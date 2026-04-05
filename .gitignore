@@ -1,0 +1,76 @@
+# ===========================
+# DESK 42 — Unity .gitignore
+# ===========================
+
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+MemoryCaptures/
+
+# Unity asset database caches
+[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*
+![Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/DataBuilders
+![Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/DefaultDataBuilder.asset
+![Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/GroupTemplates
+![Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/Settings.asset
+
+# Auto-generated VS / Rider project files
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# OS / IDE
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vs/
+.idea/
+*.swp
+
+# Build output
+/[Bb]uild/
+/[Bb]uilds/
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Crash reports
+sysinfo.txt
+
+# Packaging
+ExportedObj/
+*.tmp
+*.meta.bak
+
+# Steam
+steam_appid.txt
+
+# Local secrets — NEVER commit
+.env
+secrets.json
+unity_license.ulf
+
+# CI artifacts (kept outside repo)
+TestResults/
+artifacts/

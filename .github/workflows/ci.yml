@@ -1,0 +1,162 @@
+# ============================================================
+# DESK 42 — CI/CD Pipeline
+# GameCI: https://game.ci
+# Triggers: push to main/develop, all pull requests
+# ============================================================
+
+name: Desk 42 CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      build_release:
+        description: 'Create a release build'
+        required: false
+        default: 'false'
+
+env:
+  UNITY_VERSION: 2022.3.56f1
+  PROJECT_PATH: .                  # project root IS the Unity project
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # JOB 1: Run Edit Mode + Play Mode tests
+  # ──────────────────────────────────────────────────────────
+  test:
+    name: Test (${{ matrix.test-mode }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-mode: [EditMode, PlayMode]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # Cache the Unity Library folder — saves 5-15 min on subsequent runs
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ env.UNITY_VERSION }}-${{ matrix.test-mode }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-${{ env.UNITY_VERSION }}-${{ matrix.test-mode }}-
+            Library-${{ env.UNITY_VERSION }}-
+            Library-
+
+      - name: Run ${{ matrix.test-mode }} Tests
+        uses: game-ci/unity-test-runner@v4
+        id: tests
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:   ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion:      ${{ env.UNITY_VERSION }}
+          projectPath:       ${{ env.PROJECT_PATH }}
+          testMode:          ${{ matrix.test-mode }}
+          artifactsPath:     TestResults/${{ matrix.test-mode }}
+          coverageOptions:   'generateAdditionalMetrics;generateHtmlReport;generateBadgeReport;assemblyFilters:+Desk42.*'
+
+      # Upload test results regardless of pass/fail so you can inspect failures
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: TestResults-${{ matrix.test-mode }}
+          path: TestResults/${{ matrix.test-mode }}
+
+  # ──────────────────────────────────────────────────────────
+  # JOB 2: Build Windows Standalone (runs after tests pass)
+  # ──────────────────────────────────────────────────────────
+  build:
+    name: Build — Windows Standalone x64
+    runs-on: ubuntu-latest
+    needs: test
+    # Only build on pushes to main/develop or manual dispatch; skip on PRs
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ env.UNITY_VERSION }}-build-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-${{ env.UNITY_VERSION }}-build-
+            Library-${{ env.UNITY_VERSION }}-
+            Library-
+
+      # Embed the git short SHA + branch into build metadata
+      - name: Set build version
+        run: |
+          echo "BUILD_VERSION=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "BUILD_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Build project
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion:   ${{ env.UNITY_VERSION }}
+          projectPath:    ${{ env.PROJECT_PATH }}
+          targetPlatform: StandaloneWindows64
+          buildName:      Desk42
+          versioning:     Custom
+          version:        0.1.0-${{ env.BUILD_VERSION }}
+          # Custom build method can be added later for Steam integration
+          # buildMethod: Desk42.Editor.BuildPipeline.BuildSteam
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build-Windows-${{ env.BUILD_VERSION }}
+          path: build/StandaloneWindows64
+          retention-days: 14
+
+  # ──────────────────────────────────────────────────────────
+  # JOB 3: Deploy to Steam (only on main + manual release trigger)
+  # ──────────────────────────────────────────────────────────
+  deploy-steam:
+    name: Deploy to Steam (Beta branch)
+    runs-on: ubuntu-latest
+    needs: build
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event.inputs.build_release == 'true'
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          # Artifact name won't match without BUILD_VERSION — set it again
+          pattern: Build-Windows-*
+          merge-multiple: true
+          path: build/StandaloneWindows64
+
+      # Steamworks SteamCMD upload
+      # Requires secrets: STEAM_USERNAME, STEAM_CONFIG_VDF (base64-encoded)
+      - name: Deploy to Steam
+        uses: game-ci/steam-deploy@v3
+        with:
+          username:    ${{ secrets.STEAM_USERNAME }}
+          configVdf:   ${{ secrets.STEAM_CONFIG_VDF }}
+          appId:       ${{ secrets.STEAM_APP_ID }}
+          buildDescription: "Auto-deploy ${{ github.sha }}"
+          rootPath:    build
+          depot1Path:  StandaloneWindows64
+          releaseBranch: beta
