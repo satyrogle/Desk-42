@@ -42,6 +42,8 @@ namespace Desk42.BSM
         // ── Last Player Action ────────────────────────────────
         // The card type that was just slammed, or "" if none this tick.
         public string         LastCardTypeSlammed;
+        // Card type currently being injected (set by ClientStateMachine.TryInject)
+        public string         TriggerAction;
 
         // ── Claim State ───────────────────────────────────────
         public float          ClaimCorruption;      // 0-1

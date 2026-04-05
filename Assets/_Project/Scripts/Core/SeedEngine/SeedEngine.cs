@@ -80,7 +80,7 @@ namespace Desk42.Core
             {
                 // Each stream gets a unique seed derived from the master.
                 // FNV-1a hash gives good avalanche effect from small int inputs.
-                int streamSeed = FNV1aHash(masterSeed ^ ((int)stream * 2654435761));
+                int streamSeed = FNV1aHash(unchecked(masterSeed ^ ((int)stream * (int)2654435761u)));
                 _streams[stream] = new System.Random(streamSeed);
             }
 

@@ -178,13 +178,11 @@ namespace Desk42.UI
         {
             if (_corruptionOverlay == null) return;
 
-            float alpha = soul switch
-            {
-                <= _corruptionSoulThreshold3 => 0.40f,
-                <= _corruptionSoulThreshold2 => 0.20f,
-                <= _corruptionSoulThreshold1 => 0.05f,
-                _                            => 0.00f,
-            };
+            float alpha;
+            if      (soul <= _corruptionSoulThreshold3) alpha = 0.40f;
+            else if (soul <= _corruptionSoulThreshold2) alpha = 0.20f;
+            else if (soul <= _corruptionSoulThreshold1) alpha = 0.05f;
+            else                                         alpha = 0.00f;
 
             _corruptionOverlay.alpha = alpha;
         }

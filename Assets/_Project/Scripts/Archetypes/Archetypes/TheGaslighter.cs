@@ -169,7 +169,7 @@ namespace Desk42.Archetypes
 
             ctx.EmitDarkHumour?.Invoke("plausible_deniability");
 
-            RumorMill.Publish(new MilestoneReachedEvent(
+            RumorMill.PublishDeferred(new MilestoneReachedEvent(
                 MilestoneID.PlausibleDeniabilityUsed,
                 ctx.ShiftNumber,
                 $"cleared_{cleared}_distortion"));

@@ -170,7 +170,8 @@ namespace Desk42.Core
         [JsonProperty] public int        QuotaForCurrentAnte;
 
         // Card system
-        [JsonProperty] public DeckState Deck = new();
+        [JsonProperty] public DeckState Deck         = new();
+        [JsonProperty] public int       DrawsPerTurn = 5;   // from archetype; saved for resume
 
         // Claim queue
         [JsonProperty] public List<ActiveClaimData>   PendingClaims  = new();

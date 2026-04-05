@@ -156,7 +156,7 @@ namespace Desk42.Archetypes
             // and extend the impatience timer by 60s
             ctx.EmitDarkHumour?.Invoke("deep_audit_activated");
 
-            RumorMill.Publish(new MilestoneReachedEvent(
+            RumorMill.PublishDeferred(new MilestoneReachedEvent(
                 MilestoneID.DeepAuditUsed,
                 ctx.ShiftNumber,
                 "deep_audit"));

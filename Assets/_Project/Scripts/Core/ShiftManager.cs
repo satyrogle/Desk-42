@@ -223,7 +223,7 @@ namespace Desk42.Core
             if (e.TriggeredFugue)
             {
                 // Let the Tide know the player hit a fugue state
-                _tide.NotifyClaimResolved(duration: float.MaxValue, triggeredFugue: true);
+                _tide.NotifyClaimResolved(durationSeconds: float.MaxValue, triggeredFugue: true);
             }
         }
 
