@@ -25,7 +25,7 @@ namespace Desk42.BSM
         {
             public readonly IClientState State;
             public readonly float        MaxDuration; // 0 = no timer
-            public float                 Elapsed;
+            public readonly float        Elapsed;
 
             public StackEntry(IClientState state)
             {

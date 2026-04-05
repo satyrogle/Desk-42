@@ -118,7 +118,7 @@ namespace Desk42.Cards
             SyncFatigueOnto(card, fatigue);
 
             if (card.IsCrumpled)
-                deck.Archive(card);
+                deck.ArchiveCard(card);
             else
                 deck.Discard(card);
 

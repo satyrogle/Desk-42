@@ -145,7 +145,7 @@ namespace Desk42.Cards
         /// Permanently remove a card from this run's circulation.
         /// Used for crumpled cards and consumed-by-ability cards.
         /// </summary>
-        public void Archive(CardInstance card)
+        public void ArchiveCard(CardInstance card)
         {
             if (card == null) return;
 
