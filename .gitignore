@@ -71,6 +71,10 @@ steam_appid.txt
 secrets.json
 unity_license.ulf
 
+# Unity license activation files (local only)
+*.alf
+unity_activation_log.txt
+
 # CI artifacts (kept outside repo)
 TestResults/
 artifacts/
