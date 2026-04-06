@@ -52,6 +52,8 @@ namespace Desk42.BehaviourTrees
             float soulIntegrity, float impatience,
             string lastCardTypeSlammed = "")
         {
+            if (_paused) return BTStatus.Running;
+
             _context.DeltaTime           = deltaTime;
             _context.CurrentSanity       = sanity;
             _context.CurrentSoulIntegrity = soulIntegrity;

@@ -97,7 +97,7 @@ namespace Desk42.BSM
                 var entry = _stack.Pop();
                 float newElapsed = entry.Elapsed + deltaTime;
 
-                if (entry.IsExpired)
+                if (entry.HasTimer && newElapsed >= entry.MaxDuration)
                 {
                     // Timer ran out — exit the state and continue popping
                     entry.State.Exit(ctx);
