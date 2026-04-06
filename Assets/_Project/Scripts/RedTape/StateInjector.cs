@@ -94,6 +94,15 @@ namespace Desk42.RedTape
             // ── Step 4: Record fatigue ────────────────────────
             var fatigueResult = _fatigue.RecordPlay(cardInstanceId, card);
 
+            // ── Step 4b: Move card from Hand → Discard/Archive ────
+            var run = GameManager.Instance?.Run;
+            if (run != null)
+            {
+                var cardInst = run.Hand.FindById(cardInstanceId);
+                if (cardInst != null)
+                    run.Hand.OnCardPlayed(cardInst, _fatigue, run.Deck);
+            }
+
             // ── Step 5: Soul cost (after supply modifiers) ───────────
             if (card.SoulCost > 0f)
             {

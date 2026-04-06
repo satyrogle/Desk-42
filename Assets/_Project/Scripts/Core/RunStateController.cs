@@ -105,6 +105,7 @@ namespace Desk42.Core
         // Expose data as properties rather than the raw RunData
         // so we can enforce validation and fire events on changes.
 
+        public int     DrawsPerTurn     => _data.DrawsPerTurn;
         public float   Sanity           => _data.Sanity;
         public float   SoulIntegrity    => _data.SoulIntegrity;
         public int     Credits          => _data.CorporateCredits;

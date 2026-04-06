@@ -234,6 +234,57 @@ namespace Desk42.RedTape
             // Simple version: use Cinemachine impulse or coroutine
         }
 
+        // ── Click-to-Slam (vertical slice) ───────────────────
+
+        /// <summary>
+        /// Slam a card directly by data + instance ID — no drag CardView needed.
+        /// Called by CardButtonView when a card button is clicked.
+        /// </summary>
+        public void SlamCard(Cards.PunchCardData data, string instanceId)
+        {
+            if (_state != MachineState.Idle) return;
+            if (data == null) return;
+
+            StartCoroutine(SlamSequenceSimple(data, instanceId));
+        }
+
+        private System.Collections.IEnumerator SlamSequenceSimple(
+            Cards.PunchCardData data, string instanceId)
+        {
+            _state = MachineState.Processing;
+
+            PlaySound(_clipSlam);
+            if (_machineAnimator != null)
+                _machineAnimator.SetTrigger(_animInsert);
+
+            yield return new WaitForSeconds(_processDelay * 0.4f);
+
+            if (_machineAnimator != null)
+                _machineAnimator.SetTrigger(_animProcess);
+
+            PlaySound(_clipProcess);
+            _processParticles?.Play();
+
+            yield return new WaitForSeconds(_processDelay * 0.6f);
+
+            var result = _injector.TrySlam(data, instanceId);
+
+            _state = MachineState.Resolved;
+
+            if (!result.IsSuccess)
+            {
+                if (_machineAnimator != null)
+                    _machineAnimator.SetTrigger(_animReject);
+                PlaySound(_clipReject);
+                _rejectParticles?.Play();
+            }
+
+            OnSlamResolved?.Invoke(result);
+
+            yield return new WaitForSeconds(0.2f);
+            _state = MachineState.Idle;
+        }
+
         // ── New Shift Handshake ───────────────────────────────
 
         public void OnNewShift()
