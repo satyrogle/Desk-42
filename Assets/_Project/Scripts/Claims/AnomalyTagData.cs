@@ -75,6 +75,14 @@ namespace Desk42.Claims
                  "(overrides the template's NDARequiredChance).")]
         public bool ForcesNDA = false;
 
+        // ── Sequential Synergy ───────────────────────────────
+
+        [Header("Sequential Synergy")]
+        [Tooltip("Tags in the same category trigger a flat credit bonus when two consecutive " +
+                 "claims share a category. Leave blank for no synergy. " +
+                 "Suggested categories: Temporal, Identity, Procedural, Physical, Systemic.")]
+        public string TagCategory = "";
+
         // ── Spawn ─────────────────────────────────────────────
 
         [Header("Spawn")]

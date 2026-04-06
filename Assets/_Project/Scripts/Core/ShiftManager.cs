@@ -60,6 +60,10 @@ namespace Desk42.Core
         [Tooltip("Additional shift time (seconds) granted when Overtime begins.")]
         [SerializeField] private float _overtimeDuration   = 300f;
 
+        [Header("Sequential Synergy")]
+        [Tooltip("Flat credit bonus awarded when two consecutive resolved claims share a tag category.")]
+        [SerializeField] private int _sequentialSynergyBonus = 3;
+
         [Header("UI")]
         [Tooltip("The passive-aggressive UI controller in this scene.")]
         [SerializeField] private PassiveAggressiveUIController _uiController;
@@ -195,6 +199,9 @@ namespace Desk42.Core
             if (runData.ActiveClaim != null)
             {
                 TryGenerateMemo(runData.ActiveClaim, run, runData);
+
+                // Sequential synergy: check BEFORE adding to ResolvedClaims so [^1] is claim N-1
+                AwardSequentialSynergyBonus(runData.ActiveClaim, run, runData);
 
                 runData.ActiveClaim.IsResolved = true;
                 runData.ActiveClaim.WasHumane  = !e.ResolvedCorrectly;
@@ -412,6 +419,62 @@ namespace Desk42.Core
             yield return new WaitForSeconds(2f);
 
             GameManager.Instance?.EndShift();
+        }
+
+        // ── Sequential Synergy ───────────────────────────────
+
+        /// <summary>
+        /// Awards a flat credit bonus when the claim being resolved shares a
+        /// tag category with the previously resolved claim (claim N-1).
+        /// Called before the claim is moved into ResolvedClaims so [^1] is N-1.
+        /// </summary>
+        private void AwardSequentialSynergyBonus(
+            ActiveClaimData justResolved,
+            RunStateController run,
+            RunData runData)
+        {
+            if (runData.ResolvedClaims.Count == 0) return;
+
+            var previous = runData.ResolvedClaims[^1];
+            if (!SharesTagCategory(justResolved, previous)) return;
+
+            run.AddCredits(_sequentialSynergyBonus);
+            Debug.Log($"[ShiftManager] Sequential synergy: +{_sequentialSynergyBonus} credits " +
+                      $"({previous.ClaimId} → {justResolved.ClaimId}, shared tag category).");
+        }
+
+        private bool SharesTagCategory(ActiveClaimData a, ActiveClaimData b)
+        {
+            if (a.AnomalyTagIds == null || a.AnomalyTagIds.Length == 0) return false;
+            if (b.AnomalyTagIds == null || b.AnomalyTagIds.Length == 0) return false;
+
+            var categoriesA = new HashSet<string>();
+            foreach (string id in a.AnomalyTagIds)
+            {
+                string cat = GetTagCategory(id);
+                if (!string.IsNullOrEmpty(cat))
+                    categoriesA.Add(cat);
+            }
+
+            if (categoriesA.Count == 0) return false;
+
+            foreach (string id in b.AnomalyTagIds)
+            {
+                string cat = GetTagCategory(id);
+                if (!string.IsNullOrEmpty(cat) && categoriesA.Contains(cat))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private string GetTagCategory(string tagId)
+        {
+            if (_anomalyTags == null) return null;
+            foreach (var tag in _anomalyTags)
+                if (tag != null && tag.TagId == tagId)
+                    return tag.TagCategory;
+            return null;
         }
 
         // ── Memo Generation ───────────────────────────────────

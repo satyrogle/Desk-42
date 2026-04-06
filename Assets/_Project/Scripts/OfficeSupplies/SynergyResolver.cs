@@ -5,16 +5,23 @@
 // before it is injected. Called by StateInjector during
 // ComputeDurationOverride and credit cost calculation.
 //
-// Chain model:
-//   Each supply's ModifyInjectionDuration and ModifyCreditCost
-//   are applied in zone order (Inbox→Lamp→Clock→Tray→Corner).
-//   Multiplicative and additive modifiers stack separately:
-//     finalDuration = baseDuration * (∏ multipliers) + (∑ flat bonuses)
+// Chain model — Duration:
+//   Applied in zone order (Inbox→Lamp→Clock→Tray→Corner),
+//   each supply sees the running duration so a Paperclip
+//   doubling + a flat bonus compose naturally.
+//
+// Chain model — Credit Cost (additive-only, no cascade):
+//   Every supply is called with the ORIGINAL base cost, not
+//   the accumulated running total. Each supply's contribution
+//   is (returnedCost − baseCost). All deltas are summed once
+//   and applied to baseCost. This prevents multiplicative
+//   stacking: two supplies that each halve the cost cannot
+//   compound to a quarter — they combine to a full half-off.
 //
 // Design rationale: zone-ordered application gives the player
-// a mental model for how supplies interact — earlier zones
-// apply first, which means Inbox supplies set the baseline
-// that later zones modify. This is consistent and learnable.
+// a mental model for how supplies interact. The additive-only
+// credit rule prevents runaway cost reduction in expansion tier
+// while keeping each supply's stated effect legible.
 // ============================================================
 
 using System.Collections.Generic;
@@ -78,29 +85,35 @@ namespace Desk42.OfficeSupplies
 
         /// <summary>
         /// Compute the final credit cost after all active supply modifiers.
-        /// Returns at minimum 0.
+        /// Additive-only: each supply's delta is computed against baseCost
+        /// independently, then all deltas are summed. Multiplicative effects
+        /// from multiple supplies cannot compound. Returns at minimum 0.
         /// </summary>
         public int ApplyCreditCostModifiers(PunchCardType cardType, int baseCost)
         {
             if (_manager == null || _manager.ActiveCount == 0)
                 return baseCost;
 
-            int cost = baseCost;
+            int totalDelta = 0;
 
             foreach (var zone in ZONE_ORDER)
             {
                 var inst = _manager.GetSupplyInZone(zone);
                 if (inst == null) continue;
 
-                int prev = cost;
-                cost     = inst.Effect.ModifyCreditCost(cardType, cost);
+                // Pass baseCost to every supply so deltas are independent
+                int result = inst.Effect.ModifyCreditCost(cardType, baseCost);
+                int delta  = result - baseCost;
 
-                if (prev != cost)
+                if (delta != 0)
+                {
+                    totalDelta += delta;
                     Debug.Log($"[SynergyResolver] {inst.Data.DisplayName}: " +
-                              $"cost {prev} → {cost} ({cardType})");
+                              $"cost delta {delta:+0;-0} ({cardType})");
+                }
             }
 
-            return Mathf.Max(0, cost);
+            return Mathf.Max(0, baseCost + totalDelta);
         }
 
         // ── Bonus Draw Query ──────────────────────────────────
