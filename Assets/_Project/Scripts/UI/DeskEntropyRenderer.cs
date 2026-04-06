@@ -167,14 +167,20 @@ namespace Desk42.UI
         {
             float spike = e.HazardType switch
             {
-                OfficeHazardType.SystemCrash    => 0.15f,
+                OfficeHazardType.SystemCrash      => 0.15f,
                 OfficeHazardType.MandatoryMeeting => 0.05f,
-                OfficeHazardType.FireDrill       => 0.08f,
-                _                               => 0.03f,
+                OfficeHazardType.FireDrill         => 0.08f,
+                _                                 => 0.03f,
             };
 
-            StartCoroutine(HazardFlash());
+            // EntropySpike is always allowed — it's a brief visual on existing geometry.
             StartCoroutine(EntropySpike(spike));
+
+            // HazardFlash (screen-covering CanvasGroup) only fires when
+            // GlassCracking layer is clear — it's the entry point for
+            // expansion-tier screen obstruction.
+            if (EntropyManager.CanActivate(EntropyLayer.GlassCracking))
+                StartCoroutine(HazardFlash());
         }
 
         private void HandleShiftLifecycle(ShiftLifecycleEvent e)

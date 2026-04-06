@@ -224,5 +224,11 @@ namespace Desk42.Core
 
         public void RefreshTimestamp()
             => SavedAtUtc = DateTime.UtcNow.ToString("o");
+
+        /// <summary>
+        /// Returns the number of NDA overlays currently active this shift.
+        /// Derived from Stats so EntropyManagerDriver can sync on scene load.
+        /// </summary>
+        public int NDACountThisShift() => Stats.NDAsSignedThisRun;
     }
 }
