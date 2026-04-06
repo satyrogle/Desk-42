@@ -24,7 +24,11 @@ env:
 
 jobs:
   # ──────────────────────────────────────────────────────────
-  # JOB 1: Run Edit Mode + Play Mode tests
+  # JOB 1: Run Edit Mode tests
+  # Play Mode is excluded: Unity 2022.3 on Linux segfaults
+  # in Mono during Play Mode assembly reload (GameCI known
+  # issue). Re-enable when playmode tests are written and
+  # a stable runner image is available.
   # ──────────────────────────────────────────────────────────
   test:
     name: Test (${{ matrix.test-mode }})
@@ -32,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-mode: [EditMode, PlayMode]
+        test-mode: [EditMode]
 
     steps:
       - name: Checkout repository
