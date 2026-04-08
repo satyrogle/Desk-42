@@ -150,6 +150,7 @@ namespace Desk42.Core
         [JsonProperty] public string SavedAtUtc;
         [JsonProperty] public bool   IsComplete;       // false = mid-run resume
         [JsonProperty] public bool   IsAbandoned;
+        [JsonProperty] public bool   IsDailyBrief;    // true = date-seeded run, auto-submit to leaderboard
 
         // Identity
         [JsonProperty] public int    MasterSeed;
@@ -158,8 +159,9 @@ namespace Desk42.Core
         [JsonProperty] public string ArchetypeId;       // SO GUID of chosen archetype
 
         // Core gauges
-        [JsonProperty] public float  Sanity;            // 0-100
-        [JsonProperty] public float  SoulIntegrity;     // 0-100
+        [JsonProperty] public float   Sanity = 100f;
+        [JsonProperty] public float   ComboMultiplier = 1f;
+        [JsonProperty] public float   SoulIntegrity = 100f;     // 0-100
         [JsonProperty] public int    CorporateCredits;
         [JsonProperty] public int    PersonalExpenseDebt;
 
@@ -199,6 +201,9 @@ namespace Desk42.Core
         // Compliance vows active this run
         [JsonProperty] public List<ActiveVow>      ActiveVows = new();
 
+        // Vow: Cross-Training Initiative — flag for next card transform
+        [JsonProperty] public bool CrossTrainingSwapPending;
+
         // Rum or mill state — memos generated so far
         [JsonProperty] public List<string>         GeneratedMemoIds = new();
 
@@ -234,3 +239,4 @@ namespace Desk42.Core
         public int NDACountThisShift() => Stats.NDAsSignedThisRun;
     }
 }
+

@@ -50,6 +50,28 @@ namespace Desk42.OfficeSupplies
             _manager = manager;
         }
 
+        /// <summary>
+        /// When Open Floor Plan vow is active, zone boundaries are erased —
+        /// all supplies apply everywhere. Otherwise, iterate by zone order.
+        /// </summary>
+        private IEnumerable<OfficeSupplyInstance> GetOrderedSupplies()
+        {
+            if (ComplianceVowSystem.AreZonesMerged())
+            {
+                // All supplies apply, ordered by AllActive index
+                foreach (var inst in _manager.AllActive)
+                    yield return inst;
+            }
+            else
+            {
+                foreach (var zone in ZONE_ORDER)
+                {
+                    var inst = _manager.GetSupplyInZone(zone);
+                    if (inst != null) yield return inst;
+                }
+            }
+        }
+
         // ── Duration Modifier Chain ───────────────────────────
 
         /// <summary>
@@ -64,12 +86,9 @@ namespace Desk42.OfficeSupplies
 
             float duration = baseDuration;
 
-            // Apply each active supply in zone order
-            foreach (var zone in ZONE_ORDER)
+            // Apply each active supply (zone-ordered or all when Open Floor Plan)
+            foreach (var inst in GetOrderedSupplies())
             {
-                var inst = _manager.GetSupplyInZone(zone);
-                if (inst == null) continue;
-
                 float prev = duration;
                 duration   = inst.Effect.ModifyInjectionDuration(cardType, duration, cardTags);
 
@@ -96,11 +115,8 @@ namespace Desk42.OfficeSupplies
 
             int totalDelta = 0;
 
-            foreach (var zone in ZONE_ORDER)
+            foreach (var inst in GetOrderedSupplies())
             {
-                var inst = _manager.GetSupplyInZone(zone);
-                if (inst == null) continue;
-
                 // Pass baseCost to every supply so deltas are independent
                 int result = inst.Effect.ModifyCreditCost(cardType, baseCost);
                 int delta  = result - baseCost;
@@ -196,11 +212,8 @@ namespace Desk42.OfficeSupplies
 
             float totalDelta = 0f;
 
-            foreach (var zone in ZONE_ORDER)
+            foreach (var inst in GetOrderedSupplies())
             {
-                var inst = _manager.GetSupplyInZone(zone);
-                if (inst == null) continue;
-
                 float result = inst.Effect.ModifySoulCost(baseSoulCost);
                 float delta  = result - baseSoulCost;
 

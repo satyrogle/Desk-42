@@ -117,7 +117,7 @@ namespace Desk42.OfficeSupplies
         // ── Save / Restore ────────────────────────────────────
 
         /// <summary>
-        /// Serialize all active supplies into RunData for persistence.
+        /// Serialize all active supplies into RunData for 
         /// </summary>
         public List<ActiveSupplyData> Serialize()
         {
@@ -263,3 +263,4 @@ namespace Desk42.OfficeSupplies
             => _ctxFactory?.Invoke() ?? new SupplyContext();
     }
 }
+

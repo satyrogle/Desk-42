@@ -206,7 +206,7 @@ namespace Desk42.Core
 
         // ── Private Helpers ───────────────────────────────────
 
-        private static string SeedToCode(int seed)
+        internal static string SeedToCode(int seed)
         {
             int baseN = SHARE_CODE_CHARS.Length;
             char[] chars = new char[SHARE_CODE_LENGTH];

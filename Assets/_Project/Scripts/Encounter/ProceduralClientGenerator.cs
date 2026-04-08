@@ -25,28 +25,28 @@ namespace Desk42.Encounter
 
         public ActiveClaimData GenerateClaim(int shiftNumber, int anteNumber)
         {
-            var seed = SeedEngine.Stream(SeedStream.ClaimGeneration);
             var species = _speciesFlavors.Length > 0 
-                ? _speciesFlavors[seed.Next(0, _speciesFlavors.Length)] 
+                ? _speciesFlavors[SeedEngine.Next(SeedStream.ClaimQueue, 0, _speciesFlavors.Length)] 
                 : GetFallbackSpecies();
 
-            string fName = species.FirstNames.Length > 0 ? species.FirstNames[seed.Next(0, species.FirstNames.Length)] : "Unknown";
-            string lName = species.LastNames.Length > 0 ? species.LastNames[seed.Next(0, species.LastNames.Length)] : "Entity";
-            string topic = species.ComplaintTopics.Length > 0 ? species.ComplaintTopics[seed.Next(0, species.ComplaintTopics.Length)] : "bureaucratic friction";
+            string fName = species.FirstNames.Length > 0 ? species.FirstNames[SeedEngine.Next(SeedStream.ClaimQueue, 0, species.FirstNames.Length)] : "Unknown";
+            string lName = species.LastNames.Length > 0 ? species.LastNames[SeedEngine.Next(SeedStream.ClaimQueue, 0, species.LastNames.Length)] : "Entity";
+            string topic = species.ComplaintTopics.Length > 0 ? species.ComplaintTopics[SeedEngine.Next(SeedStream.ClaimQueue, 0, species.ComplaintTopics.Length)] : "bureaucratic friction";
 
-            string clientId = $"{fName.Substring(0, 1)}{lName}-{seed.Next(1000, 9999)}";
-            string claimId = $"CLM-{shiftNumber}-{anteNumber}-{seed.Next(10, 99)}";
+            string clientId = $"{fName.Substring(0, 1)}{lName}-{SeedEngine.Next(SeedStream.ClaimQueue, 1000, 9999)}";
+            string claimId = $"CLM-{shiftNumber}-{anteNumber}-{SeedEngine.Next(SeedStream.ClaimQueue, 10, 99)}";
 
             string narrativeText = $"{fName} {lName} is filing a formal grievance regarding {topic}. They appear highly agitated by the pneumatic tube processing times.";
 
-            return new ActiveClaimData(
-                claimId,
-                clientId,
-                species.SpeciesId,
-                narrativeText,
-                (float)Math.Round(seed.NextDouble() * 10f + 5f, 1), // Soul Cost between 5 and 15
-                seed.Next(10, 50)                                   // Credits Reward
-            );
+            return new ActiveClaimData
+            {
+                ClaimId = claimId,
+                ClientVariantId = clientId,
+                ClientSpeciesId = species.SpeciesId,
+                IncidentText = narrativeText,
+                ClaimantName = $"{fName} {lName}",
+                ClaimAmount = SeedEngine.Next(SeedStream.ClaimQueue, 10, 50)
+            };
         }
 
         private SpeciesFlavor GetFallbackSpecies()

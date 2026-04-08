@@ -49,9 +49,11 @@ namespace Desk42.Core
         // These are MonoBehaviours on child GameObjects of this GO.
         // They are created and attached in Awake if not already present.
 
-        public RunStateController  Run      { get; private set; }
-        public RumorMillDriver     EventBus { get; private set; }
-        public OfficeSupplyManager Supplies { get; private set; }
+        public RunStateController  Run        { get; private set; }
+        public RumorMillDriver     EventBus  { get; private set; }
+        public OfficeSupplyManager Supplies  { get; private set; }
+        public MilestoneTracker    Milestones { get; private set; }
+        public ComplianceVowSystem Vows       { get; private set; }
 
         // Card library — assign in Inspector (Boot scene GameManager prefab)
         [SerializeField] private CardLibrary _cardLibrary;
@@ -143,6 +145,24 @@ namespace Desk42.Core
                 Supplies = go.AddComponent<OfficeSupplyManager>();
             }
             Supplies.Initialize(() => Run?.BuildSupplyContext());
+
+            // MilestoneTracker — centralized ending-condition watcher
+            Milestones = GetComponentInChildren<MilestoneTracker>();
+            if (Milestones == null)
+            {
+                var go = new GameObject("MilestoneTracker");
+                go.transform.SetParent(transform);
+                Milestones = go.AddComponent<MilestoneTracker>();
+            }
+
+            // ComplianceVowSystem — rule mutation registry
+            Vows = GetComponentInChildren<ComplianceVowSystem>();
+            if (Vows == null)
+            {
+                var go = new GameObject("ComplianceVowSystem");
+                go.transform.SetParent(transform);
+                Vows = go.AddComponent<ComplianceVowSystem>();
+            }
         }
 
         private void BootSequence()
@@ -197,6 +217,7 @@ namespace Desk42.Core
             int seed = System.DateTime.UtcNow.Date.GetHashCode();
             Run.BeginNewRun(seed, archetypeId ?? "auditor",
                 Meta.GlobalShiftNumber, Meta);
+            Run.RawData.IsDailyBrief = true;
 
             LoadScene(SceneID.Shift);
         }
@@ -241,6 +262,9 @@ namespace Desk42.Core
         public void EndShift()
         {
             if (_isTransitioning || Run == null) return;
+
+            // Drain personal expenses before finalising the run
+            PersonalExpenseGenerator.ProcessEndOfShiftExpenses(Run.RawData, Meta);
 
             // Update Repeat Offender DB and meta-progress from the completed run
             CommitRunResultsToMeta();

@@ -90,6 +90,20 @@ namespace Desk42.Cards
             return drawn;
         }
 
+        /// <summary>Draw a specific number of cards (up to MaxSize).</summary>
+        public int DrawCards(int count, Deck deck)
+        {
+            int drawn = 0;
+            while (!IsFull && drawn < count)
+            {
+                var card = deck.Draw();
+                if (card == null) break;
+                AddCard(card);
+                drawn++;
+            }
+            return drawn;
+        }
+
         /// <summary>Add a single card to hand (up to MaxSize).</summary>
         public bool AddCard(CardInstance card)
         {

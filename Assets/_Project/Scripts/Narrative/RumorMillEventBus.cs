@@ -99,7 +99,17 @@ namespace Desk42.Core
         public static void PublishDeferred(OfficeHazardEvent e)
             => Enqueue(e, OnOfficeHazard);
         public static void PublishDeferred(FactionShiftEvent e)
-            => Enqueue(e, OnFactionShift);
+        {
+            // Vow: 24-Hour News Cycle rank 1+ — faction events fire instantly
+            if (Core.ComplianceVowSystem.ShouldBypassFactionDeferred())
+            {
+                OnFactionShift?.Invoke(e);
+                if (Core.ComplianceVowSystem.ShouldDoubleFireEvents())
+                    OnFactionShift?.Invoke(e);
+                return;
+            }
+            Enqueue(e, OnFactionShift);
+        }
         public static void PublishDeferred(ShiftLifecycleEvent e)
             => Enqueue(e, OnShiftLifecycle);
         public static void PublishDeferred(ShiftPhaseChangedEvent e)
@@ -114,11 +124,24 @@ namespace Desk42.Core
             => Enqueue(e, OnClaimQueued);
         public static void PublishDeferred(TideEscalatedEvent e)
             => Enqueue(e, OnTideEscalated);
+        public static void PublishDeferred(SupplySignalEvent e)
+            => Enqueue(e, OnSupplySignal);
 
         // ── Internal ──────────────────────────────────────────
 
         private static void Enqueue<T>(T payload, Action<T> channel)
-            => _queue.Enqueue(new DeferredEvent<T>(payload, channel));
+        {
+            // Vow: 24-Hour News Cycle — bypass the deferred queue
+            if (Core.ComplianceVowSystem.ShouldBypassDeferredQueue())
+            {
+                channel?.Invoke(payload);
+                if (Core.ComplianceVowSystem.ShouldDoubleFireEvents())
+                    channel?.Invoke(payload);
+                return;
+            }
+
+            _queue.Enqueue(new DeferredEvent<T>(payload, channel));
+        }
 
         /// <summary>
         /// Called by RumorMillDriver.LateUpdate() — drains the queue.

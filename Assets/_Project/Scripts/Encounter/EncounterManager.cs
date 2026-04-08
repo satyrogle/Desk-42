@@ -87,11 +87,23 @@ namespace Desk42.Encounter
             var clientGO = new GameObject($"Client_{claim.ClientVariantId}");
             clientGO.transform.SetParent(_clientAnchor, worldPositionStays: false);
             _activeCSM = clientGO.AddComponent<ClientStateMachine>();
+
+            // Query RepeatOffenderDB for visit history and counter-traits
+            var meta = GameManager.Instance?.Meta;
+            int visitCount = 0;
+            System.Collections.Generic.List<string> counterTraits = null;
+            if (meta != null)
+            {
+                var profile = meta.GetOrCreateProfile(claim.ClientVariantId);
+                visitCount    = profile.TotalVisits;
+                counterTraits = profile.CounterTraitIds;
+            }
+
             _activeCSM.Initialize(
                 claim.ClientVariantId,
                 claim.ClientSpeciesId,
-                visitCount: 0,       // TODO: query RepeatOffenderDB from MetaProgressData
-                counterTraits: null);
+                visitCount,
+                counterTraits);
 
             // Wire the machine so card slams reach this client
             _punchCardMachine?.SetActiveClient(_activeCSM);
@@ -136,13 +148,21 @@ namespace Desk42.Encounter
             }
 
             int baseCredits = resolvedCorrectly ? _baseCreditsApprove + (run?.ShiftNumber ?? 1) * 2 : 0;
-            
+
+            // ── Vow: Commission Only — reduce/zero base payout ──
+            baseCredits = Mathf.RoundToInt(baseCredits * ComplianceVowSystem.GetBasePayoutMultiplier());
+
             // ── Phase 3: Scoring Cascade ──
             if (run != null)
             {
                 if (resolvedCorrectly)
                     run.ComboMultiplier += 0.1f;
                 else
+                    run.ComboMultiplier = 1.0f;
+
+                // ── Vow: Commission Only rank 3 — combo resets every N claims ──
+                int resetInterval = ComplianceVowSystem.GetComboResetInterval();
+                if (resetInterval > 0 && run.RawData.Stats.ClaimsProcessed % resetInterval == 0)
                     run.ComboMultiplier = 1.0f;
             }
 

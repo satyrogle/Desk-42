@@ -72,6 +72,10 @@ namespace Desk42.RedTape
         private MachineState _state = MachineState.Idle;
         private bool         _isCardSlotHighlighted;
 
+        /// <summary>True while a card is being inserted or processed (not idle).</summary>
+        public bool IsProcessing => _state == MachineState.CardInserting
+                                 || _state == MachineState.Processing;
+
         // ── Dependencies ──────────────────────────────────────
 
         private StateInjector      _injector;

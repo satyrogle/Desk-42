@@ -82,12 +82,12 @@ namespace Desk42.UI
 
         private void HandleNDASigned(NDASignedEvent e)
         {
-            AddOverlay(e.CoveredRegionId, e.CoveredRegion.center); // Convert Rect normalized bounds to center
+            AddOverlay(e.ClaimId, e.CoveredRegion);
         }
 
         private void HandleShiftLifecycle(ShiftLifecycleEvent e)
         {
-            if (e.LifecyclePhase == ShiftLifecyclePhase.Ended)
+            if (!e.IsStart)
                 ClearAll();
         }
 

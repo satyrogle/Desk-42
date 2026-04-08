@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Desk42.Core;
-using Desk42.Persistence;
 using System.Linq;
 
 namespace Desk42.UI
@@ -62,8 +61,8 @@ namespace Desk42.UI
             }
 
             _meta.BankBalance -= cost;
-            _meta.EmployeeHandbook.UnlockBenefit(benefitId);
-            GameManager.Instance.SaveSystem.SaveMeta(GameManager.Instance.Meta);
+            _meta.EmployeeHandbook.UnlockBenefit(benefitId, cost);
+            SaveSystem.SaveMeta(_meta);
             RefreshUI();
             
             Debug.Log($"[MetaHub] Purchased benefit {benefitId} for {cost} credits. Remaining: {_meta.BankBalance}.");
@@ -84,3 +83,4 @@ namespace Desk42.UI
         }
     }
 }
+

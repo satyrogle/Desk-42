@@ -69,8 +69,8 @@ namespace Desk42.Core
             };
 
             // Draft an Escalating Regulation for this shift
-            var cards = System.Enum.GetValues(typeof(Desk42.Cards.PunchCardType));
-            var illegalCard = (Desk42.Cards.PunchCardType)cards.GetValue(SeedEngine.Next(0, cards.Length));
+            var cards = System.Enum.GetValues(typeof(PunchCardType));
+            var illegalCard = (PunchCardType)cards.GetValue(SeedEngine.Next(SeedStream.RegulationOrder, 0, cards.Length));
             _data.EscalatingRegulationCardId = illegalCard.ToString();
 
             ApplyStartingFactionDispositions(meta);
@@ -124,7 +124,7 @@ namespace Desk42.Core
         public RunData RawData          => _data; // needed by SaveSystem only
 
         // Phase 3 & 4 additions
-        public System.Collections.Generic.IReadOnlyList<Desk42.Persistence.ActiveClaimData> ResolvedClaims => _data.ResolvedClaims;
+        public System.Collections.Generic.IReadOnlyList<Desk42.Core.ActiveClaimData> ResolvedClaims => _data.ResolvedClaims;
         public float ComboMultiplier 
         { 
             get => _data.ComboMultiplier;
@@ -239,6 +239,14 @@ namespace Desk42.Core
         {
             if (_data.CurrentPhase == ShiftPhase.LunchBreak) return false;
 
+            // ── Vow: Agile Workflow — freeze timer during card processing ──
+            if (ComplianceVowSystem.ShouldFreezeTimer())
+            {
+                var machine = FindObjectOfType<RedTape.PunchCardMachine>();
+                if (machine != null && machine.IsProcessing)
+                    return false; // Timer frozen while "holding" a card
+            }
+
             // Apply clock multiplier: 0.9 with Office Clock, 1.0 otherwise
             var resolver = GameManager.Instance?.Supplies?.Resolver;
             float mult = resolver?.GetTimerMultiplier() ?? 1f;
@@ -247,6 +255,10 @@ namespace Desk42.Core
             int hostileRank = GetVowRank("hostile_environment");
             if (hostileRank > 0)
                 mult *= (1f + (0.15f * hostileRank));
+
+            // ── Vow: Agile Workflow — accelerate when NOT holding ──
+            float agileAccel = ComplianceVowSystem.GetAgileTimerAcceleration();
+            if (agileAccel > 1f) mult *= agileAccel;
 
             _data.ImpatenceTimerRemaining -= dt * mult;
 
@@ -372,17 +384,9 @@ namespace Desk42.Core
             _data.IsComplete = true;
             _data.Stats.EfficiencyRating = ComputeEfficiencyRating();
 
-            // ── Phase 2: Endings ──────────────────────────────
-            if (Mathf.Approximately(_data.SoulIntegrity, 0f) && _data.Stats.EfficiencyRating >= 1500f)
-            {
-                RumorMill.PublishDeferred(new MilestoneReachedEvent(Desk42.MilestoneID.TheCompanyMan));
-            }
-
-            var meta = GameManager.Instance?.Meta;
-            if (meta != null && meta.ConspiracyBoard.GreatAuditUnlocked)
-            {
-                RumorMill.PublishDeferred(new MilestoneReachedEvent(Desk42.MilestoneID.TheGreatAudit));
-            }
+            // ── Endings — delegated to MilestoneTracker ──────
+            GameManager.Instance?.Milestones?.EvaluateRunEndConditions(
+                _data, GameManager.Instance.Meta);
 
             // ── Phase 2: The Reflection Mechanic ──────────────────────
             string reflectionKey = "reflection.balanced";
@@ -393,6 +397,10 @@ namespace Desk42.Core
 
             var tone = ComputeNarratorTone();
             UnityEngine.Debug.Log($"[Reflection] UI Narrator outputs: {Desk42.UI.NarratorSystem.GetLine(reflectionKey, tone)}");
+
+            // ── Leaderboard auto-submit for Daily Brief ──────
+            if (_data.IsDailyBrief)
+                Desk42.Leaderboard.LeaderboardManager.Instance?.SubmitCurrentRun();
 
             AutoSave();
             SaveSystem.DeleteRun();
@@ -421,7 +429,7 @@ namespace Desk42.Core
         }
 
         private ClientStateID _lastClientState = ClientStateID.Pending;
-        private Persistence.ActiveClaimData _activeClaim;
+        private Desk42.Core.ActiveClaimData _activeClaim;
 
         private void HandleStateTransition(StateTransitionEvent e)
         {
@@ -486,7 +494,8 @@ namespace Desk42.Core
 
         private void HandleExpenseUnmet(ExpenseUnmetEvent e)
         {
-            _data.PersonalExpenseDebt += e.AmountShort;
+            // Debt is accumulated directly by PersonalExpenseGenerator
+            // before CompleteRun() — this handler only applies entropy.
             AddEntropy(0.1f * e.AmountShort / 10f); // desk deteriorates
         }
 

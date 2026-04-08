@@ -152,6 +152,21 @@ namespace Desk42.Core
                       $"Pressure: {_pressureLevel}.");
         }
 
+        /// <summary>
+        /// Force an immediate pressure escalation (up to max 3).
+        /// Used by the Unpaid Overtime loop to ratchet tension.
+        /// </summary>
+        public void ForceEscalate()
+        {
+            if (_pressureLevel < 3)
+                SetPressureLevel(_pressureLevel + 1, isOverperformance: true);
+
+            _timeSinceLastHazard = 0f;
+            ScheduleNextHazard();
+
+            Debug.Log($"[TideSystem] Force escalated to pressure {_pressureLevel}.");
+        }
+
         public void Reset()
         {
             _pressureLevel        = 0;

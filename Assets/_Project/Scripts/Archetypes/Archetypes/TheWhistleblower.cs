@@ -37,6 +37,9 @@ namespace Desk42.Archetypes
             ctx.Hand.DiscardAll(ctx.Deck);
             ctx.Hand.DrawCards(MaxHandSize, ctx.Deck);
             ctx.EmitDarkHumour?.Invoke("whistleblower_leak");
+
+            // Track leaked document toward the Whistleblower ending
+            GameManager.Instance?.Milestones?.RecordLeakedDocument();
         }
 
         public override int ModifyCreditCost(PunchCardType cardType, int baseCost)

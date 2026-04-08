@@ -22,7 +22,10 @@ namespace Desk42.Core
     {
         PendingReview, ThreatAudit, Expedite, Redact,
         LegalHold, DebugTrace, AutoFile, RecursiveFiling,
-        Analyse, Forget, CooperationRoute, Escalate
+        Analyse, Forget, CooperationRoute, Escalate,
+        Gaslight, Transfer, NonDisclosure, SmallTalk, 
+        Empathise, Interrogate, Reeducate, AppointCouncil, 
+        Legal
     }
 
     public enum UnethicalActionType
@@ -45,6 +48,7 @@ namespace Desk42.Core
     public enum MilestoneID
     {
         FirstPromotion, RedactedTruth, TheBreach, TheGreatAudit, TheCompanyMan,
+        TheWhistleblower,
         // Archetype ability milestones
         DeepAuditUsed, DistortionThreshold, PlausibleDeniabilityUsed,
         EmergencyProcedureUsed, HardResetUsed,
@@ -255,12 +259,15 @@ namespace Desk42.Core
     /// <summary>A narrative milestone was reached.</summary>
     public readonly struct MilestoneReachedEvent
     {
-        public readonly MilestoneID Milestone;
+        public readonly MilestoneID MilestoneId;
         public readonly int         ShiftNumber;
         public readonly string      Tag;   // optional debug / sub-event label
 
         public MilestoneReachedEvent(MilestoneID m, int shift, string tag = "")
-        { Milestone = m; ShiftNumber = shift; Tag = tag; }
+        { MilestoneId = m; ShiftNumber = shift; Tag = tag; }
+
+        public MilestoneReachedEvent(MilestoneID m)
+        { MilestoneId = m; ShiftNumber = 0; Tag = ""; }
     }
 
     /// <summary>A Repeat Offender was flagged with a new counter-trait.</summary>

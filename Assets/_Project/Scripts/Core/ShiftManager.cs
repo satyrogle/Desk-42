@@ -68,12 +68,21 @@ namespace Desk42.Core
         [Tooltip("The passive-aggressive UI controller in this scene.")]
         [SerializeField] private PassiveAggressiveUIController _uiController;
 
+        [Header("Unpaid Overtime")]
+        [Tooltip("Shift number at which Unpaid Overtime loop activates (inclusive).")]
+        [SerializeField] private int   _unpaidOvertimeShiftThreshold = 5;
+        [Tooltip("Seconds removed from the base timer per overtime iteration.")]
+        [SerializeField] private float _overtimeTimerReduction       = 30f;
+        [Tooltip("Minimum timer duration floor for overtime iterations.")]
+        [SerializeField] private float _overtimeTimerFloor           = 60f;
+
         // ── State ─────────────────────────────────────────────
 
         private TideSystem _tide;
         private float      _lunchBreakTimer;
         private float      _encounterStartTime;   // Time.time when current encounter began
         private bool       _shiftEnding;          // guard against double EndShift calls
+        private int        _overtimeIteration;     // how many overtime loops we've done this shift
 
         // ── Unity Lifecycle ───────────────────────────────────
 
@@ -323,7 +332,14 @@ namespace Desk42.Core
                     break;
 
                 case ShiftPhase.AfternoonBlock:
-                    StartClockOut(run);
+                    if (run.ShiftNumber >= _unpaidOvertimeShiftThreshold)
+                    {
+                        StartUnpaidOvertimeLoop(run, runData);
+                    }
+                    else
+                    {
+                        StartClockOut(run);
+                    }
                     break;
             }
         }
@@ -374,14 +390,57 @@ namespace Desk42.Core
             StartCoroutine(EndShiftSequence());
         }
 
+        /// <summary>
+        /// Unpaid Overtime loop (Phase 7): instead of ending, loop back into
+        /// MorningBlock with escalated Tide, reduced timer, and fresh claims.
+        /// The shift never ends until an ending condition fires.
+        /// </summary>
+        private void StartUnpaidOvertimeLoop(RunStateController run, RunData runData)
+        {
+            _overtimeIteration++;
+
+            // Reset ante tracking for the new iteration
+            runData.CurrentAnteNumber       = 1;
+            runData.ClaimsProcessedThisAnte = 0;
+            runData.QuotaForCurrentAnte     = ComputeQuota(
+                _morningBlockQuota + _overtimeIteration, run.ShiftNumber);
+
+            // Generate more claims for the overtime loop
+            GenerateMoreClaims(run.ShiftNumber, runData, count: runData.QuotaForCurrentAnte + 2);
+
+            // Reduce timer each iteration (floor-clamped)
+            float newTimer = Mathf.Max(
+                _overtimeDuration - _overtimeIteration * _overtimeTimerReduction,
+                _overtimeTimerFloor);
+            run.ExtendTimer(newTimer);
+
+            // Escalate Tide pressure
+            _tide.ForceEscalate();
+
+            // Transition back to MorningBlock
+            run.AdvancePhase(ShiftPhase.MorningBlock);
+            _tide.OnPhaseChanged(ShiftPhase.MorningBlock);
+
+            DequeueNextClaim(run, runData);
+
+            Debug.Log($"[ShiftManager] Unpaid Overtime iteration {_overtimeIteration}. " +
+                      $"Timer: {newTimer:F0}s. Quota: {runData.QuotaForCurrentAnte}.");
+        }
+
         private void OnTimerExpired(RunStateController run, RunData runData)
         {
             if (runData.CurrentPhase == ShiftPhase.Overtime)
             {
-                // Timer expired in overtime — Phase 7 will handle the death state.
-                // For now: end the shift as if clocked out.
-                Debug.Log("[ShiftManager] Overtime timer expired. Ending shift.");
-                StartClockOut(run);
+                if (run.ShiftNumber >= _unpaidOvertimeShiftThreshold)
+                {
+                    // Unpaid Overtime: loop back instead of ending
+                    StartUnpaidOvertimeLoop(run, runData);
+                }
+                else
+                {
+                    Debug.Log("[ShiftManager] Overtime timer expired. Ending shift.");
+                    StartClockOut(run);
+                }
                 return;
             }
 

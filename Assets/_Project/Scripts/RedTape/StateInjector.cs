@@ -71,7 +71,21 @@ namespace Desk42.RedTape
 
             // ── Step 2: Credit check ──────────────────────────
             int effectiveCost = ComputeCreditCost(card);
-            if (effectiveCost > 0 &&
+
+            // ── Vow: Zero-Based Budgeting — convert credit cost to sanity ──
+            float sanityCostFraction = Core.ComplianceVowSystem.GetSanityCostFraction();
+            if (sanityCostFraction > 0f && effectiveCost > 0)
+            {
+                float sanityCost = effectiveCost * sanityCostFraction;
+                int creditPortion = Mathf.RoundToInt(effectiveCost * (1f - sanityCostFraction));
+
+                if (creditPortion > 0 &&
+                    !(GameManager.Instance?.Run?.SpendCredits(creditPortion) ?? false))
+                    return new SlamResult(SlamOutcome.InsufficientCredits, card);
+
+                GameManager.Instance?.Run?.ModifySanity(-sanityCost);
+            }
+            else if (effectiveCost > 0 &&
                 !(GameManager.Instance?.Run?.SpendCredits(effectiveCost) ?? false))
             {
                 return new SlamResult(SlamOutcome.InsufficientCredits, card);
@@ -218,12 +232,12 @@ namespace Desk42.RedTape
                 var run = GameManager.Instance.Run;
                 if (card.CardType == PunchCardType.LegalHold || card.CardType == PunchCardType.ThreatAudit) 
                 {
-                    if (run.GetFactionRep(Desk42.FactionID.Legal) > 50) cost -= 2;
-                    else if (run.GetFactionRep(Desk42.FactionID.Legal) < -50) cost += 3;
+                    if (run.GetFactionRep(Desk42.Core.FactionID.Legal) > 50) cost -= 2;
+                    else if (run.GetFactionRep(Desk42.Core.FactionID.Legal) < -50) cost += 3;
                 }
 
-                if (run.GetFactionRep(Desk42.FactionID.Accounting) > 50) cost -= 1; // Accounting cuts base costs
-                else if (run.GetFactionRep(Desk42.FactionID.Accounting) < -50) cost += 1;
+                if (run.GetFactionRep(Desk42.Core.FactionID.Accounting) > 50) cost -= 1; // Accounting cuts base costs
+                else if (run.GetFactionRep(Desk42.Core.FactionID.Accounting) < -50) cost += 1;
 
                 // ── Phase 3: Escalating Regulations ──
                 if (!string.IsNullOrEmpty(run.EscalatingRegulationCardId) && 
