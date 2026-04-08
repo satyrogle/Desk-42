@@ -125,9 +125,28 @@ namespace Desk42.Encounter
             _encounterActive = false;
 
             var run     = GameManager.Instance?.Run;
-            int credits = resolvedCorrectly
-                ? _baseCreditsApprove + (run?.ShiftNumber ?? 1) * 2
-                : 0;
+            
+            // ── Phase 3: Cross-Claim Deduction ──
+            int crossClaimBonus = 0;
+            if (run != null && run.ResolvedClaims.Count > 0)
+            {
+                var lastClaim = run.ResolvedClaims[^1];
+                if (lastClaim.ClientSpeciesId == _activeClaim.ClientSpeciesId)
+                    crossClaimBonus = 5; // Recognized pattern!
+            }
+
+            int baseCredits = resolvedCorrectly ? _baseCreditsApprove + (run?.ShiftNumber ?? 1) * 2 : 0;
+            
+            // ── Phase 3: Scoring Cascade ──
+            if (run != null)
+            {
+                if (resolvedCorrectly)
+                    run.ComboMultiplier += 0.1f;
+                else
+                    run.ComboMultiplier = 1.0f;
+            }
+
+            int credits = Mathf.RoundToInt((baseCredits + crossClaimBonus) * (run?.ComboMultiplier ?? 1.0f));
 
             RumorMill.PublishDeferred(new ClaimResolvedEvent(
                 _activeClaim.ClaimId,
@@ -138,7 +157,7 @@ namespace Desk42.Encounter
                 _activeClaim.ClientSpeciesId));
 
             Debug.Log($"[EncounterManager] Resolved '{_activeClaim.ClaimId}' — " +
-                      $"{(resolvedCorrectly ? "APPROVE" : "DENY")}. Credits: +{credits}.");
+                      $"{(resolvedCorrectly ? "APPROVE" : "DENY")}. Credits: +{credits} (Combo: {run?.ComboMultiplier ?? 1.0f}x).");
 
             CleanupEncounter();
         }

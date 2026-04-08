@@ -152,8 +152,7 @@ namespace Desk42.OfficeSupplies
             {
                 _triggered = true;
                 ctx.EmitDarkHumour?.Invoke("post_it_hint");
-                RumorMill.PublishDeferred(new MilestoneReachedEvent(
-                    MilestoneID.FirstPromotion, ctx.ShiftNumber, "post_it_note_hint"));
+                RumorMill.PublishDeferred(new SupplySignalEvent("post_it_note", "post_it_note_hint"));
                 Debug.Log("[PostItNote] Hidden trait presence signalled.");
             }
         }
@@ -486,8 +485,7 @@ namespace Desk42.OfficeSupplies
         public override void OnEncounterStart(SupplyContext ctx)
         {
             // Signal the UI to reveal the corruption bar
-            RumorMill.PublishDeferred(new MilestoneReachedEvent(
-                MilestoneID.FirstPromotion, ctx.ShiftNumber, "desk_lamp_reveal"));
+            RumorMill.PublishDeferred(new SupplySignalEvent("desk_lamp", "desk_lamp_reveal"));
 
             ctx.EmitDarkHumour?.Invoke("desk_lamp_reveal");
             Debug.Log("[DeskLamp] Claim corruption level revealed.");

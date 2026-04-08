@@ -194,22 +194,25 @@ namespace Desk42.OfficeSupplies
             if (_manager == null || _manager.ActiveCount == 0)
                 return baseSoulCost;
 
-            float cost = baseSoulCost;
+            float totalDelta = 0f;
 
             foreach (var zone in ZONE_ORDER)
             {
                 var inst = _manager.GetSupplyInZone(zone);
                 if (inst == null) continue;
 
-                float prev = cost;
-                cost = inst.Effect.ModifySoulCost(cost);
+                float result = inst.Effect.ModifySoulCost(baseSoulCost);
+                float delta  = result - baseSoulCost;
 
-                if (!Mathf.Approximately(prev, cost))
+                if (!Mathf.Approximately(delta, 0f))
+                {
+                    totalDelta += delta;
                     Debug.Log($"[SynergyResolver] {inst.Data.DisplayName}: " +
-                              $"soul cost {prev:F2} → {cost:F2}");
+                              $"soul cost delta {delta:+0.00;-0.00}");
+                }
             }
 
-            return Mathf.Max(0f, cost);
+            return Mathf.Max(0f, baseSoulCost + totalDelta);
         }
     }
 }

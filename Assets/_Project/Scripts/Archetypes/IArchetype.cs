@@ -95,6 +95,12 @@ namespace Desk42.Archetypes
         /// Return the (possibly unchanged) cost.
         /// </summary>
         int ModifyCreditCost(PunchCardType cardType, int baseCost);
+
+        /// <summary>
+        /// Override or modify a card's soul cost.
+        /// Return the (possibly unchanged) soul cost.
+        /// </summary>
+        float ModifySoulCost(PunchCardType cardType, float baseCost);
     }
 
     // ── Vow Interface ─────────────────────────────────────────
@@ -127,6 +133,7 @@ namespace Desk42.Archetypes
         public int     ShiftNumber;
         public int     TotalCardSlams;
         public string  ActiveClientVariantId;
+        public ClientStateID ActiveClientState;
 
         // Callbacks back into RunStateController
         public System.Action<float> ModifySanity;

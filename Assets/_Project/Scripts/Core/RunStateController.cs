@@ -65,8 +65,13 @@ namespace Desk42.Core
                 CorporateCredits = ComputeStartingCredits(meta),
                 CurrentPhase     = ShiftPhase.ClockIn,
                 CurrentAnteNumber = 1,
-                ImpatenceTimerRemaining = ComputeShiftDuration(meta),
+                ImpatenceTimerRemaining = ComputeShiftDuration(meta, null), // Vows applied here when UI is ready
             };
+
+            // Draft an Escalating Regulation for this shift
+            var cards = System.Enum.GetValues(typeof(Desk42.Cards.PunchCardType));
+            var illegalCard = (Desk42.Cards.PunchCardType)cards.GetValue(SeedEngine.Next(0, cards.Length));
+            _data.EscalatingRegulationCardId = illegalCard.ToString();
 
             ApplyStartingFactionDispositions(meta);
             BuildArchetypeAndDeck(archetypeId, meta);
@@ -118,6 +123,15 @@ namespace Desk42.Core
         public float   DeskEntropy      => _data.DeskEntropy;
         public RunData RawData          => _data; // needed by SaveSystem only
 
+        // Phase 3 & 4 additions
+        public System.Collections.Generic.IReadOnlyList<Desk42.Persistence.ActiveClaimData> ResolvedClaims => _data.ResolvedClaims;
+        public float ComboMultiplier 
+        { 
+            get => _data.ComboMultiplier;
+            set => _data.ComboMultiplier = value;
+        }
+        public string EscalatingRegulationCardId => _data.EscalatingRegulationCardId;
+
         // Derived
         public bool    IsInFugueState   => _data.Sanity <= 0f;
         public NarratorReliability NarratorTone => ComputeNarratorTone();
@@ -136,7 +150,10 @@ namespace Desk42.Core
             RumorMill.Publish(new SanityChangedEvent(prev, _data.Sanity, triggeredFugue));
 
             if (triggeredFugue)
+            {
+                RecordFugueStateEntered();
                 Debug.Log("[RunStateController] Fugue State triggered.");
+            }
         }
 
         // ── Soul Integrity ────────────────────────────────────
@@ -144,6 +161,14 @@ namespace Desk42.Core
         /// <param name="delta">Negative to lose soul, positive to restore.</param>
         public void ModifySoulIntegrity(float delta)
         {
+            if (delta < 0)
+            {
+                // Zero Tolerance vow increases soul damage by 20% per rank
+                int zeroTolRank = GetVowRank("zero_tolerance");
+                if (zeroTolRank > 0)
+                    delta *= (1f + (0.20f * zeroTolRank));
+            }
+
             float prev = _data.SoulIntegrity;
             _data.SoulIntegrity = Mathf.Clamp(_data.SoulIntegrity + delta, 0f, 100f);
 
@@ -156,6 +181,19 @@ namespace Desk42.Core
         }
 
         // ── Credits ───────────────────────────────────────────
+
+        private void GenerateAnteQuota()
+        {
+            _data.ClaimsProcessedThisAnte = 0;
+            
+            // Base quota escalates per shift
+            _data.QuotaForCurrentAnte = 3 + (_data.ShiftNumber / 2);
+
+            // Double Quota vow increases this requirement!
+            int dqRank = GetVowRank("double_quota");
+            if (dqRank > 0)
+                _data.QuotaForCurrentAnte += dqRank * 2;
+        }
 
         public void AddCredits(int amount)
         {
@@ -181,6 +219,11 @@ namespace Desk42.Core
             var prev = _data.CurrentPhase;
             _data.CurrentPhase = newPhase;
 
+            if (newPhase == ShiftPhase.MorningBlock || newPhase == ShiftPhase.AfternoonBlock)
+            {
+                GenerateAnteQuota();
+            }
+
             RumorMill.PublishDeferred(new ShiftPhaseChangedEvent(prev, newPhase));
         }
 
@@ -199,6 +242,12 @@ namespace Desk42.Core
             // Apply clock multiplier: 0.9 with Office Clock, 1.0 otherwise
             var resolver = GameManager.Instance?.Supplies?.Resolver;
             float mult = resolver?.GetTimerMultiplier() ?? 1f;
+
+            // Hostile Environment vow accelerates timer decay by 15% per rank
+            int hostileRank = GetVowRank("hostile_environment");
+            if (hostileRank > 0)
+                mult *= (1f + (0.15f * hostileRank));
+
             _data.ImpatenceTimerRemaining -= dt * mult;
 
             if (_data.ImpatenceTimerRemaining <= 0f)
@@ -322,6 +371,29 @@ namespace Desk42.Core
         {
             _data.IsComplete = true;
             _data.Stats.EfficiencyRating = ComputeEfficiencyRating();
+
+            // ── Phase 2: Endings ──────────────────────────────
+            if (Mathf.Approximately(_data.SoulIntegrity, 0f) && _data.Stats.EfficiencyRating >= 1500f)
+            {
+                RumorMill.PublishDeferred(new MilestoneReachedEvent(Desk42.MilestoneID.TheCompanyMan));
+            }
+
+            var meta = GameManager.Instance?.Meta;
+            if (meta != null && meta.ConspiracyBoard.GreatAuditUnlocked)
+            {
+                RumorMill.PublishDeferred(new MilestoneReachedEvent(Desk42.MilestoneID.TheGreatAudit));
+            }
+
+            // ── Phase 2: The Reflection Mechanic ──────────────────────
+            string reflectionKey = "reflection.balanced";
+            if (_data.Stats.EfficiencyRating >= 1000f && _data.SoulIntegrity < 25f)
+                reflectionKey = "reflection.high_efficiency_low_soul";
+            else if (_data.Stats.EfficiencyRating < 500f)
+                reflectionKey = "reflection.low_efficiency";
+
+            var tone = ComputeNarratorTone();
+            UnityEngine.Debug.Log($"[Reflection] UI Narrator outputs: {Desk42.UI.NarratorSystem.GetLine(reflectionKey, tone)}");
+
             AutoSave();
             SaveSystem.DeleteRun();
         }
@@ -334,6 +406,8 @@ namespace Desk42.Core
             RumorMill.OnMoralChoice         += HandleMoralChoice;
             RumorMill.OnOfficeHazard        += HandleOfficeHazard;
             RumorMill.OnExpenseUnmet        += HandleExpenseUnmet;
+            RumorMill.OnStateTransition     += HandleStateTransition;
+            RumorMill.OnClaimQueued         += HandleClaimQueued;
         }
 
         private void OnDestroy()
@@ -342,6 +416,22 @@ namespace Desk42.Core
             RumorMill.OnMoralChoice         -= HandleMoralChoice;
             RumorMill.OnOfficeHazard        -= HandleOfficeHazard;
             RumorMill.OnExpenseUnmet        -= HandleExpenseUnmet;
+            RumorMill.OnStateTransition     -= HandleStateTransition;
+            RumorMill.OnClaimQueued         -= HandleClaimQueued;
+        }
+
+        private ClientStateID _lastClientState = ClientStateID.Pending;
+        private Persistence.ActiveClaimData _activeClaim;
+
+        private void HandleStateTransition(StateTransitionEvent e)
+        {
+            _lastClientState = e.To;
+        }
+
+        private void HandleClaimQueued(ClaimQueuedEvent e)
+        {
+            _activeClaim = e.Claim;
+            _lastClientState = ClientStateID.Pending; // Reset at start of encounter
         }
 
         private void HandleClaimResolved(ClaimResolvedEvent e)
@@ -441,22 +531,49 @@ namespace Desk42.Core
             // Bonus for maintaining high sanity
             score += _data.Sanity * 0.2f;
 
-            return Mathf.Max(0f, score);
+            // Apply Combo Multiplier
+            score *= _data.ComboMultiplier;
+
+            return UnityEngine.Mathf.Max(0f, score);
         }
 
         private int ComputeStartingCredits(MetaProgressData meta)
         {
-            // Base credits; Employee Handbook benefits can increase this
             int base_ = 20;
-            // TODO: check meta.EmployeeHandbook for credit-boosting benefits
+            if (meta?.EmployeeHandbook != null)
+            {
+                if (meta.EmployeeHandbook.HasBenefit("signing_bonus"))
+                    base_ += 10;
+            }
             return base_;
         }
 
-        private float ComputeShiftDuration(MetaProgressData meta)
+        public int GetVowRank(string vowId)
+        {
+            if (_data?.ActiveVows == null) return 0;
+            foreach (var vow in _data.ActiveVows)
+            {
+                if (vow.VowId == vowId) return vow.Rank;
+            }
+            return 0;
+        }
+
+        private float ComputeShiftDuration(MetaProgressData meta, System.Collections.Generic.List<ActiveVow> activeVows = null)
         {
             // Default ~24-minute shift in seconds
             float duration = 24f * 60f;
-            // TODO: Compliance Vow "Mandatory Overtime" reduces this
+            
+            int overtimeRank = GetVowRank("mandatory_overtime");
+            // If activeVows isn't passed we check internal state
+            if (activeVows != null)
+            {
+                foreach (var vow in activeVows)
+                    if (vow.VowId == "mandatory_overtime") overtimeRank = vow.Rank;
+            }
+            
+            if (overtimeRank > 0)
+                duration -= (30f * overtimeRank);
+            
             return duration;
         }
 
@@ -533,7 +650,8 @@ namespace Desk42.Core
             Credits          = _data.CorporateCredits,
             ShiftNumber      = _data.ShiftNumber,
             TotalCardSlams   = _data.Stats.CardSlamsTotal,
-            ActiveClientVariantId = "",
+            ActiveClientVariantId = _activeClaim?.ClientVariantId,
+            ActiveClientState = _lastClientState,
 
             ModifySanity         = delta  => ModifySanity(delta),
             ModifySoulIntegrity  = delta  => ModifySoulIntegrity(delta),

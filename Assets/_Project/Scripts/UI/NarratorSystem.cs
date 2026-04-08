@@ -326,6 +326,32 @@ namespace Desk42.UI
                 "", "", "",
                 "You should know: I'm not being honest with you anymore.",
             },
+
+            // ── Phase 2: Reflection Mechanic ─────────────────────────
+
+            ["reflection.high_efficiency_low_soul"] = new[]
+            {
+                "A perfect synthesis of output and detachment. The executives are pleased.",
+                "You pushed paper and crushed souls. Exactly as instructed.",
+                "You're a machine now. A very efficient one.",
+                "There is nothing left of you but the work.",
+            },
+
+            ["reflection.low_efficiency"] = new[]
+            {
+                "Efficiency rating below threshold. Recommend remedial training.",
+                "You're falling behind the curve. Pick it up.",
+                "You can't save them all, and you're not even trying.",
+                "You're failing. And for what?",
+            },
+
+            ["reflection.balanced"] = new[]
+            {
+                "Shift complete. Processing parameters within acceptable bounds.",
+                "Another day done. Nothing broken beyond repair.",
+                "You survived this shift. barely.",
+                "You keep pretending you can find a middle ground.",
+            },
         };
 
         // ── Query API ─────────────────────────────────────────

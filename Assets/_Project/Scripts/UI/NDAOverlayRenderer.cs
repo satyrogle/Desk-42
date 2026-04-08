@@ -66,6 +66,31 @@ namespace Desk42.UI
             public bool          IsDrifting;
         }
 
+        // ── Subscriptions ─────────────────────────────────────
+
+        private void OnEnable()
+        {
+            RumorMill.OnNDASigned += HandleNDASigned;
+            RumorMill.OnShiftLifecycle += HandleShiftLifecycle;
+        }
+
+        private void OnDisable()
+        {
+            RumorMill.OnNDASigned -= HandleNDASigned;
+            RumorMill.OnShiftLifecycle -= HandleShiftLifecycle;
+        }
+
+        private void HandleNDASigned(NDASignedEvent e)
+        {
+            AddOverlay(e.CoveredRegionId, e.CoveredRegion.center); // Convert Rect normalized bounds to center
+        }
+
+        private void HandleShiftLifecycle(ShiftLifecycleEvent e)
+        {
+            if (e.LifecyclePhase == ShiftLifecyclePhase.Ended)
+                ClearAll();
+        }
+
         // ── Public API ────────────────────────────────────────
 
         /// <summary>

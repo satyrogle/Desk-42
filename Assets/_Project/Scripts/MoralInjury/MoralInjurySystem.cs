@@ -209,8 +209,10 @@ namespace Desk42.MoralInjury
 
             _soulCap = Mathf.Max(10f, _soulCap - reduction);
 
+            MilestoneID milestone = newScar == ScarLevel.Callous ? MilestoneID.TheBreach : MilestoneID.RedactedTruth;
+
             RumorMill.PublishDeferred(new MilestoneReachedEvent(
-                MilestoneID.RedactedTruth,
+                milestone,
                 0,
                 $"scar_{type}_{newScar}"));
 

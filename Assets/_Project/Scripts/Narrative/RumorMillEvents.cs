@@ -44,7 +44,7 @@ namespace Desk42.Core
 
     public enum MilestoneID
     {
-        FirstPromotion, RedactedTruth, TheBreach, TheGreatAudit,
+        FirstPromotion, RedactedTruth, TheBreach, TheGreatAudit, TheCompanyMan,
         // Archetype ability milestones
         DeepAuditUsed, DistortionThreshold, PlausibleDeniabilityUsed,
         EmergencyProcedureUsed, HardResetUsed,
@@ -317,5 +317,15 @@ namespace Desk42.Core
 
         public NarratorToneChangedEvent(NarratorReliability prev, NarratorReliability curr)
         { Previous = prev; Current = curr; }
+    }
+
+    /// <summary>An Office Supply triggered a unique mechanical signal (like a hint or reveal).</summary>
+    public readonly struct SupplySignalEvent
+    {
+        public readonly string SupplyId; // SO GUID or shorthand
+        public readonly string Tag;      // Sub-event label
+
+        public SupplySignalEvent(string supplyId, string tag = "")
+        { SupplyId = supplyId; Tag = tag; }
     }
 }

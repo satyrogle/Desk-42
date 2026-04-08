@@ -107,9 +107,14 @@ namespace Desk42.RedTape
             if (card.SoulCost > 0f)
             {
                 float soulCost = card.SoulCost;
+                var archetype = GameManager.Instance?.Run?.Archetype;
+                if (archetype != null)
+                     soulCost = archetype.ModifySoulCost(card.CardType, soulCost);
+
                 var soulResolver = GameManager.Instance?.Supplies?.Resolver;
                 if (soulResolver != null)
                     soulCost = soulResolver.ApplySoulCostModifiers(soulCost);
+
                 if (soulCost > 0f)
                     GameManager.Instance?.Run?.ModifySoulIntegrity(-soulCost);
             }
@@ -165,6 +170,26 @@ namespace Desk42.RedTape
                 duration = resolver.ApplyDurationModifiers(
                     card.CardType, duration, card.TypeTags);
 
+            // BSM State Effectiveness 
+            if (_activeClient != null)
+            {
+                var mood = _activeClient.CurrentMoodState;
+                if (mood == ClientStateID.Suspicious && card.CardType == PunchCardType.CooperationRoute)
+                    duration *= 0.5f;
+                else if (mood == ClientStateID.Paranoid && 
+                        (card.CardType == PunchCardType.Analyse || card.CardType == PunchCardType.Redact))
+                    duration *= 0.5f;
+                else if (mood == ClientStateID.Dissociating)
+                    duration = 0f;
+
+                // Form Predelegation mutation passive
+                if (card.CardType == PunchCardType.PendingReview && 
+                    (GameManager.Instance?.Meta?.HasCounterTrait(_activeClient.ClientVariantId, "form_predelegation") ?? false))
+                {
+                    duration *= 0.5f;
+                }
+            }
+
             return duration;
         }
 
@@ -182,6 +207,31 @@ namespace Desk42.RedTape
             var resolver = GameManager.Instance?.Supplies?.Resolver;
             if (resolver != null)
                 cost = resolver.ApplyCreditCostModifiers(card.CardType, cost);
+
+            int stricterNDARank = GameManager.Instance?.Run?.GetVowRank("stricter_nondisclosure") ?? 0;
+            if (stricterNDARank > 0 && (card.CardType == PunchCardType.Redact || card.CardType == PunchCardType.NonDisclosure))
+                cost += stricterNDARank * 2;
+
+            // Faction Cost Modifiers
+            if (GameManager.Instance?.Run != null)
+            {
+                var run = GameManager.Instance.Run;
+                if (card.CardType == PunchCardType.LegalHold || card.CardType == PunchCardType.ThreatAudit) 
+                {
+                    if (run.GetFactionRep(Desk42.FactionID.Legal) > 50) cost -= 2;
+                    else if (run.GetFactionRep(Desk42.FactionID.Legal) < -50) cost += 3;
+                }
+
+                if (run.GetFactionRep(Desk42.FactionID.Accounting) > 50) cost -= 1; // Accounting cuts base costs
+                else if (run.GetFactionRep(Desk42.FactionID.Accounting) < -50) cost += 1;
+
+                // ── Phase 3: Escalating Regulations ──
+                if (!string.IsNullOrEmpty(run.EscalatingRegulationCardId) && 
+                    card.CardType.ToString() == run.EscalatingRegulationCardId)
+                {
+                    cost *= 3; // Triple cost penalty!
+                }
+            }
 
             return Mathf.Max(0, cost);
         }

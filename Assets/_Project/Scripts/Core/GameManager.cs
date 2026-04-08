@@ -185,6 +185,22 @@ namespace Desk42.Core
             LoadScene(SceneID.Shift);
         }
 
+        /// <summary>Start a new run locked to the real-world system date (Daily Brief).</summary>
+        public void StartDailyBriefRun(string archetypeId = null)
+        {
+            if (_isTransitioning) return;
+
+            Meta.GlobalShiftNumber++;
+            SaveSystem.SaveMeta(Meta);
+
+            // Phase 4: Daily Brief creates a globally identical seed for the current UTC date
+            int seed = System.DateTime.UtcNow.Date.GetHashCode();
+            Run.BeginNewRun(seed, archetypeId ?? "auditor",
+                Meta.GlobalShiftNumber, Meta);
+
+            LoadScene(SceneID.Shift);
+        }
+
         /// <summary>Start a new run with a specific seed (from share code).</summary>
         public void StartSeededRun(string seedCode, string archetypeId = null)
         {

@@ -137,6 +137,7 @@ namespace Desk42.Core
         [JsonProperty] public int   CreditsEarned;
         [JsonProperty] public int   CreditsSpent;
         [JsonProperty] public float EfficiencyRating;  // computed at shift end
+        [JsonProperty] public float ComboMultiplier = 1.0f; // Scoring cascade multiplier
         [JsonProperty] public List<string> BadgesEarnedIds = new();
     }
 
@@ -172,6 +173,7 @@ namespace Desk42.Core
         // Card system
         [JsonProperty] public DeckState Deck         = new();
         [JsonProperty] public int       DrawsPerTurn = 5;   // from archetype; saved for resume
+        [JsonProperty] public string    EscalatingRegulationCardId; // ID of the "illegal" card this shift
 
         // Claim queue
         [JsonProperty] public List<ActiveClaimData>   PendingClaims  = new();

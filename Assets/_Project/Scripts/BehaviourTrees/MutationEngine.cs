@@ -230,6 +230,58 @@ namespace Desk42.RedTape
                         "notarized_copies_rule");
                     break;
 
+                case "deliberate_delay":
+                    client.BaseBT.InsertBlockerForCard(nameof(PunchCardType.Analyse), traitId);
+                    break;
+
+                case "union_regulation":
+                    client.BaseBT.InsertBlockerForCard(nameof(PunchCardType.Transfer), traitId);
+                    AddBlockingTransitionRule(client, nameof(PunchCardType.Transfer), 
+                        Core.ClientStateID.Litigious, 99, "union_regulation_rule");
+                    break;
+
+                case "nda_preemptive":
+                    client.BaseBT.InsertBlockerForCard(nameof(PunchCardType.NonDisclosure), traitId);
+                    AddBlockingTransitionRule(client, nameof(PunchCardType.NonDisclosure), 
+                        Core.ClientStateID.Suspicious, 99, "nda_preemptive_rule");
+                    break;
+
+                case "trait_masking":
+                    client.BaseBT.InsertBlockerForCard(nameof(PunchCardType.SmallTalk), traitId);
+                    break;
+
+                case "professional_distance":
+                    client.BaseBT.InsertBlockerForCard(nameof(PunchCardType.Empathise), traitId);
+                    AddBlockingTransitionRule(client, nameof(PunchCardType.Empathise), 
+                        Core.ClientStateID.Resigned, 99, "professional_distance_rule");
+                    break;
+
+                case "scripted_responses":
+                    client.BaseBT.InsertBlockerForCard(nameof(PunchCardType.Interrogate), traitId);
+                    break;
+
+                case "meticulous_notes":
+                    client.BaseBT.InsertBlockerForCard(nameof(PunchCardType.Gaslight), traitId);
+                    AddBlockingTransitionRule(client, nameof(PunchCardType.Gaslight), 
+                        Core.ClientStateID.Paranoid, 99, "meticulous_notes_rule");
+                    break;
+
+                case "memory_implant":
+                    client.BaseBT.InsertBlockerForCard(nameof(PunchCardType.Reeducate), traitId);
+                    AddBlockingTransitionRule(client, nameof(PunchCardType.Reeducate), 
+                        Core.ClientStateID.Dissociating, 99, "memory_implant_rule");
+                    break;
+
+                case "injunction_immunity":
+                    client.BaseBT.InsertBlockerForCard(nameof(PunchCardType.LegalHold), traitId);
+                    break;
+
+                case "counter_hold":
+                    client.BaseBT.InsertBlockerForCard(nameof(PunchCardType.AppointCouncil), traitId);
+                    AddBlockingTransitionRule(client, nameof(PunchCardType.AppointCouncil), 
+                        Core.ClientStateID.Smug, 99, "counter_hold_rule");
+                    break;
+
                 // ── Default ───────────────────────────────────
 
                 default:

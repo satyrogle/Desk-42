@@ -21,8 +21,11 @@ namespace Desk42.Archetypes
             {
                 "auditor"    => new TheAuditor(),
                 "gaslighter" => new TheGaslighter(),
-                "bureaucrat" => new TheBureaucrat(),
-                "it_person"  => new TheITPerson(),
+                "bureaucrat"    => new TheBureaucrat(),
+                "it_person"     => new TheITPerson(),
+                "whistleblower" => new TheWhistleblower(),
+                "intern"        => new TheIntern(),
+                "hr_rep"        => new TheHRRep(),
                 _ => Fallback(archetypeId),
             };
         }
@@ -41,6 +44,9 @@ namespace Desk42.Archetypes
             "gaslighter",
             "bureaucrat",
             "it_person",
+            "whistleblower",
+            "intern",
+            "hr_rep",
         };
     }
 }

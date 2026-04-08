@@ -47,5 +47,6 @@ namespace Desk42.Archetypes
 
         public virtual float ModifyInjectionDuration(PunchCardType t, float dur)  => dur;
         public virtual int   ModifyCreditCost(PunchCardType t, int cost)          => cost;
+        public virtual float ModifySoulCost(PunchCardType t, float cost)          => cost;
     }
 }

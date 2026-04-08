@@ -46,6 +46,7 @@ namespace Desk42.Core
         public static event Action<NarratorToneChangedEvent>   OnNarratorToneChanged;
         public static event Action<ClaimQueuedEvent>           OnClaimQueued;
         public static event Action<TideEscalatedEvent>         OnTideEscalated;
+        public static event Action<SupplySignalEvent>          OnSupplySignal;
 
         // ── Frame-Deferred Dispatch ───────────────────────────
         // Events queued here are dispatched at end-of-frame by
@@ -80,6 +81,7 @@ namespace Desk42.Core
         public static void Publish(StateTransitionEvent e)       => OnStateTransition?.Invoke(e);
         public static void Publish(SanityChangedEvent e)         => OnSanityChanged?.Invoke(e);
         public static void Publish(NarratorToneChangedEvent e)   => OnNarratorToneChanged?.Invoke(e);
+        public static void Publish(SupplySignalEvent e)          => OnSupplySignal?.Invoke(e);
 
         /// <summary>
         /// Publish deferred — queues the event for end-of-frame dispatch.
@@ -166,6 +168,7 @@ namespace Desk42.Core
             OnNarratorToneChanged   = null;
             OnClaimQueued           = null;
             OnTideEscalated         = null;
+            OnSupplySignal          = null;
             _queue.Clear();
         }
     }
