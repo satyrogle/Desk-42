@@ -73,9 +73,8 @@ namespace Desk42.Audio
         {
 #if DESK42_FMOD
             FMODUnity.RuntimeManager.StudioSystem.setParameterByName(name, value);
-#else
-            Debug.Log($"[FMODManager:Stub] SetGlobalParameter({name}, {value:F2})");
 #endif
+            // Stub: silent — called every frame, can't log
         }
 
         /// <summary>Set volume on a named bus (0 = silent, 1 = full).</summary>
@@ -84,8 +83,6 @@ namespace Desk42.Audio
 #if DESK42_FMOD
             var bus = FMODUnity.RuntimeManager.GetBus(busPath);
             bus.setVolume(Mathf.Clamp01(volume));
-#else
-            Debug.Log($"[FMODManager:Stub] SetBusVolume({busPath}, {volume:F2})");
 #endif
         }
 
@@ -94,8 +91,6 @@ namespace Desk42.Audio
         {
 #if DESK42_FMOD
             FMODUnity.RuntimeManager.PlayOneShot(eventPath, position);
-#else
-            Debug.Log($"[FMODManager:Stub] PlayOneShot({eventPath})");
 #endif
         }
 

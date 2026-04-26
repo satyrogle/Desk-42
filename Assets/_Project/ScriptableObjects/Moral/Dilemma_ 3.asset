@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7998e12fa30c0074caa6d4cff06753ca, type: 3}
+  m_Name: Dilemma_ 3
+  m_EditorClassIdentifier: 
+  DilemmaId: Moral_SentientServer
+  PromptTemplate: The mainframe is begging for mercy via the command terminal.
+  EthicalChoiceLabel: Initiate sleep mode.
+  EthicalSoulDelta: 15
+  EthicalCreditDelta: -20
+  EthicalTimeDelta: -45
+  BureaucraticChoiceLabel: Overclock the CPU.
+  BureaucraticSoulDelta: -20
+  BureaucraticCreditDelta: 30
+  BureaucraticTimeDelta: 0
+  ActionType: 1
+  MaxSoulForEligibility: 100
+  MinSoulForEligibility: 20
+  MinShiftNumber: 2
+  IsTrapDilemma: 0
+  NarratorOverrideKey: 
+  SpawnWeight: 0.4

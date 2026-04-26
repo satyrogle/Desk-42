@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7998e12fa30c0074caa6d4cff06753ca, type: 3}
+  m_Name: Dilemma_ 4
+  m_EditorClassIdentifier: 
+  DilemmaId: Moral_VoidAudit
+  PromptTemplate: Faceless auditors from Upper Management demand to inspect your
+    terminal.
+  EthicalChoiceLabel: Surrender your memories.
+  EthicalSoulDelta: -25
+  EthicalCreditDelta: 0
+  EthicalTimeDelta: -60
+  BureaucraticChoiceLabel: Bribe them.
+  BureaucraticSoulDelta: 0
+  BureaucraticCreditDelta: -40
+  BureaucraticTimeDelta: -15
+  ActionType: 0
+  MaxSoulForEligibility: 100
+  MinSoulForEligibility: 0
+  MinShiftNumber: 3
+  IsTrapDilemma: 1
+  NarratorOverrideKey: 
+  SpawnWeight: 0.3

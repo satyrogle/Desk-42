@@ -30,12 +30,24 @@ namespace Desk42.UI
                 _buySigningBonusBtn.onClick.AddListener(() => TryBuyBenefit("signing_bonus", 50));
             
             if (_startNextShiftBtn != null)
-                _startNextShiftBtn.onClick.AddListener(() => GameManager.Instance.StartNewRun("auditor")); // Replace with correct archetype picker
+                _startNextShiftBtn.onClick.AddListener(StartNextShiftClicked);
         }
 
         private void OnDestroy()
         {
             // Removed OnMetaProgressLoaded unsubscription
+        }
+
+        private void StartNextShiftClicked()
+        {
+            if (GameManager.Instance == null)
+            {
+                Debug.LogError("[MetaHub] GameManager not loaded. " +
+                    "Press Play from the Boot scene, not InternalAudit directly.");
+                return;
+            }
+
+            GameManager.Instance.StartNewRun("auditor"); // TODO: archetype picker
         }
 
         private void Initialize(MetaProgressData meta)

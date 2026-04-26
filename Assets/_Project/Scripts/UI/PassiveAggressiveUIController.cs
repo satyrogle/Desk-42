@@ -107,6 +107,7 @@ namespace Desk42.UI
             RumorMill.OnNDASigned            += HandleNDASigned;
             RumorMill.OnShiftPhaseChanged    += HandlePhaseChanged;
             RumorMill.OnClaimResolved        += HandleClaimResolved;
+            RumorMill.OnCardSlammed          += HandleCardSlammed;
         }
 
         private void OnDisable()
@@ -118,6 +119,7 @@ namespace Desk42.UI
             RumorMill.OnNDASigned            -= HandleNDASigned;
             RumorMill.OnShiftPhaseChanged    -= HandlePhaseChanged;
             RumorMill.OnClaimResolved        -= HandleClaimResolved;
+            RumorMill.OnCardSlammed          -= HandleCardSlammed;
         }
 
         private void Start()
@@ -171,7 +173,7 @@ namespace Desk42.UI
             if (_soulFill && _soulGradient != null)
                 _soulFill.color = _soulGradient.Evaluate(t);
             if (_soulLabel)
-                _soulLabel.text = NarratorSystem.GetLine("tooltip.soul_gauge", _currentTone);
+                _soulLabel.text = $"Soul {Mathf.RoundToInt(soul)}%";
         }
 
         private void ApplyCorruptionLevel(float soul)
@@ -200,6 +202,9 @@ namespace Desk42.UI
         {
             float t = sanity / 100f;
             if (_sanitySlider) _sanitySlider.value = t;
+
+            if (_sanityLabel)
+                _sanityLabel.text = $"Sanity {Mathf.RoundToInt(sanity)}%";
 
             // Below warp threshold — add subtle horizontal shake to bar
             if (_sanitySlider && sanity < _warpThreshold)
@@ -316,6 +321,16 @@ namespace Desk42.UI
         {
             _clientIndex++;
             UpdateClientProgress();
+
+            var run = GameManager.Instance?.Run;
+            if (run != null) RefreshCredits(run.Credits);
+        }
+
+        private void HandleCardSlammed(CardSlammedEvent e)
+        {
+            // Cards deduct credits in StateInjector — pull live value to UI
+            var run = GameManager.Instance?.Run;
+            if (run != null) RefreshCredits(run.Credits);
         }
 
         public void SetClientTotal(int total)

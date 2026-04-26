@@ -51,7 +51,7 @@ namespace Desk42.UI
                 _anomalyTagsLabel.text = FormatTags(claim.AnomalyTagIds);
 
             if (_ndaLabel)
-                _ndaLabel.text = claim.NDARequired ? "⚠ NDA REQUIRED" : "";
+                _ndaLabel.text = claim.NDARequired ? "[!] NDA REQUIRED" : "";
 
             if (_claimIdLabel)
                 _claimIdLabel.text = $"#{claim.ClaimId?[..8] ?? "????????"}";
