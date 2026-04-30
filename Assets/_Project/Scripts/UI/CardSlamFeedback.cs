@@ -13,6 +13,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Desk42.Accessibility;
 using Desk42.Core;
 
 namespace Desk42.UI
@@ -37,6 +38,7 @@ namespace Desk42.UI
 
         private void HandleSlam(CardSlammedEvent e)
         {
+            if (AccessibilitySettings.ReducedMotion) return;
             if (_flashRoot == null) BuildUI();
 
             // Flash + label

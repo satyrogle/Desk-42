@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Desk42.Accessibility;
 using Desk42.Core;
 
 namespace Desk42.UI
@@ -106,6 +107,11 @@ namespace Desk42.UI
 
         private void ApplyDistortion()
         {
+            if (AccessibilitySettings.DisableScreenDistortion)
+            {
+                ResetAll();
+                return;
+            }
             ApplyJitter();
             ApplyOverlay();
             ApplyDrift();

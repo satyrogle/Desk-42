@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using Desk42.Tutorial;
 using Desk42.UI;
 
 namespace Desk42.EditorTools
@@ -43,6 +44,14 @@ namespace Desk42.EditorTools
             {
                 Undo.AddComponent<MoralDilemmaPanel>(systemsGO);
                 Debug.Log("[HighImpactInjector] Attached MoralDilemmaPanel.");
+            }
+
+            // 3b. TutorialController (first-run guided overlay; no-op
+            //     if MetaProgressData.TutorialCompleted is true)
+            if (systemsGO.GetComponent<TutorialController>() == null)
+            {
+                Undo.AddComponent<TutorialController>(systemsGO);
+                Debug.Log("[HighImpactInjector] Attached TutorialController.");
             }
 
             // 4. NDA Overlay Renderer (should be on UI_Shift or Canvas)

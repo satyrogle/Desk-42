@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using TMPro;
+using Desk42.Accessibility;
 using Desk42.Core;
 
 namespace Desk42.UI
@@ -94,7 +95,8 @@ namespace Desk42.UI
             if (_timer < _updateInterval) return;
             _timer = 0f;
 
-            if (_currentSanity >= _sanityThreshold)
+            if (_currentSanity >= _sanityThreshold ||
+                AccessibilitySettings.DisableScreenDistortion)
             {
                 if (_isCorrupting) RestoreAll();
                 return;

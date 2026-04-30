@@ -25,6 +25,8 @@ namespace Desk42.UI
         [SerializeField] private Button _startNewRunBtn;
         [SerializeField] private Button _continueBtn;
         [SerializeField] private Button _dailyBriefBtn;
+        [SerializeField] private Button _settingsBtn;
+        [SerializeField] private Button _replayTutorialBtn;
         [SerializeField] private Button _quitBtn;
 
         [Header("Default Archetype")]
@@ -41,10 +43,12 @@ namespace Desk42.UI
 
             if (_autoBuildUI) BuildDefaultUI();
 
-            WireButton(_startNewRunBtn,  OnStartNewRun);
-            WireButton(_continueBtn,     OnContinue, SaveSystem.HasActiveRun());
-            WireButton(_dailyBriefBtn,   OnDailyBrief);
-            WireButton(_quitBtn,         OnQuit);
+            WireButton(_startNewRunBtn,     OnStartNewRun);
+            WireButton(_continueBtn,        OnContinue, SaveSystem.HasActiveRun());
+            WireButton(_dailyBriefBtn,      OnDailyBrief);
+            WireButton(_settingsBtn,        OnSettings);
+            WireButton(_replayTutorialBtn,  OnReplayTutorial);
+            WireButton(_quitBtn,            OnQuit);
         }
 
         private static void WireButton(Button btn, UnityEngine.Events.UnityAction handler,
@@ -82,10 +86,12 @@ namespace Desk42.UI
             title.color = new Color(0.9f, 0.85f, 0.7f);
 
             // Buttons stacked vertically, centered
-            _startNewRunBtn = CreateButton(canvasGO.transform, "Start New Run",   new Vector2(0,   60));
-            _continueBtn    = CreateButton(canvasGO.transform, "Continue",        new Vector2(0,    0));
-            _dailyBriefBtn  = CreateButton(canvasGO.transform, "Daily Brief",     new Vector2(0,  -60));
-            _quitBtn        = CreateButton(canvasGO.transform, "Quit",            new Vector2(0, -140));
+            _startNewRunBtn     = CreateButton(canvasGO.transform, "Start New Run",    new Vector2(0,  120));
+            _continueBtn        = CreateButton(canvasGO.transform, "Continue",         new Vector2(0,   60));
+            _dailyBriefBtn      = CreateButton(canvasGO.transform, "Daily Brief",      new Vector2(0,    0));
+            _settingsBtn        = CreateButton(canvasGO.transform, "Accessibility",    new Vector2(0,  -60));
+            _replayTutorialBtn  = CreateButton(canvasGO.transform, "Replay Tutorial",  new Vector2(0, -120));
+            _quitBtn            = CreateButton(canvasGO.transform, "Quit",             new Vector2(0, -200));
         }
 
         private static Button CreateButton(Transform parent, string label, Vector2 anchoredPos)
@@ -174,6 +180,21 @@ namespace Desk42.UI
         private void OnDailyBrief()
         {
             GameManager.Instance.StartDailyBriefRun(_defaultArchetypeId);
+        }
+
+        private void OnSettings()
+        {
+            var panel = GetOrAdd<AccessibilitySettingsPanel>();
+            panel.Show();
+        }
+
+        private void OnReplayTutorial()
+        {
+            var meta = GameManager.Instance?.Meta;
+            if (meta == null) return;
+            meta.TutorialCompleted = false;
+            SaveSystem.SaveMeta(meta);
+            Debug.Log("[MainMenu] Tutorial reset — will run on next Shift.");
         }
 
         private void OnQuit()

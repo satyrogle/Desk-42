@@ -190,6 +190,9 @@ namespace Desk42.Core
         // Which shift number we're on across ALL runs
         [JsonProperty] public int   GlobalShiftNumber;
 
+        // First-run tutorial completion flag (cross-run)
+        [JsonProperty] public bool  TutorialCompleted;
+
         // ── Repeat Offender Helpers ───────────────────────────
 
         public ClientTacticProfile GetOrCreateProfile(string clientVariantId)
