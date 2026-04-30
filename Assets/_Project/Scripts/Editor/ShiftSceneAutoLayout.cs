@@ -92,7 +92,7 @@ namespace Desk42.EditorTools
         {
             string[] panelsToStrip =
             {
-                "ClaimPanel", "ClientInfo", "SoulGauge", "SanityGauge",
+                "SoulGauge", "SanityGauge",
             };
             foreach (var name in panelsToStrip)
             {
@@ -125,7 +125,7 @@ namespace Desk42.EditorTools
             ApplyAnchor(shiftUI, "TimerFill",           new(1, 1), new(1, 1), new(1, 1), new(-20, -64),  new(200, 16));
             ApplyAnchor(shiftUI, "CreditsLabel",        new(1, 0), new(1, 0), new(1, 0), new(-20, 20),   new(220, 36));
             ApplyAnchor(shiftUI, "ClientInfo",          new(0.5f, 1), new(0.5f, 1), new(0.5f, 1), new(0, -120), new(600, 40));
-            ApplyAnchor(shiftUI, "ClaimPanel",          new(0.5f, 0.5f), new(0.5f, 0.5f), new(0.5f, 0.5f), new(0, 80),  new(720, 380));
+            ApplyAnchor(shiftUI, "ClaimPanel",          new(0.5f, 1), new(0.5f, 1), new(0.5f, 1), new(0, -240),  new(720, 360));
 
             ApplyStretchFull(shiftUI, "MoralFlash");
             ApplyStretchFull(shiftUI, "CorruptionOverlay");
@@ -146,6 +146,16 @@ namespace Desk42.EditorTools
                 hlg.childControlHeight    = false;
                 hlg.padding               = new RectOffset(8, 8, 8, 8);
             }
+
+            // Enforce proper z-sorting (bottom of hierarchy renders ON TOP)
+            OrderChild(shiftUI.transform, "ClaimPanel", 10);
+            OrderChild(shiftUI.transform, "ClientInfo", 11);
+            OrderChild(shiftUI.transform, "MoralFlash", 20);
+            OrderChild(shiftUI.transform, "CorruptionOverlay", 21);
+            OrderChild(shiftUI.transform, "SanityEffects", 22);
+            OrderChild(shiftUI.transform, "CardHand", 30);
+            OrderChild(shiftUI.transform, "ApproveBtn", 31);
+            OrderChild(shiftUI.transform, "DenyBtn", 32);
         }
 
         // ── ClaimPanel children ───────────────────────────────
@@ -155,48 +165,58 @@ namespace Desk42.EditorTools
             var cp = shiftUI.transform.Find("ClaimPanel");
             if (cp == null) return;
 
-            // Add or update background
             EnsureBackground(cp.gameObject, new Color(0.08f, 0.08f, 0.10f, 0.92f));
 
-            // Header row
-            ApplyChild(cp, "ClaimantLabel", new(0, 1), new(1, 1), new(0, 1),
-                new(20, -20), new(-260, 40));
+            var vlg = cp.GetComponent<VerticalLayoutGroup>();
+            if (vlg == null) vlg = cp.gameObject.AddComponent<VerticalLayoutGroup>();
+            vlg.childAlignment = TextAnchor.UpperLeft;
+            vlg.childControlHeight = true;
+            vlg.childControlWidth = true;
+            vlg.childForceExpandHeight = false;
+            vlg.childForceExpandWidth = true;
+            vlg.spacing = 10;
+            vlg.padding = new RectOffset(24, 24, 24, 24);
+
+            var csf = cp.GetComponent<ContentSizeFitter>();
+            if (csf == null) csf = cp.gameObject.AddComponent<ContentSizeFitter>();
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+            var rt = cp.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(0, 0);
+            rt.sizeDelta = new Vector2(720, 0);
+
+            OrderChild(cp, "Background", 0);
+            OrderChild(cp, "ClaimIdLabel", 1);
+            OrderChild(cp, "ClaimantLabel", 2);
+            OrderChild(cp, "AmountLabel", 3);
+            OrderChild(cp, "SpeciesLabel", 4);
+            OrderChild(cp, "IncidentText", 5);
+            OrderChild(cp, "AnomalyTagsLabel", 6);
+            OrderChild(cp, "NDALabel", 7);
+
+            SetTextStyle(cp, "ClaimIdLabel", TextAlignmentOptions.TopLeft, 14, new Color(0.5f, 0.5f, 0.55f));
             SetTextStyle(cp, "ClaimantLabel", TextAlignmentOptions.TopLeft, 24, Color.white);
-
-            ApplyChild(cp, "AmountLabel", new(1, 1), new(1, 1), new(1, 1),
-                new(-20, -20), new(220, 40));
-            SetTextStyle(cp, "AmountLabel", TextAlignmentOptions.TopRight, 28,
-                new Color(0.95f, 0.85f, 0.4f));
-
-            // Sub-header
-            ApplyChild(cp, "SpeciesLabel", new(0, 1), new(0, 1), new(0, 1),
-                new(20, -60), new(280, 24));
-            SetTextStyle(cp, "SpeciesLabel", TextAlignmentOptions.TopLeft, 16,
-                new Color(0.7f, 0.7f, 0.7f));
-
-            // Body — stretch to fill middle area
-            ApplyStretchInsets(cp, "IncidentText", 20, 100, 20, 90);
+            SetTextStyle(cp, "AmountLabel", TextAlignmentOptions.TopLeft, 24, new Color(0.95f, 0.85f, 0.4f));
+            SetTextStyle(cp, "SpeciesLabel", TextAlignmentOptions.TopLeft, 16, new Color(0.7f, 0.7f, 0.7f));
             SetTextStyle(cp, "IncidentText", TextAlignmentOptions.TopLeft, 18, Color.white);
+            SetTextStyle(cp, "AnomalyTagsLabel", TextAlignmentOptions.TopLeft, 14, new Color(0.7f, 0.55f, 0.85f));
+            SetTextStyle(cp, "NDALabel", TextAlignmentOptions.TopLeft, 16, new Color(0.95f, 0.45f, 0.35f));
 
-            // Footer row
-            ApplyChild(cp, "AnomalyTagsLabel", new(0, 0), new(0, 0), new(0, 0),
-                new(20, 44), new(440, 24));
-            SetTextStyle(cp, "AnomalyTagsLabel", TextAlignmentOptions.BottomLeft, 14,
-                new Color(0.7f, 0.55f, 0.85f));
-
-            ApplyChild(cp, "NDALabel", new(1, 0), new(1, 0), new(1, 0),
-                new(-20, 44), new(220, 24));
-            SetTextStyle(cp, "NDALabel", TextAlignmentOptions.BottomRight, 16,
-                new Color(0.95f, 0.45f, 0.35f));
-
-            ApplyChild(cp, "ClaimIdLabel", new(0, 0), new(0, 0), new(0, 0),
-                new(20, 14), new(220, 20));
-            SetTextStyle(cp, "ClaimIdLabel", TextAlignmentOptions.BottomLeft, 12,
-                new Color(0.5f, 0.5f, 0.55f));
-
-            // Background should sit behind everything
             var bg = cp.Find("Background");
-            if (bg != null) bg.SetAsFirstSibling();
+            if (bg != null)
+            {
+                var bgLe = bg.GetComponent<LayoutElement>();
+                if (bgLe == null) bgLe = bg.gameObject.AddComponent<LayoutElement>();
+                bgLe.ignoreLayout = true;
+                
+                var bgRt = bg.GetComponent<RectTransform>();
+                bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one;
+                bgRt.offsetMin = Vector2.zero; bgRt.offsetMax = Vector2.zero;
+            }
         }
 
         // ── Gauges ────────────────────────────────────────────
@@ -247,33 +267,61 @@ namespace Desk42.EditorTools
             var ci = shiftUI.transform.Find("ClientInfo");
             if (ci == null) return;
 
-            ApplyChild(ci, "VariantLabel", new(0, 0), new(0, 1), new(0, 0.5f),
-                new(0, 0), new(220, 0));
-            SetTextStyle(ci, "VariantLabel", TextAlignmentOptions.MidlineLeft, 16, Color.white);
+            var vlg = ci.GetComponent<VerticalLayoutGroup>();
+            if (vlg == null) vlg = ci.gameObject.AddComponent<VerticalLayoutGroup>();
+            vlg.childAlignment = TextAnchor.UpperCenter;
+            vlg.childControlHeight = true;
+            vlg.childControlWidth = true;
+            vlg.childForceExpandHeight = false;
+            vlg.childForceExpandWidth = true;
+            vlg.spacing = 4;
+            vlg.padding = new RectOffset(8, 8, 8, 8);
 
-            ApplyChild(ci, "MoodLabel", new(0.5f, 0), new(0.5f, 1), new(0.5f, 0.5f),
-                Vector2.zero, new(200, 0));
-            SetTextStyle(ci, "MoodLabel", TextAlignmentOptions.Center, 16, Color.white);
+            var csf = ci.GetComponent<ContentSizeFitter>();
+            if (csf == null) csf = ci.gameObject.AddComponent<ContentSizeFitter>();
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
-            ApplyChild(ci, "MoodIndicator", new(1, 0.5f), new(1, 0.5f), new(1, 0.5f),
-                new(0, 0), new(28, 28));
+            SetTextStyle(ci, "VariantLabel", TextAlignmentOptions.Center, 18, Color.white);
+            SetTextStyle(ci, "SpeciesLabel", TextAlignmentOptions.Center, 20, new Color(0.9f, 0.9f, 0.9f));
+            SetTextStyle(ci, "MoodLabel", TextAlignmentOptions.Center, 16, new Color(0.85f, 0.85f, 0.85f));
+            SetTextStyle(ci, "InjectionLabel", TextAlignmentOptions.Center, 14, new Color(0.6f, 0.6f, 0.6f));
+            
+            var moodInd = ci.Find("MoodIndicator");
+            if (moodInd != null)
+            {
+                var rt = moodInd.GetComponent<RectTransform>();
+                if (rt == null) rt = moodInd.gameObject.AddComponent<RectTransform>();
+                
+                // Let the LayoutGroup control position, but we constrain its preferred size
+                var le = moodInd.GetComponent<LayoutElement>();
+                if (le == null) le = moodInd.gameObject.AddComponent<LayoutElement>();
+                le.preferredWidth = 28;
+                le.preferredHeight = 28;
+            }
 
-            ApplyChild(ci, "InjectionLabel", new(0, 0), new(1, 0), new(0.5f, 1),
-                new(0, -2), new(0, 22));
-            SetTextStyle(ci, "InjectionLabel", TextAlignmentOptions.Center, 12,
-                new Color(0.7f, 0.7f, 0.7f));
+            OrderChild(ci, "VariantLabel", 0);
+            OrderChild(ci, "SpeciesLabel", 1);
+            OrderChild(ci, "MoodLabel", 2);
+            OrderChild(ci, "MoodIndicator", 3);
+            OrderChild(ci, "InjectionLabel", 4);
+        }
+
+        private static void OrderChild(Transform parent, string name, int index)
+        {
+            var child = parent.Find(name);
+            if (child != null) child.SetSiblingIndex(index);
         }
 
         // ── Approve / Deny ────────────────────────────────────
 
         private static void EnsureResolutionButtons(GameObject shiftUI)
         {
-            // Place above the CardHand (CardHand sits at y=24 with height 200,
-            // so Approve/Deny live at y=260+ to clear it cleanly)
+            // Place safely above the CardHand (CardHand goes up to y=224)
             EnsureResolutionButton(shiftUI, "ApproveBtn", "APPROVE",
-                new Color(0.15f, 0.45f, 0.20f), new Vector2(-150, 260));
+                new Color(0.15f, 0.45f, 0.20f), new Vector2(-150, 280));
             EnsureResolutionButton(shiftUI, "DenyBtn", "DENY",
-                new Color(0.55f, 0.15f, 0.15f), new Vector2(150, 260));
+                new Color(0.55f, 0.15f, 0.15f), new Vector2(150, 280));
         }
 
         private static void EnsureResolutionButton(GameObject parent, string goName,
@@ -434,6 +482,14 @@ namespace Desk42.EditorTools
         private static void AutoWireCardHandView()
         {
             var view = Object.FindObjectOfType<CardHandView>();
+            var cardHand = GameObject.Find("CardHand");
+
+            // If missing, add it to the CardHand object
+            if (view == null && cardHand != null)
+            {
+                view = cardHand.AddComponent<CardHandView>();
+            }
+
             if (view == null) return;
 
             var so = new SerializedObject(view);
@@ -448,7 +504,6 @@ namespace Desk42.EditorTools
 
             // _cardContainer = the CardHand RectTransform itself (the GameObject this is attached to,
             // OR a child named "CardHand" — typically the same object)
-            var cardHand = GameObject.Find("CardHand");
             if (cardHand != null)
             {
                 var p = so.FindProperty("_cardContainer");

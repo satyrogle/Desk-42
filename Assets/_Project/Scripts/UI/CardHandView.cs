@@ -98,19 +98,61 @@ namespace Desk42.UI
 
         private void Rebuild()
         {
+            var run = GameManager.Instance?.Run;
+            int cardCount = run?.Hand?.Cards?.Count ?? -1;
+
+            if (_cardButtonPrefab == null)
+            {
+                Debug.LogError("[CardHandView] _cardButtonPrefab is NULL — cannot rebuild. " +
+                               "Run Tools → Desk 42 → Fix Shift Scene Issues.");
+                return;
+            }
+            if (_cardContainer == null)
+            {
+                Debug.LogError("[CardHandView] _cardContainer is NULL — cannot rebuild.");
+                return;
+            }
+
             // Destroy previous buttons
             foreach (var btn in _activeButtons)
                 if (btn != null) Destroy(btn.gameObject);
             _activeButtons.Clear();
 
-            var run = GameManager.Instance?.Run;
-            if (run == null || _cardButtonPrefab == null || _cardContainer == null) return;
+            if (run == null || run.Hand == null) return;
 
             foreach (var card in run.Hand.Cards)
             {
                 var btn = Instantiate(_cardButtonPrefab, _cardContainer);
                 btn.Initialize(card, _machine);
                 _activeButtons.Add(btn);
+            }
+
+            Debug.Log($"[CardHandView] Rebuilt: {_activeButtons.Count} buttons " +
+                      $"(hand had {cardCount} cards).");
+        }
+
+        // ── Safety poll: catches missed OnHandChanged events ──
+
+        private float _pollTimer;
+
+        private void Update()
+        {
+            _pollTimer += Time.deltaTime;
+            if (_pollTimer < 0.5f) return;
+            _pollTimer = 0f;
+
+            var run = GameManager.Instance?.Run;
+            if (run?.Hand == null) return;
+
+            int handCount   = run.Hand.Cards.Count;
+            int buttonCount = _activeButtons.Count;
+
+            // Drift detected — count mismatch means we missed a change event
+            if (handCount != buttonCount)
+            {
+                Debug.LogWarning($"[CardHandView] Drift detected: hand={handCount}, buttons={buttonCount}. Forcing rebuild.");
+                TryBindHand();
+                Rebuild();
             }
         }
     }

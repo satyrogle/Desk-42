@@ -335,4 +335,69 @@ namespace Desk42.Core
         public SupplySignalEvent(string supplyId, string tag = "")
         { SupplyId = supplyId; Tag = tag; }
     }
+
+    /// <summary>A memo was generated for a resolved claim.</summary>
+    public readonly struct MemoGeneratedEvent
+    {
+        public readonly string MemoId;
+        public readonly string ClaimId;
+        public readonly string Headline;  // short summary line
+        public readonly string Body;      // full text shown when player opens the memo
+
+        public MemoGeneratedEvent(string memoId, string claimId, string headline, string body)
+        { MemoId = memoId; ClaimId = claimId; Headline = headline; Body = body; }
+    }
+
+    /// <summary>A moral dilemma should be presented to the player.</summary>
+    public readonly struct DilemmaTriggeredEvent
+    {
+        public readonly string Prompt;
+        public readonly string EthicalLabel;
+        public readonly string BureaucraticLabel;
+        public readonly System.Action OnEthical;
+        public readonly System.Action OnBureaucratic;
+
+        public DilemmaTriggeredEvent(string prompt, string ethical, string bureaucratic,
+            System.Action onEthical, System.Action onBureaucratic)
+        {
+            Prompt            = prompt;
+            EthicalLabel      = ethical;
+            BureaucraticLabel = bureaucratic;
+            OnEthical         = onEthical;
+            OnBureaucratic    = onBureaucratic;
+        }
+    }
+
+    /// <summary>Fired by GameManager.EndShift after run state is finalised.</summary>
+    public readonly struct RunCompletedEvent
+    {
+        public readonly int    ShiftNumber;
+        public readonly int    ClaimsProcessed;
+        public readonly int    CreditsEarned;
+        public readonly float  EfficiencyRating;
+        public readonly float  SoulIntegrity;
+        public readonly float  Sanity;
+        public readonly int    PersonalExpenseDebt;
+        public readonly float  ComboMultiplier;
+        public readonly string ArchetypeId;
+        public readonly string SeedCode;
+        public readonly bool   FugueTriggered;
+
+        public RunCompletedEvent(int shift, int claims, int credits, float eff,
+            float soul, float sanity, int debt, float combo,
+            string archetype, string seed, bool fugue)
+        {
+            ShiftNumber         = shift;
+            ClaimsProcessed     = claims;
+            CreditsEarned       = credits;
+            EfficiencyRating    = eff;
+            SoulIntegrity       = soul;
+            Sanity              = sanity;
+            PersonalExpenseDebt = debt;
+            ComboMultiplier     = combo;
+            ArchetypeId         = archetype;
+            SeedCode            = seed;
+            FugueTriggered      = fugue;
+        }
+    }
 }

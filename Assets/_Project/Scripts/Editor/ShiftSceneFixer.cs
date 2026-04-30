@@ -124,15 +124,18 @@ namespace Desk42.EditorTools
                 var cg = go.GetComponent<CanvasGroup>();
                 if (cg != null) { cg.alpha = 1f; cg.interactable = true; cg.blocksRaycasts = true; }
 
-                // Force RectTransform position above CardHand (high y in bottom-anchored space)
+                // Position above the CardHand, BELOW the ClaimPanel.
+                // CardHand is at bottom y=24 with h=200 → top at y=224.
+                // ClaimPanel bottom (after auto-layout shrink) sits ~y=500 from bottom.
+                // Buttons go in the gap: y=240 places them just above the cards.
                 var rt = go.GetComponent<RectTransform>();
                 if (rt != null)
                 {
                     rt.anchorMin = new Vector2(0.5f, 0);
                     rt.anchorMax = new Vector2(0.5f, 0);
                     rt.pivot     = new Vector2(0.5f, 0);
-                    rt.sizeDelta = new Vector2(240, 70);
-                    rt.anchoredPosition = new Vector2(i == 0 ? -160 : 160, 280);
+                    rt.sizeDelta = new Vector2(220, 64);
+                    rt.anchoredPosition = new Vector2(i == 0 ? -150 : 150, 240);
                 }
 
                 EditorUtility.SetDirty(go);
@@ -140,49 +143,92 @@ namespace Desk42.EditorTools
             }
         }
 
-        // ── 3. ClientInfo layout ──────────────────────────────
+        // ── 3. ClientInfo layout (VerticalLayoutGroup) ────────
+        // Stack labels vertically: variant (bold) → mood (italic + indicator) → injection.
+        // This makes ClientInfo behave like a clean text card that auto-grows.
 
         private static void FixClientInfoLayout()
         {
             var ci = GameObject.Find("ClientInfo");
             if (ci == null) return;
 
-            // Widen container
+            // Container: top-center, fixed width, height auto-fit
             var rt = ci.GetComponent<RectTransform>();
             if (rt != null)
             {
-                rt.sizeDelta = new Vector2(900, 80);
-                rt.anchoredPosition = new Vector2(0, -130);
+                rt.anchorMin = new Vector2(0.5f, 1);
+                rt.anchorMax = new Vector2(0.5f, 1);
+                rt.pivot     = new Vector2(0.5f, 1);
+                rt.sizeDelta = new Vector2(540, 110);
+                rt.anchoredPosition = new Vector2(0, -110);
             }
 
-            // VariantLabel: left half, top row
-            ApplyChild(ci.transform, "VariantLabel",
-                new(0, 0.5f), new(0.5f, 1), new(0, 1),
-                new(20, -4), new(-20, -4));
-            StyleText(ci.transform, "VariantLabel", TextAlignmentOptions.MidlineLeft, 18,
-                Color.white, FontStyles.Bold);
+            // Strip any old layout group
+            foreach (var lg in ci.GetComponents<LayoutGroup>())
+                Object.DestroyImmediate(lg);
 
-            // MoodLabel: right half, top row
-            ApplyChild(ci.transform, "MoodLabel",
-                new(0.5f, 0.5f), new(1, 1), new(1, 1),
-                new(-50, -4), new(-20, -4));
-            StyleText(ci.transform, "MoodLabel", TextAlignmentOptions.MidlineRight, 16,
-                new Color(0.9f, 0.9f, 0.6f), FontStyles.Italic);
+            // Add VerticalLayoutGroup — children auto-stacked top to bottom
+            var vlg = ci.AddComponent<VerticalLayoutGroup>();
+            vlg.padding              = new RectOffset(12, 12, 8, 8);
+            vlg.spacing              = 4;
+            vlg.childAlignment       = TextAnchor.UpperCenter;
+            vlg.childForceExpandWidth  = true;
+            vlg.childForceExpandHeight = false;
+            vlg.childControlWidth      = true;
+            vlg.childControlHeight     = false;
 
-            // MoodIndicator: far right, top row
-            ApplyChild(ci.transform, "MoodIndicator",
-                new(1, 0.5f), new(1, 1), new(1, 1),
-                new(-10, -10), new(28, 28));
+            // Style each child label and let VLG position them
+            StyleAndSizeChild(ci.transform, "VariantLabel",
+                TextAlignmentOptions.Center, 18, Color.white, FontStyles.Bold, height: 28);
 
-            // InjectionLabel: full width, bottom row
-            ApplyChild(ci.transform, "InjectionLabel",
-                new(0, 0), new(1, 0.5f), new(0.5f, 0),
-                new(0, 4), new(-20, 0));
-            StyleText(ci.transform, "InjectionLabel", TextAlignmentOptions.Center, 13,
-                new Color(0.65f, 0.85f, 0.95f), FontStyles.Normal);
+            StyleAndSizeChild(ci.transform, "MoodLabel",
+                TextAlignmentOptions.Center, 15,
+                new Color(0.95f, 0.85f, 0.50f), FontStyles.Italic, height: 22);
+
+            StyleAndSizeChild(ci.transform, "InjectionLabel",
+                TextAlignmentOptions.Center, 12,
+                new Color(0.65f, 0.85f, 0.95f), FontStyles.Normal, height: 20);
+
+            // MoodIndicator: hide it (vertical stack doesn't suit a small icon next to text)
+            // The MoodLabel color carries the same info.
+            var moodInd = ci.transform.Find("MoodIndicator");
+            if (moodInd != null) moodInd.gameObject.SetActive(false);
 
             EditorUtility.SetDirty(ci);
-            Debug.Log("[ShiftSceneFixer] ClientInfo widened to 900x80, children reorganized.");
+            Debug.Log("[ShiftSceneFixer] ClientInfo: VerticalLayoutGroup applied.");
+        }
+
+        private static void StyleAndSizeChild(Transform parent, string childName,
+            TextAlignmentOptions align, float fontSize, Color color, FontStyles style,
+            float height)
+        {
+            var t = parent.Find(childName);
+            if (t == null) return;
+            var rt = t as RectTransform;
+            if (rt == null) return;
+
+            // Clear any anchor weirdness — VLG controls positioning, not anchors
+            rt.anchorMin = new Vector2(0, 1);
+            rt.anchorMax = new Vector2(1, 1);
+            rt.pivot     = new Vector2(0.5f, 1);
+
+            // Fixed-height layout element so VLG knows what to allocate
+            var le = t.GetComponent<LayoutElement>() ?? t.gameObject.AddComponent<LayoutElement>();
+            le.preferredHeight = height;
+            le.minHeight       = height;
+            le.flexibleWidth   = 1;
+
+            var tmp = t.GetComponent<TMP_Text>();
+            if (tmp != null)
+            {
+                tmp.alignment = align;
+                tmp.fontSize  = fontSize;
+                tmp.color     = color;
+                tmp.fontStyle = style;
+                tmp.enableWordWrapping = true;
+                tmp.overflowMode = TextOverflowModes.Ellipsis;
+                tmp.raycastTarget = false;
+            }
         }
 
         // ── 4. Disable stale overlays ─────────────────────────
@@ -375,6 +421,67 @@ namespace Desk42.EditorTools
             {
                 shiftUI.AddComponent<Desk42.Core.ClickCostInterceptor>();
                 Debug.Log("[ShiftSceneFixer] Added ClickCostInterceptor to ShiftUI.");
+            }
+
+            // RunSummaryPanel — drop on its own GameObject (Canvas built at runtime)
+            if (Object.FindObjectOfType<RunSummaryPanel>() == null)
+            {
+                var go = new GameObject("RunSummaryPanel");
+                go.AddComponent<RunSummaryPanel>();
+                Debug.Log("[ShiftSceneFixer] Created RunSummaryPanel.");
+            }
+
+            // NotificationFeed — toasts for hazards/sanity/NDA/milestones/tide
+            if (Object.FindObjectOfType<NotificationFeed>() == null)
+            {
+                var go = new GameObject("NotificationFeed");
+                go.AddComponent<NotificationFeed>();
+                Debug.Log("[ShiftSceneFixer] Created NotificationFeed.");
+            }
+
+            // MemoFeedUI — bottom-left memo list with click-to-detail
+            if (Object.FindObjectOfType<MemoFeedUI>() == null)
+            {
+                var go = new GameObject("MemoFeedUI");
+                go.AddComponent<MemoFeedUI>();
+                Debug.Log("[ShiftSceneFixer] Created MemoFeedUI.");
+            }
+
+            // MoralDilemmaPanel — modal that appears on dilemma trigger
+            if (Object.FindObjectOfType<MoralDilemmaPanel>() == null)
+            {
+                var go = new GameObject("MoralDilemmaPanel");
+                go.AddComponent<MoralDilemmaPanel>();
+                Debug.Log("[ShiftSceneFixer] Created MoralDilemmaPanel.");
+            }
+
+            // CardSlamFeedback — flash + label when a card is played
+            if (Object.FindObjectOfType<CardSlamFeedback>() == null)
+            {
+                var go = new GameObject("CardSlamFeedback");
+                go.AddComponent<CardSlamFeedback>();
+                Debug.Log("[ShiftSceneFixer] Created CardSlamFeedback.");
+            }
+
+            // Re-enable ClientView's species/variant labels in case a prior fix
+            // run had disabled them. ClientInfo container should always show.
+            var clientView = Object.FindObjectOfType<ClientView>();
+            if (clientView != null)
+            {
+                var so = new SerializedObject(clientView);
+                foreach (var fieldName in new[]
+                    { "_speciesLabel", "_variantLabel", "_moodLabel", "_injectionLabel" })
+                {
+                    var prop = so.FindProperty(fieldName);
+                    if (prop?.objectReferenceValue is TMP_Text tmp && tmp != null)
+                    {
+                        if (!tmp.gameObject.activeSelf)
+                        {
+                            tmp.gameObject.SetActive(true);
+                            Debug.Log($"[ShiftSceneFixer] Re-enabled ClientView.{fieldName}.");
+                        }
+                    }
+                }
             }
 
             // FugueInputRandomizer — on a child of ShiftUI, with cardContainer wired

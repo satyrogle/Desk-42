@@ -165,11 +165,17 @@ namespace Desk42.BSM
 
             // Build the correct injected state object
             var injectedState = CreateInjectedState(cardType, targetState, overrideDuration);
-            if (injectedState == null) return InjectionResult.BlockedByCurrentState;
 
-            // Pause base BT, push injection
-            _baseBT.Pause();
-            _stateStack.Push(injectedState, _context);
+            // If the card doesn't push a temporary state AND doesn't shift the mood, it's invalid.
+            if (injectedState == null && targetState == _currentMoodState)
+                return InjectionResult.BlockedByCurrentState;
+                
+            if (injectedState != null)
+            {
+                // Pause base BT, push injection
+                _baseBT.Pause();
+                _stateStack.Push(injectedState, _context);
+            }
 
             // BSM mood state changes immediately
             TransitionToState(targetState, fireEvent: true);

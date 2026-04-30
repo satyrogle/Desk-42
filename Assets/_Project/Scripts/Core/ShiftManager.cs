@@ -55,7 +55,7 @@ namespace Desk42.Core
         [SerializeField] private int _afternoonBlockQuota  = 4;
 
         [Tooltip("Duration of the lunch break in seconds.")]
-        [SerializeField] private float _lunchBreakDuration = 60f;
+        [SerializeField] private float _lunchBreakDuration = 5f;
 
         [Tooltip("Additional shift time (seconds) granted when Overtime begins.")]
         [SerializeField] private float _overtimeDuration   = 300f;
@@ -75,6 +75,8 @@ namespace Desk42.Core
         [SerializeField] private float _overtimeTimerReduction       = 30f;
         [Tooltip("Minimum timer duration floor for overtime iterations.")]
         [SerializeField] private float _overtimeTimerFloor           = 60f;
+        [Tooltip("Hard cap on overtime iterations before forcing run end.")]
+        [SerializeField] private int   _maxOvertimeIterations        = 3;
 
         // ── State ─────────────────────────────────────────────
 
@@ -218,6 +220,8 @@ namespace Desk42.Core
                 runData.ActiveClaim = null;
             }
 
+            runData.ClaimsProcessedThisAnte++;
+
             // Check whether the current ante is now complete
             if (IsAnteComplete(runData))
             {
@@ -240,6 +244,10 @@ namespace Desk42.Core
             {
                 // Let the Tide know the player hit a fugue state
                 _tide.NotifyClaimResolved(durationSeconds: float.MaxValue, triggeredFugue: true);
+
+                // End the run — sanity bottomed out
+                Debug.Log("[ShiftManager] Fugue triggered — ending run.");
+                StartClockOut(GameManager.Instance?.Run);
             }
         }
 
@@ -386,6 +394,9 @@ namespace Desk42.Core
 
         private void StartClockOut(RunStateController run)
         {
+            if (_shiftEnding) return; // already ending — guard against re-entry
+            if (run == null) return;
+
             run.AdvancePhase(ShiftPhase.ClockOut);
             StartCoroutine(EndShiftSequence());
         }
@@ -397,6 +408,14 @@ namespace Desk42.Core
         /// </summary>
         private void StartUnpaidOvertimeLoop(RunStateController run, RunData runData)
         {
+            // Cap overtime iterations — the worker eventually breaks
+            if (_overtimeIteration >= _maxOvertimeIterations)
+            {
+                Debug.Log($"[ShiftManager] Overtime cap reached ({_maxOvertimeIterations}) — ending run.");
+                StartClockOut(run);
+                return;
+            }
+
             _overtimeIteration++;
 
             // Reset ante tracking for the new iteration
@@ -555,6 +574,11 @@ namespace Desk42.Core
 
             meta.ConspiracyBoard.Fragments.Add(fragment);
             runData.GeneratedMemoIds.Add(fragment.FragmentId);
+
+            // Notify UI listeners
+            string headline = $"Memo: {claim.ClientVariantId ?? "client"}";
+            RumorMill.Publish(new MemoGeneratedEvent(
+                fragment.FragmentId, claim.ClaimId, headline, fragment.Content ?? ""));
 
             Debug.Log($"[ShiftManager] Memo generated: {fragment.FragmentId} " +
                       $"for claim {claim.ClaimId}.");

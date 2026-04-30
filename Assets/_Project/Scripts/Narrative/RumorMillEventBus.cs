@@ -47,6 +47,9 @@ namespace Desk42.Core
         public static event Action<ClaimQueuedEvent>           OnClaimQueued;
         public static event Action<TideEscalatedEvent>         OnTideEscalated;
         public static event Action<SupplySignalEvent>          OnSupplySignal;
+        public static event Action<RunCompletedEvent>          OnRunCompleted;
+        public static event Action<MemoGeneratedEvent>         OnMemoGenerated;
+        public static event Action<DilemmaTriggeredEvent>      OnDilemmaTriggered;
 
         // ── Frame-Deferred Dispatch ───────────────────────────
         // Events queued here are dispatched at end-of-frame by
@@ -82,6 +85,9 @@ namespace Desk42.Core
         public static void Publish(SanityChangedEvent e)         => OnSanityChanged?.Invoke(e);
         public static void Publish(NarratorToneChangedEvent e)   => OnNarratorToneChanged?.Invoke(e);
         public static void Publish(SupplySignalEvent e)          => OnSupplySignal?.Invoke(e);
+        public static void Publish(RunCompletedEvent e)          => OnRunCompleted?.Invoke(e);
+        public static void Publish(MemoGeneratedEvent e)         => OnMemoGenerated?.Invoke(e);
+        public static void Publish(DilemmaTriggeredEvent e)      => OnDilemmaTriggered?.Invoke(e);
 
         /// <summary>
         /// Publish deferred — queues the event for end-of-frame dispatch.

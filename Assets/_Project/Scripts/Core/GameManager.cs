@@ -258,7 +258,12 @@ namespace Desk42.Core
             LoadScene(SceneID.Shift);
         }
 
-        /// <summary>End the current shift and transition to Internal Audit.</summary>
+        /// <summary>
+        /// End the current shift. Finalises run state and publishes
+        /// RunCompletedEvent. If a RunSummaryPanel is in the scene, it
+        /// will show and call ContinueToMetaHub when dismissed. If no
+        /// panel exists, transitions immediately as before.
+        /// </summary>
         public void EndShift()
         {
             if (_isTransitioning || Run == null) return;
@@ -272,6 +277,33 @@ namespace Desk42.Core
             Run.CompleteRun();
             SaveSystem.SaveMeta(Meta);
 
+            // Build summary event and publish
+            var data = Run.RawData;
+            int credits = data.Stats?.CreditsEarned ?? data.CorporateCredits;
+            RumorMill.Publish(new RunCompletedEvent(
+                shift:       data.ShiftNumber,
+                claims:      data.Stats?.ClaimsProcessed ?? 0,
+                credits:     credits,
+                eff:         data.Stats?.EfficiencyRating ?? 0f,
+                soul:        data.SoulIntegrity,
+                sanity:      data.Sanity,
+                debt:        data.PersonalExpenseDebt,
+                combo:       data.Stats?.ComboMultiplier ?? 1f,
+                archetype:   data.ArchetypeId,
+                seed:        data.SeedCode,
+                fugue:       data.Sanity <= 0f));
+
+            // If a summary panel is listening, it'll handle the transition.
+            // Otherwise fall back to immediate scene change.
+            var hasPanel = FindObjectOfType<UI.RunSummaryPanel>() != null;
+            if (!hasPanel)
+                LoadScene(SceneID.InternalAudit);
+        }
+
+        /// <summary>Called by RunSummaryPanel's Continue button.</summary>
+        public void ContinueToMetaHub()
+        {
+            if (_isTransitioning) return;
             LoadScene(SceneID.InternalAudit);
         }
 

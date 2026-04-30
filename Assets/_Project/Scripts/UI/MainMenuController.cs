@@ -140,7 +140,30 @@ namespace Desk42.UI
 
         private void OnStartNewRun()
         {
-            GameManager.Instance.StartNewRun(_defaultArchetypeId);
+            // Chain: archetype picker → vow picker → start
+            var archPicker = GetOrAdd<ArchetypePickerPanel>();
+            archPicker.Show(archetypeId =>
+            {
+                var vowPicker = GetOrAdd<VowPickerPanel>();
+                vowPicker.Show(vows =>
+                {
+                    GameManager.Instance.StartNewRun(archetypeId);
+
+                    // Apply vows to the just-created run
+                    var run = GameManager.Instance.Run?.RawData;
+                    if (run != null && vows != null && vows.Count > 0)
+                    {
+                        run.ActiveVows.Clear();
+                        run.ActiveVows.AddRange(vows);
+                    }
+                });
+            });
+        }
+
+        private T GetOrAdd<T>() where T : MonoBehaviour
+        {
+            var existing = GetComponent<T>();
+            return existing != null ? existing : gameObject.AddComponent<T>();
         }
 
         private void OnContinue()

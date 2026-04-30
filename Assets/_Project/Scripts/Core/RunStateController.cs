@@ -34,14 +34,16 @@ namespace Desk42.Core
         private IArchetype        _archetype;
         private Deck              _deck;
         private Hand              _hand;
-        private MoralInjurySystem _moralInjury;
+        private MoralInjurySystem  _moralInjury;
+        private MoralDilemmaSystem _moralDilemmas;
 
         // ── Public Access ─────────────────────────────────────
 
         public IArchetype        Archetype    => _archetype;
         public Deck              Deck         => _deck;
         public Hand              Hand         => _hand;
-        public MoralInjurySystem MoralInjury  => _moralInjury;
+        public MoralInjurySystem  MoralInjury    => _moralInjury;
+        public MoralDilemmaSystem MoralDilemmas  => _moralDilemmas;
 
         // ── Init ──────────────────────────────────────────────
 
@@ -358,14 +360,29 @@ namespace Desk42.Core
         {
             if (_data == null || _data.IsComplete) return;
 
-            // Sync deck: return hand cards to discard so they survive the round-trip
+            // Sync deck: include hand cards in the discard pile so they survive the round-trip
             if (_deck != null)
             {
-                _hand?.DiscardAll(_deck);
                 _data.Deck.DrawPile    = _deck.SerializeDrawPile();
-                _data.Deck.DiscardPile = _deck.SerializeDiscardPile();
                 _data.Deck.Archive     = _deck.SerializeArchive();
                 _data.Deck.DrawsPerTurn = _data.DrawsPerTurn;
+                
+                var serializedDiscard = _deck.SerializeDiscardPile();
+                if (_hand != null)
+                {
+                    foreach (var card in _hand.Cards)
+                    {
+                        serializedDiscard.Add(new Desk42.Core.CardInstanceData
+                        {
+                            CardId     = card.Data.name,
+                            InstanceId = card.InstanceId,
+                            Fatigue    = card.Fatigue,
+                            IsJammed   = card.IsJammed,
+                            IsCrumpled = card.IsCrumpled
+                        });
+                    }
+                }
+                _data.Deck.DiscardPile = serializedDiscard;
             }
 
             // Sync office supplies
@@ -648,6 +665,10 @@ namespace Desk42.Core
         {
             _moralInjury = new MoralInjurySystem();
             _moralInjury.LoadScarsFromMeta(meta);
+
+            // Build dilemma system from any MoralDilemmaData SOs in Resources
+            var dilemmaSOs = Resources.LoadAll<MoralDilemmaData>("");
+            _moralDilemmas = new MoralDilemmaSystem(dilemmaSOs, _moralInjury);
         }
 
         private ArchetypeContext BuildArchetypeContext() => new ArchetypeContext

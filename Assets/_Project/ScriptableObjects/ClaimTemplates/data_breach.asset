@@ -17,6 +17,14 @@ MonoBehaviour:
   IncidentTextVariants:
   - Claimant {claimant} submits a claim for losses totalling {amount}. The incident
     occurred on the premises of {dept}.
+  - 'A grievance has been filed by {claimant} regarding an incident in {dept}. Requested
+    compensation: {amount}.'
+  - '{claimant} insists {dept} is responsible for the recent damages and is demanding
+    {amount} in restitution.'
+  - Processing request from {claimant} against {dept}. The paperwork lists the exact
+    total as {amount}.
+  - An anomaly involving {claimant} resulted in {amount} of damages directly linked
+    to {dept} protocols.
   ClaimantNamePool:
   - T. Marlowe
   - B. Havisham

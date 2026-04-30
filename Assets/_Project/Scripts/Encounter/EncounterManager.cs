@@ -179,7 +179,31 @@ namespace Desk42.Encounter
             Debug.Log($"[EncounterManager] Resolved '{_activeClaim.ClaimId}' — " +
                       $"{(resolvedCorrectly ? "APPROVE" : "DENY")}. Credits: +{credits} (Combo: {run?.ComboMultiplier ?? 1.0f}x).");
 
+            TryTriggerDilemma(run);
+
             CleanupEncounter();
+        }
+
+        private void TryTriggerDilemma(RunStateController run)
+        {
+            if (run == null || run.MoralDilemmas == null || _activeClaim == null) return;
+
+            var dilemma = run.MoralDilemmas.TryGenerateDilemma(
+                _activeClaim.ClaimId,
+                _activeClaim.ClaimantName ?? "Unknown",
+                _activeClaim.ClaimAmount,
+                run.SoulIntegrity,
+                run.ShiftNumber);
+
+            if (dilemma == null) return;
+
+            var data = dilemma.Data;
+            RumorMill.Publish(new DilemmaTriggeredEvent(
+                prompt:           dilemma.BuiltPrompt,
+                ethical:          data.EthicalChoiceLabel,
+                bureaucratic:     data.BureaucraticChoiceLabel,
+                onEthical:        () => run.MoralDilemmas.Resolve(dilemma, choseEthical: true),
+                onBureaucratic:   () => run.MoralDilemmas.Resolve(dilemma, choseEthical: false)));
         }
 
         private void CleanupEncounter()

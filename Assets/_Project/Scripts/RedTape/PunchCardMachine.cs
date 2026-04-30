@@ -105,6 +105,8 @@ namespace Desk42.RedTape
         public void ClearActiveClient()
         {
             _injector.ClearClient();
+            StopAllCoroutines();
+            _state = MachineState.Idle;
         }
 
         // ── Update: fatigue timers ────────────────────────────
