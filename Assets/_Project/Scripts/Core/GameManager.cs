@@ -25,6 +25,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Desk42.Cards;
+using Desk42.Meta.Analytics;
 using Desk42.OfficeSupplies;
 using Desk42.MoralInjury;
 
@@ -163,6 +164,16 @@ namespace Desk42.Core
                 go.transform.SetParent(transform);
                 Vows = go.AddComponent<ComplianceVowSystem>();
             }
+
+            // AnalyticsBootstrap — picks a backend and subscribes
+            // to RumorMill events. No-op in shipping builds unless
+            // a remote backend is installed via Analytics.SetBackend.
+            if (GetComponentInChildren<AnalyticsBootstrap>() == null)
+            {
+                var go = new GameObject("AnalyticsBootstrap");
+                go.transform.SetParent(transform);
+                go.AddComponent<AnalyticsBootstrap>();
+            }
         }
 
         private void BootSequence()
@@ -199,8 +210,19 @@ namespace Desk42.Core
             SaveSystem.SaveMeta(Meta);
 
             int seed = new System.Random().Next();
-            Run.BeginNewRun(seed, archetypeId ?? "auditor",
+            string finalArchetype = archetypeId ?? "auditor";
+            Run.BeginNewRun(seed, finalArchetype,
                 Meta.GlobalShiftNumber, Meta);
+
+            Analytics.SetUserProperty("archetype", finalArchetype);
+            Analytics.Track("run_started",
+                new System.Collections.Generic.Dictionary<string, object>
+                {
+                    ["archetype"]    = finalArchetype,
+                    ["seed"]         = seed,
+                    ["global_shift"] = Meta.GlobalShiftNumber,
+                    ["mode"]         = "standard",
+                });
 
             LoadScene(SceneID.Shift);
         }
@@ -215,9 +237,20 @@ namespace Desk42.Core
 
             // Phase 4: Daily Brief creates a globally identical seed for the current UTC date
             int seed = System.DateTime.UtcNow.Date.GetHashCode();
-            Run.BeginNewRun(seed, archetypeId ?? "auditor",
+            string finalArchetype = archetypeId ?? "auditor";
+            Run.BeginNewRun(seed, finalArchetype,
                 Meta.GlobalShiftNumber, Meta);
             Run.RawData.IsDailyBrief = true;
+
+            Analytics.SetUserProperty("archetype", finalArchetype);
+            Analytics.Track("run_started",
+                new System.Collections.Generic.Dictionary<string, object>
+                {
+                    ["archetype"]    = finalArchetype,
+                    ["seed"]         = seed,
+                    ["global_shift"] = Meta.GlobalShiftNumber,
+                    ["mode"]         = "daily_brief",
+                });
 
             LoadScene(SceneID.Shift);
         }
