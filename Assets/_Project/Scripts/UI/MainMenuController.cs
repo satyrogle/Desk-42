@@ -10,6 +10,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Desk42.Accessibility;
 using Desk42.Core;
 
 namespace Desk42.UI
@@ -137,7 +138,7 @@ namespace Desk42.UI
             var tmp = go.AddComponent<TextMeshProUGUI>();
             tmp.text         = text;
             tmp.alignment    = TextAlignmentOptions.Center;
-            tmp.fontSize     = fontSize;
+            tmp.fontSize     = AccessibilitySettings.Scaled(fontSize);
             tmp.color        = Color.white;
             return tmp;
         }

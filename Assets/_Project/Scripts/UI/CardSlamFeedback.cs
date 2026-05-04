@@ -87,7 +87,7 @@ namespace Desk42.UI
             lrt.anchoredPosition = new Vector2(0, 240);
             _slamLabel = labelGO.AddComponent<TextMeshProUGUI>();
             _slamLabel.text = "";
-            _slamLabel.fontSize = 32;
+            _slamLabel.fontSize = AccessibilitySettings.Scaled(32);
             _slamLabel.fontStyle = FontStyles.Bold;
             _slamLabel.color = new Color(1f, 1f, 1f, 0f);
             _slamLabel.alignment = TextAlignmentOptions.Center;

@@ -12,6 +12,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Desk42.Accessibility;
 using Desk42.Archetypes;
 
 namespace Desk42.UI
@@ -71,7 +72,7 @@ namespace Desk42.UI
             trt.anchoredPosition = new Vector2(0, -40);
             var title = titleGO.AddComponent<TextMeshProUGUI>();
             title.text = "CHOOSE YOUR ARCHETYPE";
-            title.fontSize = 42; title.fontStyle = FontStyles.Bold;
+            title.fontSize = AccessibilitySettings.Scaled(42); title.fontStyle = FontStyles.Bold;
             title.color = new Color(0.95f, 0.85f, 0.50f);
             title.alignment = TextAlignmentOptions.Center;
 
@@ -113,7 +114,7 @@ namespace Desk42.UI
             lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
             lrt.offsetMin = Vector2.zero; lrt.offsetMax = Vector2.zero;
             var ltmp = lbl.AddComponent<TextMeshProUGUI>();
-            ltmp.text = "← BACK"; ltmp.fontSize = 18; ltmp.fontStyle = FontStyles.Bold;
+            ltmp.text = "← BACK"; ltmp.fontSize = AccessibilitySettings.Scaled(18); ltmp.fontStyle = FontStyles.Bold;
             ltmp.color = Color.white; ltmp.alignment = TextAlignmentOptions.Center;
             ltmp.raycastTarget = false;
 
@@ -150,7 +151,7 @@ namespace Desk42.UI
             nrt.anchoredPosition = new Vector2(0, -16);
             var nameTmp = nameGO.AddComponent<TextMeshProUGUI>();
             nameTmp.text = arch.DisplayName;
-            nameTmp.fontSize = 20; nameTmp.fontStyle = FontStyles.Bold;
+            nameTmp.fontSize = AccessibilitySettings.Scaled(20); nameTmp.fontStyle = FontStyles.Bold;
             nameTmp.color = new Color(0.95f, 0.85f, 0.50f);
             nameTmp.alignment = TextAlignmentOptions.Top;
             nameTmp.raycastTarget = false;
@@ -163,7 +164,7 @@ namespace Desk42.UI
             drt.offsetMin = new Vector2(14, 16); drt.offsetMax = new Vector2(-14, -70);
             var descTmp = descGO.AddComponent<TextMeshProUGUI>();
             descTmp.text = arch.AbilityDescription;
-            descTmp.fontSize = 12; descTmp.color = Color.white;
+            descTmp.fontSize = AccessibilitySettings.Scaled(12); descTmp.color = Color.white;
             descTmp.alignment = TextAlignmentOptions.TopLeft;
             descTmp.enableWordWrapping = true;
             descTmp.raycastTarget = false;

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Desk42.Accessibility;
 using Desk42.Core;
 
 namespace Desk42.UI
@@ -85,7 +86,7 @@ namespace Desk42.UI
             titleRT.anchoredPosition = Vector2.zero;
             var titleTmp = titleGO.AddComponent<TextMeshProUGUI>();
             titleTmp.text = "MEMOS";
-            titleTmp.fontSize = 14;
+            titleTmp.fontSize = AccessibilitySettings.Scaled(14);
             titleTmp.fontStyle = FontStyles.Bold;
             titleTmp.color = new Color(0.85f, 0.80f, 0.60f);
             titleTmp.alignment = TextAlignmentOptions.Center;
@@ -116,7 +117,7 @@ namespace Desk42.UI
             trt.pivot = new Vector2(0.5f, 1);
             trt.offsetMin = new Vector2(20, -60); trt.offsetMax = new Vector2(-20, -10);
             _detailTitle = t.AddComponent<TextMeshProUGUI>();
-            _detailTitle.fontSize = 22; _detailTitle.fontStyle = FontStyles.Bold;
+            _detailTitle.fontSize = AccessibilitySettings.Scaled(22); _detailTitle.fontStyle = FontStyles.Bold;
             _detailTitle.color = new Color(0.95f, 0.85f, 0.50f);
             _detailTitle.alignment = TextAlignmentOptions.TopLeft;
 
@@ -127,7 +128,7 @@ namespace Desk42.UI
             brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one;
             brt.offsetMin = new Vector2(20, 80); brt.offsetMax = new Vector2(-20, -70);
             _detailBody = b.AddComponent<TextMeshProUGUI>();
-            _detailBody.fontSize = 16; _detailBody.color = Color.white;
+            _detailBody.fontSize = AccessibilitySettings.Scaled(16); _detailBody.color = Color.white;
             _detailBody.enableWordWrapping = true;
 
             // Close button
@@ -149,7 +150,7 @@ namespace Desk42.UI
             lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
             lrt.offsetMin = Vector2.zero; lrt.offsetMax = Vector2.zero;
             var ltmp = lbl.AddComponent<TextMeshProUGUI>();
-            ltmp.text = "CLOSE"; ltmp.fontSize = 18; ltmp.fontStyle = FontStyles.Bold;
+            ltmp.text = "CLOSE"; ltmp.fontSize = AccessibilitySettings.Scaled(18); ltmp.fontStyle = FontStyles.Bold;
             ltmp.color = Color.white; ltmp.alignment = TextAlignmentOptions.Center;
             ltmp.raycastTarget = false;
 
@@ -192,7 +193,7 @@ namespace Desk42.UI
                 lrt.offsetMin = new Vector2(10, 0); lrt.offsetMax = new Vector2(-10, 0);
                 var tmp = lbl.AddComponent<TextMeshProUGUI>();
                 tmp.text = "[Memo] " + entry.Headline;
-                tmp.fontSize = 13; tmp.color = new Color(0.85f, 0.80f, 0.65f);
+                tmp.fontSize = AccessibilitySettings.Scaled(13); tmp.color = new Color(0.85f, 0.80f, 0.65f);
                 tmp.alignment = TextAlignmentOptions.MidlineLeft;
                 tmp.raycastTarget = false;
                 tmp.overflowMode = TextOverflowModes.Ellipsis;

@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Desk42.Accessibility;
 using Desk42.Core;
 
 namespace Desk42.UI
@@ -100,7 +101,7 @@ namespace Desk42.UI
             brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one;
             brt.offsetMin = new Vector2(16, 0); brt.offsetMax = new Vector2(-16, 0);
             _bankText = bankLbl.AddComponent<TextMeshProUGUI>();
-            _bankText.fontSize = 22; _bankText.fontStyle = FontStyles.Bold;
+            _bankText.fontSize = AccessibilitySettings.Scaled(22); _bankText.fontStyle = FontStyles.Bold;
             _bankText.color = new Color(0.95f, 0.85f, 0.50f);
             _bankText.alignment = TextAlignmentOptions.MidlineLeft;
             _bankText.raycastTarget = false;
@@ -189,7 +190,7 @@ namespace Desk42.UI
             lrt.offsetMin = Vector2.zero; lrt.offsetMax = Vector2.zero;
             var ltmp = lbl.AddComponent<TextMeshProUGUI>();
             ltmp.text = $"¢{cost}";
-            ltmp.fontSize = 20; ltmp.fontStyle = FontStyles.Bold;
+            ltmp.fontSize = AccessibilitySettings.Scaled(20); ltmp.fontStyle = FontStyles.Bold;
             ltmp.color = Color.white; ltmp.alignment = TextAlignmentOptions.Center;
             ltmp.raycastTarget = false;
             _benefitLabels[id] = ltmp;
@@ -216,7 +217,7 @@ namespace Desk42.UI
             lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
             lrt.offsetMin = Vector2.zero; lrt.offsetMax = Vector2.zero;
             var tmp = lbl.AddComponent<TextMeshProUGUI>();
-            tmp.text = label; tmp.fontSize = 22; tmp.fontStyle = FontStyles.Bold;
+            tmp.text = label; tmp.fontSize = AccessibilitySettings.Scaled(22); tmp.fontStyle = FontStyles.Bold;
             tmp.color = Color.white; tmp.alignment = TextAlignmentOptions.Center;
             tmp.raycastTarget = false;
         }
@@ -313,7 +314,7 @@ namespace Desk42.UI
             rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
             rt.pivot = pivot; rt.anchoredPosition = anchoredPos; rt.sizeDelta = sizeDelta;
             var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.text = text; tmp.fontSize = fontSize; tmp.fontStyle = style;
+            tmp.text = text; tmp.fontSize = AccessibilitySettings.Scaled(fontSize); tmp.fontStyle = style;
             tmp.alignment = align; tmp.color = color;
             tmp.enableWordWrapping = true; tmp.raycastTarget = false;
             return tmp;

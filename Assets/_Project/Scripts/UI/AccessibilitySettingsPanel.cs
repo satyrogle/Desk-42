@@ -302,7 +302,7 @@ namespace Desk42.UI
             var tmp = go.AddComponent<TextMeshProUGUI>();
             tmp.text         = text;
             tmp.alignment    = TextAlignmentOptions.Center;
-            tmp.fontSize     = fontSize;
+            tmp.fontSize     = AccessibilitySettings.Scaled(fontSize);
             tmp.fontStyle    = style;
             tmp.color        = color;
             tmp.raycastTarget = false;

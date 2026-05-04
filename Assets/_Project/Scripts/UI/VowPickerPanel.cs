@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Desk42.Accessibility;
 using Desk42.Core;
 
 namespace Desk42.UI
@@ -109,7 +110,7 @@ namespace Desk42.UI
             trt.anchoredPosition = new Vector2(0, -20);
             var title = titleGO.AddComponent<TextMeshProUGUI>();
             title.text = "COMPLIANCE VOWS  (optional, max 3)";
-            title.fontSize = 32; title.fontStyle = FontStyles.Bold;
+            title.fontSize = AccessibilitySettings.Scaled(32); title.fontStyle = FontStyles.Bold;
             title.color = new Color(0.95f, 0.85f, 0.50f);
             title.alignment = TextAlignmentOptions.Center;
 
@@ -141,7 +142,7 @@ namespace Desk42.UI
             srt.sizeDelta = new Vector2(800, 40);
             srt.anchoredPosition = new Vector2(0, 110);
             _statusText = statusGO.AddComponent<TextMeshProUGUI>();
-            _statusText.fontSize = 18; _statusText.color = Color.white;
+            _statusText.fontSize = AccessibilitySettings.Scaled(18); _statusText.color = Color.white;
             _statusText.alignment = TextAlignmentOptions.Center;
             _statusText.raycastTarget = false;
 
@@ -208,7 +209,7 @@ namespace Desk42.UI
             nrt.anchoredPosition = new Vector2(0, -8);
             var nameTmp = nameGO.AddComponent<TextMeshProUGUI>();
             nameTmp.text = display;
-            nameTmp.fontSize = 16; nameTmp.fontStyle = FontStyles.Bold;
+            nameTmp.fontSize = AccessibilitySettings.Scaled(16); nameTmp.fontStyle = FontStyles.Bold;
             nameTmp.color = new Color(0.95f, 0.85f, 0.50f);
             nameTmp.alignment = TextAlignmentOptions.MidlineLeft;
             nameTmp.raycastTarget = false;
@@ -223,7 +224,7 @@ namespace Desk42.UI
             brt.anchoredPosition = new Vector2(-8, -8);
             var badgeTmp = badgeGO.AddComponent<TextMeshProUGUI>();
             badgeTmp.text = "—";
-            badgeTmp.fontSize = 14; badgeTmp.fontStyle = FontStyles.Bold;
+            badgeTmp.fontSize = AccessibilitySettings.Scaled(14); badgeTmp.fontStyle = FontStyles.Bold;
             badgeTmp.color = new Color(0.65f, 0.65f, 0.65f);
             badgeTmp.alignment = TextAlignmentOptions.MidlineRight;
             badgeTmp.raycastTarget = false;
@@ -236,7 +237,7 @@ namespace Desk42.UI
             drt.offsetMin = new Vector2(8, 8); drt.offsetMax = new Vector2(-8, -38);
             var descTmp = descGO.AddComponent<TextMeshProUGUI>();
             descTmp.text = desc;
-            descTmp.fontSize = 11; descTmp.color = new Color(0.80f, 0.80f, 0.80f);
+            descTmp.fontSize = AccessibilitySettings.Scaled(11); descTmp.color = new Color(0.80f, 0.80f, 0.80f);
             descTmp.alignment = TextAlignmentOptions.TopLeft;
             descTmp.enableWordWrapping = true;
             descTmp.raycastTarget = false;
@@ -322,7 +323,7 @@ namespace Desk42.UI
             lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
             lrt.offsetMin = Vector2.zero; lrt.offsetMax = Vector2.zero;
             var ltmp = lbl.AddComponent<TextMeshProUGUI>();
-            ltmp.text = label; ltmp.fontSize = 18; ltmp.fontStyle = FontStyles.Bold;
+            ltmp.text = label; ltmp.fontSize = AccessibilitySettings.Scaled(18); ltmp.fontStyle = FontStyles.Bold;
             ltmp.color = Color.white; ltmp.alignment = TextAlignmentOptions.Center;
             ltmp.raycastTarget = false;
         }

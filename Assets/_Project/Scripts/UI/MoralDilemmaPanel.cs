@@ -12,6 +12,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Desk42.Accessibility;
 using Desk42.Core;
 
 namespace Desk42.UI
@@ -181,7 +182,7 @@ namespace Desk42.UI
             rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
             rt.pivot = pivot; rt.anchoredPosition = anchoredPos; rt.sizeDelta = sizeDelta;
             var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.text = text; tmp.fontSize = fontSize; tmp.fontStyle = style;
+            tmp.text = text; tmp.fontSize = AccessibilitySettings.Scaled(fontSize); tmp.fontStyle = style;
             tmp.alignment = align; tmp.color = color;
             tmp.raycastTarget = false;
             tmp.enableWordWrapping = true;

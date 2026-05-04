@@ -124,6 +124,13 @@ namespace Desk42.Accessibility
             label.fontSize = baseFontSize * TextScale;
         }
 
+        /// <summary>Returns the design-time font size scaled by
+        /// the current TextScale. Use in runtime UI builders:
+        /// <code>tmp.fontSize = AccessibilitySettings.Scaled(22);</code>
+        /// </summary>
+        public static float Scaled(float baseFontSize)
+            => baseFontSize * TextScale;
+
         private static void EnsureLoaded()
         {
             if (_loaded) return;

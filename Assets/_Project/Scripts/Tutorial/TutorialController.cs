@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Desk42.Accessibility;
 using Desk42.Core;
 
 namespace Desk42.Tutorial
@@ -325,7 +326,7 @@ namespace Desk42.Tutorial
             var tmp = go.AddComponent<TextMeshProUGUI>();
             tmp.text         = text;
             tmp.alignment    = TextAlignmentOptions.MidlineLeft;
-            tmp.fontSize     = fontSize;
+            tmp.fontSize     = AccessibilitySettings.Scaled(fontSize);
             tmp.fontStyle    = style;
             tmp.color        = color;
             tmp.raycastTarget = false;

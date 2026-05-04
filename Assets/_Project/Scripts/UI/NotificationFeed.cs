@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Desk42.Accessibility;
 using Desk42.Core;
 
 namespace Desk42.UI
@@ -175,7 +176,7 @@ namespace Desk42.UI
             titleRT.offsetMax = new Vector2(-12, -4);
             var titleTmp = titleGO.AddComponent<TextMeshProUGUI>();
             titleTmp.text = title;
-            titleTmp.fontSize = 16;
+            titleTmp.fontSize = AccessibilitySettings.Scaled(16);
             titleTmp.fontStyle = FontStyles.Bold;
             titleTmp.color = Color.white;
             titleTmp.alignment = TextAlignmentOptions.MidlineLeft;
@@ -191,7 +192,7 @@ namespace Desk42.UI
             bodyRT.offsetMax = new Vector2(-12, 0);
             var bodyTmp = bodyGO.AddComponent<TextMeshProUGUI>();
             bodyTmp.text = body;
-            bodyTmp.fontSize = 12;
+            bodyTmp.fontSize = AccessibilitySettings.Scaled(12);
             bodyTmp.color = new Color(0.75f, 0.75f, 0.78f);
             bodyTmp.alignment = TextAlignmentOptions.MidlineLeft;
             bodyTmp.raycastTarget = false;
