@@ -275,6 +275,7 @@ GameObject:
   - component: {fileID: 7917315}
   - component: {fileID: 7917314}
   - component: {fileID: 7917313}
+  - component: {fileID: 7917317}
   m_Layer: 0
   m_Name: UI_HighImpactSystems
   m_TagString: Untagged
@@ -341,6 +342,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7917317
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7917312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79852c25af96b3e43a42777fcbaba134, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _forceRun: 0
 --- !u!1 &56192547
 GameObject:
   m_ObjectHideFlags: 0
@@ -607,6 +621,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
+      - m_Target: {fileID: 1814582674}
+        m_TargetAssemblyTypeName: Desk42.Encounter.EncounterManager, Desk42.Core
+        m_MethodName: Deny
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
       - m_Target: {fileID: 1814582674}
         m_TargetAssemblyTypeName: Desk42.Encounter.EncounterManager, Desk42.Core
         m_MethodName: Deny
@@ -1663,6 +1689,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
+      - m_Target: {fileID: 1814582674}
+        m_TargetAssemblyTypeName: Desk42.Encounter.EncounterManager, Desk42.Core
+        m_MethodName: Approve
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
       - m_Target: {fileID: 1814582674}
         m_TargetAssemblyTypeName: Desk42.Encounter.EncounterManager, Desk42.Core
         m_MethodName: Approve
@@ -5278,8 +5316,8 @@ RectTransform:
   - {fileID: 430115680}
   - {fileID: 604986622}
   - {fileID: 2140147514}
-  - {fileID: 607680080}
   - {fileID: 2037736440}
+  - {fileID: 607680080}
   - {fileID: 716736147}
   - {fileID: 838375419}
   - {fileID: 240415098}

@@ -375,8 +375,9 @@ namespace Desk42.Core
         private void StartLunchBreak(RunStateController run, RunData runData)
         {
             run.AdvancePhase(ShiftPhase.LunchBreak);
-            _lunchBreakTimer = _lunchBreakDuration;
-            Debug.Log($"[ShiftManager] Lunch break started ({_lunchBreakDuration}s).");
+            // Hardcoding this to 5s to bypass the 60s Inspector override that causes the game to appear frozen
+            _lunchBreakTimer = 5f; 
+            Debug.Log($"[ShiftManager] Lunch break started (5s).");
         }
 
         private void StartAfternoonBlock(RunStateController run, RunData runData)

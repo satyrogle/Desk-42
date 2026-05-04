@@ -284,6 +284,12 @@ namespace Desk42.RedTape
                 PlaySound(_clipReject);
                 _rejectParticles?.Play();
             }
+            else
+            {
+                // Give some feedback so clicking doesn't feel completely silent
+                if (!Accessibility.AccessibilitySettings.ReducedMotion)
+                    CameraShake(_screenShakeMagnitude);
+            }
 
             OnSlamResolved?.Invoke(result);
 

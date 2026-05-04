@@ -249,6 +249,7 @@ namespace Desk42.Tutorial
             brt.offsetMin = Vector2.zero; brt.offsetMax = Vector2.zero;
             var bImg = backdrop.AddComponent<Image>();
             bImg.color = new Color(0f, 0f, 0f, 0.55f);
+            bImg.raycastTarget = false;
 
             // Card pinned bottom-center so it doesn't cover the claim
             var card = new GameObject("Card");
