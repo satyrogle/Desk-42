@@ -83,7 +83,7 @@ namespace Desk42.UI
                 new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0.5f, 1),
                 new Vector2(0, -40), new Vector2(900, 60),
                 32, FontStyles.Bold, TextAlignmentOptions.Center,
-                new Color(0.95f, 0.85f, 0.50f));
+                UIPalette.AccentTitle);
 
             // Bank balance display (top-right)
             var bankGO = new GameObject("BankBalance");
@@ -102,7 +102,7 @@ namespace Desk42.UI
             brt.offsetMin = new Vector2(16, 0); brt.offsetMax = new Vector2(-16, 0);
             _bankText = bankLbl.AddComponent<TextMeshProUGUI>();
             _bankText.fontSize = AccessibilitySettings.Scaled(22); _bankText.fontStyle = FontStyles.Bold;
-            _bankText.color = new Color(0.95f, 0.85f, 0.50f);
+            _bankText.color = UIPalette.AccentTitle;
             _bankText.alignment = TextAlignmentOptions.MidlineLeft;
             _bankText.raycastTarget = false;
 
@@ -135,7 +135,7 @@ namespace Desk42.UI
 
             // Next Shift (bottom-center)
             BuildBigButton(canvasGO.transform, "NextShiftBtn", "BEGIN NEXT SHIFT",
-                new Color(0.20f, 0.50f, 0.30f),
+                UIPalette.AccentSuccess,
                 new Vector2(0.5f, 0), new Vector2(0, 60),
                 new Vector2(380, 80), OnNextShiftClicked);
         }
@@ -158,7 +158,7 @@ namespace Desk42.UI
                 new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1),
                 new Vector2(16, -8), new Vector2(-16, 32),
                 18, FontStyles.Bold, TextAlignmentOptions.MidlineLeft,
-                new Color(0.95f, 0.85f, 0.50f));
+                UIPalette.AccentTitle);
             nameTmp.rectTransform.anchoredPosition = new Vector2(16, -8);
 
             // Desc

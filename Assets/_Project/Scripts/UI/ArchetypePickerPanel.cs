@@ -73,7 +73,7 @@ namespace Desk42.UI
             var title = titleGO.AddComponent<TextMeshProUGUI>();
             title.text = "CHOOSE YOUR ARCHETYPE";
             title.fontSize = AccessibilitySettings.Scaled(42); title.fontStyle = FontStyles.Bold;
-            title.color = new Color(0.95f, 0.85f, 0.50f);
+            title.color = UIPalette.AccentTitle;
             title.alignment = TextAlignmentOptions.Center;
 
             // Grid of tiles
@@ -152,7 +152,7 @@ namespace Desk42.UI
             var nameTmp = nameGO.AddComponent<TextMeshProUGUI>();
             nameTmp.text = arch.DisplayName;
             nameTmp.fontSize = AccessibilitySettings.Scaled(20); nameTmp.fontStyle = FontStyles.Bold;
-            nameTmp.color = new Color(0.95f, 0.85f, 0.50f);
+            nameTmp.color = UIPalette.AccentTitle;
             nameTmp.alignment = TextAlignmentOptions.Top;
             nameTmp.raycastTarget = false;
 

@@ -111,7 +111,7 @@ namespace Desk42.UI
             var title = titleGO.AddComponent<TextMeshProUGUI>();
             title.text = "COMPLIANCE VOWS  (optional, max 3)";
             title.fontSize = AccessibilitySettings.Scaled(32); title.fontStyle = FontStyles.Bold;
-            title.color = new Color(0.95f, 0.85f, 0.50f);
+            title.color = UIPalette.AccentTitle;
             title.alignment = TextAlignmentOptions.Center;
 
             // Scrollable grid (simple — no scroll, fits 18 vows in 6x3)
@@ -148,7 +148,7 @@ namespace Desk42.UI
 
             // Confirm button
             BuildBottomBtn("ConfirmBtn", "BEGIN SHIFT",
-                new Color(0.20f, 0.50f, 0.30f),
+                UIPalette.AccentSuccess,
                 new Vector2(150, 40), OnConfirm);
 
             // Skip button (no vows)
@@ -210,7 +210,7 @@ namespace Desk42.UI
             var nameTmp = nameGO.AddComponent<TextMeshProUGUI>();
             nameTmp.text = display;
             nameTmp.fontSize = AccessibilitySettings.Scaled(16); nameTmp.fontStyle = FontStyles.Bold;
-            nameTmp.color = new Color(0.95f, 0.85f, 0.50f);
+            nameTmp.color = UIPalette.AccentTitle;
             nameTmp.alignment = TextAlignmentOptions.MidlineLeft;
             nameTmp.raycastTarget = false;
 

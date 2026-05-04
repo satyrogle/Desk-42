@@ -89,7 +89,7 @@ namespace Desk42.UI
             cardRT.pivot     = new Vector2(0.5f, 0.5f);
             cardRT.sizeDelta = new Vector2(800, 600);
             var cardImg = card.AddComponent<Image>();
-            cardImg.color = new Color(0.10f, 0.10f, 0.12f, 0.98f);
+            cardImg.color = UIPalette.CardBackground;
 
             // Title
             _titleText = CreateLabel(card.transform, "title",
@@ -97,7 +97,7 @@ namespace Desk42.UI
                 new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1),
                 new Vector2(0, -30), new Vector2(-40, 60),
                 36, FontStyles.Bold, TextAlignmentOptions.Top,
-                new Color(0.95f, 0.85f, 0.5f));
+                UIPalette.AccentTitle);
 
             // Body (stats)
             _bodyText = CreateLabel(card.transform, "body",
@@ -150,8 +150,8 @@ namespace Desk42.UI
             string title = e.FugueTriggered ? "FUGUE STATE — RUN ENDED" : "END OF SHIFT";
             _titleText.text  = title;
             _titleText.color = e.FugueTriggered
-                ? new Color(0.95f, 0.35f, 0.35f)
-                : new Color(0.95f, 0.85f, 0.5f);
+                ? UIPalette.AccentWarn
+                : UIPalette.AccentTitle;
 
             _bodyText.text = BuildSummaryText(e);
 

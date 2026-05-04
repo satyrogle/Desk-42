@@ -66,7 +66,7 @@ namespace Desk42.UI
             brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one;
             brt.offsetMin = Vector2.zero; brt.offsetMax = Vector2.zero;
             var bImg = backdrop.AddComponent<Image>();
-            bImg.color = new Color(0f, 0f, 0f, 0.78f);
+            bImg.color = UIPalette.Backdrop;
 
             // Card
             var card = new GameObject("Card");
@@ -78,7 +78,7 @@ namespace Desk42.UI
             crt.sizeDelta = new Vector2(600, 540);
             crt.anchoredPosition = Vector2.zero;
             var cImg = card.AddComponent<Image>();
-            cImg.color = new Color(0.10f, 0.10f, 0.12f, 0.98f);
+            cImg.color = UIPalette.CardBackground;
 
             // Title
             CreateLabel(card.transform, "ACCESSIBILITY",

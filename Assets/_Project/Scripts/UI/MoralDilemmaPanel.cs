@@ -96,7 +96,7 @@ namespace Desk42.UI
             brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one;
             brt.offsetMin = Vector2.zero; brt.offsetMax = Vector2.zero;
             var bimg = back.AddComponent<Image>();
-            bimg.color = new Color(0, 0, 0, 0.78f);
+            bimg.color = UIPalette.Backdrop;
 
             // Card
             var card = new GameObject("Card");
@@ -107,14 +107,14 @@ namespace Desk42.UI
             crt.pivot     = new Vector2(0.5f, 0.5f);
             crt.sizeDelta = new Vector2(900, 480);
             var cimg = card.AddComponent<Image>();
-            cimg.color = new Color(0.10f, 0.10f, 0.12f, 0.98f);
+            cimg.color = UIPalette.CardBackground;
 
             // Title
             CreateLabel(card.transform, "MORAL DILEMMA",
                 new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1),
                 new Vector2(0, -30), new Vector2(-40, 50),
                 28, FontStyles.Bold, TextAlignmentOptions.Top,
-                new Color(0.85f, 0.30f, 0.50f));
+                UIPalette.AccentWarn);
 
             // Prompt
             _promptText = CreateLabel(card.transform, "...",
@@ -127,7 +127,7 @@ namespace Desk42.UI
 
             // Ethical button (left)
             _ethicalBtn = BuildChoiceButton(card.transform, "EthicalBtn",
-                new Color(0.20f, 0.50f, 0.30f),
+                UIPalette.AccentSuccess,
                 new Vector2(-220, 30), out _ethicalLabel);
             _ethicalBtn.onClick.AddListener(OnEthicalClicked);
 

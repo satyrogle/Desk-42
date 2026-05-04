@@ -262,11 +262,11 @@ namespace Desk42.Tutorial
             crt.sizeDelta = new Vector2(900, 280);
             crt.anchoredPosition = new Vector2(0, 60);
             var cImg = card.AddComponent<Image>();
-            cImg.color = new Color(0.10f, 0.10f, 0.12f, 0.97f);
+            cImg.color = UIPalette.CardBackground;
 
             _stepLabel = CreateLabel(card.transform, "",
                 new Vector2(0, 110), 18, FontStyles.Bold,
-                new Color(0.85f, 0.80f, 0.65f));
+                UIPalette.AccentTitle);
             _stepLabel.alignment = TextAlignmentOptions.Center;
 
             _bodyLabel = CreateLabel(card.transform, "",

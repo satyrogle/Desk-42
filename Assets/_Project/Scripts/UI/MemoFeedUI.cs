@@ -107,7 +107,7 @@ namespace Desk42.UI
             rt.sizeDelta = new Vector2(700, 480);
 
             var bg = _detailPanel.AddComponent<Image>();
-            bg.color = new Color(0.10f, 0.10f, 0.12f, 0.98f);
+            bg.color = UIPalette.CardBackground;
 
             // Title
             var t = new GameObject("DetailTitle");
@@ -118,7 +118,7 @@ namespace Desk42.UI
             trt.offsetMin = new Vector2(20, -60); trt.offsetMax = new Vector2(-20, -10);
             _detailTitle = t.AddComponent<TextMeshProUGUI>();
             _detailTitle.fontSize = AccessibilitySettings.Scaled(22); _detailTitle.fontStyle = FontStyles.Bold;
-            _detailTitle.color = new Color(0.95f, 0.85f, 0.50f);
+            _detailTitle.color = UIPalette.AccentTitle;
             _detailTitle.alignment = TextAlignmentOptions.TopLeft;
 
             // Body
