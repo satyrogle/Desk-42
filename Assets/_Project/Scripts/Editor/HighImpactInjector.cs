@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using Desk42.Audio;
 using Desk42.Tutorial;
 using Desk42.UI;
 
@@ -52,6 +53,23 @@ namespace Desk42.EditorTools
             {
                 Undo.AddComponent<TutorialController>(systemsGO);
                 Debug.Log("[HighImpactInjector] Attached TutorialController.");
+            }
+
+            // 3c. SpatialAudioThreatSystem — positional one-shots for
+            //     queue pressure, hazards, tide, sanity whispers.
+            if (systemsGO.GetComponent<SpatialAudioThreatSystem>() == null)
+            {
+                Undo.AddComponent<SpatialAudioThreatSystem>(systemsGO);
+                Debug.Log("[HighImpactInjector] Attached SpatialAudioThreatSystem.");
+            }
+
+            // 3d. ProceduralJazzGenerator — generative ambient music
+            //     that degrades with sanity. No-op until DESK42_FMOD
+            //     is defined and the FMOD project is imported.
+            if (systemsGO.GetComponent<ProceduralJazzGenerator>() == null)
+            {
+                Undo.AddComponent<ProceduralJazzGenerator>(systemsGO);
+                Debug.Log("[HighImpactInjector] Attached ProceduralJazzGenerator.");
             }
 
             // 4. NDA Overlay Renderer (should be on UI_Shift or Canvas)
