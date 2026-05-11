@@ -61,6 +61,10 @@ namespace Desk42.Audio
             Debug.Log("[FMODManager] FMOD not available (DESK42_FMOD not defined). " +
                       "Audio stubs active.");
 #endif
+
+            // Apply player-saved volumes to the buses so the boot
+            // mix reflects their last session.
+            AudioSettings.ApplyToBuses();
         }
 
         // ── Public API ────────────────────────────────────────

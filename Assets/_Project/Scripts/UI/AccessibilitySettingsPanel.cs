@@ -13,6 +13,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Desk42.Accessibility;
+using Desk42.Audio;
 
 namespace Desk42.UI
 {
@@ -45,6 +46,12 @@ namespace Desk42.UI
         private Toggle _holdToConfirmToggle;
         private Slider _textScaleSlider;
         private TMP_Text _textScaleValueLabel;
+        private Slider _masterSlider;
+        private TMP_Text _masterValueLabel;
+        private Slider _musicSlider;
+        private TMP_Text _musicValueLabel;
+        private Slider _sfxSlider;
+        private TMP_Text _sfxValueLabel;
 
         private void BuildUI()
         {
@@ -75,18 +82,18 @@ namespace Desk42.UI
             crt.anchorMin = new Vector2(0.5f, 0.5f);
             crt.anchorMax = new Vector2(0.5f, 0.5f);
             crt.pivot     = new Vector2(0.5f, 0.5f);
-            crt.sizeDelta = new Vector2(600, 540);
+            crt.sizeDelta = new Vector2(640, 740);
             crt.anchoredPosition = Vector2.zero;
             var cImg = card.AddComponent<Image>();
             cImg.color = UIPalette.CardBackground;
 
             // Title
-            CreateLabel(card.transform, "ACCESSIBILITY",
-                new Vector2(0, 230), 32, FontStyles.Bold,
+            CreateLabel(card.transform, "SETTINGS",
+                new Vector2(0, 330), 32, FontStyles.Bold,
                 new Color(0.85f, 0.80f, 0.65f));
 
-            float row = 150f;
-            const float rowStep = 55f;
+            float row = 250f;
+            const float rowStep = 50f;
 
             _reducedMotionToggle  = CreateToggle(card.transform,
                 "Reduced motion (no flash, shake)", row, AccessibilitySettings.ReducedMotion,
@@ -129,11 +136,63 @@ namespace Desk42.UI
                 new Vector2(230, row), 20, FontStyles.Normal,
                 new Color(0.85f, 0.85f, 0.85f));
 
+            row -= rowStep + 6;
+
+            // ── Audio section ───────────────────────────────
+            CreateLabel(card.transform, "AUDIO",
+                new Vector2(0, row), 18, FontStyles.Bold,
+                new Color(0.85f, 0.80f, 0.65f));
+            row -= rowStep - 5;
+
+            _masterSlider = BuildVolumeRow(card.transform, "Master",
+                row, AudioSettings.MasterVolume,
+                v => AudioSettings.MasterVolume = v,
+                out _masterValueLabel);
+            row -= rowStep;
+
+            _musicSlider = BuildVolumeRow(card.transform, "Music",
+                row, AudioSettings.MusicVolume,
+                v => AudioSettings.MusicVolume = v,
+                out _musicValueLabel);
+            row -= rowStep;
+
+            _sfxSlider = BuildVolumeRow(card.transform, "SFX",
+                row, AudioSettings.SFXVolume,
+                v => AudioSettings.SFXVolume = v,
+                out _sfxValueLabel);
+
             // Close button
             var closeBtn = CreateButton(card.transform, "Close",
-                new Vector2(0, -210), v => Hide());
+                new Vector2(0, -320), v => Hide());
 
             _root = canvasGO;
+        }
+
+        private Slider BuildVolumeRow(Transform parent, string name,
+            float yOffset, float initial, Action<float> onChanged,
+            out TMP_Text valueLabel)
+        {
+            CreateLabel(parent, name,
+                new Vector2(-220, yOffset), 18, FontStyles.Normal, Color.white);
+
+            TMP_Text capturedValueLabel = null;
+
+            var slider = CreateSlider(parent,
+                new Vector2(40, yOffset), 0f, 1f, initial,
+                v =>
+                {
+                    onChanged(v);
+                    if (capturedValueLabel != null)
+                        capturedValueLabel.text = $"{Mathf.RoundToInt(v * 100f)}%";
+                });
+
+            valueLabel = CreateLabel(parent,
+                $"{Mathf.RoundToInt(initial * 100f)}%",
+                new Vector2(230, yOffset), 18, FontStyles.Normal,
+                new Color(0.85f, 0.85f, 0.85f));
+            capturedValueLabel = valueLabel;
+
+            return slider;
         }
 
         private void RefreshControls()
@@ -144,6 +203,12 @@ namespace Desk42.UI
             if (_holdToConfirmToggle  != null) _holdToConfirmToggle.isOn  = AccessibilitySettings.HoldToConfirm;
             if (_textScaleSlider      != null) _textScaleSlider.value     = AccessibilitySettings.TextScale;
             if (_textScaleValueLabel  != null) _textScaleValueLabel.text  = $"{AccessibilitySettings.TextScale:0.00}x";
+            if (_masterSlider         != null) _masterSlider.value        = AudioSettings.MasterVolume;
+            if (_masterValueLabel     != null) _masterValueLabel.text     = $"{Mathf.RoundToInt(AudioSettings.MasterVolume * 100f)}%";
+            if (_musicSlider          != null) _musicSlider.value         = AudioSettings.MusicVolume;
+            if (_musicValueLabel      != null) _musicValueLabel.text      = $"{Mathf.RoundToInt(AudioSettings.MusicVolume * 100f)}%";
+            if (_sfxSlider            != null) _sfxSlider.value           = AudioSettings.SFXVolume;
+            if (_sfxValueLabel        != null) _sfxValueLabel.text        = $"{Mathf.RoundToInt(AudioSettings.SFXVolume * 100f)}%";
         }
 
         // ── Widget Builders ───────────────────────────────────
