@@ -22,6 +22,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Desk42.Accessibility;
 using Desk42.Cards;
 using Desk42.Core;
 
@@ -287,7 +288,7 @@ namespace Desk42.RedTape
             else
             {
                 // Give some feedback so clicking doesn't feel completely silent
-                if (!Accessibility.AccessibilitySettings.ReducedMotion)
+                if (!AccessibilitySettings.ReducedMotion)
                     CameraShake(_screenShakeMagnitude);
             }
 

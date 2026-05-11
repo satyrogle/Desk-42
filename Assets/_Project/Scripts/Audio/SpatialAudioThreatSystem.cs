@@ -57,6 +57,10 @@ namespace Desk42.Audio
 
         private float _lastQueueCueTime  = -999f;
 
+        // Don't draw from SeedEngine until a run is active —
+        // SeedEngine throws in dev builds before Init.
+        private bool _runActive;
+
         // ── Lifecycle ─────────────────────────────────────────
 
         private void OnEnable()
@@ -122,6 +126,11 @@ namespace Desk42.Audio
             {
                 _lastQueueCueTime  = -999f;
                 _lastSanityBucket = 100f;
+                _runActive        = true;
+            }
+            else
+            {
+                _runActive = false;
             }
         }
 
@@ -145,7 +154,10 @@ namespace Desk42.Audio
         private Vector3 JitteredOffAxis()
         {
             // Use SeedEngine for determinism so a seeded replay
-            // hears the same whispers in the same places.
+            // hears the same whispers in the same places. Bail
+            // if SeedEngine isn't initialized yet (e.g., scene
+            // opened directly in editor before a run starts).
+            if (!_runActive) return new Vector3(0f, 1.6f, 0f);
             float x = SeedEngine.NextFloat(SeedStream.FormCorruption,
                 -_whisperJitter, _whisperJitter);
             float z = SeedEngine.NextFloat(SeedStream.FormCorruption,

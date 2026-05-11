@@ -48,6 +48,10 @@ namespace Desk42.Audio
         private ChordSlot _currentChord;
         private Mode _currentMode = Mode.Clean;
 
+        // Don't draw from SeedEngine until a run is active —
+        // SeedEngine throws in dev builds before Init.
+        private bool _runActive;
+
 #if DESK42_FMOD
         private FMOD.Studio.EventInstance _instance;
 #endif
@@ -63,8 +67,6 @@ namespace Desk42.Audio
             _instance = FMODUnity.RuntimeManager.CreateInstance(_eventPath);
             _instance.start();
 #endif
-
-            ChooseChord();
         }
 
         private void OnDisable()
@@ -80,6 +82,8 @@ namespace Desk42.Audio
 
         private void Update()
         {
+            if (!_runActive) return;
+
             float bpm = Mathf.Lerp(_baseBpm, _maxBpm,
                 Mathf.InverseLerp(100f, 0f, _currentSanity));
             float beatInterval = 60f / bpm;
@@ -108,7 +112,12 @@ namespace Desk42.Audio
                 _currentMode   = Mode.Clean;
                 _beatIndex     = 0;
                 _barIndex      = 0;
+                _runActive     = true;
                 ChooseChord();
+            }
+            else
+            {
+                _runActive = false;
             }
         }
 
@@ -174,12 +183,12 @@ namespace Desk42.Audio
                     break;
                 case Mode.Bitonal:
                     // shift root by an unrelated step
-                    slot.Root = (slot.Root + SeedEngine.NextInt(SeedStream.AudioVariation, 1, 5)) % 12;
+                    slot.Root = (slot.Root + SeedEngine.Next(SeedStream.AudioVariation, 1, 5)) % 12;
                     if (SeedEngine.NextFloat(SeedStream.AudioVariation) < 0.4f)
                         slot.Quality = ChordQuality.HalfDim;
                     break;
                 case Mode.Free:
-                    slot.Root = SeedEngine.NextInt(SeedStream.AudioVariation, 0, 12);
+                    slot.Root = SeedEngine.Next(SeedStream.AudioVariation, 0, 12);
                     slot.Quality = ChordQuality.Cluster;
                     break;
             }
@@ -201,25 +210,25 @@ namespace Desk42.Audio
             switch (_currentMode)
             {
                 case Mode.Clean:
-                    degree = cleanScale[SeedEngine.NextInt(SeedStream.AudioVariation, 0, cleanScale.Length)];
+                    degree = cleanScale[SeedEngine.Next(SeedStream.AudioVariation, 0, cleanScale.Length)];
                     break;
                 case Mode.Substituted:
                     // bias toward chord tones, occasional approach note
                     int[] substScale = { 0, 3, 4, 7, 10, 11 };
-                    degree = substScale[SeedEngine.NextInt(SeedStream.AudioVariation, 0, substScale.Length)];
+                    degree = substScale[SeedEngine.Next(SeedStream.AudioVariation, 0, substScale.Length)];
                     break;
                 case Mode.Bitonal:
                     int[] bitonalScale = { 0, 1, 4, 6, 7, 10 };
-                    degree = bitonalScale[SeedEngine.NextInt(SeedStream.AudioVariation, 0, bitonalScale.Length)];
+                    degree = bitonalScale[SeedEngine.Next(SeedStream.AudioVariation, 0, bitonalScale.Length)];
                     break;
                 default:
                     // free / cluster — anything in the chromatic
-                    degree = SeedEngine.NextInt(SeedStream.AudioVariation, 0, 12);
+                    degree = SeedEngine.Next(SeedStream.AudioVariation, 0, 12);
                     break;
             }
 
             // Octave: melody walks an octave above the chord root
-            int octave = 12 + SeedEngine.NextInt(SeedStream.AudioVariation, 0, 2) * 12;
+            int octave = 12 + SeedEngine.Next(SeedStream.AudioVariation, 0, 2) * 12;
             return _baseRootMidi + _currentChord.Root + degree + octave;
         }
 
