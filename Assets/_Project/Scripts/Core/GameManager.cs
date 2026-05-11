@@ -25,6 +25,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Desk42.Cards;
+using Desk42.Meta.Achievements;
 using Desk42.Meta.Analytics;
 using Desk42.OfficeSupplies;
 using Desk42.MoralInjury;
@@ -173,6 +174,16 @@ namespace Desk42.Core
                 var go = new GameObject("AnalyticsBootstrap");
                 go.transform.SetParent(transform);
                 go.AddComponent<AnalyticsBootstrap>();
+            }
+
+            // AchievementBootstrap — picks a backend (Steam in
+            // shipping builds when DESK42_STEAM is defined; local
+            // store in dev) and subscribes to RumorMill milestones.
+            if (GetComponentInChildren<AchievementBootstrap>() == null)
+            {
+                var go = new GameObject("AchievementBootstrap");
+                go.transform.SetParent(transform);
+                go.AddComponent<AchievementBootstrap>();
             }
         }
 
