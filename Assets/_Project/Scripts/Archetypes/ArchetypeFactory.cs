@@ -26,6 +26,10 @@ namespace Desk42.Archetypes
                 "whistleblower" => new TheWhistleblower(),
                 "intern"        => new TheIntern(),
                 "hr_rep"        => new TheHRRep(),
+                "middle_manager" => new TheMiddleManager(),
+                "consultant"    => new TheConsultant(),
+                "union_rep"     => new TheUnionRep(),
+                "archivist"     => new TheArchivist(),
                 _ => Fallback(archetypeId),
             };
         }
@@ -47,6 +51,10 @@ namespace Desk42.Archetypes
             "whistleblower",
             "intern",
             "hr_rep",
+            "middle_manager",
+            "consultant",
+            "union_rep",
+            "archivist"
         };
     }
 }

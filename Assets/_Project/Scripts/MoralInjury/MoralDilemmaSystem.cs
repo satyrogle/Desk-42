@@ -136,7 +136,8 @@ namespace Desk42.MoralInjury
         /// </summary>
         public DilemmaResolutionResult Resolve(
             ActiveDilemma dilemma,
-            bool          choseEthical)
+            bool          choseEthical,
+            bool          inverted = false)
         {
             dilemma.Resolve(choseEthical);
             var data = dilemma.Data;
@@ -162,7 +163,8 @@ namespace Desk42.MoralInjury
                 dilemma.ClaimId,
                 data.ActionType,
                 -soulDelta,          // MoralInjuryDelta is positive when soul is lost
-                !choseEthical));
+                !choseEthical,
+                inverted));
 
             Debug.Log($"[DilemmaSystem] {dilemma.Data.DilemmaId}: " +
                       $"{(choseEthical ? "ETHICAL" : "BUREAUCRATIC")} choice. " +

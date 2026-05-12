@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs wc:*)",
+      "Read(//c/Users/jacob/AppData/Local/Unity/**)",
+      "Read(//c/c/Users/jacob/**)"
+    ]
+  }
+}

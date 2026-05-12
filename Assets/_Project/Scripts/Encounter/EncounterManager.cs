@@ -186,6 +186,9 @@ namespace Desk42.Encounter
 
         private void TryTriggerDilemma(RunStateController run)
         {
+            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            if (phase < 3) return;
+
             if (run == null || run.MoralDilemmas == null || _activeClaim == null) return;
 
             var dilemma = run.MoralDilemmas.TryGenerateDilemma(
@@ -203,7 +206,7 @@ namespace Desk42.Encounter
                 ethical:          data.EthicalChoiceLabel,
                 bureaucratic:     data.BureaucraticChoiceLabel,
                 onEthical:        () => run.MoralDilemmas.Resolve(dilemma, choseEthical: true),
-                onBureaucratic:   () => run.MoralDilemmas.Resolve(dilemma, choseEthical: false)));
+                onBureaucratic:   (inverted) => run.MoralDilemmas.Resolve(dilemma, choseEthical: false, inverted)));
         }
 
         private void CleanupEncounter()

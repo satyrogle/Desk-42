@@ -67,8 +67,9 @@ namespace Desk42.Core
         /// </summary>
         public static MetaProgressData LoadMeta()
         {
-            return Load<MetaProgressData>(MetaPath, MetaBakPath)
+            var data = Load<MetaProgressData>(MetaPath, MetaBakPath)
                    ?? new MetaProgressData();
+            return MigrateMetaIfNeeded(data);
         }
 
         // ── Run Data ─────────────────────────────────────────
@@ -114,10 +115,16 @@ namespace Desk42.Core
         /// </summary>
         public static MetaProgressData MigrateMetaIfNeeded(MetaProgressData data)
         {
-            // Version 1 is current — no migration needed yet.
-            // Future pattern:
-            // if (data.SaveVersion < 2) MigrateTo2(data);
-            // if (data.SaveVersion < 3) MigrateTo3(data);
+            if (data.SaveVersion < 2)
+            {
+                // Version 1 to 2 migration:
+                // Default HighestPhaseReached to 4 (Full) for existing players
+                if (!data.HighestPhaseReached.HasValue)
+                {
+                    data.HighestPhaseReached = 4;
+                }
+                data.SaveVersion = 2;
+            }
             return data;
         }
 

@@ -60,6 +60,13 @@ namespace Desk42.UI
         [SerializeField] private CanvasGroup _hazardFlash;
         [SerializeField] private float       _hazardFlashDuration = 0.25f;
 
+        [Header("Weaponised Clutter")]
+        [SerializeField] private GameObject[] _junkPrefabs;
+        [SerializeField] private Transform    _junkAnchor;
+        [SerializeField] private int          _maxJunkItems = 10;
+        private float _lastJunkEntropy = 0f;
+        private int   _spawnedJunkCount = 0;
+
         [Header("Transition Speed")]
         [SerializeField] private float _fadeSpeed = 2f;
 
@@ -95,6 +102,9 @@ namespace Desk42.UI
 
         private void Update()
         {
+            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            if (phase < 4) return;
+
             // Pull live entropy from run state each frame
             float liveEntropy = GameManager.Instance?.Run?.DeskEntropy ?? 0f;
             _targetEntropy = liveEntropy;
@@ -141,6 +151,60 @@ namespace Desk42.UI
                 if (!shouldFlicker && _deskLamp != null)
                     _deskLamp.intensity = _flickerIntensityMax;
             }
+
+            // ── Phase 4 Weaponised Clutter ──
+            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            if (phase >= 4 && _junkPrefabs != null && _junkPrefabs.Length > 0 && _junkAnchor != null)
+            {
+                // Clear junk if entropy resets (e.g. shift start)
+                if (entropy < 0.1f && _lastJunkEntropy >= 0.1f)
+                {
+                    _lastJunkEntropy = 0f;
+                    _spawnedJunkCount = 0;
+                    foreach (Transform child in _junkAnchor)
+                        Destroy(child.gameObject);
+                }
+
+                // Spawn 1 junk item per 0.15 entropy gained above 0.4
+                if (entropy > 0.4f)
+                {
+                    while (entropy > _lastJunkEntropy + 0.15f && _spawnedJunkCount < _maxJunkItems)
+                    {
+                        _lastJunkEntropy += 0.15f;
+                        SpawnJunkItem();
+                    }
+                }
+                else
+                {
+                    _lastJunkEntropy = Mathf.Max(_lastJunkEntropy, entropy); // track properly on way down
+                }
+            }
+        }
+
+        private void SpawnJunkItem()
+        {
+            if (_junkPrefabs == null || _junkPrefabs.Length == 0 || _junkAnchor == null) return;
+            
+            var prefab = _junkPrefabs[Random.Range(0, _junkPrefabs.Length)];
+            var junk = Instantiate(prefab, _junkAnchor);
+            
+            // Randomize position slightly around the center of the desk
+            if (junk.transform is RectTransform rt)
+            {
+                rt.anchoredPosition = new Vector2(
+                    Random.Range(-400f, 400f),
+                    Random.Range(200f, 400f) // Drop from above
+                );
+            }
+            
+            // Give it an initial tumble
+            if (junk.TryGetComponent<Rigidbody2D>(out var rb))
+            {
+                rb.AddForce(new Vector2(Random.Range(-50f, 50f), Random.Range(-100f, 0f)));
+                rb.AddTorque(Random.Range(-100f, 100f));
+            }
+            
+            _spawnedJunkCount++;
         }
 
         private void ForceApplyEntropy(float entropy)
@@ -158,6 +222,9 @@ namespace Desk42.UI
 
         private void HandleMoralChoice(MoralChoiceEvent e)
         {
+            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            if (phase < 4) return;
+
             if (!e.WasUnethical) return;
             // Entropy is updated by RunStateController; we just do a visual spike here
             StartCoroutine(EntropySpike(0.05f));
@@ -165,6 +232,9 @@ namespace Desk42.UI
 
         private void HandleHazard(OfficeHazardEvent e)
         {
+            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            if (phase < 4) return;
+
             float spike = e.HazardType switch
             {
                 OfficeHazardType.SystemCrash      => 0.15f,

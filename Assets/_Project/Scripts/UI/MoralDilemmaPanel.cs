@@ -28,7 +28,7 @@ namespace Desk42.UI
         private TMP_Text   _bureaucraticLabel;
 
         private Action _pendingEthical;
-        private Action _pendingBureaucratic;
+        private Action<bool> _pendingBureaucratic;
 
         // ── Lifecycle ─────────────────────────────────────────
 
@@ -43,9 +43,18 @@ namespace Desk42.UI
 
             _promptText.text       = e.Prompt;
             _ethicalLabel.text     = e.EthicalLabel;
-            _bureaucraticLabel.text = e.BureaucraticLabel;
             _pendingEthical        = e.OnEthical;
             _pendingBureaucratic   = e.OnBureaucratic;
+
+            var run = GameManager.Instance?.Run;
+            if (run != null && run.DarkIntelligence > 0)
+            {
+                _bureaucraticLabel.text = "[INVERT] " + e.BureaucraticLabel + " (-1 Dark Intel)";
+            }
+            else
+            {
+                _bureaucraticLabel.text = e.BureaucraticLabel;
+            }
 
             _panelRoot.SetActive(true);
             Time.timeScale = 0f;
@@ -69,8 +78,14 @@ namespace Desk42.UI
         private void OnBureaucraticClicked()
         {
             var cb = _pendingBureaucratic;
+            bool inverted = false;
+            var run = GameManager.Instance?.Run;
+            if (run != null && run.DarkIntelligence > 0)
+            {
+                inverted = true;
+            }
             Hide();
-            cb?.Invoke();
+            cb?.Invoke(inverted);
         }
 
         // ── UI Construction ───────────────────────────────────

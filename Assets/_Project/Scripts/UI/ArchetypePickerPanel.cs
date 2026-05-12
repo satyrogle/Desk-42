@@ -83,7 +83,7 @@ namespace Desk42.UI
             grt.anchorMin = new Vector2(0.5f, 0.5f);
             grt.anchorMax = new Vector2(0.5f, 0.5f);
             grt.pivot     = new Vector2(0.5f, 0.5f);
-            grt.sizeDelta = new Vector2(1140, 540);
+            grt.sizeDelta = new Vector2(1140, 800);
             grt.anchoredPosition = new Vector2(0, -20);
 
             var glg = grid.AddComponent<GridLayoutGroup>();

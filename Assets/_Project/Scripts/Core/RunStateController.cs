@@ -401,9 +401,23 @@ namespace Desk42.Core
             _data.IsComplete = true;
             _data.Stats.EfficiencyRating = ComputeEfficiencyRating();
 
+            var meta = GameManager.Instance?.Meta;
+
+            // ── Phase 8/9: Onboarding Progression ────────────
+            if (meta != null && meta.HighestPhaseReached.HasValue && meta.HighestPhaseReached.Value < 4)
+            {
+                meta.HighestPhaseReached = meta.HighestPhaseReached.Value + 1;
+                Desk42.Meta.Analytics.Analytics.Track(
+                    Desk42.Meta.Analytics.TelemetryEvents.OnboardingPhaseAdvanced,
+                    new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "new_phase", meta.HighestPhaseReached.Value }
+                    });
+            }
+
             // ── Endings — delegated to MilestoneTracker ──────
             GameManager.Instance?.Milestones?.EvaluateRunEndConditions(
-                _data, GameManager.Instance.Meta);
+                _data, meta);
 
             // ── Phase 2: The Reflection Mechanic ──────────────────────
             string reflectionKey = "reflection.balanced";
@@ -470,6 +484,15 @@ namespace Desk42.Core
 
         private void HandleMoralChoice(MoralChoiceEvent e)
         {
+            if (e.WasInverted)
+            {
+                // Empathy Inversion: Siphoning patience to restore Sanity and Soul
+                _data.DarkIntelligence--;
+                ModifySoulIntegrity(15f);
+                ModifySanity(15f);
+                return;
+            }
+
             if (e.MoralInjuryDelta > 0f)
             {
                 ModifySoulIntegrity(-e.MoralInjuryDelta);
@@ -734,5 +757,17 @@ namespace Desk42.Core
             // Vow check
             _archetype?.ActiveVow?.EvaluateOnSlam(cardType, ctx);
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [ContextMenu("Debug: Set Dark Intel (999)")]
+        private void DebugSetDarkIntel()
+        {
+            if (_data != null)
+            {
+                _data.DarkIntelligence = 999;
+                UnityEngine.Debug.Log("[RunStateController] Debug: Dark Intelligence set to 999.");
+            }
+        }
+#endif
     }
 }

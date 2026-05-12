@@ -40,6 +40,9 @@ namespace Desk42.Audio
             RumorMill.OnSanityChanged  += HandleSanityChanged;
             RumorMill.OnShiftLifecycle += HandleShiftLifecycle;
 
+            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            if (phase < 3) return;
+
 #if DESK42_FMOD
             _instance = FMODUnity.RuntimeManager.CreateInstance(_eventPath);
             _instance.start();
@@ -52,13 +55,19 @@ namespace Desk42.Audio
             RumorMill.OnShiftLifecycle -= HandleShiftLifecycle;
 
 #if DESK42_FMOD
-            _instance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
-            _instance.release();
+            if (_instance.isValid())
+            {
+                _instance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+                _instance.release();
+            }
 #endif
         }
 
         private void Update()
         {
+            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            if (phase < 3) return;
+
             _currentSanity = Mathf.MoveTowards(
                 _currentSanity, _targetSanity, _lerpSpeed * Time.deltaTime * 100f);
 
@@ -66,7 +75,10 @@ namespace Desk42.Audio
             float normalised = _currentSanity / 100f;
 
 #if DESK42_FMOD
-            _instance.setParameterByName(_parameterName, normalised);
+            if (_instance.isValid())
+            {
+                _instance.setParameterByName(_parameterName, normalised);
+            }
 #endif
 
             // Also push to the global parameter for other FMOD events

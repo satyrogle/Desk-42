@@ -143,14 +143,16 @@ namespace Desk42.Core
         public readonly UnethicalActionType ActionType;
         public readonly float              MoralInjuryDelta; // positive = more injury
         public readonly bool               WasUnethical;
+        public readonly bool               WasInverted;
 
         public MoralChoiceEvent(string claimId, UnethicalActionType action,
-            float injuryDelta, bool unethical)
+            float injuryDelta, bool unethical, bool inverted = false)
         {
             ClaimId           = claimId;
             ActionType        = action;
             MoralInjuryDelta  = injuryDelta;
             WasUnethical      = unethical;
+            WasInverted       = inverted;
         }
     }
 
@@ -355,10 +357,10 @@ namespace Desk42.Core
         public readonly string EthicalLabel;
         public readonly string BureaucraticLabel;
         public readonly System.Action OnEthical;
-        public readonly System.Action OnBureaucratic;
+        public readonly System.Action<bool> OnBureaucratic;
 
         public DilemmaTriggeredEvent(string prompt, string ethical, string bureaucratic,
-            System.Action onEthical, System.Action onBureaucratic)
+            System.Action onEthical, System.Action<bool> onBureaucratic)
         {
             Prompt            = prompt;
             EthicalLabel      = ethical;

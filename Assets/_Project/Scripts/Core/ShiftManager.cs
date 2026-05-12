@@ -167,9 +167,14 @@ namespace Desk42.Core
                 return;
             }
 
-            // Tick the impatience timer (handles Office Clock multiplier + grace period)
-            if (run.TickTimer(Time.deltaTime))
-                OnTimerExpired(run, runData);
+            // Drip-feed: Impatience timer disabled on Run 1
+            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            if (phase >= 2)
+            {
+                // Tick the impatience timer (handles Office Clock multiplier + grace period)
+                if (run.TickTimer(Time.deltaTime))
+                    OnTimerExpired(run, runData);
+            }
         }
 
         // ── Public API (for encounter system) ─────────────────

@@ -199,6 +199,12 @@ namespace Desk42.BSM
 
         // ── Organic State Transition (from BT / state Tick) ───
 
+        public void ForceState(ClientStateID newState)
+        {
+            // Bypasses BT and directly shifts mood (for systemic overrides)
+            TransitionToState(newState, true);
+        }
+
         private void TransitionToState(ClientStateID newState, bool fireEvent)
         {
             if (newState == _currentMoodState && fireEvent) return;

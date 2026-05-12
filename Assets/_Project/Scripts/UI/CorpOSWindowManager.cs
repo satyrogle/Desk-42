@@ -82,6 +82,11 @@ namespace Desk42.UI
                 );
             }
 
+            // Phase 3/4 override: Make it draggable
+            if (popup.GetComponent<CanvasGroup>() == null)
+                popup.AddComponent<CanvasGroup>();
+            popup.AddComponent<DraggableWarningPopup>();
+
             // Clean up the fake popup automatically so it doesn't leak memory or kill UI performance forever
             Destroy(popup, 15f);
 

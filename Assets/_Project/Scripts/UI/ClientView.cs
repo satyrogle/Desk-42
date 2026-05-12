@@ -12,13 +12,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using Desk42.Core;
 using Desk42.BSM;
+using UnityEngine.EventSystems;
 
 namespace Desk42.UI
 {
     [DisallowMultipleComponent]
-    public sealed class ClientView : MonoBehaviour
+    public sealed class ClientView : MonoBehaviour, IDropHandler
     {
         // ── Inspector ─────────────────────────────────────────
 
@@ -109,6 +109,42 @@ namespace Desk42.UI
             return parts.Length > 0
                 ? char.ToUpper(parts[0][0]) + parts[0][1..]
                 : id;
+        }
+
+        // ── UI Exploitation (Machiavellian Manipulation) ──────
+
+        public void OnDrop(PointerEventData eventData)
+        {
+            var popup = eventData.pointerDrag?.GetComponent<DraggableWarningPopup>();
+            if (popup != null && _csm != null)
+            {
+                // Overwhelm the client with corporate red tape
+                _csm.ForceState(ClientStateID.Resigned);
+
+                if (!Desk42.Accessibility.AccessibilitySettings.ReducedMotion)
+                {
+                    StartCoroutine(ShakeEffect());
+                }
+
+                Destroy(popup.gameObject);
+                Debug.Log("[ClientView] Machiavellian Manipulation executed.");
+            }
+        }
+
+        private System.Collections.IEnumerator ShakeEffect()
+        {
+            var rt = GetComponent<RectTransform>();
+            if (rt == null) yield break;
+            
+            Vector2 orig = rt.anchoredPosition;
+            float elapsed = 0f;
+            while (elapsed < 0.25f)
+            {
+                elapsed += Time.deltaTime;
+                rt.anchoredPosition = orig + new Vector2(Random.Range(-8f, 8f), Random.Range(-8f, 8f));
+                yield return null;
+            }
+            rt.anchoredPosition = orig;
         }
     }
 }

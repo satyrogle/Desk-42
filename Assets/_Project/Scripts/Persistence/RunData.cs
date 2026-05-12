@@ -164,6 +164,7 @@ namespace Desk42.Core
         [JsonProperty] public float   SoulIntegrity = 100f;     // 0-100
         [JsonProperty] public int    CorporateCredits;
         [JsonProperty] public int    PersonalExpenseDebt;
+        [JsonProperty] public int    DarkIntelligence; // Sprint 2 override currency
 
         // Shift structure
         [JsonProperty] public ShiftPhase CurrentPhase;

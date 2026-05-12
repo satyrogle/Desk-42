@@ -14,9 +14,20 @@
 // ============================================================
 
 using System.Collections.Generic;
-
 namespace Desk42.Meta.Analytics
 {
+    public static class TelemetryEvents
+    {
+        public const string OnboardingPhaseAdvanced = "onboarding_phase_advanced";
+        public const string DarkIntelligenceUnlocked = "dark_intelligence_unlocked";
+        public const string ExeFragmentCollected = "exe_fragment_collected";
+        public const string ParadoxRecipeExecuted = "paradox_recipe_executed";
+        public const string ParadoxRecipeFailed = "paradox_recipe_failed";
+        public const string BossFightStarted = "boss_fight_started";
+        public const string BossFightWon = "boss_fight_won";
+        public const string CrashToWinCompleted = "crash_to_win_completed";
+    }
+
     public static class Analytics
     {
         private static IAnalyticsBackend _backend = new NoOpAnalyticsBackend();

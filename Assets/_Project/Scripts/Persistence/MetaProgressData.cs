@@ -164,7 +164,7 @@ namespace Desk42.Core
     [Serializable]
     public sealed class MetaProgressData
     {
-        [JsonProperty] public int    SaveVersion = 1;      // for migration
+        [JsonProperty] public int    SaveVersion = 2;      // for migration
         [JsonProperty] public string LastSavedUtc;
 
         // Repeat Offender Database — keyed by client variant ID (SO GUID)
@@ -192,6 +192,16 @@ namespace Desk42.Core
 
         // First-run tutorial completion flag (cross-run)
         [JsonProperty] public bool  TutorialCompleted;
+
+        // ── Phase 8/9 Additions ───────────────────────────────
+
+        // Drip-feed progression (null means pre-v2 save, defaults to 4 on migration)
+        [JsonProperty] public int?   HighestPhaseReached;
+        
+        // Dark Intelligence Layer 3/4
+        [JsonProperty] public HashSet<string> DarkIntelligenceUnlocks = new();
+        [JsonProperty] public int             ExeFragmentsCollected;
+        [JsonProperty] public bool            HasEscapedTheLoop;
 
         // ── Repeat Offender Helpers ───────────────────────────
 

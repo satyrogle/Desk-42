@@ -118,7 +118,8 @@ namespace Desk42.RedTape
             }
 
             // ── Step 5: Soul cost (after supply modifiers) ───────────
-            if (card.SoulCost > 0f)
+            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            if (phase >= 3 && card.SoulCost > 0f)
             {
                 float soulCost = card.SoulCost;
                 var archetype = GameManager.Instance?.Run?.Archetype;
