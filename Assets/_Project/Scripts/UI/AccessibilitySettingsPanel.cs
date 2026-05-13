@@ -14,6 +14,7 @@ using UnityEngine.UI;
 using TMPro;
 using Desk42.Accessibility;
 using Desk42.Audio;
+using AudioSettings = Desk42.Audio.AudioSettings;
 
 namespace Desk42.UI
 {

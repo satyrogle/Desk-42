@@ -716,6 +716,7 @@ namespace Desk42.Core
             ModifySoulIntegrity  = delta  => ModifySoulIntegrity(delta),
             AddCredits           = amount => AddCredits(amount),
             SpendCredits         = amount => SpendCredits(amount),
+            ExtendTimer          = secs   => ExtendTimer(secs),
             EmitDarkHumour       = key   => Debug.Log($"[DarkHumour] {key}"),
         };
 

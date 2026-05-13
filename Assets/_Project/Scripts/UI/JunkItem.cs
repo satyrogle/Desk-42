@@ -35,6 +35,12 @@ namespace Desk42.UI
             }
         }
 
+        public void ApplyImpulse(Vector2 force, float torque)
+        {
+            _velocity += force;
+            _angularVelocity += torque;
+        }
+
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (!_isDragging) Sweep(eventData.delta);

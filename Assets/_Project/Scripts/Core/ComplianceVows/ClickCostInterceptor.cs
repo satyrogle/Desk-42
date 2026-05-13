@@ -44,10 +44,10 @@ namespace Desk42.Core
                     // Bypass cost when clicking on a jammed/crumpled card
                     var cardView = result.gameObject.GetComponentInParent<Desk42.UI.CardButtonView>();
                     var meta = GameManager.Instance?.Meta;
-                    var run = GameManager.Instance?.Run;
+                    var activeRun = GameManager.Instance?.Run;
 
                     if (meta?.DarkIntelligenceUnlocks?.Contains("WEAPONIZED_ENTROPY") == true
-                        && run != null && run.RawData.DarkIntelligence > 0
+                        && activeRun != null && activeRun.RawData.DarkIntelligence > 0
                         && cardView != null && cardView.Card != null 
                         && (cardView.Card.IsJammed || cardView.Card.IsCrumpled))
                     {

@@ -49,7 +49,7 @@ namespace Desk42.UI
             var run = GameManager.Instance?.Run;
             var meta = GameManager.Instance?.Meta;
             bool canInvert = meta?.DarkIntelligenceUnlocks?.Contains("EMPATHY_INVERSION") == true && 
-                             run != null && run.DarkIntelligence > 0;
+                             run != null && run.RawData.DarkIntelligence > 0;
 
             if (canInvert)
             {
@@ -85,7 +85,7 @@ namespace Desk42.UI
             var run = GameManager.Instance?.Run;
             var meta = GameManager.Instance?.Meta;
             bool inverted = meta?.DarkIntelligenceUnlocks?.Contains("EMPATHY_INVERSION") == true && 
-                            run != null && run.DarkIntelligence > 0;
+                            run != null && run.RawData.DarkIntelligence > 0;
 
             Hide();
             cb?.Invoke(inverted);

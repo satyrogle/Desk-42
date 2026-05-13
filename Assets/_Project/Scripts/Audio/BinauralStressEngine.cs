@@ -1,3 +1,4 @@
+#pragma warning disable 0414
 // ============================================================
 // DESK 42 — Binaural Stress Engine (MonoBehaviour)
 //

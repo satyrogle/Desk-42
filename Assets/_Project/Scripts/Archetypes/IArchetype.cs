@@ -140,6 +140,7 @@ namespace Desk42.Archetypes
         public System.Action<float> ModifySoulIntegrity;
         public System.Action<int>   AddCredits;
         public System.Action<int>   SpendCredits;
+        public System.Action<float> ExtendTimer;
         public System.Action<string> EmitDarkHumour;
     }
 }

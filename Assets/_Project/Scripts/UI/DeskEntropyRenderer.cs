@@ -198,10 +198,9 @@ namespace Desk42.UI
             }
             
             // Give it an initial tumble
-            if (junk.TryGetComponent<Rigidbody2D>(out var rb))
+            if (junk.TryGetComponent<JunkItem>(out var jItem))
             {
-                rb.AddForce(new Vector2(Random.Range(-50f, 50f), Random.Range(-100f, 0f)));
-                rb.AddTorque(Random.Range(-100f, 100f));
+                jItem.ApplyImpulse(new Vector2(Random.Range(-50f, 50f), Random.Range(-100f, 0f)), Random.Range(-100f, 100f));
             }
             
             _spawnedJunkCount++;
