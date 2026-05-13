@@ -44,6 +44,8 @@ namespace Desk42.Audio
             RumorMill.OnSanityChanged  += HandleSanityChanged;
             RumorMill.OnShiftLifecycle += HandleShiftLifecycle;
 
+            if (!(GameManager.Instance?.IsPhaseUnlocked(4) ?? true)) return;
+
 #if DESK42_FMOD
             _instance = FMODUnity.RuntimeManager.CreateInstance(_eventPath);
             _instance.start();
@@ -57,18 +59,26 @@ namespace Desk42.Audio
             RumorMill.OnShiftLifecycle -= HandleShiftLifecycle;
 
 #if DESK42_FMOD
-            _instance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
-            _instance.release();
+            if (_instance.isValid())
+            {
+                _instance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+                _instance.release();
+            }
 #endif
         }
 
         private void Update()
         {
+            if (!(GameManager.Instance?.IsPhaseUnlocked(4) ?? true)) return;
+
             _currentPressure = Mathf.MoveTowards(
                 _currentPressure, _targetPressure, _lerpSpeed * Time.deltaTime);
 
 #if DESK42_FMOD
-            _instance.setParameterByName(_parameterName, _currentPressure);
+            if (_instance.isValid())
+            {
+                _instance.setParameterByName(_parameterName, _currentPressure);
+            }
 #endif
 
             FMODManager.Instance?.SetGlobalParameter("TidePressure", _currentPressure);

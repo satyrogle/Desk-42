@@ -150,9 +150,15 @@ namespace Desk42.UI
             if (meta?.DarkIntelligenceUnlocks?.Contains("UI_EXPLOITATION") != true)
                 return;
 
+            var run = Core.GameManager.Instance?.Run;
+            if (run == null || run.RawData.DarkIntelligence <= 0)
+                return;
+
             var popup = eventData.pointerDrag?.GetComponent<DraggableWarningPopup>();
             if (popup != null && _csm != null)
             {
+                run.RawData.DarkIntelligence--;
+
                 // Overwhelm the client with corporate red tape
                 _csm.ForceState(ClientStateID.Resigned);
 
@@ -162,7 +168,7 @@ namespace Desk42.UI
                 }
 
                 Destroy(popup.gameObject);
-                Debug.Log("[ClientView] Machiavellian Manipulation executed.");
+                Debug.Log("[ClientView] Machiavellian Manipulation executed (Cost: 1 Dark Intel).");
             }
         }
 

@@ -43,8 +43,23 @@ namespace Desk42.Core
 
                     // Bypass cost when clicking on a jammed/crumpled card
                     var cardView = result.gameObject.GetComponentInParent<Desk42.UI.CardButtonView>();
-                    if (cardView != null && cardView.Card != null && (cardView.Card.IsJammed || cardView.Card.IsCrumpled))
+                    var meta = GameManager.Instance?.Meta;
+                    var run = GameManager.Instance?.Run;
+
+                    if (meta?.DarkIntelligenceUnlocks?.Contains("WEAPONIZED_ENTROPY") == true
+                        && run != null && run.RawData.DarkIntelligence > 0
+                        && cardView != null && cardView.Card != null 
+                        && (cardView.Card.IsJammed || cardView.Card.IsCrumpled))
+                    {
+                        var shiftMgr = FindObjectOfType<ShiftManager>();
+                        var activeClaim = shiftMgr?.GetActiveClaim();
+                        if (activeClaim != null)
+                        {
+                            int penalty = ComplianceVowSystem.GetClickCost() * 20; // Sanity penalty transferred to payout
+                            activeClaim.ClaimAmount = Mathf.Max(0, activeClaim.ClaimAmount - penalty);
+                        }
                         return;
+                    }
                 }
             }
 
