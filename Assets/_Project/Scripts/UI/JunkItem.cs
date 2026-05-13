@@ -4,75 +4,77 @@ using UnityEngine.EventSystems;
 namespace Desk42.UI
 {
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Rigidbody2D))]
+    [RequireComponent(typeof(RectTransform))]
     public class JunkItem : MonoBehaviour, IPointerEnterHandler, IPointerMoveHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
-        private Rigidbody2D _rb;
+        private RectTransform _rt;
+        private Vector2 _velocity;
+        private float _angularVelocity;
+        private bool _isDragging;
 
         private void Awake()
         {
-            _rb = GetComponent<Rigidbody2D>();
-            // Ensure gravity is somewhat appropriate if it's a top-down desk
-            _rb.gravityScale = 0f;
-            _rb.drag = 3f;
-            _rb.angularDrag = 2f;
+            _rt = GetComponent<RectTransform>();
+        }
+
+        private void Update()
+        {
+            if (_isDragging) return;
+
+            // Apply friction
+            if (_velocity.sqrMagnitude > 0.01f)
+            {
+                _rt.anchoredPosition += _velocity * Time.deltaTime;
+                _velocity = Vector2.Lerp(_velocity, Vector2.zero, Time.deltaTime * 3f);
+            }
+            
+            if (Mathf.Abs(_angularVelocity) > 0.01f)
+            {
+                _rt.Rotate(Vector3.forward, _angularVelocity * Time.deltaTime);
+                _angularVelocity = Mathf.Lerp(_angularVelocity, 0f, Time.deltaTime * 2f);
+            }
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            Sweep(eventData.delta);
+            if (!_isDragging) Sweep(eventData.delta);
         }
 
         public void OnPointerMove(PointerEventData eventData)
         {
-            Sweep(eventData.delta);
+            if (!_isDragging) Sweep(eventData.delta);
         }
 
         private void Sweep(Vector2 delta)
         {
-            // Sweep with mouse velocity
-            if (_rb != null && delta.sqrMagnitude > 4f)
+            if (delta.sqrMagnitude > 4f)
             {
-                // Apply force in the direction of mouse movement
-                _rb.AddForce(delta * 50f);
-                _rb.AddTorque(Random.Range(-50f, 50f));
+                _velocity += delta * 15f;
+                _angularVelocity += Random.Range(-300f, 300f);
             }
         }
 
-        // Allow direct dragging as well
         public void OnBeginDrag(PointerEventData eventData) 
         {
-            if (_rb != null)
-            {
-                _rb.velocity = Vector2.zero;
-                _rb.angularVelocity = 0f;
-            }
+            _isDragging = true;
+            _velocity = Vector2.zero;
+            _angularVelocity = 0f;
         }
         
         public void OnDrag(PointerEventData eventData)
         {
-            if (_rb != null)
+            if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                transform.parent as RectTransform, eventData.position, eventData.pressEventCamera, out Vector3 worldPoint))
             {
-                // Move towards mouse position
-                if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
-                    transform.parent as RectTransform, eventData.position, eventData.pressEventCamera, out Vector3 worldPoint))
-                {
-                    _rb.MovePosition(worldPoint);
-                }
-                else if (eventData.pressEventCamera != null)
-                {
-                    _rb.MovePosition(eventData.pressEventCamera.ScreenToWorldPoint(new Vector3(eventData.position.x, eventData.position.y, 10f)));
-                }
+                _rt.position = worldPoint;
             }
         }
         
         public void OnEndDrag(PointerEventData eventData) 
         {
-            if (_rb != null)
-            {
-                // Fling the object when releasing
-                _rb.AddForce(eventData.delta * 20f);
-            }
+            _isDragging = false;
+            _velocity = eventData.delta * 20f;
+            _angularVelocity = Random.Range(-200f, 200f);
         }
     }
 }
