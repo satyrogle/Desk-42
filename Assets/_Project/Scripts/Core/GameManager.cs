@@ -212,6 +212,15 @@ namespace Desk42.Core
 
         // ── Public Scene-Flow API ─────────────────────────────
 
+        /// <summary>Checks if a specific onboarding phase is unlocked, handling archetype bypasses.</summary>
+        public bool IsPhaseUnlocked(int phase)
+        {
+            if (Meta == null) return false;
+            // Middle Manager archetype bypasses all drip-feed phase gates
+            if (Run?.ArchetypeId == "middle_manager") return true;
+            return (Meta.HighestPhaseReached ?? 4) >= phase;
+        }
+
         /// <summary>Start a new run from the MainMenu.</summary>
         public void StartNewRun(string archetypeId = null)
         {

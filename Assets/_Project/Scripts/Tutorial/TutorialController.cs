@@ -100,31 +100,31 @@ namespace Desk42.Tutorial
             _steps.Clear();
             _steps.Add(new TutorialStep
             {
-                Title = "WELCOME TO DESK 42",
+                Title = "MEMO FROM HR: WELCOME",
                 Body  = "You're a claims adjuster at an organization that does not officially exist.\n\nYour job: process claims, route clients, and try not to lose your soul. Click CONTINUE when you're ready.",
                 AdvanceOn = TutorialTrigger.ContinueButtonOnly,
             });
             _steps.Add(new TutorialStep
             {
-                Title = "READ THE CLAIM",
+                Title = "MEMO FROM HR: CLAIM PROTOCOL",
                 Body  = "A claim will appear above. Read it carefully — every claim hides a moral choice underneath the paperwork.\n\nWhen the first claim is queued, we'll move on.",
                 AdvanceOn = TutorialTrigger.ClaimQueued,
             });
             _steps.Add(new TutorialStep
             {
-                Title = "PLAY A PUNCH CARD",
+                Title = "MEMO FROM HR: PUNCH CARD PROTOCOL",
                 Body  = "Drag a punch card from your hand into the SLOT to slam it. Each card pushes the client toward a different state.\n\nTry slamming any card to see how the client reacts.",
                 AdvanceOn = TutorialTrigger.CardSlammed,
             });
             _steps.Add(new TutorialStep
             {
-                Title = "WATCH THE CLIENT",
+                Title = "MEMO FROM HR: CLIENT MONITORING",
                 Body  = "Different cards push clients between Cooperative, Agitated, Litigious, and worse. Match cards to client mood and you'll resolve claims cleanly.\n\nResolve a claim to continue.",
                 AdvanceOn = TutorialTrigger.ClaimResolved,
             });
             _steps.Add(new TutorialStep
             {
-                Title = "YOU'RE CLEARED FOR DUTY",
+                Title = "MEMO FROM HR: CLEARED FOR DUTY",
                 Body  = "Resolve every claim before the shift ends to clock out.\n\nTrack sanity in the HUD. Watch the memos. Don't sign more NDAs than you have to.\n\nGood luck.",
                 AdvanceOn = TutorialTrigger.ContinueButtonOnly,
             });

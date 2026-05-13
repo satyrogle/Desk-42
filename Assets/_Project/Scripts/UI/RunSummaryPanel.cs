@@ -93,7 +93,7 @@ namespace Desk42.UI
 
             // Title
             _titleText = CreateLabel(card.transform, "title",
-                "END OF SHIFT",
+                "RETRAINING VIDEO",
                 new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1),
                 new Vector2(0, -30), new Vector2(-40, 60),
                 36, FontStyles.Bold, TextAlignmentOptions.Top,
@@ -147,7 +147,7 @@ namespace Desk42.UI
         {
             _panelRoot.SetActive(true);
 
-            string title = e.FugueTriggered ? "FUGUE STATE — RUN ENDED" : "END OF SHIFT";
+            string title = e.FugueTriggered ? "FUGUE STATE — RUN ENDED" : "RETRAINING VIDEO";
             _titleText.text  = title;
             _titleText.color = e.FugueTriggered
                 ? UIPalette.AccentWarn

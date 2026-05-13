@@ -40,8 +40,7 @@ namespace Desk42.Audio
             RumorMill.OnSanityChanged  += HandleSanityChanged;
             RumorMill.OnShiftLifecycle += HandleShiftLifecycle;
 
-            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
-            if (phase < 3) return;
+            if (!(GameManager.Instance?.IsPhaseUnlocked(4) ?? true)) return;
 
 #if DESK42_FMOD
             _instance = FMODUnity.RuntimeManager.CreateInstance(_eventPath);
@@ -65,8 +64,7 @@ namespace Desk42.Audio
 
         private void Update()
         {
-            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
-            if (phase < 3) return;
+            if (!(GameManager.Instance?.IsPhaseUnlocked(4) ?? true)) return;
 
             _currentSanity = Mathf.MoveTowards(
                 _currentSanity, _targetSanity, _lerpSpeed * Time.deltaTime * 100f);

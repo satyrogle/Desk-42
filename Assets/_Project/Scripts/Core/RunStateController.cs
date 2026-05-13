@@ -143,6 +143,9 @@ namespace Desk42.Core
         /// <param name="delta">Negative to drain, positive to recover.</param>
         public void ModifySanity(float delta)
         {
+            // Phase 3 drip-feed: No sanity loss before Phase 3
+            if (delta < 0f && !(GameManager.Instance?.IsPhaseUnlocked(3) ?? true)) return;
+
             float prev = _data.Sanity;
             _data.Sanity = Mathf.Clamp(_data.Sanity + delta, 0f, 100f);
 
@@ -163,6 +166,9 @@ namespace Desk42.Core
         /// <param name="delta">Negative to lose soul, positive to restore.</param>
         public void ModifySoulIntegrity(float delta)
         {
+            // Phase 3 drip-feed: No soul loss before Phase 3
+            if (delta < 0f && !(GameManager.Instance?.IsPhaseUnlocked(3) ?? true)) return;
+
             if (delta < 0)
             {
                 // Zero Tolerance vow increases soul damage by 20% per rank

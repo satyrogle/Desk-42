@@ -111,6 +111,7 @@ namespace Desk42.Meta.Analytics
                 ["action"]     = e.ActionType.ToString(),
                 ["unethical"]  = e.WasUnethical,
                 ["injury_d"]   = e.MoralInjuryDelta,
+                ["inverted"]   = e.WasInverted,
             });
         }
 

@@ -25,6 +25,29 @@ namespace Desk42.Core
             if (!ComplianceVowSystem.AllClicksCost()) return;
             if (!Input.GetMouseButtonDown(0)) return;
 
+            // ── Weaponised Entropy Bypass ──
+            if (EventSystem.current != null)
+            {
+                var pointerData = new PointerEventData(EventSystem.current)
+                {
+                    position = Input.mousePosition
+                };
+                var results = new System.Collections.Generic.List<RaycastResult>();
+                EventSystem.current.RaycastAll(pointerData, results);
+
+                foreach (var result in results)
+                {
+                    // Bypass cost when physically sweeping junk
+                    if (result.gameObject.GetComponent<Desk42.UI.JunkItem>() != null)
+                        return;
+
+                    // Bypass cost when clicking on a jammed/crumpled card
+                    var cardView = result.gameObject.GetComponentInParent<Desk42.UI.CardButtonView>();
+                    if (cardView != null && cardView.Card != null && (cardView.Card.IsJammed || cardView.Card.IsCrumpled))
+                        return;
+                }
+            }
+
             int cost = ComplianceVowSystem.GetClickCost();
             if (cost <= 0) return;
 

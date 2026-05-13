@@ -186,8 +186,7 @@ namespace Desk42.Encounter
 
         private void TryTriggerDilemma(RunStateController run)
         {
-            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
-            if (phase < 3) return;
+            if (!(GameManager.Instance?.IsPhaseUnlocked(3) ?? true)) return;
 
             if (run == null || run.MoralDilemmas == null || _activeClaim == null) return;
 

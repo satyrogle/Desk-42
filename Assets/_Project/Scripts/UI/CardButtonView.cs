@@ -36,6 +36,8 @@ namespace Desk42.UI
         private CardInstance             _card;
         private RedTape.PunchCardMachine _machine;
 
+        public CardInstance Card => _card;
+
         // ── Init ──────────────────────────────────────────────
 
         public void Initialize(CardInstance card, RedTape.PunchCardMachine machine)

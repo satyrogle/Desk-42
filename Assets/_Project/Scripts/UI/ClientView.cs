@@ -31,6 +31,9 @@ namespace Desk42.UI
         [SerializeField] private Image    _moodIndicator;
         [SerializeField] private TMP_Text _injectionLabel; // shows "INJECTED" when stack active
 
+        [Header("Clairvoyance")]
+        [SerializeField] private TMP_Text _clairvoyanceLabel;
+
         // ── Mood Color Table ──────────────────────────────────
 
         private static readonly Dictionary<ClientStateID, Color> MoodColors = new()
@@ -79,7 +82,35 @@ namespace Desk42.UI
             if (_variantLabel)   _variantLabel.text  = "";
             if (_moodLabel)      _moodLabel.text     = "";
             if (_injectionLabel) _injectionLabel.text = "";
+            if (_clairvoyanceLabel) _clairvoyanceLabel.text = "";
             if (_moodIndicator)  _moodIndicator.color = Color.grey;
+        }
+
+        private void Update()
+        {
+            if (_csm == null || _clairvoyanceLabel == null) return;
+
+            var run = Core.GameManager.Instance?.Run;
+            var meta = Core.GameManager.Instance?.Meta;
+            
+            bool hasClairvoyance = meta != null && 
+                                   meta.DarkIntelligenceUnlocks != null && 
+                                   meta.DarkIntelligenceUnlocks.Contains("CLAIRVOYANCE") &&
+                                   run != null && 
+                                   run.RawData.DarkIntelligence > 0;
+
+            if (hasClairvoyance)
+            {
+                _clairvoyanceLabel.gameObject.SetActive(true);
+                float combo = run.ComboMultiplier;
+                int visits = _csm.VisitCount;
+                string stateName = _csm.CurrentMoodState.ToString();
+                _clairvoyanceLabel.text = $"[CLAIRVOYANCE]\nMOOD THRESHOLD: {stateName} ({visits}v)\nPAYOUT MULT: {combo:F1}x";
+            }
+            else
+            {
+                _clairvoyanceLabel.gameObject.SetActive(false);
+            }
         }
 
         // ── Event Handler ─────────────────────────────────────
@@ -115,6 +146,10 @@ namespace Desk42.UI
 
         public void OnDrop(PointerEventData eventData)
         {
+            var meta = Core.GameManager.Instance?.Meta;
+            if (meta?.DarkIntelligenceUnlocks?.Contains("UI_EXPLOITATION") != true)
+                return;
+
             var popup = eventData.pointerDrag?.GetComponent<DraggableWarningPopup>();
             if (popup != null && _csm != null)
             {

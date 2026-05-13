@@ -47,7 +47,11 @@ namespace Desk42.UI
             _pendingBureaucratic   = e.OnBureaucratic;
 
             var run = GameManager.Instance?.Run;
-            if (run != null && run.DarkIntelligence > 0)
+            var meta = GameManager.Instance?.Meta;
+            bool canInvert = meta?.DarkIntelligenceUnlocks?.Contains("EMPATHY_INVERSION") == true && 
+                             run != null && run.DarkIntelligence > 0;
+
+            if (canInvert)
             {
                 _bureaucraticLabel.text = "[INVERT] " + e.BureaucraticLabel + " (-1 Dark Intel)";
             }
@@ -78,12 +82,11 @@ namespace Desk42.UI
         private void OnBureaucraticClicked()
         {
             var cb = _pendingBureaucratic;
-            bool inverted = false;
             var run = GameManager.Instance?.Run;
-            if (run != null && run.DarkIntelligence > 0)
-            {
-                inverted = true;
-            }
+            var meta = GameManager.Instance?.Meta;
+            bool inverted = meta?.DarkIntelligenceUnlocks?.Contains("EMPATHY_INVERSION") == true && 
+                            run != null && run.DarkIntelligence > 0;
+
             Hide();
             cb?.Invoke(inverted);
         }
