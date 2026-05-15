@@ -24,6 +24,7 @@ namespace Desk42.Meta.Achievements
         public const string EndingTheGreatAudit   = "ACH_ENDING_GREAT_AUDIT";
         public const string EndingRedactedTruth   = "ACH_ENDING_REDACTED_TRUTH";
         public const string EndingTheBreach       = "ACH_ENDING_THE_BREACH";
+        public const string EndingTaskFailedSuccessfully = "ACH_ENDING_TASK_FAILED_SUCCESSFULLY";
 
         // ── Mastery ───────────────────────────────────────────
         public const string ShiftPerfectSoul      = "ACH_SHIFT_PERFECT_SOUL";   // shift completed at 100% soul

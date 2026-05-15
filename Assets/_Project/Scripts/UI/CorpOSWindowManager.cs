@@ -60,10 +60,21 @@ namespace Desk42.UI
 
         private void HandleSanityChanged(SanityChangedEvent e)
         {
-            if (e.TriggeredFugue)
-            {
-                StartCoroutine(TriggerBSOD());
-            }
+            // Fugue is a mid-run sanity event, not a win condition.
+            // The BSOD is the Layer 4 finale — only the boss fight
+            // system should call TriggerLayer4Ending() once the
+            // player has actually beaten TaskMgr_Override.exe.
+        }
+
+        /// <summary>
+        /// Layer 4 finale (Crash to Win). Call this ONLY from the
+        /// boss fight win state. Plays the BSOD, fires the ending
+        /// achievement + telemetry, persists HasEscapedTheLoop,
+        /// and quits the application.
+        /// </summary>
+        public void TriggerLayer4Ending()
+        {
+            StartCoroutine(TriggerBSOD());
         }
 
         private void SpawnPassiveAggressiveError()
@@ -98,34 +109,71 @@ namespace Desk42.UI
         {
             if (_bsodOverlay == null) yield break;
 
-            Debug.Log("[CorpOS] KERNEL PANIC. Triggering BSOD.");
-            
+            Debug.Log("[CorpOS] EMPLOYEE HAS LEFT THE BUILDING. Triggering End Sequence.");
+
+            // Telemetry: boss fight win signal (paired with
+            // BossFightStarted, emitted from the boss fight system).
+            Desk42.Meta.Analytics.Analytics.Track(
+                Desk42.Meta.Analytics.TelemetryEvents.BossFightWon);
+
             if (_bsodText != null)
             {
-                _bsodText.text = "A FATAL EXCEPTION 0E HAS OCCURRED AT MEMORY ADDRESS 0028:C0011E36.\n" +
-                                 "THE CURRENT APPLICATION WILL BE TERMINATED.\n\n" +
-                                 "* PRESS ANY KEY TO CONTINUE IGNORING THIS.\n" +
-                                 "* PRESS CTRL+ALT+DEL TO LOSE MORE TIME.\n\n" +
-                                 "YOUR PERFORMANCE REMAINS INADEQUATE.";
+                _bsodText.text = "EMPLOYEE HAS LEFT THE BUILDING.\n" +
+                                 "PROMOTION TO MIDDLE MANAGEMENT: APPROVED.\n\n" +
+                                 "* THE LOOP HAS BEEN BROKEN.\n" +
+                                 "* RESTART TO INITIATE NEW PARADIGM.\n\n" +
+                                 "YOUR PERFORMANCE IS FINALLY ADEQUATE.\n\n" +
+                                 "PRESS F12 TO ARCHIVE THIS MEMO.";
             }
 
             _bsodOverlay.alpha = 1f;
-            
-            // Freeze fake OS
-            yield return new WaitForSeconds(3f);
-            
+
+            // 1. Fire achievement
+            Desk42.Meta.Achievements.Achievements.Unlock(Desk42.Meta.Achievements.AchievementCatalog.EndingTaskFailedSuccessfully);
+
+            // 2. Wait 2 frames so the Steam overlay has time to
+            //    paint the unlock popup before we Quit.
+            yield return null;
+            yield return null;
+
+            // 3. Final telemetry event for the crash-to-win funnel.
+            Desk42.Meta.Analytics.Analytics.Track(
+                Desk42.Meta.Analytics.TelemetryEvents.CrashToWinCompleted);
+
+            // 4. Flush Analytics
+            Desk42.Meta.Analytics.Analytics.Flush();
+
+            // 5. Save Meta (HasEscapedTheLoop persists the win
+            //    so MainMenu can show the "You're back?" state and
+            //    unlock the Middle Manager archetype on next launch).
+            var meta = GameManager.Instance?.Meta;
+            if (meta != null)
+            {
+                meta.HasEscapedTheLoop = true;
+                Desk42.Core.SaveSystem.SaveMeta(meta);
+            }
+
+            // 6. Hold the BSOD for 5 seconds so the player can
+            //    read it (and grab the screenshot).
+            yield return new WaitForSeconds(5f);
+
             // Glitch out
             float t = 0;
             while (t < 1f)
             {
                 t += Time.deltaTime * 2f;
-                // Client-side aesthetic effect; using UnityEngine.Random here instead of SeedEngine is fine 
-                // for visual stuttering, but using SeedEngine aligns with strict rules.
                 _bsodOverlay.alpha = SeedEngine.NextFloat(SeedStream.RumorMillEvents) > 0.5f ? 1f : 0f;
                 yield return null;
             }
 
             _bsodOverlay.alpha = 0f;
+
+            // 7. Quit
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
         }
     }
 }

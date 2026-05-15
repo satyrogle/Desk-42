@@ -190,18 +190,7 @@ namespace Desk42.Core
 
         // ── Credits ───────────────────────────────────────────
 
-        private void GenerateAnteQuota()
-        {
-            _data.ClaimsProcessedThisAnte = 0;
-            
-            // Base quota escalates per shift
-            _data.QuotaForCurrentAnte = 3 + (_data.ShiftNumber / 2);
 
-            // Double Quota vow increases this requirement!
-            int dqRank = GetVowRank("double_quota");
-            if (dqRank > 0)
-                _data.QuotaForCurrentAnte += dqRank * 2;
-        }
 
         public void AddCredits(int amount)
         {
@@ -226,11 +215,6 @@ namespace Desk42.Core
 
             var prev = _data.CurrentPhase;
             _data.CurrentPhase = newPhase;
-
-            if (newPhase == ShiftPhase.MorningBlock || newPhase == ShiftPhase.AfternoonBlock)
-            {
-                GenerateAnteQuota();
-            }
 
             RumorMill.PublishDeferred(new ShiftPhaseChangedEvent(prev, newPhase));
         }

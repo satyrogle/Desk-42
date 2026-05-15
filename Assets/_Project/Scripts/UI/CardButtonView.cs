@@ -11,6 +11,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Desk42.Cards;
+using Desk42.Core;
 
 namespace Desk42.UI
 {
@@ -82,7 +83,10 @@ namespace Desk42.UI
             }
 
             if (_button)
-                _button.interactable = !_card.IsJammed && !_card.IsCrumpled;
+            {
+                bool weaponizedEntropy = GameManager.Instance?.Meta?.DarkIntelligenceUnlocks?.Contains("WEAPONIZED_ENTROPY") == true;
+                _button.interactable = weaponizedEntropy || (!_card.IsJammed && !_card.IsCrumpled);
+            }
         }
 
         // ── Input ─────────────────────────────────────────────
@@ -90,7 +94,9 @@ namespace Desk42.UI
         private void OnClicked()
         {
             if (_card == null || _machine == null) return;
-            if (_card.IsJammed || _card.IsCrumpled) return;
+            
+            bool weaponizedEntropy = GameManager.Instance?.Meta?.DarkIntelligenceUnlocks?.Contains("WEAPONIZED_ENTROPY") == true;
+            if (!weaponizedEntropy && (_card.IsJammed || _card.IsCrumpled)) return;
 
             _machine.SlamCard(_card.Data, _card.InstanceId);
         }

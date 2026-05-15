@@ -168,6 +168,8 @@ namespace Desk42.Encounter
 
             int credits = Mathf.RoundToInt((baseCredits + crossClaimBonus) * (run?.ComboMultiplier ?? 1.0f));
 
+            // Credits are awarded by RunStateController.HandleClaimResolved via the event below
+
             RumorMill.PublishDeferred(new ClaimResolvedEvent(
                 _activeClaim.ClaimId,
                 resolvedCorrectly,
@@ -181,6 +183,13 @@ namespace Desk42.Encounter
 
             TryTriggerDilemma(run);
 
+            // Delay cleanup so visual feedback has time to render
+            StartCoroutine(DelayedCleanup());
+        }
+
+        private System.Collections.IEnumerator DelayedCleanup()
+        {
+            yield return new WaitForSeconds(0.8f);
             CleanupEncounter();
         }
 

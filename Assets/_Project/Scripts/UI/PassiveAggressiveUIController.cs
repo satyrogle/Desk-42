@@ -263,6 +263,9 @@ namespace Desk42.UI
         {
             if (_phaseLabel)
                 _phaseLabel.text = FormatPhase(e.Current);
+
+            // Reset client counter to show progress in the new ante
+            UpdateClientProgress();
         }
 
         private static string FormatPhase(ShiftPhase phase) => phase switch
@@ -342,6 +345,14 @@ namespace Desk42.UI
 
         private void UpdateClientProgress()
         {
+            var run = GameManager.Instance?.Run;
+            if (run != null)
+            {
+                // Show progress against the current ante quota — this is the real number
+                _clientIndex = run.RawData.ClaimsProcessedThisAnte;
+                _clientTotal = run.RawData.QuotaForCurrentAnte;
+            }
+
             if (_clientProgressLabel)
                 _clientProgressLabel.text = NarratorSystem.GetStatusLine(
                     "status.shift_progress", _currentTone, _clientIndex, _clientTotal);

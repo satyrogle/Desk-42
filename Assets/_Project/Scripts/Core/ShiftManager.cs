@@ -86,6 +86,8 @@ namespace Desk42.Core
         private float      _encounterStartTime;   // Time.time when current encounter began
         private bool       _shiftEnding;          // guard against double EndShift calls
         private int        _overtimeIteration;     // how many overtime loops we've done this shift
+        private int        _totalClaimsThisShift;  // hard safety cap
+        private const int  ABSOLUTE_CLAIM_CAP = 30; // never exceed this many claims per shift
 
         // ── Unity Lifecycle ───────────────────────────────────
 
@@ -268,8 +270,8 @@ namespace Desk42.Core
                 return;
             }
 
-            int morning   = ComputeQuota(_morningBlockQuota, shiftNumber);
-            int afternoon = ComputeQuota(_afternoonBlockQuota, shiftNumber);
+            int morning   = ComputeQuotaWithVows(GameManager.Instance?.Run, _morningBlockQuota, shiftNumber);
+            int afternoon = ComputeQuotaWithVows(GameManager.Instance?.Run, _afternoonBlockQuota, shiftNumber);
             int total     = morning + afternoon + 1; // +1 overflow buffer
 
             var claims = ClaimGenerator.GenerateQueue(
@@ -284,11 +286,28 @@ namespace Desk42.Core
 
         private void DequeueNextClaim(RunStateController run, RunData runData)
         {
+            // ── Hard safety cap — never exceed ABSOLUTE_CLAIM_CAP per shift ──
+            if (_totalClaimsThisShift >= ABSOLUTE_CLAIM_CAP)
+            {
+                Debug.LogWarning($"[ShiftManager] Absolute claim cap ({ABSOLUTE_CLAIM_CAP}) hit. Ending shift.");
+                StartClockOut(run);
+                return;
+            }
+
+            // ── Don't dequeue if the quota for this ante is already satisfied ──
+            if (runData.ClaimsProcessedThisAnte >= runData.QuotaForCurrentAnte)
+            {
+                Debug.Log($"[ShiftManager] Ante quota met ({runData.ClaimsProcessedThisAnte}/{runData.QuotaForCurrentAnte}). Triggering phase transition.");
+                OnAnteComplete(run, runData);
+                return;
+            }
+
             if (runData.PendingClaims.Count == 0)
             {
-                // Overflow: try to generate more claims if we haven't hit ClockOut
-                if (runData.CurrentPhase != ShiftPhase.ClockOut)
-                    GenerateMoreClaims(run.ShiftNumber, runData, count: 2);
+                // Only generate more if we genuinely need them to meet quota
+                int remaining = runData.QuotaForCurrentAnte - runData.ClaimsProcessedThisAnte;
+                if (remaining > 0 && runData.CurrentPhase != ShiftPhase.ClockOut)
+                    GenerateMoreClaims(run.ShiftNumber, runData, count: Mathf.Min(remaining, 3));
 
                 if (runData.PendingClaims.Count == 0)
                 {
@@ -302,6 +321,7 @@ namespace Desk42.Core
             var claim = runData.PendingClaims[0];
             runData.PendingClaims.RemoveAt(0);
             runData.ActiveClaim = claim;
+            _totalClaimsThisShift++;
 
             _encounterStartTime = Time.time;
             _tide.NotifyEncounterStarted();
@@ -311,7 +331,8 @@ namespace Desk42.Core
 
             Debug.Log($"[ShiftManager] Dequeued: {claim.ClaimId} " +
                       $"({claim.ClientSpeciesId}). " +
-                      $"Remaining: {runData.PendingClaims.Count}.");
+                      $"Claim {_totalClaimsThisShift}/{runData.QuotaForCurrentAnte} this ante. " +
+                      $"Remaining in queue: {runData.PendingClaims.Count}.");
         }
 
         private void GenerateMoreClaims(int shiftNumber, RunData runData, int count)
@@ -331,10 +352,14 @@ namespace Desk42.Core
 
         private bool IsAnteComplete(RunData runData)
         {
-            return runData.CurrentPhase == ShiftPhase.MorningBlock
+            // All work phases (Morning, Afternoon, Overtime) use quota-based completion
+            if (runData.CurrentPhase == ShiftPhase.MorningBlock
                 || runData.CurrentPhase == ShiftPhase.AfternoonBlock
-                ? runData.ClaimsProcessedThisAnte >= runData.QuotaForCurrentAnte
-                : false; // Overtime doesn't have a quota-based completion
+                || runData.CurrentPhase == ShiftPhase.Overtime)
+            {
+                return runData.ClaimsProcessedThisAnte >= runData.QuotaForCurrentAnte;
+            }
+            return false;
         }
 
         private void OnAnteComplete(RunStateController run, RunData runData)
@@ -355,6 +380,12 @@ namespace Desk42.Core
                         StartClockOut(run);
                     }
                     break;
+
+                case ShiftPhase.Overtime:
+                    // Overtime quota met — end the shift
+                    Debug.Log("[ShiftManager] Overtime quota met. Ending shift.");
+                    StartClockOut(run);
+                    break;
             }
         }
 
@@ -364,17 +395,23 @@ namespace Desk42.Core
             runData.QuotaForCurrentAnte = runData.CurrentPhase switch
             {
                 ShiftPhase.ClockIn or ShiftPhase.MorningBlock =>
-                    ComputeQuota(_morningBlockQuota, shift),
+                    ComputeQuotaWithVows(run, _morningBlockQuota, shift),
                 ShiftPhase.AfternoonBlock =>
-                    ComputeQuota(_afternoonBlockQuota, shift),
+                    ComputeQuotaWithVows(run, _afternoonBlockQuota, shift),
                 ShiftPhase.Overtime =>
-                    ComputeQuota(_afternoonBlockQuota, shift), // same target in overtime
+                    ComputeQuotaWithVows(run, _afternoonBlockQuota, shift), // same target in overtime
                 _ => runData.QuotaForCurrentAnte,
             };
         }
 
-        private static int ComputeQuota(int baseQuota, int shiftNumber)
-            => Mathf.Min(baseQuota + shiftNumber / 3, baseQuota + 4);
+        private static int ComputeQuotaWithVows(RunStateController run, int baseQuota, int shiftNumber)
+        {
+            int quota = Mathf.Min(baseQuota + shiftNumber / 3, baseQuota + 4);
+            int dqRank = run?.GetVowRank("double_quota") ?? 0;
+            if (dqRank > 0)
+                quota += dqRank * 2;
+            return quota;
+        }
 
         // ── Phase Transitions ─────────────────────────────────
 
@@ -390,7 +427,7 @@ namespace Desk42.Core
         {
             runData.CurrentAnteNumber       = 2;
             runData.ClaimsProcessedThisAnte = 0;
-            runData.QuotaForCurrentAnte     = ComputeQuota(_afternoonBlockQuota, run.ShiftNumber);
+            runData.QuotaForCurrentAnte     = ComputeQuotaWithVows(run, _afternoonBlockQuota, run.ShiftNumber);
 
             run.AdvancePhase(ShiftPhase.AfternoonBlock);
             _tide.OnPhaseChanged(ShiftPhase.AfternoonBlock);
@@ -428,7 +465,7 @@ namespace Desk42.Core
             // Reset ante tracking for the new iteration
             runData.CurrentAnteNumber       = 1;
             runData.ClaimsProcessedThisAnte = 0;
-            runData.QuotaForCurrentAnte     = ComputeQuota(
+            runData.QuotaForCurrentAnte     = ComputeQuotaWithVows(run,
                 _morningBlockQuota + _overtimeIteration, run.ShiftNumber);
 
             // Generate more claims for the overtime loop

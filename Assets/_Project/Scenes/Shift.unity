@@ -276,6 +276,8 @@ GameObject:
   - component: {fileID: 7917314}
   - component: {fileID: 7917313}
   - component: {fileID: 7917317}
+  - component: {fileID: 7917319}
+  - component: {fileID: 7917318}
   m_Layer: 0
   m_Name: UI_HighImpactSystems
   m_TagString: Untagged
@@ -355,6 +357,43 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _forceRun: 0
+--- !u!114 &7917318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7917312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28f9c6f99c25e9d41947bfb9581197f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _eventPath: event:/Music/Jazz
+  _baseBpm: 92
+  _maxBpm: 168
+  _baseRootMidi: 48
+--- !u!114 &7917319
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7917312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dea70daac3224db42b8c764cb90e3f9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _evtQueuePressure: event:/Threat/QueuePressure
+  _evtHazardAlert: event:/Threat/HazardAlert
+  _evtTideRumble: event:/Threat/TideRumble
+  _evtSanityWhisper: event:/Threat/SanityWhisper
+  _queuePosition: {x: -2.5, y: 0.2, z: 0.5}
+  _tidePosition: {x: 0, y: 1, z: -2}
+  _queueThreshold: 3
+  _queueCooldown: 6
+  _whisperJitter: 1.5
 --- !u!1 &56192547
 GameObject:
   m_ObjectHideFlags: 0
@@ -1396,6 +1435,9 @@ MonoBehaviour:
   _flickerSpeed: 8
   _hazardFlash: {fileID: 1499861407}
   _hazardFlashDuration: 0.25
+  _junkPrefabs: []
+  _junkAnchor: {fileID: 0}
+  _maxJunkItems: 10
   _fadeSpeed: 2
 --- !u!1 &475965764
 GameObject:
@@ -2422,6 +2464,7 @@ MonoBehaviour:
   _moodLabel: {fileID: 1501276993}
   _moodIndicator: {fileID: 1508083308}
   _injectionLabel: {fileID: 948040477}
+  _clairvoyanceLabel: {fileID: 0}
 --- !u!114 &716736149
 MonoBehaviour:
   m_ObjectHideFlags: 0

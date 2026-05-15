@@ -60,6 +60,7 @@ namespace Desk42.EditorTools
             AutoWireCardButtonPrefab();
             AutoWireCardHandView();
             AdjustFormCorruptionThreshold();
+            EnsureFeedbackOverlay(shiftUI);
 
             EditorSceneManager.MarkSceneDirty(scene);
             Debug.Log("[ShiftAutoLayout V2] Layout + wiring applied. Save the scene (Ctrl+S).");
@@ -650,6 +651,19 @@ namespace Desk42.EditorTools
             tmp.color               = color;
             tmp.enableWordWrapping  = true;
             tmp.overflowMode        = TextOverflowModes.Truncate;
+        }
+
+        // ── Feedback Overlay ─────────────────────────────────
+
+        private static void EnsureFeedbackOverlay(GameObject shiftUI)
+        {
+            var overlay = shiftUI.GetComponent<ShiftFeedbackOverlay>();
+            if (overlay == null)
+            {
+                overlay = shiftUI.AddComponent<ShiftFeedbackOverlay>();
+                EditorUtility.SetDirty(overlay);
+                Debug.Log("[ShiftAutoLayout] Added ShiftFeedbackOverlay to ShiftUI.");
+            }
         }
     }
 }

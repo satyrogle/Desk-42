@@ -52,7 +52,7 @@ namespace Desk42.UI
             var scaler = _panelRoot.AddComponent<CanvasScaler>();
             scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
-            scaler.matchWidthOrHeight  = 1f; // match height — fits any aspect
+            scaler.matchWidthOrHeight  = 0.5f; // Match width and height to fix overflow on ultra-wide
             _panelRoot.AddComponent<GraphicRaycaster>();
 
             var back = new GameObject("Backdrop");
@@ -76,22 +76,45 @@ namespace Desk42.UI
             title.color = UIPalette.AccentTitle;
             title.alignment = TextAlignmentOptions.Center;
 
-            // Grid of tiles
+            // ScrollRect wrapper so content never overflows the canvas
+            var scrollGO = new GameObject("Scroll");
+            scrollGO.transform.SetParent(_panelRoot.transform, false);
+            var scrollRT = scrollGO.AddComponent<RectTransform>();
+            scrollRT.anchorMin = new Vector2(0.05f, 0.12f);
+            scrollRT.anchorMax = new Vector2(0.95f, 0.88f);
+            scrollRT.offsetMin = Vector2.zero;
+            scrollRT.offsetMax = Vector2.zero;
+            var scrollImg = scrollGO.AddComponent<Image>();
+            scrollImg.color = new Color(0, 0, 0, 0.01f); // near-invisible mask bg
+            scrollGO.AddComponent<UnityEngine.UI.Mask>().showMaskGraphic = false;
+
+            var scroll = scrollGO.AddComponent<ScrollRect>();
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 40f;
+
+            // Grid content inside the scroll
             var grid = new GameObject("Grid");
-            grid.transform.SetParent(_panelRoot.transform, false);
+            grid.transform.SetParent(scrollGO.transform, false);
             var grt = grid.AddComponent<RectTransform>();
-            grt.anchorMin = new Vector2(0.5f, 0.5f);
-            grt.anchorMax = new Vector2(0.5f, 0.5f);
-            grt.pivot     = new Vector2(0.5f, 0.5f);
-            grt.sizeDelta = new Vector2(1140, 800);
-            grt.anchoredPosition = new Vector2(0, -20);
+            grt.anchorMin = new Vector2(0, 1);
+            grt.anchorMax = new Vector2(1, 1);
+            grt.pivot     = new Vector2(0.5f, 1);
+            grt.sizeDelta = new Vector2(0, 0); // ContentSizeFitter will set height
+
+            scroll.content = grt;
+            scroll.viewport = scrollRT;
 
             var glg = grid.AddComponent<GridLayoutGroup>();
-            glg.cellSize        = new Vector2(255, 240);
-            glg.spacing         = new Vector2(16, 16);
-            glg.childAlignment  = TextAnchor.MiddleCenter;
+            glg.cellSize        = new Vector2(240, 220);
+            glg.spacing         = new Vector2(12, 12);
+            glg.childAlignment  = TextAnchor.UpperCenter;
             glg.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
             glg.constraintCount = 4;
+
+            var csf = grid.AddComponent<ContentSizeFitter>();
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             foreach (var id in ArchetypeFactory.AllIds)
                 BuildTile(grid.transform, id);
