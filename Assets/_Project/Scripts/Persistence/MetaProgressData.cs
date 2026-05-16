@@ -203,6 +203,11 @@ namespace Desk42.Core
         [JsonProperty] public int             ExeFragmentsCollected;
         [JsonProperty] public bool            HasEscapedTheLoop;
 
+        // Rogue Subroutine — when the player last claimed the
+        // hidden bounty (used as a per-session cooldown so the
+        // pixel doesn't farm fragments infinitely).
+        [JsonProperty] public int             RogueSubroutineLastClaimedShift = -1;
+
         // ── Repeat Offender Helpers ───────────────────────────
 
         public ClientTacticProfile GetOrCreateProfile(string clientVariantId)

@@ -155,6 +155,16 @@ namespace Desk42.EditorTools
                 Debug.Log("[HighImpactInjector] Attached InternalAuditHubBootstrap.");
             }
 
+            // 1b. Rogue Subroutine pixel (Layer 3 Dark Economy).
+            //     Hidden 3px button in the hub corner; click 5x to
+            //     open a raw-text dialog that grants 1 .exe fragment.
+            //     Per-shift cooldown.
+            if (hubManager.GetComponent<RogueSubroutinePixel>() == null)
+            {
+                Undo.AddComponent<RogueSubroutinePixel>(hubManager);
+                Debug.Log("[HighImpactInjector] Attached RogueSubroutinePixel.");
+            }
+
             // 2. ConspiracyBoardUI Setup
             var boardGO = GameObject.Find("ConspiracyBoardUI");
             if (boardGO == null)
