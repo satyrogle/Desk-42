@@ -72,6 +72,24 @@ namespace Desk42.EditorTools
                 Debug.Log("[HighImpactInjector] Attached ProceduralJazzGenerator.");
             }
 
+            // 3e. PneumaticTube — Layer 3 Dark Economy drop target.
+            //     Self-builds its own canvas. Invisible until Phase 4.
+            if (systemsGO.GetComponent<PneumaticTube>() == null)
+            {
+                Undo.AddComponent<PneumaticTube>(systemsGO);
+                Debug.Log("[HighImpactInjector] Attached PneumaticTube.");
+            }
+
+            // 3f. ClientView — attach DraggableClientPortrait so the
+            //     player can pick the client up and drag them to the
+            //     tube. Phase-gated internally.
+            var clientView = GameObject.FindObjectOfType<ClientView>();
+            if (clientView != null && clientView.GetComponent<DraggableClientPortrait>() == null)
+            {
+                Undo.AddComponent<DraggableClientPortrait>(clientView.gameObject);
+                Debug.Log("[HighImpactInjector] Attached DraggableClientPortrait to ClientView.");
+            }
+
             // 4. NDA Overlay Renderer (should be on UI_Shift or Canvas)
             var canvasRoot = GameObject.Find("UI_Shift") ?? GameObject.FindObjectOfType<Canvas>()?.gameObject;
             if (canvasRoot != null)

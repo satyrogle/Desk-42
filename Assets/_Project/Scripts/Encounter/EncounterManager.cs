@@ -131,6 +131,39 @@ namespace Desk42.Encounter
         /// <summary>Called by the Deny button in the Shift scene.</summary>
         public void Deny() => ResolveEncounter(resolvedCorrectly: false);
 
+        /// <summary>
+        /// Layer 3 Dark Economy — drag the client into the Pneumatic
+        /// Tube. Bypasses the claim with no payout, no soul cost, no
+        /// dilemma. Grants Dark Intelligence. ~30% chance of an OSHA
+        /// maintenance fee popup (handled by PneumaticTube itself).
+        /// </summary>
+        public void Liquify()
+        {
+            if (!_encounterActive || _activeClaim == null) return;
+            _encounterActive = false;
+
+            var run = GameManager.Instance?.Run;
+
+            // Grant Dark Intelligence (the whole reason for the tube)
+            if (run?.RawData != null)
+                run.RawData.DarkIntelligence += 3;
+
+            // Emit a "denied" resolution so the shift count advances,
+            // but with zero credits and zero soul cost — the claim
+            // bypasses normal scoring entirely.
+            RumorMill.PublishDeferred(new ClaimResolvedEvent(
+                _activeClaim.ClaimId,
+                resolvedCorrectly: false,
+                credits: 0,
+                soulCost: 0f,
+                _activeClaim.ClientVariantId,
+                _activeClaim.ClientSpeciesId));
+
+            Debug.Log($"[EncounterManager] LIQUIFIED '{_activeClaim.ClaimId}'. +3 Dark Intel.");
+
+            StartCoroutine(DelayedCleanup());
+        }
+
         private void ResolveEncounter(bool resolvedCorrectly)
         {
             if (!_encounterActive || _activeClaim == null) return;
