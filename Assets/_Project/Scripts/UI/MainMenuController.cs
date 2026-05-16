@@ -81,10 +81,25 @@ namespace Desk42.UI
                 es.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
             }
 
-            // Title
-            var title = CreateLabel(canvasGO.transform, "DESK 42",
-                new Vector2(0, 200), 64);
-            title.color = new Color(0.9f, 0.85f, 0.7f);
+            // Title — adjusts to NG+ state once the loop is broken.
+            var meta = GameManager.Instance?.Meta;
+            bool escaped = meta != null && meta.HasEscapedTheLoop;
+
+            var title = CreateLabel(canvasGO.transform,
+                escaped ? "MIDDLE MANAGEMENT" : "DESK 42",
+                new Vector2(0, 200), escaped ? 52 : 64);
+            title.color = escaped
+                ? new Color(0.65f, 0.95f, 0.65f)
+                : new Color(0.9f, 0.85f, 0.7f);
+
+            if (escaped)
+            {
+                var banner = CreateLabel(canvasGO.transform,
+                    "* PROMOTION CONFIRMED. NEW PARADIGM AVAILABLE.\n" +
+                    "* The Middle Manager archetype is now selectable.",
+                    new Vector2(0, 145), 16);
+                banner.color = new Color(0.55f, 0.95f, 0.55f);
+            }
 
             // Buttons stacked vertically, centered
             _startNewRunBtn     = CreateButton(canvasGO.transform, "Start New Run",    new Vector2(0,  120));

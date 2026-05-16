@@ -165,6 +165,15 @@ namespace Desk42.EditorTools
                 Debug.Log("[HighImpactInjector] Attached RogueSubroutinePixel.");
             }
 
+            // 1c. TaskMgr_Override desktop icon (Layer 4 launcher).
+            //     Hidden until fragments >= TaskMgrOverride.FragmentsRequired.
+            //     Double-click launches BossFightController.
+            if (hubManager.GetComponent<TaskMgrOverrideIcon>() == null)
+            {
+                Undo.AddComponent<TaskMgrOverrideIcon>(hubManager);
+                Debug.Log("[HighImpactInjector] Attached TaskMgrOverrideIcon.");
+            }
+
             // 2. ConspiracyBoardUI Setup
             var boardGO = GameObject.Find("ConspiracyBoardUI");
             if (boardGO == null)
