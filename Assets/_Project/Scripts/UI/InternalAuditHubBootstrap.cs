@@ -133,6 +133,11 @@ namespace Desk42.UI
                 new Vector2(1, 1), new Vector2(-330, -210),
                 new Vector2(420, 100), OnConspiracyBoardClicked);
 
+            BuildBigButton(canvasGO.transform, "LoungeBtn", "OPEN RETIREMENT LOUNGE",
+                new Color(0.20f, 0.45f, 0.35f),
+                new Vector2(1, 1), new Vector2(-330, -330),
+                new Vector2(420, 100), OnRetirementLoungeClicked);
+
             // Next Shift (bottom-center)
             BuildBigButton(canvasGO.transform, "NextShiftBtn", "BEGIN NEXT SHIFT",
                 UIPalette.AccentSuccess,
@@ -271,6 +276,12 @@ namespace Desk42.UI
                 board.gameObject.SetActive(true);
             else
                 Debug.LogWarning("[Hub] No ConspiracyBoardUI in scene.");
+        }
+
+        private void OnRetirementLoungeClicked()
+        {
+            var lounge = GetOrAdd<RetirementLoungePanel>();
+            lounge.Show();
         }
 
         // ── Refresh ───────────────────────────────────────────

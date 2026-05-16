@@ -27,6 +27,7 @@ using UnityEngine.SceneManagement;
 using Desk42.Cards;
 using Desk42.Meta.Achievements;
 using Desk42.Meta.Analytics;
+using Desk42.Meta.RetirementFund;
 using Desk42.OfficeSupplies;
 using Desk42.MoralInjury;
 
@@ -184,6 +185,16 @@ namespace Desk42.Core
                 var go = new GameObject("AchievementBootstrap");
                 go.transform.SetParent(transform);
                 go.AddComponent<AchievementBootstrap>();
+            }
+
+            // RetirementFundService — awards AuditPoints on
+            // OnRunCompleted. Player spends them in the
+            // RetirementLoungePanel on the InternalAudit hub.
+            if (GetComponentInChildren<RetirementFundService>() == null)
+            {
+                var go = new GameObject("RetirementFundService");
+                go.transform.SetParent(transform);
+                go.AddComponent<RetirementFundService>();
             }
         }
 

@@ -60,6 +60,17 @@ namespace Desk42.OfficeSupplies
         [Tooltip("When does this supply activate? Used for UI tooltip and debug.")]
         public SupplyTrigger PrimaryTrigger = SupplyTrigger.OnCardSlammed;
 
+        // ── Evolution ─────────────────────────────────────────
+
+        [Header("Evolution")]
+        [Tooltip("How many triggers between evolution levels. " +
+                 "Triggers from PrimaryTrigger count toward this.")]
+        public int EvolutionThreshold = 10;
+
+        [Tooltip("Maximum evolution level. 0 = no evolution.")]
+        [Range(0, 5)]
+        public int MaxEvolutionLevel = 3;
+
         // ── Visual / Audio ────────────────────────────────────
 
         [Header("Presentation")]

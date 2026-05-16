@@ -60,14 +60,17 @@ namespace Desk42.OfficeSupplies
         {
             if (!IsActive) return;
             ctx.TriggerCount = TriggerCount;
+            ctx.EvolutionLevel = EvolutionLevel;
             Effect.OnCardSlammed(ctx);
             TriggerCount++;
+            CheckEvolution();
         }
 
         public void DispatchStateTransition(SupplyContext ctx)
         {
             if (!IsActive) return;
             ctx.TriggerCount = TriggerCount;
+            ctx.EvolutionLevel = EvolutionLevel;
             Effect.OnStateTransition(ctx);
         }
 
@@ -75,14 +78,40 @@ namespace Desk42.OfficeSupplies
         {
             if (!IsActive) return;
             ctx.TriggerCount = TriggerCount;
+            ctx.EvolutionLevel = EvolutionLevel;
             Effect.OnClaimResolved(ctx);
             TriggerCount++;
+            CheckEvolution();
+        }
+
+        // ── Evolution ─────────────────────────────────────────
+
+        /// <summary>
+        /// Check whether TriggerCount has crossed the next
+        /// evolution threshold. Bumps EvolutionLevel + logs;
+        /// IOfficeSupplyEffect implementations can read
+        /// the new level from SupplyContext.EvolutionLevel on
+        /// subsequent dispatches.
+        /// </summary>
+        private void CheckEvolution()
+        {
+            if (Data.MaxEvolutionLevel <= 0) return;
+            if (EvolutionLevel >= Data.MaxEvolutionLevel) return;
+            if (Data.EvolutionThreshold <= 0) return;
+
+            int nextThreshold = Data.EvolutionThreshold * (EvolutionLevel + 1);
+            if (TriggerCount >= nextThreshold)
+            {
+                EvolutionLevel++;
+                Debug.Log($"[Supply] {Data.DisplayName} evolved to level {EvolutionLevel}.");
+            }
         }
 
         public void DispatchHazard(SupplyContext ctx)
         {
             if (!IsActive) return;
             ctx.TriggerCount = TriggerCount;
+            ctx.EvolutionLevel = EvolutionLevel;
             Effect.OnHazard(ctx);
         }
 

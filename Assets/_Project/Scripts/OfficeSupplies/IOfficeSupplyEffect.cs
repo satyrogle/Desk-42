@@ -39,6 +39,7 @@ namespace Desk42.OfficeSupplies
         public int    TotalCardSlams;
         public float  DeskEntropy;
         public int    TriggerCount;         // how many times THIS supply has triggered
+        public int    EvolutionLevel;       // 0-N — bumped after every EvolutionThreshold triggers
 
         // ── Card system (read/write via callbacks) ────────────
         public Deck   Deck;
