@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using Desk42.Audio;
+using Desk42.Meta.DataSmuggling;
 using Desk42.Tutorial;
 using Desk42.UI;
 
@@ -78,6 +79,15 @@ namespace Desk42.EditorTools
             {
                 Undo.AddComponent<PneumaticTube>(systemsGO);
                 Debug.Log("[HighImpactInjector] Attached PneumaticTube.");
+            }
+
+            // 3g. ParadoxRecipeDetector — Steganography via Bureaucracy.
+            //     Watches card sequences for contradictory patterns.
+            //     Drops .exe fragments. Silent below Phase 4.
+            if (systemsGO.GetComponent<ParadoxRecipeDetector>() == null)
+            {
+                Undo.AddComponent<ParadoxRecipeDetector>(systemsGO);
+                Debug.Log("[HighImpactInjector] Attached ParadoxRecipeDetector.");
             }
 
             // 3f. ClientView — attach DraggableClientPortrait so the
