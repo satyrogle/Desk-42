@@ -322,7 +322,10 @@ namespace Desk42.UI
 
         private void HandleClaimResolved(ClaimResolvedEvent e)
         {
-            _clientIndex++;
+            // Don't touch _clientIndex here — UpdateClientProgress
+            // reads the authoritative ante counter from RunData. The
+            // old ++ was immediately overwritten and confused the
+            // between-block display.
             UpdateClientProgress();
 
             var run = GameManager.Instance?.Run;
@@ -348,9 +351,17 @@ namespace Desk42.UI
             var run = GameManager.Instance?.Run;
             if (run != null)
             {
-                // Show progress against the current ante quota — this is the real number
-                _clientIndex = run.RawData.ClaimsProcessedThisAnte;
-                _clientTotal = run.RawData.QuotaForCurrentAnte;
+                // Display 1-indexed "Client X of Y" where X is the
+                // current claim the player is working on, clamped to
+                // [1, Y]. Examples:
+                //   processed=0          → "Client 1 of Y" (about to start)
+                //   processed=1          → "Client 2 of Y"
+                //   processed=Y          → "Client Y of Y" (last claim,
+                //                          do NOT show "Y+1 of Y")
+                int processed = run.RawData.ClaimsProcessedThisAnte;
+                int quota     = run.RawData.QuotaForCurrentAnte;
+                _clientTotal  = Mathf.Max(1, quota);
+                _clientIndex  = Mathf.Clamp(processed + 1, 1, _clientTotal);
             }
 
             if (_clientProgressLabel)
