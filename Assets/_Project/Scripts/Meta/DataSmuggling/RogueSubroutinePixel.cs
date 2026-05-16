@@ -19,6 +19,10 @@ using UnityEngine.UI;
 using TMPro;
 using Desk42.Core;
 using Desk42.Meta.Analytics;
+// Disambiguate the Analytics *class* from the sibling
+// Desk42.Meta.Analytics *namespace* (which wins via C# scope
+// resolution from inside Desk42.Meta.DataSmuggling).
+using AnalyticsAPI = Desk42.Meta.Analytics.Analytics;
 
 namespace Desk42.Meta.DataSmuggling
 {
@@ -174,7 +178,7 @@ namespace Desk42.Meta.DataSmuggling
                 meta.RogueSubroutineLastClaimedShift = meta.GlobalShiftNumber;
                 SaveSystem.SaveMeta(meta);
 
-                Analytics.Track(TelemetryEvents.ExeFragmentCollected,
+                AnalyticsAPI.Track(TelemetryEvents.ExeFragmentCollected,
                     new System.Collections.Generic.Dictionary<string, object>
                     {
                         ["source"]    = "rogue_subroutine",

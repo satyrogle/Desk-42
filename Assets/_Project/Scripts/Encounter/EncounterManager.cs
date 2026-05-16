@@ -153,7 +153,7 @@ namespace Desk42.Encounter
             // bypasses normal scoring entirely.
             RumorMill.PublishDeferred(new ClaimResolvedEvent(
                 _activeClaim.ClaimId,
-                resolvedCorrectly: false,
+                correct: false,
                 credits: 0,
                 soulCost: 0f,
                 _activeClaim.ClientVariantId,

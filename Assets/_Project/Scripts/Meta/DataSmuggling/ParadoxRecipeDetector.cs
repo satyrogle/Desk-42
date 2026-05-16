@@ -21,6 +21,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using Desk42.Core;
 using Desk42.Meta.Analytics;
+// Disambiguate the Analytics *class* from the sibling
+// Desk42.Meta.Analytics *namespace* (which wins via C# scope
+// resolution from inside Desk42.Meta.DataSmuggling).
+using AnalyticsAPI = Desk42.Meta.Analytics.Analytics;
 
 namespace Desk42.Meta.DataSmuggling
 {
@@ -91,7 +95,7 @@ namespace Desk42.Meta.DataSmuggling
             meta.ExeFragmentsCollected++;
             SaveSystem.SaveMeta(meta);
 
-            Analytics.Track(TelemetryEvents.ParadoxRecipeExecuted,
+            AnalyticsAPI.Track(TelemetryEvents.ParadoxRecipeExecuted,
                 new Dictionary<string, object>
                 {
                     ["recipe"]    = recipe.Id,
