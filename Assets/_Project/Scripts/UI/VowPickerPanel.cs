@@ -145,8 +145,8 @@ namespace Desk42.UI
             scroll.viewport = scrollRT;
 
             var glg = gridGO.AddComponent<GridLayoutGroup>();
-            glg.cellSize        = new Vector2(240, 80);
-            glg.spacing         = new Vector2(8, 8);
+            glg.cellSize        = new Vector2(210, 72);
+            glg.spacing         = new Vector2(6, 6);
             glg.childAlignment  = TextAnchor.UpperCenter;
             glg.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
             glg.constraintCount = 4;

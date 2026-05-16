@@ -161,7 +161,13 @@ namespace Desk42.Encounter
 
             Debug.Log($"[EncounterManager] LIQUIFIED '{_activeClaim.ClaimId}'. +3 Dark Intel.");
 
-            StartCoroutine(DelayedCleanup());
+            // Same race-free cleanup as ResolveEncounter — detach
+            // state now, destroy GameObject after the animation delay.
+            var resolvedCSM = _activeCSM;
+            _activeCSM   = null;
+            _activeClaim = null;
+            _punchCardMachine?.ClearActiveClient();
+            StartCoroutine(DestroyClientAfter(resolvedCSM, 0.8f));
         }
 
         private void ResolveEncounter(bool resolvedCorrectly)
@@ -216,14 +222,23 @@ namespace Desk42.Encounter
 
             TryTriggerDilemma(run);
 
-            // Delay cleanup so visual feedback has time to render
-            StartCoroutine(DelayedCleanup());
+            // Capture the resolved encounter's CSM, then detach
+            // state synchronously so the next ClaimQueuedEvent (which
+            // arrives in the same deferred-dispatch chain) sees a
+            // clean EncounterManager. The GameObject hangs around
+            // 0.8s for the resolution animation, then dies.
+            var resolvedCSM = _activeCSM;
+            _activeCSM   = null;
+            _activeClaim = null;
+            _punchCardMachine?.ClearActiveClient();
+            StartCoroutine(DestroyClientAfter(resolvedCSM, 0.8f));
         }
 
-        private System.Collections.IEnumerator DelayedCleanup()
+        private static System.Collections.IEnumerator DestroyClientAfter(
+            BSM.ClientStateMachine csm, float delay)
         {
-            yield return new WaitForSeconds(0.8f);
-            CleanupEncounter();
+            yield return new WaitForSeconds(delay);
+            if (csm != null) Destroy(csm.gameObject);
         }
 
         private void TryTriggerDilemma(RunStateController run)
@@ -248,21 +263,6 @@ namespace Desk42.Encounter
                 bureaucratic:     data.BureaucraticChoiceLabel,
                 onEthical:        () => run.MoralDilemmas.Resolve(dilemma, choseEthical: true),
                 onBureaucratic:   (inverted) => run.MoralDilemmas.Resolve(dilemma, choseEthical: false, inverted)));
-        }
-
-        private void CleanupEncounter()
-        {
-            _punchCardMachine?.ClearActiveClient();
-            _clientView?.Clear();
-            _claimPanel?.Clear();
-
-            if (_activeCSM != null)
-            {
-                Destroy(_activeCSM.gameObject);
-                _activeCSM = null;
-            }
-
-            _activeClaim = null;
         }
 
         // ── Editor Helpers ────────────────────────────────────

@@ -107,8 +107,8 @@ namespace Desk42.UI
             scroll.viewport = scrollRT;
 
             var glg = grid.AddComponent<GridLayoutGroup>();
-            glg.cellSize        = new Vector2(240, 220);
-            glg.spacing         = new Vector2(12, 12);
+            glg.cellSize        = new Vector2(200, 170);
+            glg.spacing         = new Vector2(10, 10);
             glg.childAlignment  = TextAnchor.UpperCenter;
             glg.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
             glg.constraintCount = 4;
