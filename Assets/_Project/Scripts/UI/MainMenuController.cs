@@ -28,6 +28,7 @@ namespace Desk42.UI
         [SerializeField] private Button _dailyBriefBtn;
         [SerializeField] private Button _settingsBtn;
         [SerializeField] private Button _replayTutorialBtn;
+        [SerializeField] private Button _resetOnboardingBtn;
         [SerializeField] private Button _quitBtn;
 
         [Header("Default Archetype")]
@@ -49,6 +50,7 @@ namespace Desk42.UI
             WireButton(_dailyBriefBtn,      OnDailyBrief);
             WireButton(_settingsBtn,        OnSettings);
             WireButton(_replayTutorialBtn,  OnReplayTutorial);
+            WireButton(_resetOnboardingBtn, OnResetOnboarding);
             WireButton(_quitBtn,            OnQuit);
         }
 
@@ -102,11 +104,12 @@ namespace Desk42.UI
             }
 
             // Buttons stacked vertically, centered
-            _startNewRunBtn     = CreateButton(canvasGO.transform, "Start New Run",    new Vector2(0,  120));
-            _continueBtn        = CreateButton(canvasGO.transform, "Continue",         new Vector2(0,   60));
-            _dailyBriefBtn      = CreateButton(canvasGO.transform, "Daily Brief",      new Vector2(0,    0));
-            _settingsBtn        = CreateButton(canvasGO.transform, "Accessibility",    new Vector2(0,  -60));
-            _replayTutorialBtn  = CreateButton(canvasGO.transform, "Replay Tutorial",  new Vector2(0, -120));
+            _startNewRunBtn     = CreateButton(canvasGO.transform, "Start New Run",    new Vector2(0,  150));
+            _continueBtn        = CreateButton(canvasGO.transform, "Continue",         new Vector2(0,   95));
+            _dailyBriefBtn      = CreateButton(canvasGO.transform, "Daily Brief",      new Vector2(0,   40));
+            _settingsBtn        = CreateButton(canvasGO.transform, "Accessibility",    new Vector2(0,  -15));
+            _replayTutorialBtn  = CreateButton(canvasGO.transform, "Replay Tutorial",  new Vector2(0,  -70));
+            _resetOnboardingBtn = CreateButton(canvasGO.transform, "Reset Onboarding", new Vector2(0, -125));
             _quitBtn            = CreateButton(canvasGO.transform, "Quit",             new Vector2(0, -200));
         }
 
@@ -211,6 +214,22 @@ namespace Desk42.UI
             meta.TutorialCompleted = false;
             SaveSystem.SaveMeta(meta);
             Debug.Log("[MainMenu] Tutorial reset — will run on next Shift.");
+        }
+
+        private void OnResetOnboarding()
+        {
+            // Full drip-feed reset. Returns the player to Phase 1
+            // (pure stamping) AND re-arms the HR Memo tutorial. Use
+            // when you want to experience the new-player escalation
+            // from scratch — IsPhaseUnlocked() will gate Impatience
+            // (Phase 2), Soul/Sanity (Phase 3), and Entropy + audio
+            // (Phase 4) until you complete runs to climb back up.
+            var meta = GameManager.Instance?.Meta;
+            if (meta == null) return;
+            meta.HighestPhaseReached = 1;
+            meta.TutorialCompleted   = false;
+            SaveSystem.SaveMeta(meta);
+            Debug.Log("[MainMenu] Onboarding reset — drip-feed restarts at Phase 1.");
         }
 
         private void OnQuit()

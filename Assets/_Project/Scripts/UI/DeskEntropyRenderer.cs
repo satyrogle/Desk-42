@@ -61,6 +61,11 @@ namespace Desk42.UI
         [SerializeField] private float       _hazardFlashDuration = 0.25f;
 
         [Header("Weaponised Clutter")]
+        [Tooltip("Default OFF — only enable once you've assigned " +
+                 "lightweight 2D prop sprites (NOT particle prefabs) " +
+                 "to _junkPrefabs. Particle prefabs cause the screen " +
+                 "to flood when entropy ramps.")]
+        [SerializeField] private bool         _enableWeaponizedClutter = false;
         [SerializeField] private GameObject[] _junkPrefabs;
         [SerializeField] private Transform    _junkAnchor;
         [SerializeField] private int          _maxJunkItems = 10;
@@ -154,7 +159,8 @@ namespace Desk42.UI
 
             // ── Phase 4 Weaponised Clutter ──
             int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
-            if (phase >= 4 && _junkPrefabs != null && _junkPrefabs.Length > 0 && _junkAnchor != null)
+            if (_enableWeaponizedClutter && phase >= 4
+                && _junkPrefabs != null && _junkPrefabs.Length > 0 && _junkAnchor != null)
             {
                 // Clear junk if entropy resets (e.g. shift start)
                 if (entropy < 0.1f && _lastJunkEntropy >= 0.1f)
@@ -248,7 +254,8 @@ namespace Desk42.UI
             // HazardFlash (screen-covering CanvasGroup) only fires when
             // GlassCracking layer is clear — it's the entry point for
             // expansion-tier screen obstruction.
-            if (EntropyManager.CanActivate(EntropyLayer.GlassCracking))
+            if (EntropyManager.CanActivate(EntropyLayer.GlassCracking)
+                && FeedbackBudget.RequestBurst(FeedbackKind.Flash))
                 StartCoroutine(HazardFlash());
         }
 

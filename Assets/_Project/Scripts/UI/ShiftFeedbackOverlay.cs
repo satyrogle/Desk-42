@@ -137,6 +137,12 @@ namespace Desk42.UI
 
         private void ShowToast(string message, Color color, float fontSize)
         {
+            // Throttle: at most one toast per FeedbackBudget window.
+            // Drops the toast (doesn't queue) — toasts that lose this
+            // gate are typically the duplicate "card filed" type which
+            // are also covered by CardSlamFeedback's own flash.
+            if (!FeedbackBudget.RequestBurst(FeedbackKind.Toast)) return;
+
             if (_toastContainer == null) return;
 
             // Cap active toasts

@@ -39,6 +39,7 @@ namespace Desk42.UI
         private void HandleSlam(CardSlammedEvent e)
         {
             if (AccessibilitySettings.ReducedMotion) return;
+            if (!FeedbackBudget.RequestBurst(FeedbackKind.Flash)) return;
             if (_flashRoot == null) BuildUI();
 
             // Flash + label
