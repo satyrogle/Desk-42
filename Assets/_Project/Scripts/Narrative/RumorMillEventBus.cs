@@ -175,6 +175,13 @@ namespace Desk42.Core
         }
 
         /// <summary>
+        /// Discard all queued-but-not-yet-dispatched events.
+        /// Call before scene activation to prevent stale deferred events
+        /// from firing against objects that are mid-destruction.
+        /// </summary>
+        public static void FlushQueue() => _queue.Clear();
+
+        /// <summary>
         /// Clear all subscriptions — call between scenes / on application quit
         /// to prevent stale delegates from prior scene objects.
         /// </summary>

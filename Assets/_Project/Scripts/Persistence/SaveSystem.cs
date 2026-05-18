@@ -108,22 +108,34 @@ namespace Desk42.Core
 
         // ── Migration ─────────────────────────────────────────
 
+        // Bump this constant each time the MetaProgressData schema changes.
+        // Add a corresponding case to MigrateMetaIfNeeded below.
+        public const int CurrentMetaSaveVersion = 2;
+
         /// <summary>
-        /// Run schema migration on a loaded MetaProgressData if its
-        /// SaveVersion is behind the current version.
-        /// Extend this method as you bump SaveVersion.
+        /// Run schema migrations sequentially from the save's stored version
+        /// up to CurrentMetaSaveVersion. Each case handles exactly one version
+        /// step. To add a migration: bump CurrentMetaSaveVersion and add a
+        /// new case — the while loop guarantees old saves catch up.
         /// </summary>
         public static MetaProgressData MigrateMetaIfNeeded(MetaProgressData data)
         {
-            if (data.SaveVersion < 2)
+            while (data.SaveVersion < CurrentMetaSaveVersion)
             {
-                // Version 1 to 2 migration:
-                // Default HighestPhaseReached to 4 (Full) for existing players
-                if (!data.HighestPhaseReached.HasValue)
+                switch (data.SaveVersion)
                 {
-                    data.HighestPhaseReached = 4;
+                    case 1:
+                        // 1 → 2: default HighestPhaseReached to 4 for existing players
+                        if (!data.HighestPhaseReached.HasValue)
+                            data.HighestPhaseReached = 4;
+                        break;
+
+                    default:
+                        Debug.LogWarning($"[SaveSystem] Unknown SaveVersion {data.SaveVersion} during migration — skipping to current.");
+                        data.SaveVersion = CurrentMetaSaveVersion;
+                        return data;
                 }
-                data.SaveVersion = 2;
+                data.SaveVersion++;
             }
             return data;
         }

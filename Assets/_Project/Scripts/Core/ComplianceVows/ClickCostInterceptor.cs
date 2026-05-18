@@ -51,7 +51,7 @@ namespace Desk42.Core
                         && cardView != null && cardView.Card != null 
                         && (cardView.Card.IsJammed || cardView.Card.IsCrumpled))
                     {
-                        var shiftMgr = FindObjectOfType<ShiftManager>();
+                        var shiftMgr = Desk42Services.Get<ShiftManager>();
                         var activeClaim = shiftMgr?.GetActiveClaim();
                         if (activeClaim != null)
                         {

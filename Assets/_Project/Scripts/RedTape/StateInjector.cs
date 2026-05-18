@@ -118,7 +118,7 @@ namespace Desk42.RedTape
             }
 
             // ── Step 5: Soul cost (after supply modifiers) ───────────
-            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            int phase = GameManager.Phase;
             if (phase >= 3 && card.SoulCost > 0f)
             {
                 float soulCost = card.SoulCost;

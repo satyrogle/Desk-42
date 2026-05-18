@@ -23,6 +23,16 @@ namespace Desk42.UI
         private MetaProgressData _meta;
         private List<GameObject> _spawnedPostIts = new List<GameObject>();
 
+        private void Awake()
+        {
+            Desk42Services.Register(this);
+        }
+
+        private void OnDestroy()
+        {
+            Desk42Services.Unregister<ConspiracyBoardUI>();
+        }
+
         private void Start()
         {
             if (_closeButton != null)

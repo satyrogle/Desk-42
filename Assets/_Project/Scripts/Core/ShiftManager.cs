@@ -91,6 +91,23 @@ namespace Desk42.Core
 
         // ── Unity Lifecycle ───────────────────────────────────
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (_claimTemplates == null || _claimTemplates.Length == 0)
+                Debug.LogWarning("[ShiftManager] No ClaimTemplateData assigned — shift will have no claims.", this);
+            if (_anomalyTags == null || _anomalyTags.Length == 0)
+                Debug.LogWarning("[ShiftManager] No AnomalyTagData assigned — anomaly tags unavailable.", this);
+            if (_uiController == null)
+                Debug.LogWarning("[ShiftManager] _uiController not assigned — passive-aggressive UI will be silent.", this);
+        }
+#endif
+
+        private void Awake()
+        {
+            Desk42Services.Register(this);
+        }
+
         private void Start()
         {
             var run = GameManager.Instance?.Run;
@@ -148,6 +165,7 @@ namespace Desk42.Core
         private void OnDestroy()
         {
             UnsubscribeFromRumorMill();
+            Desk42Services.Unregister<ShiftManager>();
         }
 
         // ── Update ────────────────────────────────────────────
@@ -171,7 +189,7 @@ namespace Desk42.Core
             }
 
             // Drip-feed: Impatience timer disabled on Run 1
-            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            int phase = GameManager.Phase;
             if (phase >= 2)
             {
                 // Tick the impatience timer (handles Office Clock multiplier + grace period)

@@ -32,6 +32,16 @@ namespace Desk42.UI
 
         // ── Unity Lifecycle ───────────────────────────────────
 
+        private void Awake()
+        {
+            Desk42Services.Register(this);
+        }
+
+        private void OnDestroy()
+        {
+            Desk42Services.Unregister<RunSummaryPanel>();
+        }
+
         private void OnEnable()
         {
             RumorMill.OnRunCompleted += HandleRunCompleted;

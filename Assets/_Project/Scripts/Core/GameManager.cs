@@ -223,14 +223,28 @@ namespace Desk42.Core
 
         // ── Public Scene-Flow API ─────────────────────────────
 
-        /// <summary>Checks if a specific onboarding phase is unlocked, handling archetype bypasses.</summary>
-        public bool IsPhaseUnlocked(int phase)
+        /// <summary>
+        /// Resolved phase level (0-4) for the current session, with archetype
+        /// bypasses applied. Use this instead of reading Meta.HighestPhaseReached
+        /// directly — it handles the middle_manager bypass and null-safety.
+        /// Defaults to 4 (full game) when no session is active, so features
+        /// are visible in scenes loaded outside a normal game flow.
+        /// </summary>
+        public int PhaseLevel
         {
-            if (Meta == null) return false;
-            // Middle Manager archetype bypasses all drip-feed phase gates
-            if (Run?.ArchetypeId == "middle_manager") return true;
-            return (Meta.HighestPhaseReached ?? 4) >= phase;
+            get
+            {
+                if (Meta == null) return 4;
+                if (Run?.ArchetypeId == "middle_manager") return 4;
+                return Meta.HighestPhaseReached ?? 4;
+            }
         }
+
+        /// <summary>Static shorthand for GameManager.Instance.PhaseLevel.</summary>
+        public static int Phase => Instance?.PhaseLevel ?? 4;
+
+        /// <summary>Checks if a specific onboarding phase is unlocked, handling archetype bypasses.</summary>
+        public bool IsPhaseUnlocked(int phase) => PhaseLevel >= phase;
 
         /// <summary>Start a new run from the MainMenu.</summary>
         public void StartNewRun(string archetypeId = null)
@@ -359,7 +373,7 @@ namespace Desk42.Core
 
             // If a summary panel is listening, it'll handle the transition.
             // Otherwise fall back to immediate scene change.
-            var hasPanel = FindObjectOfType<UI.RunSummaryPanel>() != null;
+            var hasPanel = Desk42Services.Get<UI.RunSummaryPanel>() != null;
             if (!hasPanel)
                 LoadScene(SceneID.InternalAudit);
         }
@@ -425,6 +439,10 @@ namespace Desk42.Core
             // Wait until load is 90% (Unity holds at 0.9 before activation)
             while (op.progress < 0.9f)
                 yield return null;
+
+            // Discard any deferred events queued before the transition —
+            // they would fire against scene objects that are about to be destroyed.
+            RumorMill.FlushQueue();
 
             // TODO: Signal transition controller to fade in when ready
             op.allowSceneActivation = true;

@@ -28,7 +28,7 @@ using Desk42.BSM;
 namespace Desk42.Encounter
 {
     [DisallowMultipleComponent]
-    public sealed class EncounterManager : MonoBehaviour
+    public sealed class EncounterManager : RumorMillListener
     {
         // ── Inspector ─────────────────────────────────────────
 
@@ -58,17 +58,36 @@ namespace Desk42.Encounter
         private ActiveClaimData    _activeClaim;
         private bool               _encounterActive;
 
-        // ── RumorMill Subscriptions ───────────────────────────
+        // ── Lifecycle ─────────────────────────────────────────
 
-        private void OnEnable()
+#if UNITY_EDITOR
+        private void OnValidate()
         {
-            RumorMill.OnClaimQueued += HandleClaimQueued;
+            if (_punchCardMachine == null)
+                Debug.LogError("[EncounterManager] _punchCardMachine not assigned.", this);
+            if (_clientView == null)
+                Debug.LogError("[EncounterManager] _clientView not assigned.", this);
+            if (_claimPanel == null)
+                Debug.LogError("[EncounterManager] _claimPanel not assigned.", this);
+            if (_cardHandView == null)
+                Debug.LogError("[EncounterManager] _cardHandView not assigned.", this);
+            if (_clientAnchor == null)
+                Debug.LogError("[EncounterManager] _clientAnchor not assigned.", this);
+        }
+#endif
+
+        private void Awake()
+        {
+            Desk42Services.Register(this);
         }
 
-        private void OnDisable()
+        private void OnDestroy()
         {
-            RumorMill.OnClaimQueued -= HandleClaimQueued;
+            Desk42Services.Unregister<EncounterManager>();
         }
+
+        protected override void Subscribe()   => RumorMill.OnClaimQueued += HandleClaimQueued;
+        protected override void Unsubscribe() => RumorMill.OnClaimQueued -= HandleClaimQueued;
 
         // ── Claim Queued ──────────────────────────────────────
 

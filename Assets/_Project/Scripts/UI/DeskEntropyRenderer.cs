@@ -107,7 +107,7 @@ namespace Desk42.UI
 
         private void Update()
         {
-            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            int phase = GameManager.Phase;
             if (phase < 4) return;
 
             // Pull live entropy from run state each frame
@@ -158,7 +158,7 @@ namespace Desk42.UI
             }
 
             // ── Phase 4 Weaponised Clutter ──
-            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            int phase = GameManager.Phase;
             if (_enableWeaponizedClutter && phase >= 4
                 && _junkPrefabs != null && _junkPrefabs.Length > 0 && _junkAnchor != null)
             {
@@ -227,7 +227,7 @@ namespace Desk42.UI
 
         private void HandleMoralChoice(MoralChoiceEvent e)
         {
-            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            int phase = GameManager.Phase;
             if (phase < 4) return;
 
             if (!e.WasUnethical) return;
@@ -237,7 +237,7 @@ namespace Desk42.UI
 
         private void HandleHazard(OfficeHazardEvent e)
         {
-            int phase = GameManager.Instance?.Meta?.HighestPhaseReached ?? 4;
+            int phase = GameManager.Phase;
             if (phase < 4) return;
 
             float spike = e.HazardType switch

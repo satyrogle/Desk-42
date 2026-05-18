@@ -168,7 +168,7 @@ namespace Desk42.UI
             // with HR popups for the player's last second of attention.
             _spammer?.Cease();
 
-            var corpos = FindObjectOfType<CorpOSWindowManager>();
+            var corpos = Desk42Services.Get<CorpOSWindowManager>();
             if (corpos != null)
             {
                 corpos.TriggerLayer4Ending();

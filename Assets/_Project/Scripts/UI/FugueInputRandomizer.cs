@@ -16,7 +16,7 @@ using Desk42.Core;
 namespace Desk42.UI
 {
     [DisallowMultipleComponent]
-    public sealed class FugueInputRandomizer : MonoBehaviour
+    public sealed class FugueInputRandomizer : RumorMillListener
     {
         // ── Inspector ─────────────────────────────────────────
 
@@ -36,13 +36,13 @@ namespace Desk42.UI
 
         // ── Unity Lifecycle ───────────────────────────────────
 
-        private void OnEnable()
+        protected override void Subscribe()
         {
             RumorMill.OnSanityChanged  += HandleSanityChanged;
             RumorMill.OnShiftLifecycle += HandleShiftLifecycle;
         }
 
-        private void OnDisable()
+        protected override void Unsubscribe()
         {
             RumorMill.OnSanityChanged  -= HandleSanityChanged;
             RumorMill.OnShiftLifecycle -= HandleShiftLifecycle;

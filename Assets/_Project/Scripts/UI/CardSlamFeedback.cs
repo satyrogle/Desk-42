@@ -19,7 +19,7 @@ using Desk42.Core;
 namespace Desk42.UI
 {
     [DisallowMultipleComponent]
-    public sealed class CardSlamFeedback : MonoBehaviour
+    public sealed class CardSlamFeedback : RumorMillListener
     {
         [SerializeField] private float _pulseDuration = 0.35f;
         [SerializeField] private float _flashAlpha    = 0.30f;
@@ -30,9 +30,9 @@ namespace Desk42.UI
 
         // ── Lifecycle ─────────────────────────────────────────
 
-        private void OnEnable()  { RumorMill.OnCardSlammed += HandleSlam; }
-        private void OnDisable() { RumorMill.OnCardSlammed -= HandleSlam; }
-        private void Start()     { BuildUI(); }
+        protected override void Subscribe()   => RumorMill.OnCardSlammed += HandleSlam;
+        protected override void Unsubscribe() => RumorMill.OnCardSlammed -= HandleSlam;
+        private void Start() { BuildUI(); }
 
         // ── Event Handler ─────────────────────────────────────
 

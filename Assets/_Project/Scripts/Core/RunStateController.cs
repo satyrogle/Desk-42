@@ -234,7 +234,7 @@ namespace Desk42.Core
             // ── Vow: Agile Workflow — freeze timer during card processing ──
             if (ComplianceVowSystem.ShouldFreezeTimer())
             {
-                var machine = FindObjectOfType<RedTape.PunchCardMachine>();
+                var machine = Desk42Services.Get<RedTape.PunchCardMachine>();
                 if (machine != null && machine.IsProcessing)
                     return false; // Timer frozen while "holding" a card
             }

@@ -63,7 +63,7 @@ namespace Desk42.UI
             scaler.referenceResolution = new Vector2(1920, 1080);
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            if (FindObjectOfType<UnityEngine.EventSystems.EventSystem>() == null)
+            if (UnityEngine.EventSystems.EventSystem.current == null)
             {
                 var es = new GameObject("EventSystem");
                 es.AddComponent<UnityEngine.EventSystems.EventSystem>();
@@ -271,7 +271,7 @@ namespace Desk42.UI
 
         private void OnConspiracyBoardClicked()
         {
-            var board = FindObjectOfType<ConspiracyBoardUI>();
+            var board = Desk42Services.Get<ConspiracyBoardUI>();
             if (board != null)
                 board.gameObject.SetActive(true);
             else

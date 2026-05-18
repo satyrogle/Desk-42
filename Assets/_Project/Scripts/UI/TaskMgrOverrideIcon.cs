@@ -78,7 +78,7 @@ namespace Desk42.UI
 
         private void Launch()
         {
-            var canvas = GetComponentInParent<Canvas>() ?? FindObjectOfType<Canvas>();
+            var canvas = GetComponentInParent<Canvas>();
             if (canvas == null) return;
 
             var fightGO = new GameObject("BossFightController");
@@ -90,7 +90,7 @@ namespace Desk42.UI
 
         private void BuildUI()
         {
-            var canvas = GetComponentInChildren<Canvas>() ?? FindObjectOfType<Canvas>();
+            var canvas = GetComponentInParent<Canvas>();
             if (canvas == null) return;
 
             _icon = new GameObject("TaskMgrOverrideIcon");

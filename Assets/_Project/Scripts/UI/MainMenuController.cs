@@ -76,7 +76,7 @@ namespace Desk42.UI
             canvasGO.AddComponent<GraphicRaycaster>();
 
             // EventSystem (if missing)
-            if (FindObjectOfType<UnityEngine.EventSystems.EventSystem>() == null)
+            if (UnityEngine.EventSystems.EventSystem.current == null)
             {
                 var es = new GameObject("EventSystem");
                 es.AddComponent<UnityEngine.EventSystems.EventSystem>();

@@ -93,6 +93,7 @@ namespace Desk42.RedTape
 
         private void Awake()
         {
+            Desk42Services.Register(this);
             _fatigue  = new CardFatigueTracker();
             _mutation = new MutationEngine();
             _injector = GetComponent<StateInjector>()
@@ -109,6 +110,11 @@ namespace Desk42.RedTape
             _injector.ClearClient();
             StopAllCoroutines();
             _state = MachineState.Idle;
+        }
+
+        private void OnDestroy()
+        {
+            Desk42Services.Unregister<PunchCardMachine>();
         }
 
         // ── Update: fatigue timers ────────────────────────────

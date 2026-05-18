@@ -31,6 +31,16 @@ namespace Desk42.UI
         [Header("Config")]
         [SerializeField] private float _basePopupChance = 0.05f;
 
+        private void Awake()
+        {
+            Desk42Services.Register(this);
+        }
+
+        private void OnDestroy()
+        {
+            Desk42Services.Unregister<CorpOSWindowManager>();
+        }
+
         private void OnEnable()
         {
             RumorMill.OnClaimResolved += HandleClaimResolved;

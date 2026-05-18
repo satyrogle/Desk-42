@@ -65,8 +65,8 @@ namespace Desk42.Meta.DataSmuggling
         private void BuildPixel()
         {
             // Reuse whatever canvas the InternalAudit hub is on
-            var canvas = GetComponentInChildren<Canvas>()
-                         ?? FindObjectOfType<Canvas>();
+            var canvas = GetComponentInParent<Canvas>()
+                         ?? GetComponentInChildren<Canvas>();
             if (canvas == null) return;
 
             _pixelGO = new GameObject("RogueSubroutinePixel");
@@ -105,7 +105,8 @@ namespace Desk42.Meta.DataSmuggling
         private void OpenDialog()
         {
             if (_dialogGO != null) return;
-            var canvas = FindObjectOfType<Canvas>();
+            var canvas = GetComponentInParent<Canvas>()
+                         ?? GetComponentInChildren<Canvas>();
             if (canvas == null) return;
 
             _dialogGO = new GameObject("RogueDialog");

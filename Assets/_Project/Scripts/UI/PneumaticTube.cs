@@ -63,7 +63,7 @@ namespace Desk42.UI
             var portrait = eventData.pointerDrag?.GetComponent<DraggableClientPortrait>();
             if (portrait == null) return;
 
-            var encounter = FindObjectOfType<EncounterManager>();
+            var encounter = Desk42Services.Get<EncounterManager>();
             if (encounter == null) return;
 
             encounter.Liquify();
