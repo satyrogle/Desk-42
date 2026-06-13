@@ -32,11 +32,15 @@ The per-system drivers subscribe to **`SanityChangedEvent`** (from `Narrative/Ru
 | `bus:/SFX` | one-shots, interface |
 | `bus:/Ambience` | ambient bed |
 
-**Events referenced in code** (author these paths in Studio):
+**Events / snapshots referenced in code** (author these paths in Studio):
 - `event:/Music/BinauralStress` — sustaining bed, local `SanityLevel` param (`BinauralStressEngine`).
 - `event:/Music/Jazz` — procedural jazz, chord/note params (`ProceduralJazzGenerator`).
 - `event:/Music/ShiftCrescendo` — multi-track, `TidePressure` (`StressCrescendo`).
 - `event:/Threat/SanityWhisper`, `event:/Threat/TideRumble`, `event:/Threat/QueuePressure`, `event:/Threat/HazardAlert`, `event:/Threat/PneumaticTube` — spatial threat one-shots (`SpatialAudioThreatSystem`, `UI/PneumaticTube`).
+- `event:/Threat/TierCross` — tier-cross stinger, local `Direction` param (-1 worse / +1 recovering) (`DistortionAudioDirector`).
+- `snapshot:/Fugue`, `snapshot:/MercyWindow`, `snapshot:/Flow` — mode snapshots (`DistortionAudioDirector`).
+
+> **Event paths are plain strings, not `EventReference` fields.** Every driver serializes a `string _eventPath` and calls `RuntimeManager.CreateInstance(path)`. So the FMOD 2.02 `EventReference` migration **does not apply** to this codebase — don't convert these to `EventReference`. (The names just have to exist in the built banks at runtime.)
 
 ### Per-system drivers (read before editing audio)
 - **`BinauralStressEngine`** — sustaining `event:/Music/BinauralStress`; smooths Sanity, sets local `SanityLevel` on the instance **and** pushes global `"Sanity"` (normalized) via `FMODManager`.
@@ -44,6 +48,7 @@ The per-system drivers subscribe to **`SanityChangedEvent`** (from `Narrative/Ru
 - **`StressCrescendo`** — drives `event:/Music/ShiftCrescendo` with `TidePressure`.
 - **`SpatialAudioThreatSystem`** — positional threat stingers bucketed by Sanity.
 - **`AudioSettings`** — static volume prefs pushed to `FMODManager` buses on change.
+- **`DistortionAudioDirector`** — the **discrete** Distortion-Scale layer (added with this pack). Event-bus driven; fires `event:/Threat/TierCross` stingers on Sanity tier crossings (hysteresis, one stinger per crossing even on multi-tier drops) and toggles `snapshot:/Fugue` (auto, from `SanityChangedEvent.TriggeredFugue`) / `snapshot:/MercyWindow` / `snapshot:/Flow`. Does **not** push global params (no double-drive). Place it on the same audio GameObject as the other drivers. **Mercy/Flow have no bus event — wire `EnterMercyWindow()/ExitMercyWindow()` (and `EnterFlow()/ExitFlow()`) from `Core/TideSystem` on Ebb/Flow** (`// TODO(wire)` left in the file).
 
 ---
 
@@ -68,7 +73,7 @@ The five-tier Distortion Scale (architecture.md) is the design goal: one continu
 ### Reconciliation notes (where the kit's old design diverged — resolve before authoring)
 - **Sanity scale:** code is **0–1 normalized**. The old Brawler-derived kit doc assumed 0–100. Author Studio for 0–1, or change the push site (`BinauralStressEngine`) — pick one.
 - **Bus layout:** code uses Master/Music/SFX/Ambience. The kit proposed Diegetic/Interface/Voice buses. If you want those, **add them in Studio AND add the bus paths + resolves to `FMODManager`** so code can target them — don't author orphan buses.
-- **Stingers/snapshots:** there's no stinger/snapshot driver in code yet. If you adopt the tier-stinger + Fugue/Mercy snapshot model, add a small driver in `Desk42.Audio` that subscribes to `SanityChangedEvent` (for tier crossings, with hysteresis) and exposes `EnterFugue/ExitFugue/EnterMercyWindow/ExitMercyWindow` called by the dissociation state and `TideSystem`. Route it through `FMODManager`, event-bus driven — consistent with Layer 1.
+- **Stingers/snapshots:** `DistortionAudioDirector` (shipped with this pack) already implements this layer — tier-cross stingers with hysteresis + Fugue/Mercy/Flow snapshots, event-bus driven, no global-param double-drive. Two things remain: (1) **author** `event:/Threat/TierCross` + the three snapshots in Studio, and (2) **wire** `EnterMercyWindow()/ExitMercyWindow()` (and Flow) from `Core/TideSystem` on Ebb/Flow — Fugue is already automatic from the bus.
 
 ---
 
@@ -77,9 +82,10 @@ The five-tier Distortion Scale (architecture.md) is the design goal: one continu
 2. **Import** the plugin into the project.
 3. **Add the asmdef reference:** open `Assets/_Project/Scripts/Desk42.Core.asmdef` and add `FMODUnity` (and `FMODUnityResonance` if you use it) to `references`. *(Do this before the next step.)*
 4. **Enable the gate:** Player Settings -> Scripting Define Symbols -> add `DESK42_FMOD`. *(Only after steps 2–3, or `Desk42.Audio` won't compile.)*
-5. **Create the FMOD Studio project**, author buses/params/events to the Layer 1 names, build banks.
+5. **Create the FMOD Studio project**, author buses/params/events to the Layer 1 names (incl. `event:/Threat/TierCross` with a `Direction` param and `snapshot:/Fugue` `/MercyWindow` `/Flow`), build banks.
 6. **FMOD -> Edit Settings** -> point at the `.fspro` / built banks; set banks to **load at initialization** so beds can start without manual bank loading.
-7. **Smoke test:** enter Play mode, change Sanity, confirm the global `"Sanity"` param moves on the Studio System (via `BinauralStressEngine`) and the bed responds.
+7. **Add `DistortionAudioDirector`** to the audio GameObject (alongside the other drivers). Fugue + tier stingers are automatic; **wire `EnterMercyWindow()/ExitMercyWindow()` (and Flow) from `Core/TideSystem`** on Ebb/Flow (`// TODO(wire)` in the file).
+8. **Smoke test:** enter Play mode, change Sanity, confirm the global `"Sanity"` param moves (via `BinauralStressEngine`), a `TierCross` stinger fires on a band crossing, and `snapshot:/Fugue` ducks the mix at Sanity 0.
 
 ## First milestone (prove the spine before authoring everything)
 Get `event:/Music/BinauralStress` + the global `"Sanity"` param working with two layers crossfading as Sanity drops in play mode. Confirm `FMODManager.SetGlobalParameter("Sanity", …)` moves it. Then layer the rest tier by tier. Snapshots and the full FX chain come after the bed proves out.

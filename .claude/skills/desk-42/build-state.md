@@ -12,7 +12,7 @@ Single source of truth for "what actually exists right now." Update it as things
 - **BSM:** `BSM/` — `ClientStateMachine`, `ClientStateStack`, `ClientContext`, `States/`, `Transitions/`. (9 client states.)
 - **Red Tape Engine / BT:** `BehaviourTrees/` — `BehaviourTree`, `BTNode`, `BTStatus`, `BTContext`, `MutationEngine` (runtime node injection), `Nodes/`. `RedTape/` — `StateInjector`, `PunchCardMachine`, `CardFatigueTracker`.
 - **Event bus:** `Narrative/RumorMillEventBus.cs` + `RumorMillEvents.cs` (`SanityChangedEvent`, etc.).
-- **Audio (FMOD-shaped, gated):** `Audio/` — `FMODManager`, `BinauralStressEngine`, `ProceduralJazzGenerator`, `StressCrescendo`, `SpatialAudioThreatSystem`, `AudioSettings`. All behind `#if DESK42_FMOD`.
+- **Audio (FMOD-shaped, gated):** `Audio/` — `FMODManager`, `BinauralStressEngine`, `ProceduralJazzGenerator`, `StressCrescendo`, `SpatialAudioThreatSystem`, `AudioSettings`, and **`DistortionAudioDirector`** (added with this pack — discrete tier stingers + Fugue/Mercy/Flow snapshots, event-bus driven). All behind `#if DESK42_FMOD`.
 - **Other systems present:** `MoralInjury/`, `Archetypes/` (+ `Archetypes/Archetypes/` concrete archetypes), `Cards/`, `Claims/`, `Encounter/`, `Economy/`, `Synergy/`, `OfficeSupplies/`, `Meta/*` (Achievements, Analytics, BossFight, DataSmuggling, RetirementFund), `Leaderboard/`, `Accessibility/`, `Tutorial/`, `UI/` (`CorpOSWindowManager`, `PneumaticTube`, panels), `Editor/` + `EditorTools/`.
 - Tests exist under `Tests/EditMode` and `Tests/PlayMode`.
 
