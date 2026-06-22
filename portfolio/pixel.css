@@ -161,6 +161,7 @@ body {
 .scene__inner { position: relative; z-index: 2; max-width: 64%; }
 .scene__no { font-family: var(--font-family-pixel); font-size: clamp(18px,4vw,38px); color: var(--scene-accent); line-height: 1; text-shadow: 0 2px 0 rgba(0,0,0,0.3); }
 .scene__kicker { font-family: var(--font-family-pixel); font-size: 9px; letter-spacing: var(--tracking-label); color: var(--scene-accent); margin: var(--space-3) 0 var(--space-2); }
+h2.scene__title { margin:0; }
 .scene__title { font-family: var(--font-family-ui); font-weight:700; letter-spacing: var(--tracking-heading); line-height: var(--line-height-heading);
   font-size: var(--font-size-heading-lg); color: var(--color-text-primary); }
 .scene__lede { font-size: var(--font-size-body); line-height: var(--line-height-body); margin-top: var(--space-3); color: var(--color-text-secondary); max-width: 54ch; }
@@ -202,7 +203,7 @@ body {
 .rating { display:grid; grid-template-columns: 150px 1fr 48px; gap: var(--space-4); align-items:center; margin-bottom: var(--space-3); }
 .rating__name { font-family: var(--font-family-system); font-size:11px; letter-spacing:0.04em; color: var(--color-text-secondary); }
 .rating__track { height:14px; background: rgba(0,0,0,0.45); border:1px solid rgba(0,0,0,0.55); box-shadow: inset 0 0 0 1px var(--color-border-subtle); overflow:hidden; }
-.rating__fill { height:100%; width:0; background: var(--color-signal-terminal); box-shadow: var(--glow-terminal); transition: width var(--duration-cinematic) var(--ease-mechanical); }
+.rating__fill { display:block; height:100%; width:0; background: var(--color-signal-terminal); box-shadow: var(--glow-terminal); transition: width var(--duration-cinematic) var(--ease-mechanical); }
 .rating__fill.amber { background: var(--color-signal-primary); box-shadow: var(--glow-signal-amber); }
 .rating__fill.data  { background: var(--color-signal-data); box-shadow: var(--glow-data); }
 .rating__fill.crit  { background: var(--color-status-critical); box-shadow: var(--glow-critical); }
@@ -373,7 +374,7 @@ body {
 .toast__icon svg { width:22px; height:22px; }
 .toast__kicker { font-family: var(--font-family-pixel); font-size:7px; letter-spacing:1px; color: var(--color-signal-primary); }
 .toast__label { font-family: var(--font-family-ui); font-weight:700; font-size:15px; margin-top:4px; }
-@media (max-width:560px){ .toasts { display:none; } }
+@media (max-width:560px){ .toasts { left:10px; right:10px; bottom:10px; } .toast { width:100%; } }
 
 /* ─────────────────────────────────────────────────────────────────────────
    REVEAL + PARALLAX (driven by motion.js)
@@ -398,7 +399,7 @@ body {
   .boot::before, .stage__bg, .stage__bg::after, .silhouette .float, .silhouette .eye, .boot__prompt.show { animation:none !important; }
   .scene.in .scene__sheen { animation:none; }
   .has-js [data-rise], .has-js [data-pop] > * { opacity:1 !important; transform:none !important; }
-  .toast { animation:none; transform:none; opacity:1; }
+  .toast { animation:none !important; transform:none !important; opacity:1 !important; }
   [data-parallax] { transform:none !important; }
 }
 
