@@ -78,14 +78,71 @@
   /* ── Achievement toasts ──────────────────────────────────────────────── */
   (function toasts() {
     var host = $('.toasts'); if (!host) return;
+    host.setAttribute('aria-live', 'polite');
+    host.setAttribute('aria-atomic', 'true');
     var ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 17l-5.5 2.5 1-6.3L3 8.9 9 8z"/></svg>';
-    function toast(kicker, label) {
-      var t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status');
-      t.innerHTML = '<span class="toast__icon" aria-hidden="true">' + ICON + '</span><span><span class="toast__kicker">' + kicker + '</span><span class="toast__label">' + label + '</span></span>';
-      host.appendChild(t);
-      setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 360); }, 3200);
+    var queue = [];
+    var active = null;
+    var activeToken = 0;
+    var timeoutId = null;
+    var removeId = null;
+    var recent = Object.create(null);
+    var MAX_QUEUE = 5;
+    var DEDUPE_MS = 2500;
+    var VISIBLE_MS = 3200;
+    var EXIT_MS = REDUCE ? 0 : 360;
+
+    function clearTimers() {
+      if (timeoutId) window.clearTimeout(timeoutId);
+      if (removeId) window.clearTimeout(removeId);
+      timeoutId = null;
+      removeId = null;
     }
-    window.__desk42 = window.__desk42 || {}; window.__desk42.toast = toast;
+    function pruneRecent(now) {
+      Object.keys(recent).forEach(function (key) { if (now - recent[key] > DEDUPE_MS) delete recent[key]; });
+    }
+    function removeActive(token) {
+      if (!active || token !== activeToken) return;
+      clearTimers();
+      var current = active;
+      active = null;
+      current.remove();
+      showNext();
+    }
+    function closeActive(token) {
+      if (!active || token !== activeToken) return;
+      clearTimers();
+      if (REDUCE) { removeActive(token); return; }
+      active.classList.add('out');
+      removeId = window.setTimeout(function () { removeActive(token); }, EXIT_MS);
+    }
+    function showNext() {
+      if (active || !queue.length) return;
+      var item = queue.shift();
+      var token = ++activeToken;
+      var t = document.createElement('div');
+      t.className = 'toast';
+      t.setAttribute('role', 'status');
+      t.innerHTML = '<span class="toast__icon" aria-hidden="true">' + ICON + '</span><span><span class="toast__kicker">' + item.kicker + '</span><span class="toast__label">' + item.label + '</span></span>';
+      host.replaceChildren(t);
+      active = t;
+      timeoutId = window.setTimeout(function () { closeActive(token); }, VISIBLE_MS);
+    }
+    function toast(kicker, label) {
+      var now = Date.now();
+      pruneRecent(now);
+      var key = kicker + '|' + label;
+      if (recent[key] && now - recent[key] < DEDUPE_MS) return;
+      recent[key] = now;
+      if (active && active.textContent.indexOf(label) !== -1) return;
+      if (queue.some(function (item) { return item.kicker === kicker && item.label === label; })) return;
+      if (queue.length >= MAX_QUEUE) queue.shift();
+      queue.push({ kicker: kicker, label: label });
+      showNext();
+    }
+    window.__desk42 = window.__desk42 || {};
+    window.__desk42.toast = toast;
+    window.__desk42.toastState = function () { return { active: !!active, queued: queue.length, visible: host.querySelectorAll('.toast').length }; };
     var MAP = { metrics: ['READOUT', 'METRICS SYNCED'], glance: ['DOCTRINE', 'DIRECTIVES FILED'], map: ['ARCHIVE', 'ROSTER UNLOCKED'], systems: ['CORE', 'SYSTEMS ONLINE'], practice: ['AUDIT', 'INSPECTION PASSED'], cross: ['DOSSIER', 'CROSS-REFERENCE LOGGED'] };
     if (!('IntersectionObserver' in window)) return;
     var fired = {};
