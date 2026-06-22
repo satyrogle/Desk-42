@@ -39,7 +39,7 @@
   .scroller { position:relative; z-index:5; }
   .beat { min-height:100vh; display:flex; align-items:center; padding:0 clamp(20px,7vw,120px); pointer-events:none; }
   .beat.right { justify-content:flex-end; text-align:right; }
-  .beat__inner { max-width:30ch; opacity:0; transform:translateY(30px); transition:opacity .7s cubic-bezier(.2,1,.36,1), transform .7s cubic-bezier(.2,1,.36,1); }
+  .beat__inner { max-width:min(38rem, 100%); opacity:0; transform:translateY(30px); transition:opacity .7s cubic-bezier(.2,1,.36,1), transform .7s cubic-bezier(.2,1,.36,1); }
   .beat.in .beat__inner { opacity:1; transform:none; }
   .kick { font-family: var(--font-family-pixel); font-size:10px; letter-spacing:3px; color: var(--green-400); display:block; margin-bottom:18px; }
   .beat.anomaly .kick { color: var(--violet-400); }
