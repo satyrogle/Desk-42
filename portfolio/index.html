@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sanjay Jacob Sulegonker — Desk 42 Engineering Evidence</title>
+<meta name="description" content="Engineering evidence portfolio for Desk 42 — gameplay systems, AI and architecture by Sanjay Jacob Sulegonker, presented as a bureau terminal. Prepared for the Global Talent Visa." />
+<meta name="color-scheme" content="dark light" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="eng.css" />
+<link rel="stylesheet" href="pixel.css" />
+</head>
+<body class="booting">
+<a class="skip-link" href="#decks">Skip to content</a>
+
+<!-- SCENE 01 · BOOT -->
+<div class="boot" role="dialog" aria-label="System boot — press start to enter">
+  <div class="boot__inner">
+    <div class="boot__logo">DESK<br>42</div>
+    <div class="boot__word">ENGINEERING EVIDENCE</div>
+    <pre class="boot__log" aria-live="polite"></pre>
+    <div class="boot__prompt"><span class="key">ENTER</span> PRESS START</div>
+  </div>
+  <button class="boot__skip" type="button">SKIP ▸</button>
+</div>
+<script>
+  (function () { var b = document.querySelector('.boot'); if (!b) return;
+    function kill(){ b.classList.add('is-out'); setTimeout(function(){ b.setAttribute('hidden',''); document.body.classList.remove('booting'); }, 780); }
+    try { if (sessionStorage.getItem('desk42.seen')) { b.setAttribute('hidden',''); document.body.classList.remove('booting'); return; } } catch (e) {}
+    window.addEventListener('load', function(){ setTimeout(function(){ if(!b.hasAttribute('hidden')) kill(); }, 16000); });
+  })();
+</script>
+
+<div class="atmosphere" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="crt" aria-hidden="true"></div>
+<div class="toasts" aria-live="polite"></div>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar__inner">
+    <div class="topbar__mark" aria-hidden="true">42</div>
+    <span class="topbar__title">Engineering Evidence</span>
+    <nav class="topbar__nav" aria-label="Section navigation">
+      <a href="machine.html">◆ The Machine</a>
+      <a href="#decks">Artifacts</a>
+      <a href="#anomaly">Anomaly</a>
+      <a href="#statement">Clearance</a>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" aria-pressed="false">☼ Archive</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- SCENE 02 · LANDING HERO (bureau vista) -->
+  <section class="hero hero--cine" id="top">
+    <div class="stage">
+      <div class="stage__bg" aria-hidden="true"></div>
+      <img class="stage__plate" src="assets/pixel/bureau-vista.png" width="256" height="144" alt="Pixel-art view across a night-shift bureau: rows of desks with glowing green and cyan terminals receding toward a tall window where a violet anomaly burns, a lone operator at the front desk." />
+      <div class="stage__rays" aria-hidden="true"></div>
+      <div class="stage__grain" aria-hidden="true"></div>
+      <div class="stage__scrim" aria-hidden="true"></div>
+      <div class="stage__tag" aria-hidden="true">BUREAU OF CONTINUED OPERATIONS · INTAKE</div>
+      <aside class="hud" aria-label="Operator status">
+        <div class="hud__row"><span>OPERATOR</span><b>S. JACOB</b></div>
+        <div class="hud__row"><span>CLEARANCE</span><span class="hud__tag">GRANTED</span></div>
+        <div class="hud__bar hud__bar--soul"><i style="width:78%"></i></div>
+        <div class="hud__row"><span>ARTIFACTS</span><span class="hud__tag">6 FILED</span></div>
+        <div class="hud__bar hud__bar--clear"><i style="width:52%"></i></div>
+        <div class="hud__row"><span>STATUS</span><b>ON SHIFT</b></div>
+      </aside>
+      <div class="stage__title">
+        <span class="hero__badge"><span class="dot" aria-hidden="true"></span> Portfolio · Global Talent Visa</span>
+        <h1 class="title-pop">Systems, AI &amp; the<br /><span class="grad">machinery beneath play</span></h1>
+      </div>
+    </div>
+    <p class="body lede" data-rise>
+      I'm <strong>Sanjay Jacob Sulegonker</strong> — a gameplay systems and AI engineer, and solo
+      developer of <em>Desk 42</em>. This is the bureau: a curated set of technical artifacts
+      documenting the architecture, AI and mathematical systems behind my work, prepared as evidence
+      of exceptional promise in digital technology.
+    </p>
+    <dl class="hero__meta" data-pop>
+      <div><dt>Discipline</dt><dd>Gameplay Systems · AI</dd></div>
+      <div><dt>Programme</dt><dd>MA Digital Games · Brunel</dd></div>
+      <div><dt>Engine</dt><dd>Unity · C#</dd></div>
+      <div><dt>Flagship</dt><dd>Desk 42 — roguelite</dd></div>
+    </dl>
+  </section>
+
+  <!-- SCENE 03 · DOSSIER SELECTOR -->
+  <section class="section" id="decks">
+    <div class="scene scene--roster" data-rise>
+      <div class="scene__inner"><div class="scene__no">FILE</div><div class="scene__kicker">CASE ARCHIVE</div><div class="scene__title">Six technical artifacts</div><p class="scene__lede">Each artifact is a self-contained dossier. The Systems Architecture file is authorised and operational; the remainder are sealed and in production from the same source material.</p></div>
+      <div class="scene__sheen" aria-hidden="true"></div>
+    </div>
+    <div class="dossiers" data-pop>
+      <a class="dossier d-arch dossier--active" href="architecture.html" aria-label="Open Systems Architecture — authorised">
+        <div class="dossier__head"><span class="dossier__case">CASE 01 · SYS-ARCH</span><span class="dossier__access dossier__access--auth">AUTHORISED</span></div>
+        <div class="dossier__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2 2M16 16l2 2"/></svg></div>
+        <div class="dossier__title">Systems Architecture</div>
+        <p class="dossier__desc">The dependency graph of Desk 42 — 13 divisions, the Rumor Mill event bus, and six load-bearing systems. Grounded in the real source tree.</p>
+        <div class="dossier__foot"><span class="dossier__meta">Namespace roster · core systems</span><span class="dossier__action">ACCESS ▸</span></div>
+      </a>
+      <div class="dossier d-ai dossier--sealed" role="group" aria-label="AI Innovation Showcase — in production">
+        <div class="dossier__head"><span class="dossier__case">CASE 02 · AI-SHOW</span><span class="dossier__access dossier__access--prod">IN PRODUCTION</span></div>
+        <div class="dossier__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M12 7v3l-6 7M12 10l6 7"/></svg></div>
+        <div class="dossier__title">AI Innovation Showcase</div>
+        <p class="dossier__desc">Player-modifiable behaviour trees, Markov client prediction, a PID difficulty controller, HMM inference and chaos-driven variance.</p>
+        <div class="dossier__foot"><span class="dossier__meta">7 AI systems</span><span class="dossier__action">SEALED</span></div>
+      </div>
+      <div class="dossier d-math dossier--sealed" role="group" aria-label="Mathematical Systems — in production">
+        <div class="dossier__head"><span class="dossier__case">CASE 03 · MATH-SYS</span><span class="dossier__access dossier__access--prod">IN PRODUCTION</span></div>
+        <div class="dossier__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 5h14L9 19h10"/></svg></div>
+        <div class="dossier__title">Mathematical Systems</div>
+        <p class="dossier__desc">Fuzzy logic, Markov chains, PID, the logistic map, Bayesian networks, queueing theory and MAUT — the maths driving game behaviour.</p>
+        <div class="dossier__foot"><span class="dossier__meta">10 models</span><span class="dossier__action">SEALED</span></div>
+      </div>
+      <div class="dossier d-port dossier--sealed" role="group" aria-label="Engineering Portfolio — in production">
+        <div class="dossier__head"><span class="dossier__case">CASE 04 · ENG-PORT</span><span class="dossier__access dossier__access--prod">IN PRODUCTION</span></div>
+        <div class="dossier__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h16v13H4z"/><path d="M9 7V5h6v2"/></svg></div>
+        <div class="dossier__title">Engineering Portfolio</div>
+        <p class="dossier__desc">A personal portfolio across projects — systems built, problems solved, and the through-line of the work.</p>
+        <div class="dossier__foot"><span class="dossier__meta">Dark / light · multi-section</span><span class="dossier__action">SEALED</span></div>
+      </div>
+      <div class="dossier d-road dossier--sealed" role="group" aria-label="Product Roadmap — in production">
+        <div class="dossier__head"><span class="dossier__case">CASE 05 · ROADMAP</span><span class="dossier__access dossier__access--prod">IN PRODUCTION</span></div>
+        <div class="dossier__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h10M4 12h14M4 17h7"/></svg></div>
+        <div class="dossier__title">Product Roadmap</div>
+        <p class="dossier__desc">Delivery planning for Desk 42 and Kindred Siege — Gantt timelines and feature tiers, Jan 2025 → Q4 2027.</p>
+        <div class="dossier__foot"><span class="dossier__meta">Gantt · feature tiers</span><span class="dossier__action">SEALED</span></div>
+      </div>
+      <div class="dossier d-thesis dossier--sealed" role="group" aria-label="Thesis Pipeline — in production">
+        <div class="dossier__head"><span class="dossier__case">CASE 06 · THESIS</span><span class="dossier__access dossier__access--prod">IN PRODUCTION</span></div>
+        <div class="dossier__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4L3 8l9 4 9-4z"/><path d="M7 10v5l5 2 5-2v-5"/></svg></div>
+        <div class="dossier__title">Thesis Pipeline</div>
+        <p class="dossier__desc">The research-to-product pipeline — timeline, concept mapping and impact statement linking academic work to shipped systems.</p>
+        <div class="dossier__foot"><span class="dossier__meta">Timeline · impact</span><span class="dossier__action">SEALED</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANOMALY BEAT -->
+  <section class="section" id="anomaly" aria-label="Anomaly">
+    <figure class="plate-band" data-rise>
+      <img src="assets/pixel/anomaly-corridor.png" width="256" height="144" alt="Pixel-art filing-archive corridor: rows of cabinets recede toward a dark doorway where a violet-magenta anomaly blooms, a small operator silhouette standing before it." />
+      <figcaption>
+        <div class="k">⚠ ANOMALY · SUB-LEVEL 42</div>
+        <h3>Something in the filing is not filing back</h3>
+        <p>The deeper systems hold. The deeper records do not. Engineering discipline is what keeps the machine standing while the archive misbehaves.</p>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- SCENE 13 · CLEARANCE / EVIDENCE STATEMENT -->
+  <section class="section" id="statement">
+    <div class="scene scene--integrity" data-rise>
+      <div class="scene__inner"><div class="scene__no">SEAL</div><div class="scene__kicker">EVIDENCE STATEMENT</div><div class="scene__title">Why this clears</div><p class="scene__lede">The case for exceptional promise in digital technology — depth, applied AI, and production rigour, delivered solo.</p></div>
+      <div class="scene__sheen" aria-hidden="true"></div>
+    </div>
+    <div class="clearance" data-pop>
+      <div class="clearance__item"><span class="k">CLAUSE I</span><h3>Depth, solo</h3><p>A complete, layered game architecture — AI, state machines, adaptive difficulty, persistence — designed and built by one engineer.</p></div>
+      <div class="clearance__item"><span class="k">CLAUSE II</span><h3>Applied AI &amp; maths</h3><p>Behaviour trees, Markov models, PID control and chaotic systems used not as buzzwords but as shipped, load-bearing mechanics.</p></div>
+      <div class="clearance__item"><span class="k">CLAUSE III</span><h3>Engineering rigour</h3><p>Assembly-enforced boundaries, automated tests and CI — production discipline applied to an independent project.</p></div>
+    </div>
+  </section>
+
+  <!-- SIGN-OFF -->
+  <footer class="signoff">
+    <div>
+      <div class="signoff__title">Sanjay Jacob Sulegonker</div>
+      <p class="signoff__meta">Gameplay Systems &amp; AI Engineer · MA Digital Games, Brunel University London<br>Engineering evidence · prepared for Global Talent Visa</p>
+    </div>
+    <div class="signoff__seal" aria-hidden="true"><span>BUREAU</span><b>42</b><span>FILED</span></div>
+  </footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'desk42.eng.theme', root = document.documentElement, btn = document.getElementById('theme-toggle');
+  function set(t) { root.setAttribute('data-theme', t); if (btn) { btn.setAttribute('aria-pressed', String(t === 'light')); btn.textContent = t === 'light' ? '☾ Night Shift' : '☼ Archive'; } try { localStorage.setItem(KEY, t); } catch (e) {} }
+  try { var s = localStorage.getItem(KEY); if (s) set(s); } catch (e) {}
+  if (btn) btn.addEventListener('click', function () { set(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); });
+  var links = Array.prototype.slice.call(document.querySelectorAll('.topbar__nav a'));
+  var map = {}; links.forEach(function (l) { map[l.getAttribute('href').slice(1)] = l; });
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { links.forEach(function (l){ l.removeAttribute('aria-current'); }); if (map[e.target.id]) map[e.target.id].setAttribute('aria-current','true'); } }); }, { rootMargin: '-10% 0px -80% 0px' });
+    links.forEach(function (l) { var s = document.getElementById(l.getAttribute('href').slice(1)); if (s) io.observe(s); });
+  }
+})();
+</script>
+<script src="motion.js"></script>
+<script src="pixel.js"></script>
+</body>
+</html>

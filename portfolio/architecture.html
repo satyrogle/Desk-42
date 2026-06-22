@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Desk 42 — Systems Architecture · Sanjay Jacob Sulegonker</title>
+<meta name="description" content="Systems architecture of Desk 42 — a solo-developed Unity roguelite, presented as a bureaucratic control system. Divisions, core systems and engineering integrity. Global Talent Visa evidence." />
+<meta name="color-scheme" content="dark light" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="eng.css" />
+<link rel="stylesheet" href="pixel.css" />
+</head>
+<body class="booting">
+<a class="skip-link" href="#overview">Skip to content</a>
+
+<!-- SCENE 01 · BOOT -->
+<div class="boot" role="dialog" aria-label="System boot — press start to enter">
+  <div class="boot__inner">
+    <div class="boot__logo">DESK<br>42</div>
+    <div class="boot__word">SYSTEMS ARCHITECTURE</div>
+    <pre class="boot__log" aria-live="polite"></pre>
+    <div class="boot__prompt"><span class="key">ENTER</span> PRESS START</div>
+  </div>
+  <button class="boot__skip" type="button">SKIP ▸</button>
+</div>
+<script>
+  (function () { var b = document.querySelector('.boot'); if (!b) return;
+    function kill(){ b.classList.add('is-out'); setTimeout(function(){ b.setAttribute('hidden',''); document.body.classList.remove('booting'); }, 780); }
+    try { if (sessionStorage.getItem('desk42.seen')) { b.setAttribute('hidden',''); document.body.classList.remove('booting'); return; } } catch (e) {}
+    window.addEventListener('load', function(){ setTimeout(function(){ if(!b.hasAttribute('hidden')) kill(); }, 16000); });
+  })();
+</script>
+
+<div class="atmosphere" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="crt" aria-hidden="true"></div>
+<div class="toasts" aria-live="polite"></div>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar__inner">
+    <div class="topbar__mark" aria-hidden="true">42</div>
+    <span class="topbar__title">Systems Architecture</span>
+    <nav class="topbar__nav" aria-label="Section navigation">
+      <a href="#overview">Overview</a>
+      <a href="#metrics">Metrics</a>
+      <a href="#glance">Doctrine</a>
+      <a href="#map">Divisions</a>
+      <a href="#systems">Core Systems</a>
+      <a href="#practice">Integrity</a>
+      <a href="#cross">Intelligence</a>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" aria-pressed="false">☼ Archive</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- SCENE 02 · ARCHITECTURE OVERVIEW (hero) -->
+  <section class="hero hero--cine" id="overview">
+    <div class="stage">
+      <div class="stage__bg" aria-hidden="true"></div>
+      <img class="stage__plate" src="assets/pixel/operator-night.png" width="256" height="144" alt="Pixel-art night-shift office at Desk 42: an operator's desk lit by a glowing green terminal, a barred window with a pale moon, and a tall figure watching from the dark with amber eyes." />
+      <div class="stage__rays" aria-hidden="true"></div>
+      <div class="stage__grain" aria-hidden="true"></div>
+      <div class="stage__scrim" aria-hidden="true"></div>
+      <div class="stage__tag" aria-hidden="true">DESK 42 · NIGHT SHIFT · 27:42</div>
+      <aside class="hud" aria-label="Operator status">
+        <div class="hud__row"><span>OPERATOR</span><b>S. JACOB</b></div>
+        <div class="hud__row"><span>SOUL</span><span class="hud__tag">STABLE</span></div>
+        <div class="hud__bar hud__bar--soul"><i style="width:71%"></i></div>
+        <div class="hud__row"><span>SANITY</span><span class="hud__tag" data-sanity>100%</span></div>
+        <div class="hud__bar hud__bar--sanity"><i style="width:100%"></i></div>
+        <div class="hud__row"><span>DEPTH</span><span class="hud__tag" data-depth>0%</span></div>
+        <div class="hud__bar hud__bar--clear"><i style="width:40%"></i></div>
+        <div class="hud__row"><span>SHIFT</span><b>ACTIVE</b></div>
+      </aside>
+      <div class="stage__title">
+        <span class="hero__badge"><span class="dot" aria-hidden="true"></span> Technical Evidence · Global Talent Visa</span>
+        <h1 class="title-pop">The architecture of a<br /><span class="grad">bureaucratic machine</span></h1>
+      </div>
+    </div>
+    <p class="body lede" data-rise>
+      <strong>Desk 42</strong> is a solo-developed Unity roguelite built on a strict, event-driven
+      architecture: 71 C# scripts organised into 13 cohesive namespaces, communicating through a
+      single decoupled event bus. This is the system — its divisions, its core machinery, and the
+      engineering that keeps a one-person codebase maintainable.
+    </p>
+    <dl class="hero__meta" data-pop>
+      <div><dt>Developer</dt><dd>Sanjay Jacob Sulegonker</dd></div>
+      <div><dt>Programme</dt><dd>MA Digital Games · Brunel University London</dd></div>
+      <div><dt>Engine</dt><dd>Unity 2022.3 LTS · URP</dd></div>
+      <div><dt>Language</dt><dd>C# · .NET</dd></div>
+      <div><dt>Team Size</dt><dd>Solo developer</dd></div>
+    </dl>
+  </section>
+
+  <!-- SCENE 03 · OPERATIONAL METRICS -->
+  <section class="section" id="metrics" aria-label="Operational metrics">
+    <div class="counters" data-pop style="margin-bottom:var(--space-6)">
+      <div class="counter"><div class="counter__readout" data-count="71">0</div><div class="counter__label">C# Scripts</div><div class="counter__note">67 systems · 4 test suites</div></div>
+      <div class="counter counter--data"><div class="counter__readout" data-count="13">0</div><div class="counter__label">Divisions</div><div class="counter__note">Single-responsibility namespaces</div></div>
+      <div class="counter counter--amber"><div class="counter__readout" data-count="27">0</div><div class="counter__label">Dependencies</div><div class="counter__note">Acyclic · Core-routed</div></div>
+      <div class="counter counter--crit"><div class="counter__readout" data-count="1">0</div><div class="counter__label">Operator</div><div class="counter__note">Design · code · systems</div></div>
+    </div>
+    <div class="ratings" data-rise>
+      <div class="ratings__title">◈ SYSTEM RATINGS · DESK 42</div>
+      <div class="rating"><span class="rating__name">ARCHITECTURE</span><span class="rating__track"><i class="rating__fill" data-fill="92"></i></span><span class="rating__val">92</span></div>
+      <div class="rating"><span class="rating__name">AI / BEHAVIOUR</span><span class="rating__track"><i class="rating__fill amber" data-fill="88"></i></span><span class="rating__val">88</span></div>
+      <div class="rating"><span class="rating__name">ADAPTIVE DIFFICULTY</span><span class="rating__track"><i class="rating__fill crit" data-fill="80"></i></span><span class="rating__val">80</span></div>
+      <div class="rating"><span class="rating__name">TEST COVERAGE</span><span class="rating__track"><i class="rating__fill data" data-fill="64"></i></span><span class="rating__val">64</span></div>
+      <div class="rating"><span class="rating__name">DECOUPLING</span><span class="rating__track"><i class="rating__fill" data-fill="95"></i></span><span class="rating__val">95</span></div>
+    </div>
+  </section>
+
+  <!-- SCENE 04 · DOCTRINE (principles) -->
+  <section class="section" id="glance">
+    <div class="scene scene--doctrine" data-rise>
+      <div class="scene__art" aria-hidden="true"><svg viewBox="0 0 200 200" fill="rgba(0,0,0,0.22)"><rect x="46" y="30" width="108" height="140" rx="4" fill="rgba(0,0,0,0.28)"/><path d="M64 60 h72 M64 84 h72 M64 108 h54 M64 132 h60" stroke="rgba(255,255,255,0.28)" stroke-width="5"/><circle cx="150" cy="150" r="24" fill="none" stroke="rgba(238,182,83,0.5)" stroke-width="5"/><path d="M140 150 l7 8 14 -16" stroke="rgba(238,182,83,0.7)" stroke-width="5" fill="none"/></svg></div>
+      <div class="scene__inner"><div class="scene__no">01</div><div class="scene__kicker">OPERATING DOCTRINE</div><div class="scene__title">An architecture built to decouple</div><p class="scene__lede">Standing orders for the machine. One law above all: <em>systems do not call each other directly</em>. Logic moves through a typed event bus; content is data, not code.</p></div>
+      <div class="scene__sheen" aria-hidden="true"></div>
+    </div>
+    <div class="doctrine" data-pop>
+      <article class="directive"><div class="directive__no">DIRECTIVE I</div><div class="directive__kicker">EVENT-DRIVEN</div><h3>The Rumor Mill bus</h3><p>Every domain event is a <code>readonly struct</code>. The bus routes them; a system imports only the event type it cares about — nothing else.</p></article>
+      <article class="directive"><div class="directive__no">DIRECTIVE II</div><div class="directive__kicker">DATA-DRIVEN</div><h3>ScriptableObject content</h3><p>Cards, clients, supplies and regulations are authored as assets via factories and registries — new content needs no new code paths.</p></article>
+      <article class="directive"><div class="directive__no">DIRECTIVE III</div><div class="directive__kicker">LAYERED</div><h3>Core as the hub</h3><p>Gameplay divisions depend inward on <code>Core</code>, which owns canonical run state and the event definitions. Dependencies stay shallow and directed.</p></article>
+    </div>
+  </section>
+
+  <!-- SCENE 05 · BUREAU DIVISIONS (namespace roster) -->
+  <section class="section" id="map">
+    <div class="scene scene--roster" data-rise>
+      <div class="scene__art" aria-hidden="true"><svg viewBox="0 0 200 200" fill="rgba(0,0,0,0.22)"><circle cx="100" cy="56" r="14"/><rect x="84" y="76" width="32" height="40" rx="6"/><circle cx="56" cy="120" r="11" fill="rgba(114,205,212,0.4)"/><rect x="44" y="134" width="24" height="32" rx="5" fill="rgba(114,205,212,0.4)"/><circle cx="144" cy="120" r="11"/><rect x="132" y="134" width="24" height="32" rx="5"/></svg></div>
+      <div class="scene__inner"><div class="scene__no">02</div><div class="scene__kicker">DEPARTMENT ROSTER</div><div class="scene__title">13 divisions, one decoupled bureau</div><p class="scene__lede">Each namespace is a single-responsibility division. Counts are measured from the source tree; <strong>Core</strong> is the hub everything routes through. 27 directed dependencies link the bureau.</p></div>
+      <div class="scene__sheen" aria-hidden="true"></div>
+    </div>
+    <div class="divisions" data-pop>
+      <div class="division d-core"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg></div><div class="division__count">5<small>SCRIPTS</small></div></div><div class="division__name">Core</div><div class="division__role">Singleton, scene-flow FSM, run state, the Rumor Mill events &amp; adaptive Tide.</div><span class="division__state">HUB</span></div>
+      <div class="division d-ui"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div><div class="division__count">11<small>SCRIPTS</small></div></div><div class="division__name">UI</div><div class="division__role">Passive-aggressive UI controller, decay/entropy renderers, NDA overlays, narrator.</div><span class="division__state">VIEW</span></div>
+      <div class="division d-ai"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="5" r="2.4"/><circle cx="6" cy="19" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M12 7v4M12 11l-5 6M12 11l5 6"/></svg></div><div class="division__count">8<small>SCRIPTS</small></div></div><div class="division__name">BehaviourTrees</div><div class="division__role">Tick-budgeted, runtime-mutable behaviour trees driving client AI.</div><span class="division__state">AI</span></div>
+      <div class="division d-ai"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="5" width="16" height="5"/><rect x="4" y="14" width="16" height="5"/><path d="M9 10v4"/></svg></div><div class="division__count">8<small>SCRIPTS</small></div></div><div class="division__name">BSM</div><div class="division__role">Bureaucratic State Machine — stack-based client states, transition tables, tells.</div><span class="division__state">AI</span></div>
+      <div class="division d-content"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="3" width="12" height="18" rx="1"/><path d="M9 7h6M9 11h6M9 15h3"/></svg></div><div class="division__count">7<small>SCRIPTS</small></div></div><div class="division__name">OfficeSupplies</div><div class="division__role">Relic/item system — registry, instances, tiered supplies &amp; a synergy resolver.</div><span class="division__state">CONTENT</span></div>
+      <div class="division d-content"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-4 3.5-6 7-6s7 2 7 6"/></svg></div><div class="division__count">7<small>SCRIPTS</small></div></div><div class="division__name">Archetypes</div><div class="division__role">Client personalities via a factory — Auditor, Bureaucrat, Gaslighter, IT Person.</div><span class="division__state">CONTENT</span></div>
+      <div class="division d-content"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="6" width="16" height="12" rx="1"/><rect x="7" y="9" width="2" height="3" fill="currentColor"/><rect x="11" y="9" width="2" height="3" fill="currentColor"/><rect x="15" y="9" width="2" height="3" fill="currentColor"/></svg></div><div class="division__count">5<small>SCRIPTS</small></div></div><div class="division__name">Cards</div><div class="division__role">Deckbuilder core — punch-card data, deck, hand, library and draft system.</div><span class="division__state">CONTENT</span></div>
+      <div class="division d-ai"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 7h10v10H7z"/><path d="M3 12h4M17 12h4"/></svg></div><div class="division__count">3<small>SCRIPTS</small></div></div><div class="division__name">RedTape</div><div class="division__role">The bridge — injects player card slams into the behaviour tree; card-fatigue.</div><span class="division__state">BRIDGE</span></div>
+      <div class="division d-data"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div><div class="division__count">3<small>SCRIPTS</small></div></div><div class="division__name">Persistence</div><div class="division__role">Save/load and serialisation of run and meta state.</div><span class="division__state">DATA</span></div>
+      <div class="division d-data"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="12" r="2.4"/><path d="M8.4 12H14M14 9l4 3-4 3z"/></svg></div><div class="division__count">3<small>SCRIPTS</small></div></div><div class="division__name">Narrative</div><div class="division__role">Rumor Mill event bus &amp; conspiracy-memo generation.</div><span class="division__state">DATA</span></div>
+      <div class="division d-content"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z"/><path d="M10 9l4 4M14 9l-4 4"/></svg></div><div class="division__count">3<small>SCRIPTS</small></div></div><div class="division__name">MoralInjury</div><div class="division__role">Moral dilemmas and the accumulating moral-injury model.</div><span class="division__state">CONTENT</span></div>
+      <div class="division d-content"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 4h11l3 3v13H5z"/><path d="M16 4v3h3M8 12h8M8 16h6"/></svg></div><div class="division__count">3<small>SCRIPTS</small></div></div><div class="division__name">Claims</div><div class="division__role">Claim definitions and resolution flow — the unit of work per shift.</div><span class="division__state">CONTENT</span></div>
+      <div class="division d-ai"><div class="division__top"><div class="division__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></div><div class="division__count">1<small>SCRIPT</small></div></div><div class="division__name">Encounter</div><div class="division__role">Encounter orchestration linking clients, the BSM and Core.</div><span class="division__state">AI</span></div>
+    </div>
+    <p class="mono" style="margin-top:var(--space-3); color:var(--color-text-muted)">Counts reflect the current source tree; empty scaffold namespaces (Audio, Economy, Synergy, Meta, Modes, Debug, Clients) are reserved for in-progress systems and excluded.</p>
+  </section>
+
+  <!-- SCENE 06 · CORE SYSTEMS CONTROL ROOM -->
+  <section class="section" id="systems">
+    <div class="scene scene--systems" data-rise>
+      <div class="scene__art" aria-hidden="true"><svg viewBox="0 0 200 200" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="5"><circle cx="100" cy="100" r="60"/><circle cx="100" cy="100" r="30"/><path d="M100 40v20M100 140v20M40 100h20M140 100h20"/><circle cx="100" cy="100" r="8" fill="rgba(173,129,223,0.6)" stroke="none"/></svg></div>
+      <div class="scene__inner"><div class="scene__no">03</div><div class="scene__kicker">CONTROL ROOM</div><div class="scene__title">Six load-bearing systems</div><p class="scene__lede">The machinery that carries the architecture — each isolated, instrumented, and tested at its seams.</p></div>
+      <div class="scene__sheen" aria-hidden="true"></div>
+    </div>
+    <div class="controlroom" data-rise>
+      <img class="controlroom__plate" src="assets/pixel/control-room.png" width="320" height="160" alt="Pixel-art control room: an instrument wall of dials, toggle switches, indicator lamps, reel-to-reel decks and phosphor screens, with an operator at the central console." />
+      <div class="controlroom__scrim" aria-hidden="true"></div>
+      <div class="controlroom__grid">
+        <div class="controlroom__rail" role="tablist" aria-orientation="vertical" aria-label="Core systems">
+          <span class="controlroom__rail-label">◈ STATIONS · 06</span>
+          <button class="station" role="tab" id="st-bus" aria-controls="panel-bus" aria-selected="true" tabindex="0" data-sys style="--st:var(--color-signal-data)"><span class="station__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="2"/><path d="M12 6a6 6 0 016 6M12 4a8 8 0 018 8M12 18a6 6 0 01-6-6M12 20a8 8 0 01-8-8"/></svg></span><span><span class="station__name">Rumor Mill bus</span><span class="station__sub">DECOUPLING</span></span><span class="station__light" aria-hidden="true"></span></button>
+          <button class="station" role="tab" id="st-life" aria-controls="panel-life" aria-selected="false" tabindex="-1" data-sys style="--st:var(--color-signal-primary)"><span class="station__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/></svg></span><span><span class="station__name">Scene &amp; run state</span><span class="station__sub">LIFECYCLE</span></span><span class="station__light" aria-hidden="true"></span></button>
+          <button class="station" role="tab" id="st-bsm" aria-controls="panel-bsm" aria-selected="false" tabindex="-1" data-sys style="--st:var(--color-signal-terminal)"><span class="station__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="4"/><rect x="4" y="10" width="16" height="4"/><rect x="4" y="16" width="16" height="4"/></svg></span><span><span class="station__name">State machine</span><span class="station__sub">AI · STATE</span></span><span class="station__light" aria-hidden="true"></span></button>
+          <button class="station" role="tab" id="st-trees" aria-controls="panel-trees" aria-selected="false" tabindex="-1" data-sys style="--st:var(--color-signal-terminal)"><span class="station__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="5" r="2.2"/><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="19" r="2.2"/><path d="M12 7v3M12 10l-6 7M12 10l6 7"/></svg></span><span><span class="station__name">Behaviour trees</span><span class="station__sub">AI · TREES</span></span><span class="station__light" aria-hidden="true"></span></button>
+          <button class="station" role="tab" id="st-tide" aria-controls="panel-tide" aria-selected="false" tabindex="-1" data-sys style="--st:var(--color-status-critical)"><span class="station__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 14c3 0 3-4 6-4s3 4 6 4 3-4 6-4"/><path d="M3 18c3 0 3-4 6-4s3 4 6 4 3-4 6-4"/></svg></span><span><span class="station__name">The Tide</span><span class="station__sub">DIFFICULTY</span></span><span class="station__light" aria-hidden="true"></span></button>
+          <button class="station" role="tab" id="st-inject" aria-controls="panel-inject" aria-selected="false" tabindex="-1" data-sys style="--st:var(--color-signal-primary)"><span class="station__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="8" width="8" height="8"/><path d="M11 12h7M18 9l3 3-3 3"/></svg></span><span><span class="station__name">Cards → AI</span><span class="station__sub">BRIDGE</span></span><span class="station__light" aria-hidden="true"></span></button>
+        </div>
+        <div class="controlroom__screen">
+          <div class="syspanel" id="panel-bus" role="tabpanel" aria-labelledby="st-bus" tabindex="0" style="--st:var(--color-signal-data)"><div class="syspanel__bar"><span class="syspanel__id">CH.01 · DECOUPLING</span><span class="syspanel__state">ONLINE</span></div><h3>Rumor Mill event bus</h3><p>A typed publish/subscribe spine. Every domain event is a <code>readonly struct</code>; the bus is the only shared dependency. The UI reacts to <code>SanityChanged</code> without ever knowing what raised it.</p><div class="syspanel__evidence">EVIDENCE · <b>Narrative/RumorMillEventBus.cs</b> · <b>Core/RumorMillEvents.cs</b></div></div>
+          <div class="syspanel" id="panel-life" role="tabpanel" aria-labelledby="st-life" tabindex="0" hidden style="--st:var(--color-signal-primary)"><div class="syspanel__bar"><span class="syspanel__id">CH.02 · LIFECYCLE</span><span class="syspanel__state">ONLINE</span></div><h3>Scene flow &amp; run state</h3><p><code>GameManager</code> is a <code>DontDestroyOnLoad</code> root owning a scene-flow FSM (Boot → MainMenu → Shift → InternalAudit). <code>RunStateController</code> is the single source of truth for mutable run data, with a clean API and auto-save.</p><div class="syspanel__evidence">EVIDENCE · <b>Core/GameManager.cs</b> · <b>Core/RunStateController.cs</b></div></div>
+          <div class="syspanel" id="panel-bsm" role="tabpanel" aria-labelledby="st-bsm" tabindex="0" hidden style="--st:var(--color-signal-terminal)"><div class="syspanel__bar"><span class="syspanel__id">CH.03 · AI · STATE</span><span class="syspanel__state">ONLINE</span></div><h3>Bureaucratic State Machine</h3><p>Clients run on a <em>stack-based</em> machine (<code>ClientStateStack</code> + <code>TransitionTable</code>): a pushdown automaton that suspends a state, handles an interruption, and resumes. A <code>ClientTellSystem</code> surfaces readable tells.</p><div class="syspanel__evidence">EVIDENCE · <b>BSM/ClientStateStack.cs</b> · <b>BSM/TransitionTable.cs</b></div></div>
+          <div class="syspanel" id="panel-trees" role="tabpanel" aria-labelledby="st-trees" tabindex="0" hidden style="--st:var(--color-signal-terminal)"><div class="syspanel__bar"><span class="syspanel__id">CH.04 · AI · TREES</span><span class="syspanel__state">ONLINE</span></div><h3>Runtime-mutable behaviour trees</h3><p>Each tree carries a <strong>per-frame tick budget</strong> and resumes partial traversals next frame. It exposes <code>InsertBlockerForCard(...)</code> — gameplay rewrites AI decision-making at runtime. The engine behind the signature mechanic.</p><div class="syspanel__evidence">EVIDENCE · <b>BehaviourTrees/BehaviourTree.cs</b></div></div>
+          <div class="syspanel" id="panel-tide" role="tabpanel" aria-labelledby="st-tide" tabindex="0" hidden style="--st:var(--color-status-critical)"><div class="syspanel__bar"><span class="syspanel__id">CH.05 · DIFFICULTY</span><span class="syspanel__state">RISING</span></div><h3>The Tide — adaptive pressure</h3><p>A closed-loop difficulty controller. Three fast resolutions raise a pressure level (0–3) that shortens hazard intervals and unlocks severer hazards. Pressure never auto-decays — it relents only when the player struggles.</p><div class="syspanel__evidence">EVIDENCE · <b>Core/TideSystem.cs</b></div></div>
+          <div class="syspanel" id="panel-inject" role="tabpanel" aria-labelledby="st-inject" tabindex="0" hidden style="--st:var(--color-signal-primary)"><div class="syspanel__bar"><span class="syspanel__id">CH.06 · BRIDGE</span><span class="syspanel__state">ONLINE</span></div><h3>Cards → AI injection</h3><p><code>RedTape.StateInjector</code> and the <code>PunchCardMachine</code> turn a player's card into a structural change in the client's behaviour tree, guarded by <code>HasBlockerForCard</code>. The deckbuilder and the AI meet here — through one seam.</p><div class="syspanel__evidence">EVIDENCE · <b>RedTape/StateInjector.cs</b> · <b>RedTape/PunchCardMachine.cs</b></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 07 · CODE TRANSMISSION -->
+    <div class="terminal" style="margin-top:var(--space-6)" data-rise>
+      <div class="terminal__bar"><span class="dot" aria-hidden="true"></span> RUMOR-MILL · TRANSMISSION <span class="path">/Core/RumorMillEvents.cs</span></div>
+      <div class="terminal__body">
+        <div class="code" id="code1"><button class="copy-btn" data-copy-target="#code1body">Copy</button><span id="code1body"><span class="cm">// Systems publish typed events; subscribers stay decoupled.</span>
+<span class="kw">public readonly struct</span> <span class="ty">SanityChanged</span> { <span class="kw">public readonly</span> <span class="ty">float</span> Value; }
+
+<span class="cm">// UI subscribes to exactly what it needs — nothing more.</span>
+RumorMill.<span class="fn">Subscribe</span>&lt;<span class="ty">SanityChanged</span>&gt;(e =&gt; _sanityGauge.<span class="fn">SetValue</span>(e.Value));
+
+<span class="cm">// A gameplay system raises it without knowing who listens.</span>
+RumorMill.<span class="fn">Publish</span>(<span class="kw">new</span> <span class="ty">SanityChanged</span> { Value = run.Sanity });</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCENE 08 · ENGINEERING INTEGRITY -->
+  <section class="section" id="practice">
+    <div class="scene scene--integrity" data-rise>
+      <div class="scene__art" aria-hidden="true"><svg viewBox="0 0 200 200" fill="rgba(0,0,0,0.22)"><path d="M100 28 L160 52 V104 Q160 150 100 174 Q40 150 40 104 V52 Z"/><path d="M74 100 l18 20 36 -44" fill="none" stroke="rgba(131,205,152,0.55)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="scene__inner"><div class="scene__no">04</div><div class="scene__kicker">MACHINE INTEGRITY</div><div class="scene__title">How a solo codebase stays healthy</div><p class="scene__lede">Production discipline applied to an independent project — secured boundaries, automated tests, and gated builds.</p></div>
+      <div class="scene__sheen" aria-hidden="true"></div>
+    </div>
+    <div class="integrity" data-pop>
+      <div class="intmod"><div class="intmod__head"><div class="intmod__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div><h3>Test Chamber</h3><span class="intmod__seal">PASS</span></div><p>EditMode suites under the Unity Test Framework cover scoring, state-machine transitions and economy logic — the rules most likely to regress.</p></div>
+      <div class="intmod"><div class="intmod__head"><div class="intmod__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12h6l2-3 2 6 2-3h4"/></svg></div><h3>Build Gate</h3><span class="intmod__seal">GATED</span></div><p>A GitHub Actions workflow compiles the project and runs the EditMode suite on every push, with builds gated behind manual dispatch.</p></div>
+      <div class="intmod"><div class="intmod__head"><div class="intmod__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg></div><h3>Assembly Firewall</h3><span class="intmod__seal">SEALED</span></div><p>Namespaces map to <code>.asmdef</code> assemblies, enforcing dependency direction at compile time and keeping iteration fast.</p></div>
+      <div class="intmod"><div class="intmod__head"><div class="intmod__emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 4h11l3 3v13H5z"/><path d="M9 11h6M9 15h4"/></svg></div><h3>Documentation Archive</h3><span class="intmod__seal">FILED</span></div><p>Every major script opens with a header comment stating its responsibility, threading model and integration points — the architecture is legible from the source.</p></div>
+    </div>
+  </section>
+
+  <!-- SCENE 09 · CROSS-PROJECT INTELLIGENCE -->
+  <section class="section" id="cross">
+    <div class="scene scene--intel" data-rise>
+      <div class="scene__art" aria-hidden="true"><svg viewBox="0 0 200 200" fill="rgba(0,0,0,0.22)"><rect x="36" y="44" width="74" height="96" rx="4"/><rect x="90" y="60" width="74" height="96" rx="4" fill="rgba(255,255,255,0.22)"/><path d="M150 96 h22 m-10 -10 l10 10 -10 10" stroke="rgba(217,76,67,0.6)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="scene__inner"><div class="scene__no">05</div><div class="scene__kicker">INTELLIGENCE BOARD</div><div class="scene__title">Patterns that travel</div><p class="scene__lede">Event-driven decoupling, data-driven content and adaptive systems recur across projects. Verified Desk 42 evidence cross-referenced against a second dossier.</p></div>
+      <div class="scene__sheen" aria-hidden="true"></div>
+    </div>
+    <div class="classified" style="margin-bottom:var(--space-5)" data-rise>
+      <span class="classified__stamp">⚠ UNVERIFIED — PENDING CONFIRMATION</span>
+      <p>The Desk 42 column is confirmed from source. The <strong>Kindred Siege</strong> column holds placeholders — replace the marked values with confirmed figures before submitting as evidence.</p>
+    </div>
+    <div class="intel" data-rise>
+      <div class="intel__head"><div class="intel__col intel__col--label">PATTERN</div><div class="intel__col intel__col--a">DESK 42 · VERIFIED</div><div class="intel__col intel__col--b">KINDRED SIEGE</div></div>
+      <div class="intel__row"><div class="intel__k">Event communication</div><div class="intel__v intel__v--verified">Typed pub/sub bus</div><div class="intel__v--unverified">to confirm</div></div>
+      <div class="intel__row"><div class="intel__k">AI approach</div><div class="intel__v intel__v--verified">Stack FSM + mutable BTs</div><div class="intel__v--unverified">to confirm</div></div>
+      <div class="intel__row"><div class="intel__k">Difficulty</div><div class="intel__v intel__v--verified">Adaptive Tide controller</div><div class="intel__v--unverified">to confirm</div></div>
+      <div class="intel__row"><div class="intel__k">Content pipeline</div><div class="intel__v intel__v--verified">ScriptableObjects + factories</div><div class="intel__v--unverified">to confirm</div></div>
+    </div>
+  </section>
+
+  <!-- SCENE 10 · EXIT / EVIDENCE SIGN-OFF -->
+  <footer class="signoff">
+    <div>
+      <div class="signoff__title">Desk 42 — Systems Architecture</div>
+      <p class="signoff__meta">Sanjay Jacob Sulegonker · MA Digital Games, Brunel University London<br>Figures extracted from the project source tree · Unity 2022.3 LTS · URP<br>Technical evidence · prepared for Global Talent Visa</p>
+    </div>
+    <div class="signoff__seal" aria-hidden="true"><span>DESK</span><b>42</b><span>SEALED</span></div>
+  </footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'desk42.eng.theme';
+  var root = document.documentElement, btn = document.getElementById('theme-toggle');
+  function set(theme) {
+    root.setAttribute('data-theme', theme);
+    if (btn) { btn.setAttribute('aria-pressed', String(theme === 'light')); btn.textContent = theme === 'light' ? '☾ Night Shift' : '☼ Archive'; }
+    try { localStorage.setItem(KEY, theme); } catch (e) {}
+  }
+  try { var saved = localStorage.getItem(KEY); if (saved) set(saved); } catch (e) {}
+  if (btn) btn.addEventListener('click', function () { set(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); });
+
+  document.querySelectorAll('.copy-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = document.querySelector(b.getAttribute('data-copy-target'));
+      var txt = t ? t.innerText : '';
+      var done = function () { b.classList.add('copied'); var p = b.textContent; b.textContent = 'Copied'; setTimeout(function () { b.classList.remove('copied'); b.textContent = p; }, 1100); };
+      if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, function(){}); else done();
+    });
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('.topbar__nav a'));
+  var map = {}; links.forEach(function (l) { map[l.getAttribute('href').slice(1)] = l; });
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { links.forEach(function (l){ l.removeAttribute('aria-current'); }); if (map[e.target.id]) map[e.target.id].setAttribute('aria-current','true'); } });
+    }, { rootMargin: '-10% 0px -80% 0px' });
+    links.forEach(function (l) { var s = document.getElementById(l.getAttribute('href').slice(1)); if (s) io.observe(s); });
+  }
+})();
+</script>
+<script src="motion.js"></script>
+<script src="pixel.js"></script>
+</body>
+</html>

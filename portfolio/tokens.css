@@ -1,0 +1,247 @@
+/* ============================================================================
+   DESK 42 — TOKEN FOUNDATION
+   Four-tier architecture per DESK42_VISUAL_TOKEN_SYSTEM:
+     primitive → semantic → component → scene
+   Themes: Night Shift (dark, default) · Archive Shift (light, aged paper).
+   Loaded before eng.css and pixel.css.
+   ============================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Silkscreen:wght@400;700&display=swap');
+
+/* ─────────────────────────────────────────────────────────────────────────
+   1 · PRIMITIVE TOKENS
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Void & graphite */
+  --ink-1000:#050508; --ink-975:#08090d; --ink-950:#0d0e13; --ink-900:#13151b;
+  --ink-850:#191b22; --ink-800:#20232b; --ink-700:#2d313b; --ink-600:#434855;
+  /* Paper & institutional neutrals */
+  --paper-050:#f2ead6; --paper-100:#e7dcc2; --paper-200:#d5c7a8; --paper-300:#bbaa88;
+  --paper-500:#7d725d; --paper-700:#4d473c; --paper-900:#24211c;
+  /* Signal amber */
+  --amber-300:#ffd27d; --amber-400:#f6c164; --amber-500:#eeb653; --amber-600:#c98a32; --amber-800:#744317;
+  /* Institutional red */
+  --red-300:#ff8175; --red-400:#ef655b; --red-500:#d94c43; --red-600:#b63531; --red-800:#6c1f24;
+  /* Terminal green */
+  --green-300:#a9e3b6; --green-400:#83cd98; --green-500:#62b27d; --green-700:#34734f; --green-900:#173728;
+  /* Monitor cyan */
+  --cyan-300:#9ee7eb; --cyan-400:#72cdd4; --cyan-500:#55aeb8; --cyan-700:#2f6f79; --cyan-900:#17373d;
+  /* Anomaly violet */
+  --violet-300:#c7a3f2; --violet-400:#ad81df; --violet-500:#9264c6; --violet-700:#563879; --violet-900:#271d36;
+  /* Surreal magenta */
+  --magenta-300:#f39ac3; --magenta-500:#d35f98; --magenta-700:#87385f; --magenta-900:#401c31;
+  /* Contaminant / acid */
+  --acid-300:#d5e18a; --acid-500:#aebc57; --acid-700:#66712f;
+
+  /* Typography */
+  --font-family-ui: "Space Grotesk", system-ui, -apple-system, sans-serif;
+  --font-family-system: "IBM Plex Mono", ui-monospace, "JetBrains Mono", monospace;
+  --font-family-pixel: "Silkscreen", "IBM Plex Mono", monospace;
+  --font-size-display-2xl: clamp(3.4rem, 9vw, 8rem);
+  --font-size-display-xl: clamp(2.8rem, 7vw, 6rem);
+  --font-size-display-lg: clamp(2.2rem, 5vw, 4.4rem);
+  --font-size-heading-xl: clamp(1.9rem, 4vw, 3.4rem);
+  --font-size-heading-lg: clamp(1.55rem, 3vw, 2.4rem);
+  --font-size-heading-md: clamp(1.25rem, 2vw, 1.7rem);
+  --font-size-body-lg: 1.125rem; --font-size-body: 1rem; --font-size-body-sm: 0.875rem;
+  --font-size-label: 0.75rem; --font-size-micro: 0.625rem;
+  --line-height-display: 0.92; --line-height-heading: 1.08; --line-height-body: 1.6; --line-height-system: 1.45;
+  --tracking-display: -0.045em; --tracking-heading: -0.025em; --tracking-body: -0.01em;
+  --tracking-label: 0.12em; --tracking-pixel: 0.08em;
+
+  /* Spacing */
+  --space-0:0; --space-1:.25rem; --space-2:.5rem; --space-3:.75rem; --space-4:1rem;
+  --space-5:1.25rem; --space-6:1.5rem; --space-8:2rem; --space-10:2.5rem; --space-12:3rem;
+  --space-16:4rem; --space-20:5rem; --space-24:6rem; --space-32:8rem;
+
+  /* Layout */
+  --layout-max-width:90rem; --layout-content-width:72rem; --layout-prose-width:46rem;
+  --layout-gutter: clamp(1rem,3vw,3rem); --layout-section-gap: clamp(4rem,9vw,8rem); --layout-panel-gap: clamp(1rem,2vw,2rem);
+
+  /* Borders & radii */
+  --border-width-hairline:1px; --border-width-control:2px; --border-width-alert:3px;
+  --radius-none:0; --radius-control:2px; --radius-panel:6px; --radius-overlay:10px; --radius-pill:999px;
+  --pixel-unit:4px;
+  /* composite borders (resolve against theme --color-border-* below) */
+  --border-subtle: var(--border-width-hairline) solid var(--color-border-subtle);
+  --border-default: var(--border-width-hairline) solid var(--color-border-default);
+  --border-emphasis: var(--border-width-control) solid var(--color-border-emphasis);
+
+  /* Motion */
+  --duration-instant:90ms; --duration-quick:160ms; --duration-standard:240ms;
+  --duration-deliberate:420ms; --duration-scene:700ms; --duration-cinematic:1100ms;
+  --ease-system: cubic-bezier(0.22,1,0.36,1);
+  --ease-mechanical: cubic-bezier(0.12,0.72,0.2,1);
+  --ease-linear: linear;
+  --ease-dread: cubic-bezier(0.45,0,0.55,1);
+  --motion-hover-duration: var(--duration-quick);
+  --motion-panel-duration: var(--duration-standard);
+  --motion-reveal-duration: var(--duration-scene);
+  --motion-theme-duration: var(--duration-deliberate);
+
+  /* z-index scale */
+  --z-base:0; --z-raised:1; --z-overlay:40; --z-hud:6; --z-toast:80; --z-boot:200;
+
+  /* Gradient tokens (theme-agnostic constructions) */
+  --gradient-canvas-night:
+    radial-gradient(circle at 78% 18%, rgba(146,100,198,0.12), transparent 34%),
+    radial-gradient(circle at 18% 72%, rgba(85,174,184,0.08), transparent 40%),
+    linear-gradient(145deg, #050508 0%, #0b0c12 54%, #12101a 100%);
+  --gradient-night-shift:
+    radial-gradient(circle at 72% 35%, rgba(238,182,83,0.28), transparent 28%),
+    radial-gradient(circle at 82% 44%, rgba(217,76,67,0.13), transparent 42%),
+    linear-gradient(155deg, #09090e 0%, #15101b 58%, #07070a 100%);
+  --gradient-terminal-bloom:
+    radial-gradient(circle at 50% 45%, rgba(131,205,152,0.24), transparent 34%),
+    linear-gradient(180deg, rgba(85,174,184,0.08), transparent 70%);
+  --gradient-data-bloom:
+    radial-gradient(circle at 35% 30%, rgba(114,205,212,0.23), transparent 40%),
+    radial-gradient(circle at 75% 75%, rgba(86,56,121,0.18), transparent 48%);
+  --gradient-alert-bloom:
+    radial-gradient(circle at 70% 28%, rgba(217,76,67,0.38), transparent 34%),
+    linear-gradient(135deg, rgba(116,67,23,0.15), transparent 62%);
+  --gradient-anomaly-bloom:
+    radial-gradient(circle at 62% 42%, rgba(173,129,223,0.38), transparent 28%),
+    radial-gradient(circle at 48% 56%, rgba(211,95,152,0.24), transparent 44%),
+    radial-gradient(circle at 72% 70%, rgba(85,174,184,0.14), transparent 58%);
+  --gradient-paper-radiation:
+    radial-gradient(circle at 75% 28%, rgba(146,100,198,0.13), transparent 30%),
+    radial-gradient(circle at 20% 76%, rgba(138,78,24,0.14), transparent 40%),
+    linear-gradient(145deg, #e5d8b9 0%, #cbbb96 100%);
+  --gradient-border-signal:
+    linear-gradient(115deg, rgba(238,182,83,0.08), rgba(238,182,83,0.68), rgba(114,205,212,0.32), rgba(238,182,83,0.08));
+  --gradient-text-signal: linear-gradient(100deg, #ffe0a0 0%, #f0b95d 45%, #d9745c 100%);
+  --gradient-text-anomaly: linear-gradient(100deg, #d9bbff 0%, #b47be6 46%, #e46ca8 100%);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   2 · SEMANTIC TOKENS — Night Shift (dark, default)
+   ───────────────────────────────────────────────────────────────────────── */
+:root, :root[data-theme="dark"] {
+  --color-background-canvas: var(--ink-1000);
+  --color-background-deep: var(--ink-975);
+  --color-background-console: var(--ink-950);
+
+  --color-surface-panel: rgba(24,26,34,0.92);
+  --color-surface-panel-raised: rgba(31,34,44,0.95);
+  --color-surface-panel-muted: rgba(18,20,27,0.82);
+  --color-surface-overlay: rgba(8,9,13,0.88);
+
+  --color-text-primary: #f3ecda;
+  --color-text-secondary: #bbb6aa;
+  --color-text-muted: #86848a;
+  --color-text-inverse: var(--ink-1000);
+
+  --color-border-subtle: rgba(242,234,214,0.09);
+  --color-border-default: rgba(242,234,214,0.16);
+  --color-border-emphasis: rgba(242,234,214,0.32);
+
+  --color-signal-primary: var(--amber-500);
+  --color-signal-terminal: var(--green-400);
+  --color-signal-data: var(--cyan-400);
+  --color-status-warning: var(--amber-500);
+  --color-status-critical: var(--red-500);
+  --color-status-safe: var(--green-400);
+  --color-anomaly: var(--violet-400);
+  --color-anomaly-secondary: var(--magenta-500);
+
+  --scene-canvas-gradient: var(--gradient-canvas-night);
+  --terminal-background: rgba(12,29,23,0.88);
+  --terminal-grid: rgba(131,205,152,0.08);
+  --terminal-text: var(--green-300);
+  --terminal-highlight: var(--cyan-300);
+  --dossier-background: var(--color-surface-panel-raised);
+  --dossier-ink: var(--color-text-primary);
+
+  /* Shadows / glows */
+  --shadow-inset-highlight: inset 0 1px 0 rgba(255,255,255,0.055);
+  --shadow-panel: 0 18px 48px rgba(0,0,0,0.34), var(--shadow-inset-highlight);
+  --shadow-panel-raised: 0 28px 80px rgba(0,0,0,0.48), 0 0 0 1px rgba(255,255,255,0.035), var(--shadow-inset-highlight);
+  --glow-signal-amber: 0 0 22px rgba(238,182,83,0.22);
+  --glow-terminal: 0 0 24px rgba(131,205,152,0.2);
+  --glow-data: 0 0 32px rgba(114,205,212,0.22);
+  --glow-critical: 0 0 36px rgba(217,76,67,0.28);
+  --glow-anomaly: 0 0 60px rgba(173,129,223,0.3), 0 0 110px rgba(211,95,152,0.13);
+
+  --grain-opacity: 0.025;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   3 · SEMANTIC TOKENS — Archive Shift (light, aged institutional paper)
+   ───────────────────────────────────────────────────────────────────────── */
+:root[data-theme="light"] {
+  --color-background-canvas: #c8b996;
+  --color-background-deep: #b9a985;
+  --color-background-console: #d8c9a8;
+
+  --color-surface-panel: rgba(232,220,191,0.94);
+  --color-surface-panel-raised: rgba(244,234,211,0.96);
+  --color-surface-panel-muted: rgba(206,191,158,0.84);
+  --color-surface-overlay: rgba(229,216,184,0.9);
+
+  --color-text-primary: #211e1a;
+  --color-text-secondary: #514b40;
+  --color-text-muted: #746c5d;
+  --color-text-inverse: #f4ecd9;
+
+  --color-border-subtle: rgba(36,31,25,0.12);
+  --color-border-default: rgba(36,31,25,0.22);
+  --color-border-emphasis: rgba(36,31,25,0.4);
+
+  --color-signal-primary: #8a4e18;
+  --color-signal-terminal: #255f41;
+  --color-signal-data: #245d66;
+  --color-status-warning: #8a4e18;
+  --color-status-critical: #8f2f2c;
+  --color-status-safe: #255f41;
+  --color-anomaly: #644082;
+  --color-anomaly-secondary: #823a60;
+
+  --scene-canvas-gradient: var(--gradient-paper-radiation);
+  --terminal-background: rgba(228,214,180,0.92);
+  --terminal-grid: rgba(36,31,25,0.08);
+  --terminal-text: #255f41;
+  --terminal-highlight: #245d66;
+  --dossier-background: var(--color-surface-panel-raised);
+  --dossier-ink: #211e1a;
+
+  --shadow-inset-highlight: inset 0 1px 0 rgba(255,255,255,0.4);
+  --shadow-panel: 0 14px 36px rgba(60,48,30,0.22), var(--shadow-inset-highlight);
+  --shadow-panel-raised: 0 22px 58px rgba(60,48,30,0.3), 0 0 0 1px rgba(36,31,25,0.06), var(--shadow-inset-highlight);
+  --glow-signal-amber: 0 0 0 rgba(0,0,0,0);
+  --glow-terminal: 0 0 0 rgba(0,0,0,0);
+  --glow-data: 0 0 0 rgba(0,0,0,0);
+  --glow-critical: 0 0 0 rgba(0,0,0,0);
+  --glow-anomaly: 0 0 0 rgba(0,0,0,0);
+
+  --gradient-night-shift: var(--gradient-paper-radiation);
+
+  --grain-opacity: 0.05;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   4 · COMPONENT + SCENE TOKENS
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Component */
+  --mission-panel-background: var(--color-surface-panel-raised);
+  --mission-panel-border: var(--color-border-default);
+  --mission-panel-accent: var(--color-signal-primary);
+  --mission-panel-shadow: var(--shadow-panel);
+  --mission-panel-radius: var(--radius-panel);
+  --mission-panel-padding: clamp(1.25rem,2.5vw,2.5rem);
+  --operator-status-background: rgba(8,10,14,0.78);
+  --dossier-card-stamp: var(--red-600);
+
+  /* Scene accents — one identity per wireframe */
+  --scene-boot-accent: var(--color-signal-primary);
+  --scene-hero-accent: var(--color-signal-primary);
+  --scene-metrics-accent: var(--color-signal-terminal);
+  --scene-doctrine-accent: var(--color-signal-primary);
+  --scene-roster-accent: var(--color-signal-data);
+  --scene-systems-accent: var(--color-anomaly);
+  --scene-code-accent: var(--color-signal-terminal);
+  --scene-integrity-accent: var(--color-status-safe);
+  --scene-intel-accent: var(--color-status-critical);
+  --scene-footer-accent: var(--color-anomaly);
+}

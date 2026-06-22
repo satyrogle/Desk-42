@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Desk 42 — The Machine</title>
+<meta name="description" content="Desk 42 — a 3D, pixel-art rendered centerpiece of the bureaucratic machine. Scroll to descend." />
+<meta name="color-scheme" content="dark" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="tokens.css" />
+<style>
+  html { scroll-behavior: smooth; }
+  body { margin:0; background:#04050a; color: var(--color-text-primary); font-family: var(--font-family-ui); overflow-x:hidden; }
+  #gl { position:fixed; inset:0; width:100vw; height:100vh; display:block; z-index:0;
+        image-rendering: pixelated; image-rendering: crisp-edges; }
+  .vig { position:fixed; inset:0; z-index:1; pointer-events:none;
+         background: radial-gradient(120% 120% at 50% 45%, transparent 55%, rgba(2,3,7,0.7) 100%); }
+  .scan { position:fixed; inset:0; z-index:2; pointer-events:none; opacity:.35; mix-blend-mode:multiply;
+          background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px); }
+
+  .top { position:fixed; top:0; left:0; right:0; z-index:6; display:flex; align-items:center; gap:14px;
+         padding:14px clamp(16px,4vw,40px); }
+  .top__mark { width:30px; height:30px; border-radius:3px; background: linear-gradient(135deg, var(--amber-500), var(--amber-600));
+               color:#05060a; font-family: var(--font-family-pixel); font-weight:700; font-size:13px; display:grid; place-items:center; }
+  .top__t { font-family: var(--font-family-pixel); font-size:10px; letter-spacing:2px; color: var(--color-text-secondary); }
+  .top__cta { margin-left:auto; font-family: var(--font-family-pixel); font-size:9px; letter-spacing:1px; color: var(--amber-400);
+              border:1px solid color-mix(in oklab, var(--amber-500) 50%, transparent); padding:8px 12px; border-radius:4px; text-decoration:none; }
+  .top__cta:hover { background: color-mix(in oklab, var(--amber-500) 14%, transparent); color:#fff; }
+
+  .scroller { position:relative; z-index:5; }
+  .beat { min-height:100vh; display:flex; align-items:center; padding:0 clamp(20px,7vw,120px); pointer-events:none; }
+  .beat.right { justify-content:flex-end; text-align:right; }
+  .beat__inner { max-width:30ch; opacity:0; transform:translateY(30px); transition:opacity .7s cubic-bezier(.2,1,.36,1), transform .7s cubic-bezier(.2,1,.36,1); }
+  .beat.in .beat__inner { opacity:1; transform:none; }
+  .kick { font-family: var(--font-family-pixel); font-size:10px; letter-spacing:3px; color: var(--green-400); display:block; margin-bottom:18px; }
+  .beat.anomaly .kick { color: var(--violet-400); }
+  h1.big { font-family: var(--font-family-ui); font-weight:700; letter-spacing:-0.03em; line-height:.95;
+           font-size: clamp(2.6rem, 7vw, 5.4rem); margin:0; color:#fff; text-shadow: 0 4px 40px rgba(0,0,0,.7); }
+  h1.big .am { color: var(--amber-400); } h1.big .an { color: var(--violet-300); }
+  .beat p { font-size: clamp(1rem,1.6vw,1.2rem); line-height:1.55; color: rgba(243,236,218,.82); margin:18px 0 0; }
+  .hint { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); z-index:6;
+          font-family: var(--font-family-pixel); font-size:9px; letter-spacing:2px; color: var(--color-text-muted); animation: bob 2s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{ transform:translateX(-50%) translateY(0);} 50%{ transform:translateX(-50%) translateY(6px);} }
+
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} .hint{animation:none;} }
+</style>
+</head>
+<body>
+<canvas id="gl" aria-label="A 3D pixel-art rendering of the Desk 42 machine: a brutalist control tower of glowing terminals with punched cards orbiting it, turning slowly in the dark." role="img"></canvas>
+<div class="vig" aria-hidden="true"></div>
+<div class="scan" aria-hidden="true"></div>
+
+<header class="top">
+  <div class="top__mark" aria-hidden="true">42</div>
+  <span class="top__t">DESK 42 · THE MACHINE</span>
+  <a class="top__cta" href="index.html">▸ ENTER THE BUREAU</a>
+</header>
+
+<main class="scroller">
+  <section class="beat" data-cam="0"><div class="beat__inner"><span class="kick">DEPT. OF CONTINUED OPERATIONS</span><h1 class="big">The machine that<br><span class="am">files itself.</span></h1><p>A bureaucracy with no operator left awake. It runs anyway. Scroll to descend.</p></div></section>
+  <section class="beat right" data-cam="1"><div class="beat__inner"><span class="kick">ONE CONSOLE</span><h1 class="big">Every system,<br>one machine.</h1><p>The event bus, the state machine, the adaptive Tide — all of it routes through the core.</p></div></section>
+  <section class="beat" data-cam="2"><div class="beat__inner"><span class="kick">IT DOES NOT REST</span><h1 class="big">It does not stop<br>when you do.</h1><p>The punched cards keep cycling. The shift never formally ends.</p></div></section>
+  <section class="beat anomaly right" data-cam="3"><div class="beat__inner"><span class="kick">⚠ ANOMALY · SUB-LEVEL 42</span><h1 class="big">Something is<br><span class="an">filing back.</span></h1><p>The records stop matching the inputs. The light is the wrong colour now.</p></div></section>
+  <section class="beat" data-cam="4"><div class="beat__inner"><span class="kick">CLOCK IN</span><h1 class="big">Take the desk.</h1><p style="pointer-events:auto"><a class="top__cta" style="display:inline-block;margin-top:6px" href="architecture.html">▸ OPEN THE ARCHITECTURE</a></p></div></section>
+</main>
+<div class="hint" aria-hidden="true">SCROLL ▾ · DRAG TO ORBIT</div>
+
+<script src="assets/vendor/three.min.js"></script>
+<script>
+(function () {
+'use strict';
+if (!window.THREE) { document.querySelector('.hint').textContent = '3D unavailable'; return; }
+
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:false, powerPreference:'high-performance' });
+renderer.setClearColor(0x05060a, 1);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x05060a, 0.05);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+camera.position.set(0, 1.3, 8.4);
+
+// ── palette ──
+const C = { steelA:0x434b5b, steelB:0x3a4252, steelC:0x4e5868, plinth:0x2a303b,
+            green:0x9ee7b0, cyan:0x86dbe2, amber:0xffc864, red:0xef655b, violet:0xc7a3f2, paper:0xe7dcc2 };
+
+// ── machine group ──
+const machine = new THREE.Group(); scene.add(machine);
+function box(w,h,d,color,metal=0.25,rough=0.72){ return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color,metalness:metal,roughness:rough})); }
+function glow(w,h,color){ return new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshBasicMaterial({color})); }
+
+const plinth = box(3.4,0.5,2.4,C.plinth); plinth.position.y=-1.35; machine.add(plinth);
+const cab1 = box(2.3,1.3,1.5,C.steelA); cab1.position.y=-0.45; machine.add(cab1);
+const cab2 = box(1.9,1.05,1.25,C.steelB); cab2.position.y=0.62; machine.add(cab2);
+const cab3 = box(1.25,0.85,0.95,C.steelC); cab3.position.y=1.55; machine.add(cab3);
+
+// emissive terminal screens on front faces
+const screens = [];
+function addScreen(x,y,z,w,h,color){ const s=glow(w,h,color); s.position.set(x,y,z); machine.add(s); screens.push(s); return s; }
+addScreen(-0.62,-0.4,0.77,0.7,0.5,C.green);
+addScreen(0.30,-0.4,0.77,0.7,0.5,C.cyan);
+addScreen(-0.45,0.62,0.64,0.55,0.42,C.amber);
+addScreen(0.40,0.62,0.64,0.5,0.42,C.green);
+addScreen(0.0,1.55,0.49,0.5,0.34,C.cyan);
+// side screens
+const sL = glow(0.6,0.5,C.amber); sL.position.set(-1.16,-0.4,0); sL.rotation.y=Math.PI/2; machine.add(sL); screens.push(sL);
+const sR = glow(0.6,0.5,C.green); sR.position.set(1.16,-0.4,0); sR.rotation.y=-Math.PI/2; machine.add(sR); screens.push(sR);
+
+// dials (small cylinders) on cab1 front
+function dial(x,y){ const d=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.06,10), new THREE.MeshStandardMaterial({color:0x14161c,metalness:0.4,roughness:0.5})); d.rotation.x=Math.PI/2; d.position.set(x,y,0.78); machine.add(d);
+  const t=new THREE.Mesh(new THREE.BoxGeometry(0.015,0.09,0.02), new THREE.MeshBasicMaterial({color:C.amber})); t.position.set(x,y+0.04,0.82); machine.add(t); return t; }
+const dials=[dial(-0.95,-0.78),dial(-0.55,-0.78),dial(-0.15,-0.78)];
+
+// glowing core "eye"
+const core = new THREE.Mesh(new THREE.SphereGeometry(0.24,16,16), new THREE.MeshBasicMaterial({color:C.amber}));
+core.position.set(0,0.62,0.66); machine.add(core);
+const coreLight = new THREE.PointLight(0xffb454, 6, 6, 2); coreLight.position.set(0,0.62,1.0); machine.add(coreLight);
+
+// antenna + blinking tip
+const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.04,1.1,6), new THREE.MeshStandardMaterial({color:0x3a3f4a,metalness:0.6,roughness:0.4}));
+ant.position.set(0.4,2.45,0); machine.add(ant);
+const tip = new THREE.Mesh(new THREE.SphereGeometry(0.08,8,8), new THREE.MeshBasicMaterial({color:C.red})); tip.position.set(0.4,3.05,0); machine.add(tip);
+
+// orbiting punched cards
+const ring = new THREE.Group(); ring.rotation.x = -0.5; machine.add(ring);
+const cards=[];
+for(let i=0;i<7;i++){ const card=box(0.95,0.02,0.62,C.paper,0.0,0.9); const a=i/7*Math.PI*2;
+  card.userData.a=a; ring.add(card); cards.push(card);
+  // perforation holes (tiny dark boxes)
+  for(let h=0; h<4; h++){ const ho=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.03,0.06), new THREE.MeshStandardMaterial({color:0x14110c})); ho.position.set(-0.3+h*0.18,0.012,0.18); card.add(ho); }
+}
+function layoutCards(){ cards.forEach(c=>{ const r=2.6; c.position.set(Math.cos(c.userData.a)*r, 0, Math.sin(c.userData.a)*r); c.rotation.y = -c.userData.a + Math.PI/2; }); }
+layoutCards();
+
+// ── lights ──
+scene.add(new THREE.AmbientLight(0x3c4c66, 0.95));
+const key = new THREE.DirectionalLight(0xffd9a0, 2.7); key.position.set(-5,6,4); scene.add(key);
+const fill = new THREE.DirectionalLight(0x9fb6d6, 0.9); fill.position.set(2,1.5,6); scene.add(fill);
+const rim = new THREE.DirectionalLight(0x86dbe2, 1.2); rim.position.set(5,1.5,-4); scene.add(rim);
+const anomalyLight = new THREE.PointLight(0xad81df, 0, 10, 2); anomalyLight.position.set(0,1.2,2.2); scene.add(anomalyLight);
+
+// ── low-res render target + dither post pass ──
+let lowW=1, lowH=1;
+let rt = new THREE.WebGLRenderTarget(1,1,{ minFilter:THREE.NearestFilter, magFilter:THREE.NearestFilter });
+const postScene = new THREE.Scene();
+const postCam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+const postMat = new THREE.ShaderMaterial({
+  uniforms:{ tDiffuse:{value:rt.texture} },
+  vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.0,1.0); }`,
+  fragmentShader:`
+    uniform sampler2D tDiffuse; varying vec2 vUv;
+    float bayer2(vec2 p){ vec2 m=mod(p,2.0); float v=(m.x<1.0)?((m.y<1.0)?0.0:3.0):((m.y<1.0)?2.0:1.0); return (v+0.5)*0.25; }
+    void main(){ vec3 c=texture2D(tDiffuse,vUv).rgb; float lv=7.0; float d=bayer2(gl_FragCoord.xy)-0.5;
+      c=clamp(floor(c*lv + d + 0.5)/lv,0.0,1.0); gl_FragColor=vec4(c,1.0); }`
+});
+postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2), postMat));
+
+function resize(){
+  const w=window.innerWidth, h=window.innerHeight; const aspect=w/h;
+  camera.aspect=aspect; camera.updateProjectionMatrix();
+  lowH = Math.max(140, Math.round(h/4.2)); lowW = Math.round(lowH*aspect);
+  rt.setSize(lowW, lowH); renderer.setSize(lowW, lowH, false);
+}
+window.addEventListener('resize', resize); resize();
+
+// ── interaction: drag to orbit + scroll camera ──
+let dragRot=0, dragVel=0, dragging=false, lastX=0;
+canvas.addEventListener('pointerdown', e=>{ dragging=true; lastX=e.clientX; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', e=>{ if(dragging){ const dx=e.clientX-lastX; lastX=e.clientX; dragVel += dx*0.0008; } });
+canvas.addEventListener('pointerup', ()=> dragging=false);
+
+function scrollProg(){ const max=document.body.scrollHeight-window.innerHeight; return max>0? Math.min(1,Math.max(0,window.scrollY/max)) : 0; }
+
+// reveal beats
+const beats=[...document.querySelectorAll('.beat')];
+if('IntersectionObserver' in window){ const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); }),{threshold:.4}); beats.forEach(b=>io.observe(b)); }
+else beats.forEach(b=>b.classList.add('in'));
+
+const clock = new THREE.Clock();
+let camY=1.3, camZ=8.4, anomaly=0;
+function frame(){
+  const dt=Math.min(0.05, clock.getDelta()), t=clock.elapsedTime;
+  const p=scrollProg();
+
+  // auto-rotate + drag inertia
+  dragRot += dragVel; dragVel *= 0.92;
+  machine.rotation.y = (REDUCE?0:t*0.18) + dragRot + p*Math.PI*1.4;
+  machine.position.y = REDUCE?0:Math.sin(t*0.8)*0.05;
+
+  // camera descends and pushes in as you scroll
+  camY = 1.7 - p*2.4; camZ = 8.6 - p*3.2;
+  camera.position.x = Math.sin(p*0.6)*0.6;
+  camera.position.y += (camY - camera.position.y)*0.08;
+  camera.position.z += (camZ - camera.position.z)*0.08;
+  camera.lookAt(0, 0.4 - p*0.5, 0);
+
+  // cards orbit
+  if(!REDUCE){ cards.forEach(c=>{ c.userData.a += dt*0.25; }); ring.rotation.z += dt*0.05; layoutCards(); }
+
+  // blink + screen shimmer
+  tip.material.color.setScalar(0); tip.material.color.set( (Math.floor(t*1.5)%2)? C.red : 0x401012 );
+  const flick = 0.85 + Math.sin(t*7.0)*0.05;
+  screens.forEach((s,i)=> s.material.color.getHSL({}) && s.material.color.multiplyScalar(1));
+
+  // anomaly beat (last third) → violet intrusion
+  const targetAnom = p>0.62 ? Math.min(1,(p-0.62)/0.3) : 0;
+  anomaly += (targetAnom-anomaly)*0.06;
+  anomalyLight.intensity = anomaly*7.0;
+  coreLight.color.lerpColors(new THREE.Color(0xffb454), new THREE.Color(0xad81df), anomaly);
+  core.material.color.lerpColors(new THREE.Color(C.amber), new THREE.Color(C.violet), anomaly);
+  scene.fog.color.lerpColors(new THREE.Color(0x05060a), new THREE.Color(0x140a1c), anomaly*0.8);
+  renderer.setClearColor(scene.fog.color, 1);
+
+  // render scene → RT, then dither post → screen
+  renderer.setRenderTarget(rt); renderer.render(scene, camera);
+  renderer.setRenderTarget(null); renderer.render(postScene, postCam);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
