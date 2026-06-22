@@ -1,106 +1,122 @@
-# Desk 42 Portfolio — Final Visual Pass & Browser Validation
+# Desk 42 — Pass A Reliability Validation Notes
 
-Validated in headless Chromium (Playwright) — served locally, screenshots
-captured and inspected at the required breakpoints, then corrected.
+This file records the checks run for the reliability/correctness pass. Browser automation could not be completed in this environment because no Chromium/Chrome executable was present and installing Playwright from npm was blocked by a registry `403 Forbidden` response. Results below distinguish source inspection, automated static checks, local HTTP asset checks and limitations.
 
-## 1 · Screen inventory
+## Current page inventory
 
-| Screen / section | File | Previous treatment | Current treatment | Status | Visual check |
-|---|---|---|---|---|---|
-| System boot | both | PRESS START curtain | Diagnostic sequence → PRESS START → aperture wipe | Done | ✓ |
-| Landing hero | index | Gradient title + cards | Bureau-vista **pixel-art** scene + HUD + integrated title | Done | ✓ dark/light/mobile |
-| Dossier selector | index | 6 identical cards | 6 distinct **dossiers** (authorised vs sealed-hatched, case IDs, emblems, access state) | Done | ✓ |
-| Anomaly beat | index | — (new) | Full-bleed **anomaly-corridor** pixel scene + caption | Done | ✓ |
-| Clearance / evidence | index | 3 cards | Clearance clauses under integrity scene band | Done | ✓ |
-| Architecture hero | architecture | SVG silhouette | **operator-night** pixel scene + rays + HUD + title | Done | ✓ |
-| Operational metrics | architecture | tiles | Punched-card **counters** + cabinet **rating meters** | Done | ✓ |
-| Doctrine (principles) | architecture | cards | Sealed **directives** under scene band | Done | ✓ |
-| Bureau divisions (roster) | architecture | flowchart→cards | **Division** cards: emblem, count, role, operational state | Done | ✓ |
-| Core systems | architecture | bento + mini-charts | Control-room **modules**, distinct emblem/colour/state | Done | ✓ |
-| Code evidence | architecture | code block | **Terminal transmission** panel (path, copy) | Done | ✓ |
-| Engineering integrity | architecture | cards | **Integrity modules** (test chamber / build gate / firewall / archive) | Done | ✓ |
-| Cross-project | architecture | table | **Intelligence board** (verified / unverified markers) | Done | ✓ |
-| Sign-off footer | both | text footer | Evidence **sign-off** with seal | Done | ✓ |
+The current site has three HTML pages:
 
-Repository contains **two pages / 14 named scenes** (not ~13 separate files). The
-spec's "thirteen wireframes" map to sections within these two pages; all are listed above.
+- `index.html`
+- `architecture.html`
+- `machine.html`
 
-## 2 · Motion inventory
+## Heading hierarchy
 
-| Interaction | File | Duration | Easing | Trigger | Reduced-motion |
-|---|---|---|---|---|---|
-| Boot diagnostic typing | pixel.js | ~230ms/line | step | load | instant dump |
-| Boot aperture exit | pixel.css | `--duration-cinematic` | `--ease-mechanical` | ENTER/click | opacity only |
-| Section reveal (rise/pop) | motion.js + pixel.css | `--motion-reveal-duration` | `--ease-system/-mechanical` | scroll (IO + sweep + 5s safety) | shown immediately |
-| Scene light-sweep | pixel.css | 1.1s | `--ease-system` | reveal | none |
-| Counter count-up | motion.js | 1200ms | cubic ease-out | in-view | final value set |
-| Rating meter fill | motion.js + pixel.css | `--duration-cinematic` | `--ease-mechanical` | in-view | filled instantly |
-| Hero plate drift | pixel.css | 46s | `--ease-dread` | ambient | none |
-| Gradient/anomaly breathe | pixel.css | 7–30s | `--ease-dread` | ambient | none |
-| Panel/dossier hover | pixel.css | `--motion-panel-duration` | `--ease-system` | hover | unaffected (instant) |
-| HUD sanity drain | pixel.js | 220ms | `--ease-system` | scroll | value still updates |
-| Theme transition | pixel.css | `--motion-theme-duration` | `--ease-system` | toggle | near-instant |
-| Achievement toast | pixel.css | `--duration-deliberate` | `--ease-mechanical` | section in-view | no transform |
+Automated source parsing was run with `/tmp/check_static.py`.
 
-All sequences collapse to a complete, legible state under `prefers-reduced-motion`.
+| Page | h1 | h2 | h3 | Heading order | Level skips |
+|---|---:|---:|---:|---|---|
+| `index.html` | 1 | 2 | 4 | `h1 > h2 > h3 > h2 > h3 > h3 > h3` | none detected |
+| `architecture.html` | 1 | 5 | 13 | `h1 > h2 > h3 > h3 > h3 > h2 > h2 > h3 > h3 > h3 > h3 > h3 > h3 > h2 > h3 > h3 > h3 > h3 > h2` | none detected |
+| `machine.html` | 1 | 4 | 0 | `h1 > h2 > h2 > h2 > h2` | none detected |
 
-## 3 · Browser findings & corrections
-- **Bug fixed:** scroll-reveal relied solely on IntersectionObserver and left most
-  sections invisible if IO timing was off. Reworked to IO **+ scroll-sweep + a 5s
-  safety net** so content can never stay hidden.
-- Verified full render at 1440 (dark/light), 390 mobile (dark/light), and tablet.
-- **Mobile nav** previously hid entirely → now a scrollable nav row.
+Source inspection confirms major `.scene__title` section titles are now `h2.scene__title`, and the Machine page keeps only its first narrative title as `h1`.
 
-## 4 · Accessibility (automated + manual)
-- 1 `<h1>`, 1 `<main>`, 1 `<header>` per page; logical headings.
-- All `<img>` carry alt; decorative layers `aria-hidden`.
-- No links/buttons without accessible names.
-- Contrast (computed): body text **17.3:1** dark / **8.6:1** light; scene titles
-  **14.7:1** dark / **12.2:1** light — all exceed WCAG AA.
-- Status shown by label + shape, not colour alone; `:focus-visible` rings on controls
-  and dossiers; theme toggle exposes `aria-pressed`.
+## Inline styles
 
-## 5 · Performance
-- Pixel scenes ~26–29 KB each (256×144 PNG, nearest-neighbour upscale); 3 total.
-- Motion is transform/opacity; off-screen ambient loops are CSS (cheap); no animation library.
-- Inline styles reduced: architecture **32 → 7**, index **33 → 2** (remainder are
-  one-off margins / data-driven widths).
-- Fonts hosted with system fallbacks; only required weights requested.
+Automated source parsing counted these `style` attributes:
 
-## 6 · Factual integrity
-- All figures measured from source (71 scripts / 13 namespaces / 27 edges).
-- Kindred Siege column remains visibly **UNVERIFIED**.
-- Personal/institutional details unchanged pending confirmation.
+| Page | Inline style count | Notes |
+|---|---:|---|
+| `index.html` | 2 | HUD bar widths for data-driven visual state. |
+| `architecture.html` | 19 | 3 HUD bar widths, 12 station `--st` custom properties for the control-room selector, and remaining data/custom-property-driven presentation values. |
+| `machine.html` | 2 | The final CTA paragraph/link preserve pointer access and local spacing inside the full-screen narrative beat. |
 
-## 7 · Remaining limitations
-- Decks 02–06 are intentionally **sealed / in-production** (content not yet built).
-- Light-theme bloom is gentler than dark by design; worth a human eye on Archive Shift.
-- Pixel scenes are procedurally generated originals; richer hand-pixelled art could
-  replace them later via the same manifest.
+## Source and syntax checks run
 
----
+- `node --check portfolio/pixel.js`
+- `node --check portfolio/motion.js`
+- Machine inline script extracted to `/tmp/machine-inline.js`, then checked with `node --check /tmp/machine-inline.js`.
+- `python3 -m py_compile portfolio/tools/*.py`
+- `/tmp/check_static.py` source assertions for headings, display modes, fallback markup, loop-controller markers and toast queue markers.
 
-## Pass 2 — corrections from the rendered audit
+## Local HTTP asset check
 
-Verified in-browser after each fix.
+The site was served with `python3 -m http.server 8000` from `portfolio/`. A Python `urllib.request` check returned HTTP 200 for:
 
-| Audit finding | Fix | Verified |
-|---|---|---|
-| Archive Shift hero title unreadable (dark text on dark stage) | `.title-pop` stays light (`#f6efdd`) in both themes; badge given a dark backing | ✓ computed colour `rgb(246,239,221)` over the stage |
-| Boot once-per-session edge bug (skip before sequence end didn't persist) | `dismiss()` now writes `sessionStorage.desk42.seen` on **any** dismissal | ✓ skip mid-sequence → flag `1`, boot hidden on reload |
-| Stale `inventory` toast (no matching section) | Removed; toast map now matches real section ids | ✓ |
-| Duplicate font requests (eng.css JetBrains+Inter vs tokens IBM+Silkscreen) | eng.css `@import` removed; fonts load once in tokens.css | ✓ single request |
-| Two parallel token systems | Legacy `--bg-*/--fg-*/--amber/--t-*/--r-*/--s*` remapped to formal tokens in pixel.css (both themes) → tokens.css is the source of truth | ✓ pages render unchanged |
-| Duplicate atmosphere/grain definitions | Removed from eng.css; defined once in pixel.css | ✓ |
-| "Off-screen animation pausing" claimed but absent | Implemented: `.stage` IntersectionObserver toggles `paused`; `visibilitychange` pauses on hidden tab (`animation-play-state`) | ✓ |
-| Scene comments skipped 02/03/07 | Renumbered sequentially 01–10 | ✓ |
-| Stale README | Rewritten to match the two-page implementation, tokens, themes, pixel art, scenes | ✓ |
+- `index.html`
+- `architecture.html`
+- `machine.html`
+- `tokens.css`
+- `eng.css`
+- `pixel.css`
+- `pixel.js`
+- `motion.js`
+- `assets/vendor/three.min.js`
+- all four `assets/pixel/*.png` files
 
-### Still outstanding (honest)
-- Section compositions remain scene-banner + themed module grids. A deeper
-  recompose (filing-index divisions, control-room panorama, security-checkpoint
-  integrity) is **not** done — it is a further authored pass.
-- Cosmic escalation is light-touch (boot "ENTITY 42 AWAKE", an impossible
-  `27:42` timestamp, the unverified intelligence column) rather than a full
-  progressive corruption arc.
-- Pixel scenes are 3 procedurally-generated originals, not the full 7-scene set.
+## Machine page reliability
+
+### Source inspection and static checks
+
+- Global box sizing reset is present in the Machine page style.
+- The previous body-level `overflow-x:hidden` workaround was removed.
+- The Machine page includes semantic fallback markup using `assets/pixel/control-room.png`.
+- WebGL startup now checks for `window.THREE`, `THREE.WebGLRenderer`, canvas context creation returning `null`, renderer construction and scene setup failures.
+- Failure handling hides the canvas, shows the fallback figure, updates a concise `aria-live` diagnostic, logs a concise console warning and reveals all narrative beats.
+- Narrative reveal setup runs before WebGL startup and has an immediate reveal path when `IntersectionObserver` is unavailable or throws.
+- The loop controller tracks active state, loop-running state, current animation-frame handle, reduced-motion state and document-hidden state.
+- Reduced motion renders a static frame when WebGL starts and does not start the continuous loop.
+- `visibilitychange` stops the loop while hidden and resumes through the same guarded `syncMotion()` path when visible.
+
+### Limitation
+
+The required rendered overflow measurements at 1440, 1024, 768 and 390 pixels, forced WebGL-failure browser assertions, reduced-motion requestAnimationFrame instrumentation and hidden-tab browser lifecycle test could not be executed because browser automation was unavailable in this environment.
+
+## Rating bars
+
+Source inspection confirms:
+
+- `.rating__fill` has `display:block` and retains width, height, colour and transition behaviour.
+- `.hud__bar i` already had `display:block`.
+- `.gauge__fill` now has `display:block`.
+
+The architecture metrics markup still declares rating values of 92, 88, 80, 64 and 95 via `data-fill` attributes. `motion.js` remains responsible for applying those values as widths when the metrics section is revealed.
+
+### Limitation
+
+Rendered dark/light visual verification and screenshot capture of the metric bars could not be completed because browser automation was unavailable.
+
+## Toast queue
+
+Source inspection confirms the achievement-toast system now uses:
+
+- a bounded FIFO queue (`MAX_QUEUE = 5`),
+- one active toast at a time,
+- duplicate suppression window (`DEDUPE_MS = 2500`),
+- timer cleanup before close/remove transitions,
+- `host.replaceChildren(t)` so only one visible toast element occupies the live region,
+- a test/debug state accessor at `window.__desk42.toastState()`.
+
+### Limitation
+
+Rapid section-navigation browser verification, reduced-motion toast rendering and screenshot inspection could not be completed because browser automation was unavailable.
+
+## Accessibility checks
+
+Source inspection confirmed:
+
+- Each HTML page has one `main` and one `h1`.
+- The Machine fallback image has meaningful alternative text.
+- Decorative Machine vignette/scanline layers remain `aria-hidden`.
+- Toast host is a polite, atomic live region; toasts use `role="status"` and do not move focus.
+- Existing links and buttons retain visible text labels.
+- Theme toggles remain button controls in the main pages.
+
+### Limitation
+
+Automated accessibility tooling was not run because browser automation and npm installation were unavailable.
+
+## Responsive/theme rendering and screenshots
+
+No screenshot artifacts are recorded in this validation file because the environment lacked a browser executable and npm installation of Playwright was blocked. Required visual checks should be rerun in an environment with Chromium/Playwright available.
