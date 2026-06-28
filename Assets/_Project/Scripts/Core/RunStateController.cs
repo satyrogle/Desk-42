@@ -283,12 +283,6 @@ namespace Desk42.Core
             _data.DeskEntropy = Mathf.Clamp01(_data.DeskEntropy + amount);
         }
 
-        public void ResetEntropy()
-        {
-            _data.DeskEntropy = 0f;
-            Debug.Log("[RunStateController] Desk entropy reset (Internal Audit clean).");
-        }
-
         // ── Faction ───────────────────────────────────────────
 
         public float GetFactionRep(FactionID faction)
