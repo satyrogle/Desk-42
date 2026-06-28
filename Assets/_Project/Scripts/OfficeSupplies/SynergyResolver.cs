@@ -199,6 +199,98 @@ namespace Desk42.OfficeSupplies
             return false;
         }
 
+        // ── Full Cascade Resolution (traced) ──────────────────
+
+        /// <summary>
+        /// Runs the duration, credit cost, and soul cost chains and
+        /// records a per-step trace of each, for presentation
+        /// (CascadePresenter) and test fixtures. Does not replace
+        /// ApplyDurationModifiers / ApplyCreditCostModifiers /
+        /// ApplySoulCostModifiers — those remain the scalar entry
+        /// points StateInjector calls directly.
+        /// </summary>
+        public SynergyResolutionPacket ResolveCascade(PunchCardType cardType,
+            float baseDuration, int baseCreditCost, float baseSoulCost,
+            IReadOnlyList<string> cardTags = null)
+        {
+            var packet = new SynergyResolutionPacket
+            {
+                CardType        = cardType,
+                BaseDuration    = baseDuration,
+                BaseCreditCost  = baseCreditCost,
+                BaseSoulCost    = baseSoulCost,
+                DurationSteps   = new List<ModifierStep>(),
+                CreditCostSteps = new List<ModifierStep>(),
+                SoulCostSteps   = new List<ModifierStep>(),
+            };
+
+            if (_manager == null || _manager.ActiveCount == 0)
+            {
+                packet.FinalDuration   = baseDuration;
+                packet.FinalCreditCost = baseCreditCost;
+                packet.FinalSoulCost   = baseSoulCost;
+                return packet;
+            }
+
+            // Duration chain — cascading, mirrors ApplyDurationModifiers
+            float duration = baseDuration;
+            foreach (var inst in GetOrderedSupplies())
+            {
+                float prev = duration;
+                duration   = inst.Effect.ModifyInjectionDuration(cardType, duration, cardTags);
+                packet.DurationSteps.Add(new ModifierStep
+                {
+                    SupplyId    = inst.Data.SupplyId,
+                    DisplayName = inst.Data.DisplayName,
+                    Zone        = inst.Data.Zone,
+                    PrevValue   = prev,
+                    NewValue    = duration,
+                    Delta       = duration - prev,
+                });
+            }
+            packet.FinalDuration = Mathf.Max(0f, duration);
+
+            // Credit cost chain — additive-only, mirrors ApplyCreditCostModifiers
+            int creditDelta = 0;
+            foreach (var inst in GetOrderedSupplies())
+            {
+                int result = inst.Effect.ModifyCreditCost(cardType, baseCreditCost);
+                int delta  = result - baseCreditCost;
+                creditDelta += delta;
+                packet.CreditCostSteps.Add(new ModifierStep
+                {
+                    SupplyId    = inst.Data.SupplyId,
+                    DisplayName = inst.Data.DisplayName,
+                    Zone        = inst.Data.Zone,
+                    PrevValue   = baseCreditCost,
+                    NewValue    = result,
+                    Delta       = delta,
+                });
+            }
+            packet.FinalCreditCost = Mathf.Max(0, baseCreditCost + creditDelta);
+
+            // Soul cost chain — additive-only, mirrors ApplySoulCostModifiers
+            float soulDelta = 0f;
+            foreach (var inst in GetOrderedSupplies())
+            {
+                float result = inst.Effect.ModifySoulCost(baseSoulCost);
+                float delta  = result - baseSoulCost;
+                soulDelta += delta;
+                packet.SoulCostSteps.Add(new ModifierStep
+                {
+                    SupplyId    = inst.Data.SupplyId,
+                    DisplayName = inst.Data.DisplayName,
+                    Zone        = inst.Data.Zone,
+                    PrevValue   = baseSoulCost,
+                    NewValue    = result,
+                    Delta       = delta,
+                });
+            }
+            packet.FinalSoulCost = Mathf.Max(0f, baseSoulCost + soulDelta);
+
+            return packet;
+        }
+
         // ── Soul Cost Modifier Chain ──────────────────────────
 
         /// <summary>
