@@ -1,0 +1,24 @@
+// PROVISIONAL — pending SynergyResolver packet confirmation from Claude
+{
+  "sanity": 90,
+  "steps": [
+    {
+      "type": "base_resolution",
+      "value": 10
+    },
+    {
+      "type": "office_supply",
+      "supply": "Stapler",
+      "value": 5
+    },
+    {
+      "type": "tag_match",
+      "tag": "TagMatch",
+      "value": 15
+    }
+  ],
+  "stamp": {
+    "tier": 1,
+    "result": "clean"
+  }
+}
