@@ -58,6 +58,9 @@ namespace Desk42.Encounter
         private ActiveClaimData    _activeClaim;
         private bool               _encounterActive;
 
+        /// <summary>The client BSM for the in-progress encounter, if any.</summary>
+        public ClientStateMachine ActiveClient => _activeCSM;
+
         // ── Lifecycle ─────────────────────────────────────────
 
 #if UNITY_EDITOR
