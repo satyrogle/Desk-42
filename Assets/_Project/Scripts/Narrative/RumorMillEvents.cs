@@ -402,4 +402,22 @@ namespace Desk42.Core
             FugueTriggered      = fugue;
         }
     }
+
+    /// <summary>
+    /// Fired by StateInjector immediately after a successful slam, carrying the
+    /// full per-step SynergyResolver trace so the CascadePresenter can render the
+    /// modifier cascade. Immediate dispatch — time-critical UI feedback.
+    /// </summary>
+    public readonly struct CardCascadeResolvedEvent
+    {
+        public readonly OfficeSupplies.SynergyResolutionPacket Packet;
+        public readonly string CardInstanceId;
+
+        public CardCascadeResolvedEvent(
+            OfficeSupplies.SynergyResolutionPacket packet, string cardInstanceId)
+        {
+            Packet         = packet;
+            CardInstanceId = cardInstanceId;
+        }
+    }
 }

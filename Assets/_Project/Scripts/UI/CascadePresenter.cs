@@ -119,8 +119,15 @@ namespace Desk42.UI
             }
         }
 
+        private void OnEnable()
+        {
+            RumorMill.OnCardCascadeResolved += HandleCascadeResolved;
+        }
+
         private void OnDisable()
         {
+            RumorMill.OnCardCascadeResolved -= HandleCascadeResolved;
+
             if (_activeSequence != null)
             {
                 StopCoroutine(_activeSequence);
@@ -128,6 +135,11 @@ namespace Desk42.UI
             }
 
             SetIntentState(false);
+        }
+
+        private void HandleCascadeResolved(CardCascadeResolvedEvent e)
+        {
+            PlaySequence(e.Packet);
         }
 
         private void SetIntentState(bool active)
