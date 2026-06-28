@@ -80,8 +80,11 @@ namespace Desk42.Core
             BuildMoralInjurySystem(meta);
             SubscribeToRumorMill();
 
-            RumorMill.PublishDeferred(new ShiftLifecycleEvent(
-                shiftNumber, isStart: true, ShiftPhase.ClockIn, masterSeed));
+            // ShiftLifecycleEvent(isStart: true) is published by GameManager
+            // after the Shift scene activates, not here. Publishing it now
+            // would queue it before LoadSceneAsync's RumorMill.FlushQueue()
+            // wipes pending events ahead of scene activation, so it would
+            // never reach the new scene's listeners (audio systems, etc).
         }
 
         /// <summary>
