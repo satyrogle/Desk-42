@@ -88,6 +88,7 @@ namespace Desk42.Core
         public static void Publish(RunCompletedEvent e)          => OnRunCompleted?.Invoke(e);
         public static void Publish(MemoGeneratedEvent e)         => OnMemoGenerated?.Invoke(e);
         public static void Publish(DilemmaTriggeredEvent e)      => OnDilemmaTriggered?.Invoke(e);
+        public static void Publish(ShiftLifecycleEvent e)        => OnShiftLifecycle?.Invoke(e);
 
         /// <summary>
         /// Publish deferred — queues the event for end-of-frame dispatch.

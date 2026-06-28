@@ -65,6 +65,11 @@ namespace Desk42.UI
         // NDA count is fed externally from NDASignedEvent
         private static int _activeNDACount;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>Test hook — pins the Sanity value used by entropy-driven effects. Null = use live value.</summary>
+        public static int? SanityOverride { get; set; }
+#endif
+
         // ── Public Queries ────────────────────────────────────
 
         public static int  ActiveNDACount       => _activeNDACount;

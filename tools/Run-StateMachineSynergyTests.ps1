@@ -33,14 +33,20 @@ $LogFile = Join-Path $ResultsDir "bsm-synergy.log"
 
 $TestFilter = "Desk42.Tests.EditMode.BSMTests;Desk42.Tests.EditMode.SynergyResolverTests"
 
-& $UnityExe -runTests -batchmode -nographics `
-    -projectPath $ProjectPath `
-    -testPlatform EditMode `
-    -testFilter $TestFilter `
-    -testResults $ResultsXml `
-    -logFile $LogFile
+# Start-Process is used instead of the call operator because the call
+# operator's $LASTEXITCODE / return timing proved unreliable here.
+# ArgumentList as an array does not reliably quote elements containing
+# spaces (the project path does), so build one pre-quoted command-line
+# string instead — Windows native argv parsing handles that correctly.
+$ArgString = "-runTests -batchmode -nographics " +
+    "-projectPath `"$ProjectPath`" " +
+    "-testPlatform EditMode " +
+    "-testFilter `"$TestFilter`" " +
+    "-testResults `"$ResultsXml`" " +
+    "-logFile `"$LogFile`""
 
-$ExitCode = $LASTEXITCODE
+$Process = Start-Process -FilePath $UnityExe -ArgumentList $ArgString -Wait -PassThru -NoNewWindow
+$ExitCode = $Process.ExitCode
 
 if (-not (Test-Path $ResultsXml)) {
     Write-Host "FAIL: Unity exited ($ExitCode) before writing results. See $LogFile"

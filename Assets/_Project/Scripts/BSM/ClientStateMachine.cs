@@ -81,6 +81,27 @@ namespace Desk42.BSM
         public BehaviourTree BaseBT           => _baseBT;
         public bool          IsInInjectedState => !_stateStack.IsEmpty;
 
+        // ── Impatience (ATB) ───────────────────────────────────
+
+        public const float MaxImpatience = 100f;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>Test hook — forces Impatience to a fixed value. Null = use live value.</summary>
+        public float? ImpatienceOverride { get; set; }
+#endif
+
+        /// <summary>0-100 fill of this client's impatience gauge, derived from the shift timer.</summary>
+        public float Impatience
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (ImpatienceOverride.HasValue) return ImpatienceOverride.Value;
+#endif
+                return (_context?.ImpatienceTimerRatio ?? 0f) * MaxImpatience;
+            }
+        }
+
         // ── Init ──────────────────────────────────────────────
 
         public void Initialize(

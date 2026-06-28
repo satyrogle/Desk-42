@@ -451,6 +451,17 @@ namespace Desk42.Core
 
             _isTransitioning = false;
 
+            // Re-publish shift-start after the new scene is active. Publishing
+            // this before LoadSceneAsync would have it wiped by the
+            // RumorMill.FlushQueue() above before any new-scene listener
+            // (audio systems, etc.) ever subscribes.
+            if (scene == SceneID.Shift && Run?.RawData != null)
+            {
+                var data = Run.RawData;
+                RumorMill.Publish(new ShiftLifecycleEvent(
+                    data.ShiftNumber, isStart: true, data.CurrentPhase, data.MasterSeed));
+            }
+
             Debug.Log($"[GameManager] Scene loaded: {scene}");
         }
 
