@@ -26,6 +26,9 @@ namespace Desk42.RedTape
     [RequireComponent(typeof(PunchCardMachine))]
     public sealed class StateInjector : MonoBehaviour
     {
+        // Sanity cost when a client's ATB gauge overflows before a card resolves.
+        private const float ATB_OVERFLOW_SANITY_COST = 5f;
+
         // ── Dependencies ──────────────────────────────────────
 
         // Set by encounter setup
@@ -59,6 +62,17 @@ namespace Desk42.RedTape
 
             if (card == null)
                 return new SlamResult(SlamOutcome.InvalidCard, null);
+
+            // ── Step 0: ATB edge case ──────────────────────────
+            // If the client's impatience gauge has overflowed, the state
+            // change takes priority over the card: force the BSM transition
+            // and apply the sanity hit BEFORE resolving injection, so the
+            // card is evaluated against the post-overflow state.
+            if (_activeClient.Impatience >= ClientStateMachine.MaxImpatience)
+            {
+                _activeClient.ForceState(ClientStateID.Agitated);
+                GameManager.Instance?.Run?.ModifySanity(-ATB_OVERFLOW_SANITY_COST);
+            }
 
             // ── Step 1: Fatigue check ─────────────────────────
             if (!_fatigue.CanPlay(cardInstanceId, card, out string reason))
