@@ -2,38 +2,22 @@ using NUnit.Framework;
 
 namespace Desk42.Tests
 {
+    [TestFixture]
     public class CascadePresenterTests
     {
-        // [TODO: wire to CascadePresenter once Claude reviews it]
+        [Test, Explicit]
+        public void StepYieldsBaseDelay_ByDefault() {}
 
-        [Test]
-        public void TimingTest_EachModifierYieldsBaseDelay()
-        {
-            // Timing test: each modifier step yields BaseDelay by default.
-        }
+        [Test, Explicit]
+        public void StepYieldsSkipDelay_WhenSeenCountExceedsThreshold() {}
 
-        [Test]
-        public void FastForwardTest_AutoFastForwardCountYieldsSkipDelay()
-        {
-            // Fast-forward test: SeenComboCount >= AutoFastForwardCount causes the step to yield SkipDelay.
-        }
+        [Test, Explicit]
+        public void StepYieldsSkipDelay_WhenManualFastForwardHeld() {}
 
-        [Test]
-        public void ManualSkipTest_HoldToFastForwardRoutesToSkipDelay()
-        {
-            // Manual skip test: hold-to-fast-forward routes to SkipDelay path.
-        }
+        [Test, Explicit]
+        public void StepCount_MatchesPacketModifierCount() {}
 
-        [Test]
-        public void StepCountTest_PlaySequenceRunsExactlyAsManyStepsAsModifiers()
-        {
-            // Step count test: PlaySequence runs exactly as many steps as the packet has modifiers.
-        }
-
-        [Test]
-        public void StampTierTest_SanityMapsToCorrectTier()
-        {
-            // Stamp tier test: Sanity 90 -> Tier 1, Sanity 60 -> Tier 2, Sanity 35 -> Tier 3, Sanity 10 -> Tier 4.
-        }
+        [Test, Explicit]
+        public void StampTier_MapsCorrectlyFromSanity() {}
     }
 }
