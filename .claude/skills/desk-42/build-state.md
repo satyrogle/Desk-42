@@ -20,7 +20,7 @@ Single source of truth for "what actually exists right now." Update it as things
 - **Claude skill pack + root `CLAUDE.md` + `.claudeignore`:** ✅ installed (this pack), corrected to the live repo.
 - **Coplay "MCP for Unity":** dependency added to `Packages/manifest.json` ✅; **not yet activated** — Jacob must open Unity and run *Configure All Detected Clients* (see `mcp-setup.md`).
 - **FMOD:** code scaffolded ✅; **plugin NOT imported, `DESK42_FMOD` OFF.** No FMOD Studio project/banks yet. (see `fmod-integration.md`).
-- **ComfyUI:** skill authored ✅ (`comfy-integration.md` / `comfy-mcp-setup.md`); **server not stood up, no MCP server registered yet.**
+- **ComfyUI:** skill authored ✅; pipeline **validated end-to-end 2026-06-13** — SDXL base driven via the HTTP API produced a 5-tier Distortion-Scale ladder + birefnet transparent cutouts into `Assets/_Project/Art/Sprites` (`stamp_t0..t4[_cutout].png`). Install/launch in the ComfyUI memory note. **No MCP server registered yet** (drove it via the raw `/prompt` API; the MCP route in `comfy-mcp-setup.md` is the next-session upgrade).
 
 ## Unknown / to confirm in repo
 - Compile status with current scene edits (`Shift.unity` shows as modified in git).
