@@ -1,0 +1,51 @@
+# Keep Claude Code out of Unity's generated/binary junk so it doesn't burn
+# context on files it can't use.
+
+# Generated / caches
+Library/
+Temp/
+Obj/
+obj/
+Logs/
+UserSettings/
+Build/
+Builds/
+.vs/
+.idea/
+.gradle/
+
+# Generated project files
+*.csproj
+*.sln
+*.user
+*.suo
+
+# Binary assets (not useful as text)
+*.psd
+*.ai
+*.png
+*.jpg
+*.jpeg
+*.tga
+*.exr
+*.fbx
+*.obj
+*.blend
+*.wav
+*.ogg
+*.mp3
+*.mp4
+*.dll
+*.so
+*.dylib
+*.pdb
+*.unitypackage
+*.zip
+*.7z
+
+# Meta files are text but pure noise for reasoning
+*.meta
+
+# KEEP (do not ignore): Assets/**/*.cs, *.asmdef, *.asset (ScriptableObject data
+# is YAML and valuable), ProjectSettings/, Packages/manifest.json, *.unity scenes
+# if you need to inspect them, and the .claude/ skill.
