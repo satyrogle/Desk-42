@@ -1,4 +1,7 @@
 ﻿"Date","ShortHash","Hash","Author","Email","Subject"
+"2026-07-04","6e354e6","6e354e662629d0943be508df07ca759d1d8bafbd","satyrogle","111346518+satyrogle@users.noreply.github.com","Merge chore/claude-mcp-fmod-comfy-skill-pack into feat/cli-tooling"
+"2026-07-04","be610ab","be610abb492f4103bac7c9c8098b58fee2c3ecf8","satyrogle","111346518+satyrogle@users.noreply.github.com","docs(comfy): document the reference->ControlNet method + validated tier ladder"
+"2026-07-03","8389a5b","8389a5b64171c1e7ab9c82233ee81084dc73e6ba","satyrogle","111346518+satyrogle@users.noreply.github.com","WIP: epitaxy pre-switch from main"
 "2026-06-28","e79a6c7","e79a6c7fa394669c225dc53c2fc3d83dadfd8b0b","satyrogle","111346518+satyrogle@users.noreply.github.com","feat: route slam resolution through a single ResolveCascade evaluation"
 "2026-06-28","ee2a49c","ee2a49c64c1641ba9a8586f2155ff58fc79d0fdb","satyrogle","111346518+satyrogle@users.noreply.github.com","feat: cascade-resolved event channel + presenter subscription"
 "2026-06-28","785b6bf","785b6bfba3bf996f6761930b71f69ad836a1862b","satyrogle","111346518+satyrogle@users.noreply.github.com","Merge branch 'feat/cli-tooling'"
