@@ -10,6 +10,7 @@ namespace Desk42.Debugging
         private static bool _feedbackOverlayFired;
         private static bool _spatialAudioFired;
         private static bool _deskEntropyFired;
+        private static bool _cascadeReactorFired;
         private static string _pendingClaimId;
 
         public static void BeginAudit(string claimId)
@@ -21,11 +22,13 @@ namespace Desk42.Debugging
             _feedbackOverlayFired  = false;
             _spatialAudioFired     = false;
             _deskEntropyFired      = false;
+            _cascadeReactorFired   = false;
         }
 
-        public static void MarkFeedbackOverlay() => _feedbackOverlayFired = true;
-        public static void MarkSpatialAudio()    => _spatialAudioFired    = true;
-        public static void MarkDeskEntropy()      => _deskEntropyFired     = true;
+        public static void MarkFeedbackOverlay() => _feedbackOverlayFired  = true;
+        public static void MarkSpatialAudio()    => _spatialAudioFired     = true;
+        public static void MarkDeskEntropy()      => _deskEntropyFired      = true;
+        public static void MarkCascadeReactor()   => _cascadeReactorFired   = true;
 
         public static void Evaluate()
         {
@@ -37,6 +40,8 @@ namespace Desk42.Debugging
                 Debug.LogWarning($"[ConsensusAudit] WARN: SpatialAudioThreatSystem did not fire for ClaimResolvedEvent ({_pendingClaimId})");
             if (!_deskEntropyFired)
                 Debug.LogWarning($"[ConsensusAudit] WARN: DeskEntropyRenderer did not fire for ClaimResolvedEvent ({_pendingClaimId})");
+            if (!_cascadeReactorFired)
+                Debug.LogWarning($"[ConsensusAudit] WARN: CascadeReactor did not fire for ClaimResolvedEvent ({_pendingClaimId})");
 
             _pendingClaimId = null;
         }

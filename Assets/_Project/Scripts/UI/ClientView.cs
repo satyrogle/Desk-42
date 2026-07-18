@@ -44,20 +44,32 @@ namespace Desk42.UI
 
         private static readonly Dictionary<ClientStateID, Color> MoodColors = new()
         {
-            [ClientStateID.Pending]      = new Color(0.80f, 0.80f, 0.80f),
-            [ClientStateID.Cooperative]  = new Color(0.35f, 0.78f, 0.35f),
-            [ClientStateID.Agitated]     = new Color(1.00f, 0.55f, 0.15f),
-            [ClientStateID.Litigious]    = new Color(0.90f, 0.15f, 0.15f),
-            [ClientStateID.Suspicious]   = new Color(0.80f, 0.70f, 0.10f),
-            [ClientStateID.Resigned]     = new Color(0.45f, 0.45f, 0.70f),
-            [ClientStateID.Paranoid]     = new Color(0.65f, 0.25f, 0.80f),
-            [ClientStateID.Dissociating] = new Color(0.25f, 0.25f, 0.25f),
-            [ClientStateID.Smug]         = new Color(0.55f, 0.90f, 0.55f),
+            [ClientStateID.Pending]      = new Color(0.85f, 0.85f, 0.80f),
+            [ClientStateID.Cooperative]  = new Color(0.40f, 0.75f, 0.50f),
+            [ClientStateID.Agitated]     = new Color(0.95f, 0.55f, 0.30f),
+            [ClientStateID.Litigious]    = new Color(0.80f, 0.20f, 0.20f),
+            [ClientStateID.Suspicious]   = new Color(0.70f, 0.60f, 0.30f),
+            [ClientStateID.Resigned]     = new Color(0.50f, 0.50f, 0.55f),
+            [ClientStateID.Paranoid]     = new Color(0.55f, 0.35f, 0.70f),
+            [ClientStateID.Dissociating] = new Color(0.30f, 0.30f, 0.35f),
+            [ClientStateID.Smug]         = new Color(0.90f, 0.80f, 0.40f),
         };
 
         // ── State ─────────────────────────────────────────────
 
         private ClientStateMachine _csm;
+
+        // ── Lifecycle ─────────────────────────────────────────
+
+        private void OnEnable()
+        {
+            RumorMill.OnCardSlammed += HandleCardSlammed;
+        }
+
+        private void OnDisable()
+        {
+            RumorMill.OnCardSlammed -= HandleCardSlammed;
+        }
 
         // ── API ───────────────────────────────────────────────
 
@@ -136,6 +148,12 @@ namespace Desk42.UI
         {
             (_tellIndicator as BSM.ITellVisualIndicator)?.ShowTell(tell);
             (_fidgetDriver as BSM.IClientFidgetDriver)?.OnTellReceived(tell);
+        }
+
+        private void HandleCardSlammed(CardSlammedEvent e)
+        {
+            (_fidgetDriver as BSM.IClientFidgetDriver)?.OnSlamRecoil(e.CardType);
+            (_deskItems as BSM.IDeskItemReactor)?.OnCardSlammed(e.CardType);
         }
 
         private void HandleDarkHumour(string key)

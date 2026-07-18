@@ -4,6 +4,8 @@ namespace Desk42.Core
 {
     public static class OfficeHazardInteractionTable
     {
+        public static OfficeHazardType? LastConsequence { get; private set; }
+
         private static readonly Dictionary<(OfficeHazardType, OfficeHazardType), OfficeHazardType> _chains = new()
         {
             [(OfficeHazardType.PrinterJam,        OfficeHazardType.SystemCrash)]       = OfficeHazardType.UnscheduledAudit,
@@ -16,7 +18,11 @@ namespace Desk42.Core
         public static OfficeHazardType? CheckChain(OfficeHazardType previous, OfficeHazardType current)
         {
             if (_chains.TryGetValue((previous, current), out var result))
+            {
+                LastConsequence = result;
                 return result;
+            }
+            LastConsequence = null;
             return null;
         }
     }
