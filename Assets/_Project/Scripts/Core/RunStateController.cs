@@ -465,6 +465,16 @@ namespace Desk42.Core
             RecordClaimResolved(!e.ResolvedCorrectly); // humane = not correct
             AddCredits(e.CreditsEarned);
 
+            // Combo multiplier — consecutive approvals build the combo
+            if (e.ResolvedCorrectly)
+                _data.ComboMultiplier += 0.1f;
+            else
+                _data.ComboMultiplier = 1.0f;
+
+            int resetInterval = ComplianceVowSystem.GetComboResetInterval();
+            if (resetInterval > 0 && _data.Stats.ClaimsProcessed % resetInterval == 0)
+                _data.ComboMultiplier = 1.0f;
+
             if (e.SoulCost > 0f)
                 ModifySoulIntegrity(-e.SoulCost);
         }

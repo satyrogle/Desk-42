@@ -238,8 +238,9 @@ namespace Desk42.Core
             {
                 TryGenerateMemo(runData.ActiveClaim, run, runData);
 
-                // Sequential synergy: check BEFORE adding to ResolvedClaims so [^1] is claim N-1
+                // Bonuses check BEFORE adding to ResolvedClaims so [^1] is claim N-1
                 AwardSequentialSynergyBonus(runData.ActiveClaim, run, runData);
+                AwardCrossClaimBonus(runData.ActiveClaim, run, runData);
 
                 runData.ActiveClaim.IsResolved = true;
                 runData.ActiveClaim.WasHumane  = !e.ResolvedCorrectly;
@@ -560,6 +561,25 @@ namespace Desk42.Core
             yield return new WaitForSeconds(2f);
 
             GameManager.Instance?.EndShift();
+        }
+
+        // ── Cross-Claim Deduction ────────────────────────────
+
+        private const int CROSS_CLAIM_BONUS = 5;
+
+        private void AwardCrossClaimBonus(
+            ActiveClaimData justResolved,
+            RunStateController run,
+            RunData runData)
+        {
+            if (runData.ResolvedClaims.Count == 0) return;
+
+            var lastClaim = runData.ResolvedClaims[^1];
+            if (lastClaim.ClientSpeciesId != justResolved.ClientSpeciesId) return;
+
+            run.AddCredits(CROSS_CLAIM_BONUS);
+            Debug.Log($"[ShiftManager] Cross-claim deduction: +{CROSS_CLAIM_BONUS} credits " +
+                      $"(same species: {justResolved.ClientSpeciesId}).");
         }
 
         // ── Sequential Synergy ───────────────────────────────

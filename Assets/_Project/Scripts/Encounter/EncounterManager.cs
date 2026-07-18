@@ -197,58 +197,27 @@ namespace Desk42.Encounter
             if (!_encounterActive || _activeClaim == null) return;
             _encounterActive = false;
 
-            var run     = GameManager.Instance?.Run;
-            
-            // ── Phase 3: Cross-Claim Deduction ──
-            int crossClaimBonus = 0;
-            if (run != null && run.ResolvedClaims.Count > 0)
-            {
-                var lastClaim = run.ResolvedClaims[^1];
-                if (lastClaim.ClientSpeciesId == _activeClaim.ClientSpeciesId)
-                    crossClaimBonus = 5; // Recognized pattern!
-            }
+            var run = GameManager.Instance?.Run;
 
             int baseCredits = resolvedCorrectly ? _baseCreditsApprove + (run?.ShiftNumber ?? 1) * 2 : 0;
-
-            // ── Vow: Commission Only — reduce/zero base payout ──
             baseCredits = Mathf.RoundToInt(baseCredits * ComplianceVowSystem.GetBasePayoutMultiplier());
 
-            // ── Phase 3: Scoring Cascade ──
-            if (run != null)
-            {
-                if (resolvedCorrectly)
-                    run.ComboMultiplier += 0.1f;
-                else
-                    run.ComboMultiplier = 1.0f;
-
-                // ── Vow: Commission Only rank 3 — combo resets every N claims ──
-                int resetInterval = ComplianceVowSystem.GetComboResetInterval();
-                if (resetInterval > 0 && run.RawData.Stats.ClaimsProcessed % resetInterval == 0)
-                    run.ComboMultiplier = 1.0f;
-            }
-
-            int credits = Mathf.RoundToInt((baseCredits + crossClaimBonus) * (run?.ComboMultiplier ?? 1.0f));
-
-            // Credits are awarded by RunStateController.HandleClaimResolved via the event below
+            // Combo and cross-claim bonuses are applied by
+            // RunStateController and ShiftManager via ClaimResolvedEvent
 
             RumorMill.PublishDeferred(new ClaimResolvedEvent(
                 _activeClaim.ClaimId,
                 resolvedCorrectly,
-                credits,
-                soulCost: 0f,   // unethical soul cost via MoralChoiceEvent only
+                baseCredits,
+                soulCost: 0f,
                 _activeClaim.ClientVariantId,
                 _activeClaim.ClientSpeciesId));
 
             Debug.Log($"[EncounterManager] Resolved '{_activeClaim.ClaimId}' — " +
-                      $"{(resolvedCorrectly ? "APPROVE" : "DENY")}. Credits: +{credits} (Combo: {run?.ComboMultiplier ?? 1.0f}x).");
+                      $"{(resolvedCorrectly ? "APPROVE" : "DENY")}. Base credits: {baseCredits}.");
 
             TryTriggerDilemma(run);
 
-            // Capture the resolved encounter's CSM, then detach
-            // state synchronously so the next ClaimQueuedEvent (which
-            // arrives in the same deferred-dispatch chain) sees a
-            // clean EncounterManager. The GameObject hangs around
-            // 0.8s for the resolution animation, then dies.
             var resolvedCSM = _activeCSM;
             _activeCSM   = null;
             _activeClaim = null;
