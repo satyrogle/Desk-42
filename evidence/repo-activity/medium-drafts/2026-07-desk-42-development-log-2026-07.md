@@ -1,4 +1,4 @@
-﻿---
+---
 title: Desk 42 development log: 2026-07
 approved: false
 publish: false

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Desk 42 Unity + Comfy"
+  short_description: "Generate assets and wire them into Unity"
+  default_prompt: "Use $operate-desk42-unity-comfy to generate a Desk 42 asset in ComfyUI, import it, and wire it into Unity."

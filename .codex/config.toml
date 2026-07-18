@@ -1,0 +1,25 @@
+# Trusted-repository MCP configuration for the Desk 42 Unity + ComfyUI loop.
+# Start or verify the backing applications with the repo skill before use.
+
+[mcp_servers.unityMCP]
+url = "http://127.0.0.1:8080/mcp"
+enabled = true
+required = false
+startup_timeout_sec = 20
+tool_timeout_sec = 180
+default_tools_approval_mode = "writes"
+
+[mcp_servers.comfyui]
+command = "npx"
+args = ["-y", "comfyui-mcp@0.37.0"]
+enabled = true
+required = false
+startup_timeout_sec = 30
+tool_timeout_sec = 600
+default_tools_approval_mode = "writes"
+
+[mcp_servers.comfyui.env]
+COMFYUI_URL = "http://127.0.0.1:8188"
+COMFYUI_PATH = "C:\\Users\\jacob\\ComfyUI-Installs\\ComfyUI\\ComfyUI"
+COMFYUI_MCP_AUTOUPDATE = "0"
+COMFYUI_MCP_ALLOW_GIT_WRITES = "0"
