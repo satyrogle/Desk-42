@@ -86,15 +86,17 @@ namespace Desk42.UI
 
         private void OnEnable()
         {
-            RumorMill.OnMoralChoice   += HandleMoralChoice;
-            RumorMill.OnOfficeHazard  += HandleHazard;
+            RumorMill.OnMoralChoice    += HandleMoralChoice;
+            RumorMill.OnClaimResolved  += HandleClaimResolved;
+            RumorMill.OnOfficeHazard   += HandleHazard;
             RumorMill.OnShiftLifecycle += HandleShiftLifecycle;
         }
 
         private void OnDisable()
         {
-            RumorMill.OnMoralChoice   -= HandleMoralChoice;
-            RumorMill.OnOfficeHazard  -= HandleHazard;
+            RumorMill.OnMoralChoice    -= HandleMoralChoice;
+            RumorMill.OnClaimResolved  -= HandleClaimResolved;
+            RumorMill.OnOfficeHazard   -= HandleHazard;
             RumorMill.OnShiftLifecycle -= HandleShiftLifecycle;
         }
 
@@ -224,6 +226,13 @@ namespace Desk42.UI
         }
 
         // ── Event Handlers ────────────────────────────────────
+
+        private void HandleClaimResolved(ClaimResolvedEvent e)
+        {
+#if DEVELOPMENT_BUILD
+            Debugging.ConsensusAudit.MarkDeskEntropy();
+#endif
+        }
 
         private void HandleMoralChoice(MoralChoiceEvent e)
         {

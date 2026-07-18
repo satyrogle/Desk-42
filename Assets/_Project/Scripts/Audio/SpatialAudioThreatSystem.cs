@@ -66,6 +66,7 @@ namespace Desk42.Audio
         private void OnEnable()
         {
             RumorMill.OnClaimQueued    += HandleClaimQueued;
+            RumorMill.OnClaimResolved  += HandleClaimResolved;
             RumorMill.OnOfficeHazard   += HandleOfficeHazard;
             RumorMill.OnTideEscalated  += HandleTideEscalated;
             RumorMill.OnSanityChanged  += HandleSanityChanged;
@@ -75,6 +76,7 @@ namespace Desk42.Audio
         private void OnDisable()
         {
             RumorMill.OnClaimQueued    -= HandleClaimQueued;
+            RumorMill.OnClaimResolved  -= HandleClaimResolved;
             RumorMill.OnOfficeHazard   -= HandleOfficeHazard;
             RumorMill.OnTideEscalated  -= HandleTideEscalated;
             RumorMill.OnSanityChanged  -= HandleSanityChanged;
@@ -90,6 +92,13 @@ namespace Desk42.Audio
             _lastQueueCueTime = Time.unscaledTime;
             Play(_evtQueuePressure, _queuePosition,
                 $"queue pressure ({e.QueueRemaining} pending)");
+        }
+
+        private void HandleClaimResolved(ClaimResolvedEvent e)
+        {
+#if DEVELOPMENT_BUILD
+            Debugging.ConsensusAudit.MarkSpatialAudio();
+#endif
         }
 
         private void HandleOfficeHazard(OfficeHazardEvent e)

@@ -95,6 +95,9 @@ namespace Desk42.UI
 
         private void HandleClaimResolved(ClaimResolvedEvent e)
         {
+#if DEVELOPMENT_BUILD
+            Debugging.ConsensusAudit.MarkFeedbackOverlay();
+#endif
             if (e.ResolvedCorrectly)
             {
                 ShowToast($"✓ CLAIM APPROVED  +¢{e.CreditsEarned}", ApproveColor, 36);
