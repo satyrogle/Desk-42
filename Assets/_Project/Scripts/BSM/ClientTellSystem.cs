@@ -73,7 +73,8 @@ namespace Desk42.BSM
                 if (def.IsSubtleVariant && _visitCount == 0) continue;
                 if (!def.IsSubtleVariant && _visitCount > 0) continue;
 
-                _pendingTells.Enqueue((def, def.LeadTimeSeconds * intensity));
+                float noiseMult = Core.OfficeEnvironmentState.GetTellLeadTimeMultiplier();
+                _pendingTells.Enqueue((def, def.LeadTimeSeconds * intensity * noiseMult));
                 return;
             }
 

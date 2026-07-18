@@ -148,6 +148,9 @@ namespace Desk42.RedTape
                     GameManager.Instance?.Run?.ModifySoulIntegrity(-soulCost);
             }
 
+            // ── Step 5b: Office environment card effect ─────────
+            OfficeEnvironmentState.ApplyCardEffect(card.CardType);
+
             // ── Step 6: Publish to Rumor Mill ─────────────────
             GameManager.Instance?.Run?.RecordCardSlam();
 
@@ -218,6 +221,8 @@ namespace Desk42.RedTape
                     duration *= 0.5f;
                 }
             }
+
+            duration *= Core.OfficeEnvironmentState.GetInjectionDurationMultiplier();
 
             return duration;
         }

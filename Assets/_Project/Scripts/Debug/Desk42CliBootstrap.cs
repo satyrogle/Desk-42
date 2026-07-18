@@ -18,6 +18,7 @@ namespace Desk42.Debugging
         {
             Desk42CLI.Register("bsm", BsmCliTool.Run);
             Desk42CLI.Register("entropy", EntropyCliTool.Run);
+            Desk42CLI.Register("env", EnvCliTool.Run);
         }
     }
 }

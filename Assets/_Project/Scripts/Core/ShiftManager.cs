@@ -178,6 +178,7 @@ namespace Desk42.Core
             var runData = run.RawData;
 
             _tide.Tick(Time.deltaTime);
+            OfficeEnvironmentState.Tick(Time.deltaTime);
 
             // During lunch: count down the break, skip timer
             if (runData.CurrentPhase == ShiftPhase.LunchBreak)

@@ -61,6 +61,9 @@ namespace Desk42.Core
         private float _nextHazardIn;
         private ShiftPhase _currentPhase = ShiftPhase.ClockIn;
 
+        private OfficeHazardType? _lastFiredHazardType;
+        private const float CHAIN_WINDOW = 30f;
+
         // ── Queries ───────────────────────────────────────────
 
         public int PressureLevel => _pressureLevel;
@@ -173,6 +176,7 @@ namespace Desk42.Core
             _consecutiveFastCount = 0;
             _timeSinceLastHazard  = 0f;
             _nextHazardIn         = HazardIntervals[0];
+            _lastFiredHazardType  = null;
         }
 
         // ── Private ───────────────────────────────────────────
@@ -181,6 +185,31 @@ namespace Desk42.Core
         {
             var type = PickHazard();
             bool isOverperf = _pressureLevel >= 2;
+
+            OfficeEnvironmentState.ApplyHazard(type);
+
+            // Hazard interaction chain — 30s window, one chain per primary
+            if (_lastFiredHazardType.HasValue && _timeSinceLastHazard <= CHAIN_WINDOW)
+            {
+                var prev = _lastFiredHazardType.Value;
+                var chained = OfficeHazardInteractionTable.CheckChain(prev, type);
+                if (chained.HasValue)
+                {
+                    OfficeEnvironmentState.ApplyHazard(chained.Value);
+                    RumorMill.PublishDeferred(
+                        new OfficeHazardEvent(chained.Value, 0f, isOverperf));
+                    _lastFiredHazardType = null; // prevent infinite cascade
+                    Debug.Log($"[TideSystem] Chain: {prev} + {type} → {chained.Value}");
+                }
+                else
+                {
+                    _lastFiredHazardType = type;
+                }
+            }
+            else
+            {
+                _lastFiredHazardType = type;
+            }
 
             Debug.Log($"[TideSystem] Hazard fired: {type}. " +
                       $"Pressure: {_pressureLevel}, overperf: {isOverperf}.");

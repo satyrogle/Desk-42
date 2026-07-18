@@ -30,7 +30,7 @@ namespace Desk42.BSM
         public float          OfficeSanity;          // player's current sanity 0-100
         public float          SoulIntegrity;         // player's soul 0-100
         public float          ImpatienceTimerRatio;  // 0=full time, 1=expired
-        public string         OfficeTemperatureState; // "PEAK_EFFICIENCY", "LUNCH_BREAK", "SYSTEM_CRASH"
+        public string         OfficeTemperatureState => Core.OfficeEnvironmentState.GetTemperatureState();
 
         // ── Faction ───────────────────────────────────────────
         public float          FilingReputation;

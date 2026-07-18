@@ -177,6 +177,12 @@ namespace Desk42.BSM.States
                 _smallTalkTimer = 0f;
             }
 
+            if (Core.OfficeEnvironmentState.NoiseLevel > 60f)
+            {
+                ctx.RequestTransition?.Invoke(ClientStateID.Pending);
+                return false;
+            }
+
             // If impatience is very high, cooperative client becomes resigned
             if (ctx.ImpatienceTimerRatio > 0.8f)
             {

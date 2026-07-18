@@ -134,6 +134,8 @@ namespace Desk42.BSM
 
             float dt = Time.deltaTime;
 
+            Core.OfficeEnvironmentState.ApplyClientStateTick(CurrentMoodState, dt);
+
             // Tick the state stack first
             bool stackActive = _stateStack.Tick(_context, dt);
 
