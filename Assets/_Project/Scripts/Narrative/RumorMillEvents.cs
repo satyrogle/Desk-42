@@ -68,29 +68,44 @@ namespace Desk42.Core
         AfternoonBlock, Overtime, ClockOut
     }
 
+    public enum CardSlamOutcome
+    {
+        Success,
+        BlockedByExemption,
+        CardJammed,
+        InsufficientCredits,
+        ClientNotResponding,
+        BlockedByState,
+    }
+
     // ── Event Structs ─────────────────────────────────────────
     // All events are readonly structs — zero GC allocation.
 
     /// <summary>Player slammed a punch card into the machine.</summary>
     public readonly struct CardSlammedEvent
     {
-        public readonly PunchCardType CardType;
-        public readonly string        CardInstanceId;   // per-run GUID (fatigue key)
-        public readonly string        ClientVariantId;
-        public readonly ClientStateID StateBefore;
-        public readonly int           CurrentFatigue;   // how many times used this shift
+        public readonly PunchCardType    CardType;
+        public readonly string           CardInstanceId;   // per-run GUID (fatigue key)
+        public readonly string           ClientVariantId;
+        public readonly ClientStateID    StateBefore;
+        public readonly int              CurrentFatigue;   // how many times used this shift
+        public readonly CardSlamOutcome  Outcome;
+        public readonly int              CreditCost;       // shown on InsufficientCredits toast
 
         // Backward-compat alias
         public string CardId => CardInstanceId;
 
         public CardSlammedEvent(PunchCardType type, string cardInstanceId,
-            string clientId, ClientStateID before, int fatigue)
+            string clientId, ClientStateID before, int fatigue,
+            CardSlamOutcome outcome = CardSlamOutcome.Success, int creditCost = 0)
         {
             CardType        = type;
             CardInstanceId  = cardInstanceId;
             ClientVariantId = clientId;
             StateBefore     = before;
             CurrentFatigue  = fatigue;
+            Outcome         = outcome;
+            CreditCost      = creditCost;
         }
     }
 

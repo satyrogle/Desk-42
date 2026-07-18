@@ -80,6 +80,7 @@ namespace Desk42.RedTape
                 var fatigueOutcome = _fatigue.IsJammed(cardInstanceId)
                     ? SlamOutcome.CardJammed
                     : SlamOutcome.CardCrumpled;
+                PublishSlamEvent(card, cardInstanceId, CardSlamOutcome.CardJammed);
                 return new SlamResult(fatigueOutcome, card) { Reason = reason };
             }
 
@@ -95,13 +96,17 @@ namespace Desk42.RedTape
 
                 if (creditPortion > 0 &&
                     !(GameManager.Instance?.Run?.SpendCredits(creditPortion) ?? false))
+                {
+                    PublishSlamEvent(card, cardInstanceId, CardSlamOutcome.InsufficientCredits, effectiveCost);
                     return new SlamResult(SlamOutcome.InsufficientCredits, card);
+                }
 
                 GameManager.Instance?.Run?.ModifySanity(-sanityCost);
             }
             else if (effectiveCost > 0 &&
                 !(GameManager.Instance?.Run?.SpendCredits(effectiveCost) ?? false))
             {
+                PublishSlamEvent(card, cardInstanceId, CardSlamOutcome.InsufficientCredits, effectiveCost);
                 return new SlamResult(SlamOutcome.InsufficientCredits, card);
             }
 
@@ -116,7 +121,9 @@ namespace Desk42.RedTape
                 if (effectiveCost > 0)
                     GameManager.Instance?.Run?.AddCredits(effectiveCost);
 
-                return MapInjectionFailure(injectionResult, card);
+                var mapped = MapInjectionFailure(injectionResult, card);
+                PublishSlamEvent(card, cardInstanceId, MapToEventOutcome(mapped.Outcome));
+                return mapped;
             }
 
             // ── Step 4: Record fatigue ────────────────────────
@@ -159,7 +166,8 @@ namespace Desk42.RedTape
                 cardInstanceId,
                 _activeClient.ClientVariantId,
                 _activeClient.CurrentMoodState,
-                _fatigue.GetFatigue(cardInstanceId)));
+                _fatigue.GetFatigue(cardInstanceId),
+                CardSlamOutcome.Success));
 
             // ── Step 7: Update Repeat Offender DB ────────────
             GameManager.Instance?.Meta?.RecordCardUsed(
@@ -286,6 +294,32 @@ namespace Desk42.RedTape
                     { Reason = "Client is not responsive." },
 
                 _ => new SlamResult(SlamOutcome.BlockedByCurrentState, card)
+            };
+        }
+
+        private void PublishSlamEvent(PunchCardData card, string cardInstanceId,
+            CardSlamOutcome outcome, int creditCost = 0)
+        {
+            if (_activeClient == null) return;
+            RumorMill.Publish(new CardSlammedEvent(
+                card.CardType,
+                cardInstanceId,
+                _activeClient.ClientVariantId,
+                _activeClient.CurrentMoodState,
+                _fatigue?.GetFatigue(cardInstanceId) ?? 0,
+                outcome,
+                creditCost));
+        }
+
+        private static CardSlamOutcome MapToEventOutcome(SlamOutcome outcome)
+        {
+            return outcome switch
+            {
+                SlamOutcome.BlockedByPreFiledExemption => CardSlamOutcome.BlockedByExemption,
+                SlamOutcome.ClientNotResponding        => CardSlamOutcome.ClientNotResponding,
+                SlamOutcome.InsufficientCredits        => CardSlamOutcome.InsufficientCredits,
+                SlamOutcome.CardJammed                 => CardSlamOutcome.CardJammed,
+                _                                      => CardSlamOutcome.BlockedByState,
             };
         }
     }

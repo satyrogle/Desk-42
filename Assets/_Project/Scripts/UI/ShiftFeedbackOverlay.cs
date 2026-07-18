@@ -54,16 +54,18 @@ namespace Desk42.UI
 
         private void OnEnable()
         {
-            RumorMill.OnClaimResolved   += HandleClaimResolved;
-            RumorMill.OnCardSlammed     += HandleCardSlammed;
-            RumorMill.OnShiftPhaseChanged += HandlePhaseChanged;
+            RumorMill.OnClaimResolved       += HandleClaimResolved;
+            RumorMill.OnCardSlammed         += HandleCardSlammed;
+            RumorMill.OnShiftPhaseChanged   += HandlePhaseChanged;
+            RumorMill.OnCounterTraitGenerated += HandleCounterTrait;
         }
 
         private void OnDisable()
         {
-            RumorMill.OnClaimResolved   -= HandleClaimResolved;
-            RumorMill.OnCardSlammed     -= HandleCardSlammed;
-            RumorMill.OnShiftPhaseChanged -= HandlePhaseChanged;
+            RumorMill.OnClaimResolved       -= HandleClaimResolved;
+            RumorMill.OnCardSlammed         -= HandleCardSlammed;
+            RumorMill.OnShiftPhaseChanged   -= HandlePhaseChanged;
+            RumorMill.OnCounterTraitGenerated -= HandleCounterTrait;
         }
 
         // ── Toast Container ───────────────────────────────────
@@ -107,15 +109,40 @@ namespace Desk42.UI
         {
             string cardType = e.CardType.ToString().ToUpper();
 
-            // Show subtle feedback for card slams
-            if (e.CurrentFatigue > 0 && e.CurrentFatigue >= 3)
+            switch (e.Outcome)
             {
-                ShowToast($"⚠ {cardType} JAMMED", JamColor, 22);
+                case CardSlamOutcome.Success:
+                    if (e.CurrentFatigue > 0 && e.CurrentFatigue >= 3)
+                        ShowToast($"⚠ {cardType} JAMMED", JamColor, 22);
+                    else
+                        ShowToast($"▸ {cardType} FILED", SlamColor, 18);
+                    break;
+
+                case CardSlamOutcome.BlockedByExemption:
+                    ShowToast($"⚡ COUNTER-TRAIT: {cardType}", BlockColor, 26);
+                    break;
+
+                case CardSlamOutcome.CardJammed:
+                    ShowToast($"⚠ {cardType} JAMMED", JamColor, 22);
+                    break;
+
+                case CardSlamOutcome.InsufficientCredits:
+                    ShowToast($"✗ INSUFFICIENT CREDITS (¢{e.CreditCost})", DenyColor, 22);
+                    break;
+
+                case CardSlamOutcome.ClientNotResponding:
+                    ShowToast("✗ CLIENT NOT RESPONDING", DenyColor, 22);
+                    break;
+
+                case CardSlamOutcome.BlockedByState:
+                    ShowToast($"✗ {cardType} BLOCKED", BlockColor, 22);
+                    break;
             }
-            else
-            {
-                ShowToast($"▸ {cardType} FILED", SlamColor, 18);
-            }
+        }
+
+        private void HandleCounterTrait(CounterTraitGeneratedEvent e)
+        {
+            ShowToast($"⚡ MUTATION: {e.CounterTraitId}", BlockColor, 24);
         }
 
         private void HandlePhaseChanged(ShiftPhaseChangedEvent e)
