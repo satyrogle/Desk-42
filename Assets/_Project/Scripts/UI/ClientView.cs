@@ -35,6 +35,11 @@ namespace Desk42.UI
         [Header("Clairvoyance")]
         [SerializeField] private TMP_Text _clairvoyanceLabel;
 
+        [Header("Codex Components (null until wired)")]
+        [SerializeField] private MonoBehaviour _tellIndicator;
+        [SerializeField] private MonoBehaviour _fidgetDriver;
+        [SerializeField] private MonoBehaviour _deskItems;
+
         // ── Mood Color Table ──────────────────────────────────
 
         private static readonly Dictionary<ClientStateID, Color> MoodColors = new()
@@ -69,6 +74,8 @@ namespace Desk42.UI
             UpdateMood(csm.CurrentMoodState, csm.IsInInjectedState);
 
             csm.OnStateChanged += HandleStateChanged;
+            csm.OnTellFired    += HandleTellFired;
+            csm.OnDarkHumour   += HandleDarkHumour;
         }
 
         public void Clear()
@@ -76,6 +83,8 @@ namespace Desk42.UI
             if (_csm != null)
             {
                 _csm.OnStateChanged -= HandleStateChanged;
+                _csm.OnTellFired    -= HandleTellFired;
+                _csm.OnDarkHumour   -= HandleDarkHumour;
                 _csm = null;
             }
 
@@ -114,10 +123,28 @@ namespace Desk42.UI
             }
         }
 
-        // ── Event Handler ─────────────────────────────────────
+        // ── Event Handlers ────────────────────────────────────
 
-        private void HandleStateChanged(ClientStateID _, ClientStateID newState)
-            => UpdateMood(newState, _csm?.IsInInjectedState ?? false);
+        private void HandleStateChanged(ClientStateID prev, ClientStateID newState)
+        {
+            UpdateMood(newState, _csm?.IsInInjectedState ?? false);
+            (_fidgetDriver as BSM.IClientFidgetDriver)?.SetState(newState);
+            (_deskItems as BSM.IDeskItemReactor)?.OnClientStateChanged(prev, newState);
+        }
+
+        private void HandleTellFired(BSM.TellDefinition tell)
+        {
+            (_tellIndicator as BSM.ITellVisualIndicator)?.ShowTell(tell);
+            (_fidgetDriver as BSM.IClientFidgetDriver)?.OnTellReceived(tell);
+        }
+
+        private void HandleDarkHumour(string key)
+        {
+            var run = Core.GameManager.Instance?.Run;
+            if (run == null) return;
+            string line = NarratorSystem.GetLine($"dark_humour.{key}", run.NarratorTone);
+            Debug.Log($"[ClientView] DarkHumour: {key} → {line}");
+        }
 
         // ── Display ───────────────────────────────────────────
 
