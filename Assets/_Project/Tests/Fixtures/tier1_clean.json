@@ -1,0 +1,11 @@
+// PROVISIONAL — pending SynergyResolver packet confirmation from Claude
+{
+  "sanity": 100,
+  "steps": [
+    { "type": "base_resolution", "value": 10 }
+  ],
+  "stamp": {
+    "tier": 1,
+    "result": "APPROVED"
+  }
+}

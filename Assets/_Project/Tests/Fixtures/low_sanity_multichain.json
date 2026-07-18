@@ -1,0 +1,15 @@
+// PROVISIONAL — pending SynergyResolver packet confirmation from Claude
+{
+  "sanity": 20,
+  "steps": [
+    { "type": "base_resolution", "value": 5 },
+    { "type": "punch_card", "value": 2 },
+    { "type": "office_supply", "value": 3 },
+    { "type": "zone", "value": 1 },
+    { "type": "faction", "value": 4 }
+  ],
+  "stamp": {
+    "tier": 4,
+    "result": "TERMINATED"
+  }
+}
