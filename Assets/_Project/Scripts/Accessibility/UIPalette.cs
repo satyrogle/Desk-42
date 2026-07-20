@@ -27,26 +27,26 @@ namespace Desk42.Accessibility
         public static Color Backdrop =>
             AccessibilitySettings.HighContrast
                 ? new Color(0f, 0f, 0f, 0.95f)
-                : new Color(0f, 0f, 0f, 0.78f);
+                : new Color(0.015f, 0.06f, 0.05f, 0.86f);
 
         /// <summary>Card / panel body fill.</summary>
         public static Color CardBackground =>
             AccessibilitySettings.HighContrast
                 ? new Color(0f, 0f, 0f, 1f)
-                : new Color(0.10f, 0.10f, 0.12f, 0.98f);
+                : new Color(0.035f, 0.12f, 0.105f, 0.98f);
 
         // ── Text ──────────────────────────────────────────────
 
         public static Color TextPrimary =>
             AccessibilitySettings.HighContrast
                 ? Color.white
-                : Color.white;
+                : new Color(0.88f, 0.85f, 0.72f, 1f);
 
         /// <summary>Subdued body/description text.</summary>
         public static Color TextSecondary =>
             AccessibilitySettings.HighContrast
                 ? Color.white
-                : new Color(0.75f, 0.75f, 0.78f, 1f);
+                : new Color(0.62f, 0.70f, 0.64f, 1f);
 
         // ── Accents ───────────────────────────────────────────
 
@@ -54,30 +54,30 @@ namespace Desk42.Accessibility
         public static Color AccentTitle =>
             AccessibilitySettings.HighContrast
                 ? new Color(1f, 1f, 0f, 1f)
-                : new Color(0.95f, 0.85f, 0.50f, 1f);
+                : new Color(0.72f, 0.58f, 0.28f, 1f);
 
         /// <summary>Warning / danger / unethical-choice tone.</summary>
         public static Color AccentWarn =>
             AccessibilitySettings.HighContrast
                 ? new Color(1f, 0.4f, 0.4f, 1f)
-                : new Color(0.85f, 0.30f, 0.50f, 1f);
+                : new Color(0.58f, 0.16f, 0.13f, 1f);
 
         /// <summary>Success / ethical-choice / approve tone.</summary>
         public static Color AccentSuccess =>
             AccessibilitySettings.HighContrast
                 ? new Color(0f, 1f, 0.4f, 1f)
-                : new Color(0.20f, 0.50f, 0.30f, 1f);
+                : new Color(0.18f, 0.38f, 0.30f, 1f);
 
         // ── Buttons ───────────────────────────────────────────
 
         public static Color ButtonNormal =>
             AccessibilitySettings.HighContrast
                 ? new Color(0.05f, 0.05f, 0.05f, 1f)
-                : new Color(0.20f, 0.20f, 0.25f, 1f);
+                : new Color(0.07f, 0.20f, 0.17f, 1f);
 
         public static Color ButtonHighlighted =>
             AccessibilitySettings.HighContrast
                 ? new Color(1f, 1f, 1f, 0.5f)
-                : new Color(0.35f, 0.35f, 0.40f, 1f);
+                : new Color(0.22f, 0.42f, 0.34f, 1f);
     }
 }

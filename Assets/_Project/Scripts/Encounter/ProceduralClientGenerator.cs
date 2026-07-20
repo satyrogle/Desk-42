@@ -53,7 +53,7 @@ namespace Desk42.Encounter
         {
             return new SpeciesFlavor
             {
-                SpeciesId = "humanoid",
+                SpeciesId = "unregistered_alien",
                 FirstNames = new[] { "Bob", "Alice", "Subject", "Unit" },
                 LastNames = new[] { "Smith", "Johnson", "A01", "B02" },
                 ComplaintTopics = new[] { "mandatory overtime", "lukewarm coffee", "soul erasure" }

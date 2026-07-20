@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using Desk42.UI;
@@ -13,3 +14,4 @@ public class Diag {
         }
     }
 }
+#endif

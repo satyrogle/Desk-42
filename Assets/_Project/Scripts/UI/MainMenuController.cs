@@ -21,6 +21,7 @@ namespace Desk42.UI
         [Header("Auto-Build UI")]
         [Tooltip("If true, build a default Canvas + 4 buttons at runtime.")]
         [SerializeField] private bool _autoBuildUI = true;
+        [SerializeField] private Sprite _officeBackground;
 
         [Header("Manual Wiring (used when _autoBuildUI = false)")]
         [SerializeField] private Button _startNewRunBtn;
@@ -71,9 +72,32 @@ namespace Desk42.UI
             canvasGO.transform.SetParent(transform, false);
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasGO.AddComponent<CanvasScaler>().uiScaleMode =
-                CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            var scaler = canvasGO.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.matchWidthOrHeight = 0.5f;
             canvasGO.AddComponent<GraphicRaycaster>();
+
+            // Reuse the approved desk-stage composition so the front door and
+            // gameplay feel like the same place, even while final art is pending.
+            var background = CreatePanel(canvasGO.transform, "OfficeBackground",
+                Vector2.zero, new Vector2(1920f, 1080f),
+                Color.white);
+            var backgroundImage = background.GetComponent<Image>();
+            backgroundImage.sprite = _officeBackground;
+            backgroundImage.preserveAspect = false;
+            backgroundImage.raycastTarget = false;
+
+            CreatePanel(canvasGO.transform, "Atmosphere",
+                Vector2.zero, new Vector2(1920f, 1080f),
+                new Color(0.015f, 0.075f, 0.065f, 0.56f));
+
+            var docket = CreatePanel(canvasGO.transform, "EmployeeDocket",
+                new Vector2(-658f, 0f), new Vector2(500f, 840f),
+                new Color(0.035f, 0.12f, 0.105f, 0.96f));
+            var docketOutline = docket.AddComponent<Outline>();
+            docketOutline.effectColor = new Color(0.72f, 0.58f, 0.28f, 0.95f);
+            docketOutline.effectDistance = new Vector2(2f, -2f);
 
             // EventSystem (if missing)
             if (UnityEngine.EventSystems.EventSystem.current == null)
@@ -89,10 +113,19 @@ namespace Desk42.UI
 
             var title = CreateLabel(canvasGO.transform,
                 escaped ? "MIDDLE MANAGEMENT" : "DESK 42",
-                new Vector2(0, 200), escaped ? 52 : 64);
+                new Vector2(-684, 356), escaped ? 48 : 62);
+            title.rectTransform.sizeDelta = new Vector2(430, 80);
+            title.alignment = TextAlignmentOptions.Left;
             title.color = escaped
                 ? new Color(0.65f, 0.95f, 0.65f)
                 : new Color(0.9f, 0.85f, 0.7f);
+
+            var subtitle = CreateLabel(canvasGO.transform,
+                "CLAIMS INTAKE // EMPLOYEE ACCESS",
+                new Vector2(-684, 306), 17);
+            subtitle.rectTransform.sizeDelta = new Vector2(430, 40);
+            subtitle.alignment = TextAlignmentOptions.Left;
+            subtitle.color = new Color(0.62f, 0.74f, 0.67f);
 
             if (escaped)
             {
@@ -104,16 +137,24 @@ namespace Desk42.UI
             }
 
             // Buttons stacked vertically, centered
-            _startNewRunBtn     = CreateButton(canvasGO.transform, "Start New Run",    new Vector2(0,  150));
-            _continueBtn        = CreateButton(canvasGO.transform, "Continue",         new Vector2(0,   95));
-            _dailyBriefBtn      = CreateButton(canvasGO.transform, "Daily Brief",      new Vector2(0,   40));
-            _settingsBtn        = CreateButton(canvasGO.transform, "Accessibility",    new Vector2(0,  -15));
-            _replayTutorialBtn  = CreateButton(canvasGO.transform, "Replay Tutorial",  new Vector2(0,  -70));
-            _resetOnboardingBtn = CreateButton(canvasGO.transform, "Reset Onboarding", new Vector2(0, -125));
-            _quitBtn            = CreateButton(canvasGO.transform, "Quit",             new Vector2(0, -200));
+            _startNewRunBtn     = CreateButton(canvasGO.transform, "CLOCK IN — NEW RUN", new Vector2(-684,  220), true);
+            _continueBtn        = CreateButton(canvasGO.transform, "RESUME CASELOAD",     new Vector2(-684,  150));
+            _dailyBriefBtn      = CreateButton(canvasGO.transform, "DAILY BRIEF",         new Vector2(-684,   80));
+            _settingsBtn        = CreateButton(canvasGO.transform, "ACCESSIBILITY",       new Vector2(-684,   10));
+            _replayTutorialBtn  = CreateButton(canvasGO.transform, "REPLAY ORIENTATION",  new Vector2(-684,  -60));
+            _resetOnboardingBtn = CreateButton(canvasGO.transform, "RESET ONBOARDING",    new Vector2(-684, -130));
+            _quitBtn            = CreateButton(canvasGO.transform, "CLOCK OUT",           new Vector2(-684, -220));
+
+            var footer = CreateLabel(canvasGO.transform,
+                "PROPERTY OF THE ORGANIZATION\nUNAUTHORIZED CLARITY IS A POLICY VIOLATION",
+                new Vector2(-684, -340), 13);
+            footer.rectTransform.sizeDelta = new Vector2(430, 60);
+            footer.alignment = TextAlignmentOptions.Left;
+            footer.color = new Color(0.55f, 0.64f, 0.58f);
         }
 
-        private static Button CreateButton(Transform parent, string label, Vector2 anchoredPos)
+        private static Button CreateButton(Transform parent, string label, Vector2 anchoredPos,
+            bool primary = false)
         {
             var go = new GameObject($"Btn_{label}");
             go.transform.SetParent(parent, false);
@@ -122,22 +163,55 @@ namespace Desk42.UI
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot     = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(280, 50);
+            rt.sizeDelta = new Vector2(430, 56);
             rt.anchoredPosition = anchoredPos;
 
             var img = go.AddComponent<Image>();
-            img.color = new Color(0.2f, 0.2f, 0.25f, 0.9f);
+            img.color = primary
+                ? new Color(0.72f, 0.58f, 0.28f, 0.98f)
+                : new Color(0.07f, 0.20f, 0.17f, 0.98f);
+
+            var outline = go.AddComponent<Outline>();
+            outline.effectColor = new Color(0.72f, 0.58f, 0.28f, 0.85f);
+            outline.effectDistance = new Vector2(1f, -1f);
 
             var btn = go.AddComponent<Button>();
             var colors = btn.colors;
-            colors.normalColor      = new Color(0.2f, 0.2f, 0.25f);
-            colors.highlightedColor = new Color(0.35f, 0.35f, 0.4f);
-            colors.pressedColor     = new Color(0.5f, 0.5f, 0.55f);
-            colors.disabledColor    = new Color(0.15f, 0.15f, 0.18f);
+            colors.normalColor      = img.color;
+            colors.highlightedColor = new Color(0.22f, 0.42f, 0.34f, 1f);
+            colors.pressedColor     = new Color(0.11f, 0.28f, 0.23f, 1f);
+            colors.disabledColor    = new Color(0.08f, 0.12f, 0.11f, 0.8f);
             btn.colors = colors;
 
-            CreateLabel(go.transform, label, Vector2.zero, 22);
+            var buttonLabel = CreateLabel(go.transform, label, Vector2.zero, 18);
+            var labelRT = buttonLabel.rectTransform;
+            labelRT.anchorMin = Vector2.zero;
+            labelRT.anchorMax = Vector2.one;
+            labelRT.offsetMin = Vector2.zero;
+            labelRT.offsetMax = Vector2.zero;
+            buttonLabel.enableWordWrapping = false;
+            buttonLabel.overflowMode = TextOverflowModes.Overflow;
+            buttonLabel.maxVisibleCharacters = int.MaxValue;
+            buttonLabel.fontStyle = FontStyles.Bold;
+            buttonLabel.color = primary
+                ? new Color(0.035f, 0.10f, 0.085f)
+                : new Color(0.88f, 0.85f, 0.72f);
             return btn;
+        }
+
+        private static GameObject CreatePanel(Transform parent, string name,
+            Vector2 anchoredPosition, Vector2 size, Color color)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = anchoredPosition;
+            rt.sizeDelta = size;
+            go.AddComponent<Image>().color = color;
+            return go;
         }
 
         private static TMP_Text CreateLabel(Transform parent, string text,

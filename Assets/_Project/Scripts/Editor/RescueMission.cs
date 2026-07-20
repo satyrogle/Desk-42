@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -141,3 +142,4 @@ namespace Desk42.EditorTools
         }
     }
 }
+#endif

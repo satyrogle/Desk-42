@@ -249,37 +249,42 @@ namespace Desk42.Tutorial
             brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one;
             brt.offsetMin = Vector2.zero; brt.offsetMax = Vector2.zero;
             var bImg = backdrop.AddComponent<Image>();
-            bImg.color = new Color(0f, 0f, 0f, 0.55f);
+            bImg.color = new Color(0.02f, 0.08f, 0.07f, 0.20f);
             bImg.raycastTarget = false;
 
-            // Card pinned bottom-center so it doesn't cover the claim
+            // Compact memo pinned at the right so the player can still read
+            // the claim, claimant state, and card hand while learning.
             var card = new GameObject("Card");
             card.transform.SetParent(canvasGO.transform, false);
             var crt = card.AddComponent<RectTransform>();
-            crt.anchorMin = new Vector2(0.5f, 0f);
-            crt.anchorMax = new Vector2(0.5f, 0f);
-            crt.pivot     = new Vector2(0.5f, 0f);
-            crt.sizeDelta = new Vector2(900, 280);
-            crt.anchoredPosition = new Vector2(0, 60);
+            crt.anchorMin = new Vector2(1f, 1f);
+            crt.anchorMax = new Vector2(1f, 1f);
+            crt.pivot     = new Vector2(1f, 1f);
+            crt.sizeDelta = new Vector2(520, 310);
+            crt.anchoredPosition = new Vector2(-32, -128);
             var cImg = card.AddComponent<Image>();
-            cImg.color = UIPalette.CardBackground;
+            cImg.color = new Color(0.035f, 0.14f, 0.12f, 0.98f);
+
+            var outline = card.AddComponent<Outline>();
+            outline.effectColor = new Color(0.79f, 0.61f, 0.32f, 1f);
+            outline.effectDistance = new Vector2(3f, -3f);
 
             _stepLabel = CreateLabel(card.transform, "",
-                new Vector2(0, 110), 18, FontStyles.Bold,
+                new Vector2(0, 125), 17, FontStyles.Bold,
                 UIPalette.AccentTitle);
             _stepLabel.alignment = TextAlignmentOptions.Center;
 
             _bodyLabel = CreateLabel(card.transform, "",
-                new Vector2(0, 10), 22, FontStyles.Normal, Color.white);
-            _bodyLabel.rectTransform.sizeDelta = new Vector2(840, 160);
+                new Vector2(0, 25), 18, FontStyles.Normal, new Color(0.94f, 0.89f, 0.76f));
+            _bodyLabel.rectTransform.sizeDelta = new Vector2(460, 160);
             _bodyLabel.alignment = TextAlignmentOptions.TopLeft;
             _bodyLabel.enableWordWrapping = true;
 
             _continueBtn = CreateButton(card.transform, "Continue",
-                new Vector2(160, -100), () => Advance());
+                new Vector2(120, -110), () => Advance());
 
             _skipBtn = CreateButton(card.transform, "Skip Tutorial",
-                new Vector2(-160, -100), () => Complete());
+                new Vector2(-120, -110), () => Complete());
 
             _root = canvasGO;
         }
@@ -295,17 +300,17 @@ namespace Desk42.Tutorial
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot     = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(220, 48);
+            rt.sizeDelta = new Vector2(210, 48);
             rt.anchoredPosition = anchoredPos;
 
             var img = go.AddComponent<Image>();
-            img.color = new Color(0.20f, 0.20f, 0.25f, 1f);
+            img.color = new Color(0.12f, 0.28f, 0.23f, 1f);
 
             var btn = go.AddComponent<Button>();
             var lbl = CreateLabel(go.transform, label, Vector2.zero, 22,
-                FontStyles.Bold, Color.white);
+                FontStyles.Bold, new Color(0.94f, 0.89f, 0.76f));
             lbl.alignment = TextAlignmentOptions.Center;
-            lbl.rectTransform.sizeDelta = new Vector2(200, 40);
+            lbl.rectTransform.sizeDelta = new Vector2(190, 40);
 
             btn.onClick.AddListener(() => onClick());
             return btn;

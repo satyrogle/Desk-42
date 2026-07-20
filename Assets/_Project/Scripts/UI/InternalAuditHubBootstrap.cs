@@ -76,7 +76,7 @@ namespace Desk42.UI
             var bgRT = bg.AddComponent<RectTransform>();
             bgRT.anchorMin = Vector2.zero; bgRT.anchorMax = Vector2.one;
             bgRT.offsetMin = Vector2.zero; bgRT.offsetMax = Vector2.zero;
-            bg.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.10f, 1f);
+            bg.AddComponent<Image>().color = new Color(0.025f, 0.09f, 0.075f, 1f);
 
             // Title
             CreateLabel(canvasGO.transform, "INTERNAL AUDIT — HUMAN RESOURCES",
@@ -93,7 +93,7 @@ namespace Desk42.UI
             brRT.pivot = new Vector2(1, 1);
             brRT.sizeDelta = new Vector2(360, 60);
             brRT.anchoredPosition = new Vector2(-40, -40);
-            bankGO.AddComponent<Image>().color = new Color(0.12f, 0.12f, 0.14f, 0.95f);
+            bankGO.AddComponent<Image>().color = UIPalette.CardBackground;
 
             var bankLbl = new GameObject("Lbl");
             bankLbl.transform.SetParent(bankGO.transform, false);
@@ -156,22 +156,21 @@ namespace Desk42.UI
             rt.sizeDelta = new Vector2(680, 90);
             rt.anchoredPosition = anchoredPos;
 
-            row.AddComponent<Image>().color = new Color(0.13f, 0.13f, 0.16f, 1f);
+            row.AddComponent<Image>().color = new Color(0.06f, 0.17f, 0.145f, 1f);
 
             // Name
             var nameTmp = CreateLabel(row.transform, name,
-                new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1),
-                new Vector2(16, -8), new Vector2(-16, 32),
+                new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
+                new Vector2(16, -10), new Vector2(460, 30),
                 18, FontStyles.Bold, TextAlignmentOptions.MidlineLeft,
                 UIPalette.AccentTitle);
-            nameTmp.rectTransform.anchoredPosition = new Vector2(16, -8);
 
             // Desc
             CreateLabel(row.transform, desc,
-                new Vector2(0, 0), new Vector2(1, 0.5f), new Vector2(0, 0),
-                new Vector2(16, 8), new Vector2(-180, 28),
-                12, FontStyles.Normal, TextAlignmentOptions.TopLeft,
-                new Color(0.85f, 0.85f, 0.85f));
+                new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
+                new Vector2(16, -46), new Vector2(460, 26),
+                14, FontStyles.Normal, TextAlignmentOptions.TopLeft,
+                UIPalette.TextSecondary);
 
             // Buy button
             var btnGO = new GameObject("Buy");
@@ -181,7 +180,7 @@ namespace Desk42.UI
             brt.pivot = new Vector2(1, 0.5f);
             brt.sizeDelta = new Vector2(150, 60);
             brt.anchoredPosition = new Vector2(-12, 0);
-            btnGO.AddComponent<Image>().color = new Color(0.20f, 0.40f, 0.25f);
+            btnGO.AddComponent<Image>().color = UIPalette.ButtonNormal;
             var btn = btnGO.AddComponent<Button>();
             string capId = id;
             int capCost = cost;
@@ -208,7 +207,7 @@ namespace Desk42.UI
             go.transform.SetParent(parent, false);
             var rt = go.AddComponent<RectTransform>();
             rt.anchorMin = anchorMinMax; rt.anchorMax = anchorMinMax;
-            rt.pivot = new Vector2(0.5f, 0);
+            rt.pivot = new Vector2(0.5f, anchorMinMax.y > 0.5f ? 1f : 0f);
             rt.sizeDelta = size;
             rt.anchoredPosition = anchoredPos;
 
