@@ -22,7 +22,8 @@
     "com.unity.modules.screencapture": "1.0.0",
     "com.unity.modules.ui": "1.0.0",
     "com.unity.modules.uielements": "1.0.0",
-    "com.unity.modules.unitywebrequest": "1.0.0"
+    "com.unity.modules.unitywebrequest": "1.0.0",
+    "com.ivanmurzak.unity.mcp": "0.86.0"
   },
   "scopedRegistries": [
     {
@@ -30,7 +31,9 @@
       "url": "https://package.openupm.com",
       "scopes": [
         "com.tnrd.steamworks",
-        "com.neptunian.filesystemwatcher"
+        "com.neptunian.filesystemwatcher",
+        "com.ivanmurzak",
+        "extensions.unity"
       ]
     }
   ]

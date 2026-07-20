@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "ai-game-developer": {
+      "args": [
+        "port=21910",
+        "plugin-timeout=10000",
+        "client-transport=stdio",
+        "authorization=none",
+        "project=b691b8c7"
+      ],
+      "command": "C:\\Users\\jacob\\Desk 42\\Library\\mcp-server\\win-x64\\gamedev-mcp-server.exe"
+    }
+  }
+}
