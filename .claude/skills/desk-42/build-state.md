@@ -18,9 +18,9 @@ Single source of truth for "what actually exists right now." Update it as things
 
 ## Tooling state (this pack)
 - **Claude skill pack + root `CLAUDE.md` + `.claudeignore`:** ✅ installed (this pack), corrected to the live repo.
-- **Coplay "MCP for Unity":** dependency added to `Packages/manifest.json` ✅; **not yet activated** — Jacob must open Unity and run *Configure All Detected Clients* (see `mcp-setup.md`).
+- **Coplay "MCP for Unity":** ✅ **live and confirmed** — smoke tested 2026-07-18 (created/deleted SmokeTest_RedCube in Boot.unity via MCP). (see `mcp-setup.md`).
 - **FMOD:** code scaffolded ✅; **plugin NOT imported, `DESK42_FMOD` OFF.** No FMOD Studio project/banks yet. (see `fmod-integration.md`).
-- **ComfyUI:** skill authored ✅; pipeline **validated end-to-end 2026-06-13** — SDXL base driven via the HTTP API produced a 5-tier Distortion-Scale ladder + birefnet transparent cutouts into `Assets/_Project/Art/Sprites` (`stamp_t0..t4[_cutout].png`). Install/launch in the ComfyUI memory note. **No MCP server registered yet** (drove it via the raw `/prompt` API; the MCP route in `comfy-mcp-setup.md` is the next-session upgrade).
+- **ComfyUI MCP:** ✅ **live and confirmed** — smoke tested 2026-07-18 (coffee_mug_smoke_test.png generated via MCP into Art/Sprites, now deleted). ComfyUI 0.24.1, PyTorch 2.5.1+cu121, RTX 3060 Ti. Models in `C:\Users\jacob\ComfyUI-Shared\models\`. Checkpoints: Juggernaut-XL_v9, RealVisXL_V5.0_fp16, sd_xl_base_1.0. (see `comfy-integration.md`).
 
 ## Unknown / to confirm in repo
 - Compile status with current scene edits (`Shift.unity` shows as modified in git).
@@ -30,7 +30,6 @@ Single source of truth for "what actually exists right now." Update it as things
 - How much desk scene/prefab wiring is complete vs. stubbed.
 
 ## Next up (the remaining integration work — checklists live in the linked docs)
-1. **MCP:** open Unity -> *Window -> MCP for Unity -> Configure All Detected Clients* -> smoke test "create a red cube." (`mcp-setup.md`)
-2. **FMOD:** import plugin -> add `FMODUnity` ref to `Desk42.Core.asmdef` -> define `DESK42_FMOD` -> author Studio project to the code's event/bus/param names -> banks load-at-init -> Play-mode Sanity smoke test. (`fmod-integration.md`)
-3. **ComfyUI:** stand up ComfyUI (API on `127.0.0.1:8188`) -> register a ComfyUI MCP server alongside Unity -> generate one tiered test asset into `Art/Sprites`. (`comfy-mcp-setup.md`)
-4. Toward Steam Early Access.
+1. **FMOD:** import plugin -> add `FMODUnity` ref to `Desk42.Core.asmdef` -> define `DESK42_FMOD` -> author Studio project to the code's event/bus/param names -> banks load-at-init -> Play-mode Sanity smoke test. (`fmod-integration.md`)
+2. **First real art generation:** use ComfyUI MCP to generate a tiered prop set (e.g. coffee mug `_t0.._t4` + cutouts) following `comfy-integration.md` conventions. ControlNet workflow with `controlnet-union-sdxl-promax` is the validated path for specific props.
+3. Toward Steam Early Access.
