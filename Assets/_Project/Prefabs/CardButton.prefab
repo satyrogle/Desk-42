@@ -75,7 +75,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 0.35, g: 0.35, b: 0.4, a: 1}
+  m_fontColor: {r: 0.07058824, g: 0.22745098, b: 0.19215687, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -100,7 +100,7 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 2
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -147,6 +147,7 @@ GameObject:
   - component: {fileID: 362713927902894074}
   - component: {fileID: 5069859059649817372}
   - component: {fileID: 6233936502857055189}
+  - component: {fileID: 6502974212261584270}
   m_Layer: 0
   m_Name: CardButton
   m_TagString: Untagged
@@ -198,7 +199,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.95, g: 0.93, b: 0.85, a: 1}
+  m_Color: {r: 0.9372549, g: 0.89411765, b: 0.7764706, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -277,9 +278,24 @@ MonoBehaviour:
   _costLabel: {fileID: 1173788760371782850}
   _button: {fileID: 5069859059649817372}
   _background: {fileID: 362713927902894074}
-  _normalColor: {r: 1, g: 1, b: 1, a: 1}
-  _jammedColor: {r: 1, g: 0.5, b: 0.1, a: 1}
-  _crumpledColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
+  _normalColor: {r: 0.9372549, g: 0.89411765, b: 0.7764706, a: 1}
+  _jammedColor: {r: 0.78431374, g: 0.6039216, b: 0.32156864, a: 1}
+  _crumpledColor: {r: 0.56078434, g: 0.6627451, b: 0.6509804, a: 1}
+--- !u!114 &6502974212261584270
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4746431037828543405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_EffectColor: {r: 0.03529412, g: 0.12156863, b: 0.105882354, a: 1}
+  m_EffectDistance: {x: 3, y: -3}
+  m_UseGraphicAlpha: 1
 --- !u!1 &6076576038850845766
 GameObject:
   m_ObjectHideFlags: 0
@@ -355,7 +371,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 0.75, g: 0.3, b: 0.2, a: 1}
+  m_fontColor: {r: 0.6431373, g: 0.23137255, b: 0.19607843, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -489,7 +505,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 0.55, g: 0.45, b: 0.1, a: 1}
+  m_fontColor: {r: 0.44705883, g: 0.34117648, b: 0.12156863, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -623,7 +639,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
+  m_fontColor: {r: 0.14117648, g: 0.19215687, b: 0.1764706, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -648,7 +664,7 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 1
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0

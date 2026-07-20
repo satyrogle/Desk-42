@@ -27,6 +27,12 @@ namespace Desk42.UI
         [SerializeField] private TMP_Text _speciesLabel;
         [SerializeField] private TMP_Text _variantLabel;
 
+        [Header("Portrait")]
+        [Tooltip("State-driven claimant portrait. Wired by the Visual Identity setup tool.")]
+        [SerializeField] private Image _portraitImage;
+        [Tooltip("Species/state sprite catalog. Falls back to the Resources catalog when empty.")]
+        [SerializeField] private ClientVisualCatalog _visualCatalog;
+
         [Header("Mood")]
         [SerializeField] private TMP_Text _moodLabel;
         [SerializeField] private Image    _moodIndicator;
@@ -58,8 +64,16 @@ namespace Desk42.UI
         // ── State ─────────────────────────────────────────────
 
         private ClientStateMachine _csm;
+        private string _speciesId;
 
         // ── Lifecycle ─────────────────────────────────────────
+
+        private void Awake()
+        {
+            if (_visualCatalog == null)
+                _visualCatalog = Resources.Load<ClientVisualCatalog>(
+                    "VisualIdentity/ClientVisualCatalog");
+        }
 
         private void OnEnable()
         {
@@ -79,11 +93,13 @@ namespace Desk42.UI
             Clear();
 
             _csm = csm;
+            _speciesId = speciesId;
 
             if (_speciesLabel) _speciesLabel.text = FormatSpecies(speciesId);
             if (_variantLabel) _variantLabel.text = variantId ?? "—";
 
             UpdateMood(csm.CurrentMoodState, csm.IsInInjectedState);
+            UpdatePortrait(csm.CurrentMoodState);
 
             csm.OnStateChanged += HandleStateChanged;
             csm.OnTellFired    += HandleTellFired;
@@ -100,12 +116,19 @@ namespace Desk42.UI
                 _csm = null;
             }
 
+            _speciesId = null;
+
             if (_speciesLabel)   _speciesLabel.text  = "";
             if (_variantLabel)   _variantLabel.text  = "";
             if (_moodLabel)      _moodLabel.text     = "";
             if (_injectionLabel) _injectionLabel.text = "";
             if (_clairvoyanceLabel) _clairvoyanceLabel.text = "";
             if (_moodIndicator)  _moodIndicator.color = Color.grey;
+            if (_portraitImage)
+            {
+                _portraitImage.sprite = null;
+                _portraitImage.enabled = false;
+            }
         }
 
         private void Update()
@@ -140,6 +163,7 @@ namespace Desk42.UI
         private void HandleStateChanged(ClientStateID prev, ClientStateID newState)
         {
             UpdateMood(newState, _csm?.IsInInjectedState ?? false);
+            UpdatePortrait(newState);
             (_fidgetDriver as BSM.IClientFidgetDriver)?.SetState(newState);
             (_deskItems as BSM.IDeskItemReactor)?.OnClientStateChanged(prev, newState);
         }
@@ -177,6 +201,21 @@ namespace Desk42.UI
 
             if (_injectionLabel)
                 _injectionLabel.text = injected ? "[ FORM FILED ]" : "";
+        }
+
+        private void UpdatePortrait(ClientStateID state)
+        {
+            if (_portraitImage == null)
+                return;
+
+            if (_visualCatalog == null)
+                _visualCatalog = Resources.Load<ClientVisualCatalog>(
+                    "VisualIdentity/ClientVisualCatalog");
+
+            Sprite portrait = _visualCatalog?.ResolveSprite(_speciesId, state);
+            _portraitImage.sprite = portrait;
+            _portraitImage.enabled = portrait != null;
+            _portraitImage.preserveAspect = true;
         }
 
         private static string FormatSpecies(string id)

@@ -1,0 +1,29 @@
+GIMP Palette
+Name: Desk 42 Healthy Office v1
+Columns: 8
+#
+  8  21  19	ink
+ 16  31  27	deep
+ 23  63  50	green
+ 36  80  63	green_mid
+ 53 102  80	green_light
+ 77 121  99	green_high
+241 232 206	cream
+216 197 139	paper_shadow
+191 162 111	paper_mid
+143 169 166	blue_grey
+119 115 106	warm_grey
+ 79  86  82	metal_shadow
+206 113  58	task_orange
+164  78  45	rust
+106  64  43	wood
+ 80  48  33	wood_shadow
+183  59  50	approval_red
+ 51  44  48	soot
+ 24  25  27	char
+ 41  42  46	suit
+ 69  70  75	suit_light
+182 136  73	brass
+226 165  82	amber
+214 160 112	moth
+240 198 146	moth_light

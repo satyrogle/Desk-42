@@ -51,10 +51,17 @@ namespace Desk42.UI
             _ghost = new GameObject("ClientPortraitGhost");
             _ghost.transform.SetParent(canvas.transform, false);
             _ghostRT = _ghost.AddComponent<RectTransform>();
-            _ghostRT.sizeDelta = new Vector2(140, 140);
+            var sourceRT = transform as RectTransform;
+            _ghostRT.sizeDelta = sourceRT != null
+                ? sourceRT.rect.size
+                : new Vector2(256, 256);
 
             var img = _ghost.AddComponent<Image>();
-            img.color = new Color(0.85f, 0.30f, 0.50f, 0.7f);
+            var sourceImage = GetComponent<Image>();
+            img.sprite = sourceImage != null ? sourceImage.sprite : null;
+            img.material = sourceImage != null ? sourceImage.material : null;
+            img.preserveAspect = true;
+            img.color = new Color(1f, 1f, 1f, 0.7f);
             img.raycastTarget = false;
 
             _ghostCanvas = canvas;

@@ -46,7 +46,7 @@ MonoBehaviour:
   - Facilities
   - Document Retention
   SpeciesPool:
-  - human_standard
+  - void_proxy
   BaseCorruption: 0.35
   AnomalyTagSlots: 3
   AnomalyTagFilter: []
