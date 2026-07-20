@@ -14,6 +14,7 @@
 // Lives on the PunchCardMachine GameObject.
 // ============================================================
 
+using System.Collections.Generic;
 using UnityEngine;
 using Desk42.Core;
 using Desk42.Cards;
@@ -84,8 +85,17 @@ namespace Desk42.RedTape
                 return new SlamResult(fatigueOutcome, card) { Reason = reason };
             }
 
+            // ── Supply cascade: one evaluation feeds both mechanics & UI ──
+            // Replaces the separate ApplyDurationModifiers / ApplyCreditCostModifiers
+            // / ApplySoulCostModifiers calls. Each supply's (stateful) Modify* runs
+            // exactly once in here; we consume the Finals for the mechanics below and
+            // publish the per-step trace for the CascadePresenter. Calling the scalar
+            // Apply* methods in addition would double-run consumable effects (e.g. the
+            // Stapler discount), desyncing what's shown from what's actually charged.
+            SynergyResolutionPacket cascade = BuildCascade(card);
+
             // ── Step 2: Credit check ──────────────────────────
-            int effectiveCost = ComputeCreditCost(card);
+            int effectiveCost = ApplyFlatCreditModifiers(card, cascade.FinalCreditCost);
 
             // ── Vow: Zero-Based Budgeting — convert credit cost to sanity ──
             float sanityCostFraction = Core.ComplianceVowSystem.GetSanityCostFraction();
@@ -111,7 +121,7 @@ namespace Desk42.RedTape
             }
 
             // ── Step 3: Attempt injection on client BSM ───────
-            float durationOverride = ComputeDurationOverride(card);
+            float durationOverride = ApplyStateEffectiveness(card, cascade.FinalDuration);
             var injectionResult = _activeClient.TryInject(
                 card.CardType.ToString(), durationOverride);
 
@@ -138,22 +148,15 @@ namespace Desk42.RedTape
                     run.Hand.OnCardPlayed(cardInst, _fatigue, run.Deck);
             }
 
-            // ── Step 5: Soul cost (after supply modifiers) ───────────
-            int phase = GameManager.Phase;
-            if (phase >= 3 && card.SoulCost > 0f)
-            {
-                float soulCost = card.SoulCost;
-                var archetype = GameManager.Instance?.Run?.Archetype;
-                if (archetype != null)
-                     soulCost = archetype.ModifySoulCost(card.CardType, soulCost);
+            // ── Step 5: Soul cost (resolved in the cascade above) ────
+            // FinalSoulCost already has archetype + supply modifiers applied and
+            // is zeroed below phase 3 (see BuildCascade), so the old phase /
+            // SoulCost gate is preserved without re-running the chain.
+            if (cascade.FinalSoulCost > 0f)
+                GameManager.Instance?.Run?.ModifySoulIntegrity(-cascade.FinalSoulCost);
 
-                var soulResolver = GameManager.Instance?.Supplies?.Resolver;
-                if (soulResolver != null)
-                    soulCost = soulResolver.ApplySoulCostModifiers(soulCost);
-
-                if (soulCost > 0f)
-                    GameManager.Instance?.Run?.ModifySoulIntegrity(-soulCost);
-            }
+            // ── Step 5b: Render the resolution (FF-style cascade) ────
+            RumorMill.Publish(new CardCascadeResolvedEvent(cascade, cardInstanceId));
 
             // ── Step 5b: Office environment card effect ─────────
             OfficeEnvironmentState.ApplyCardEffect(card.CardType);
@@ -186,30 +189,72 @@ namespace Desk42.RedTape
             };
         }
 
-        // ── Duration Override ─────────────────────────────────
+        // ── Supply Cascade Build ──────────────────────────────
 
         /// <summary>
-        /// Computes the effective injection duration after applying
-        /// archetype and active office supply modifier chains.
+        /// Runs the single SynergyResolver cascade for this slam. Archetype
+        /// modifiers hit the bases first (archetype → supplies is the established
+        /// order), then ResolveCascade runs each supply's Modify* exactly once
+        /// across the duration, credit and soul chains. The packet's Finals drive
+        /// the mechanics in TrySlam; its Steps drive the CascadePresenter. Soul is
+        /// phase-gated: below phase 3 the soul chain is suppressed so no phantom
+        /// soul cost is shown or charged.
         /// </summary>
-        private float ComputeDurationOverride(PunchCardData card)
+        private SynergyResolutionPacket BuildCascade(PunchCardData card)
         {
-            // Base duration from the card SO
-            float duration = card.InjectionDuration;
+            var archetype = GameManager.Instance?.Run?.Archetype;
 
-            // Archetype multiplier (e.g. Bureaucrat efficiency meter boost)
-            if (GameManager.Instance?.Run?.Archetype != null)
-                duration = GameManager.Instance.Run.Archetype
-                    .ModifyInjectionDuration(card.CardType, duration);
+            // Post-archetype duration base
+            float baseDuration = card.InjectionDuration;
+            if (archetype != null)
+                baseDuration = archetype.ModifyInjectionDuration(card.CardType, baseDuration);
             else
-                duration *= card.ArchetypeMultiplier;
+                baseDuration *= card.ArchetypeMultiplier;
 
-            // Office supply synergy chain
+            // Post-archetype credit base
+            int baseCredit = card.CreditCost;
+            if (archetype != null)
+                baseCredit = archetype.ModifyCreditCost(card.CardType, baseCredit);
+
+            // Post-archetype, phase-gated soul base
+            float baseSoul = (GameManager.Phase >= 3 && card.SoulCost > 0f) ? card.SoulCost : 0f;
+            if (archetype != null && baseSoul > 0f)
+                baseSoul = archetype.ModifySoulCost(card.CardType, baseSoul);
+
             var resolver = GameManager.Instance?.Supplies?.Resolver;
-            if (resolver != null)
-                duration = resolver.ApplyDurationModifiers(
-                    card.CardType, duration, card.TypeTags);
+            SynergyResolutionPacket packet = resolver != null
+                ? resolver.ResolveCascade(card.CardType, baseDuration, baseCredit, baseSoul, card.TypeTags)
+                : new SynergyResolutionPacket
+                {
+                    CardType        = card.CardType,
+                    BaseDuration    = baseDuration, FinalDuration   = baseDuration,
+                    BaseCreditCost  = baseCredit,   FinalCreditCost = baseCredit,
+                    BaseSoulCost    = baseSoul,     FinalSoulCost   = baseSoul,
+                    DurationSteps   = new List<ModifierStep>(),
+                    CreditCostSteps = new List<ModifierStep>(),
+                    SoulCostSteps   = new List<ModifierStep>(),
+                };
 
+            // Suppress phantom soul when soul cost is inactive this slam.
+            if (baseSoul <= 0f)
+            {
+                packet.BaseSoulCost  = 0f;
+                packet.FinalSoulCost = 0f;
+                packet.SoulCostSteps?.Clear();
+            }
+
+            return packet;
+        }
+
+        // ── State Effectiveness (post-cascade duration) ───────
+
+        /// <summary>
+        /// Applies BSM mood effectiveness and mutation passives to the
+        /// supply-resolved duration. Separate from the supply cascade because
+        /// it depends on live client mood, not desk supplies.
+        /// </summary>
+        private float ApplyStateEffectiveness(PunchCardData card, float duration)
+        {
             // BSM State Effectiveness 
             if (_activeClient != null)
             {
@@ -235,20 +280,16 @@ namespace Desk42.RedTape
             return duration;
         }
 
+        // ── Flat Credit Modifiers (post-cascade credit) ───────
+
         /// <summary>
-        /// Computes the effective credit cost after archetype and supply modifiers.
+        /// Applies the flat, non-supply credit adjustments (vow NDA surcharge,
+        /// faction reputation, escalating-regulation penalty) on top of the
+        /// supply-resolved cost. Order preserved from the original chain:
+        /// archetype + supply (in the cascade) → these flat adjustments.
         /// </summary>
-        private int ComputeCreditCost(PunchCardData card)
+        private int ApplyFlatCreditModifiers(PunchCardData card, int cost)
         {
-            int cost = card.CreditCost;
-
-            if (GameManager.Instance?.Run?.Archetype != null)
-                cost = GameManager.Instance.Run.Archetype
-                    .ModifyCreditCost(card.CardType, cost);
-
-            var resolver = GameManager.Instance?.Supplies?.Resolver;
-            if (resolver != null)
-                cost = resolver.ApplyCreditCostModifiers(card.CardType, cost);
 
             int stricterNDARank = GameManager.Instance?.Run?.GetVowRank("stricter_nondisclosure") ?? 0;
             if (stricterNDARank > 0 && (card.CardType == PunchCardType.Redact || card.CardType == PunchCardType.NonDisclosure))

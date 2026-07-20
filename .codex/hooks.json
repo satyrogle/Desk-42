@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -ExecutionPolicy Bypass -File \"C:\\Users\\jacob\\Desk 42\\tools\\PostEdit-RunRelevantTests.ps1\""
+          }
+        ]
+      }
+    ]
+  }
+}

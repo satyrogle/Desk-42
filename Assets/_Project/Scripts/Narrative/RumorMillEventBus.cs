@@ -50,6 +50,7 @@ namespace Desk42.Core
         public static event Action<RunCompletedEvent>          OnRunCompleted;
         public static event Action<MemoGeneratedEvent>         OnMemoGenerated;
         public static event Action<DilemmaTriggeredEvent>      OnDilemmaTriggered;
+        public static event Action<CardCascadeResolvedEvent>   OnCardCascadeResolved;
 
         // ── Frame-Deferred Dispatch ───────────────────────────
         // Events queued here are dispatched at end-of-frame by
@@ -89,6 +90,7 @@ namespace Desk42.Core
         public static void Publish(MemoGeneratedEvent e)         => OnMemoGenerated?.Invoke(e);
         public static void Publish(DilemmaTriggeredEvent e)      => OnDilemmaTriggered?.Invoke(e);
         public static void Publish(ShiftLifecycleEvent e)        => OnShiftLifecycle?.Invoke(e);
+        public static void Publish(CardCascadeResolvedEvent e)   => OnCardCascadeResolved?.Invoke(e);
 
         /// <summary>
         /// Publish deferred — queues the event for end-of-frame dispatch.
@@ -206,6 +208,7 @@ namespace Desk42.Core
             OnClaimQueued           = null;
             OnTideEscalated         = null;
             OnSupplySignal          = null;
+            OnCardCascadeResolved   = null;
             _queue.Clear();
         }
     }
