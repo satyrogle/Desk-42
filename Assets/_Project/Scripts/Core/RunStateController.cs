@@ -120,7 +120,7 @@ namespace Desk42.Core
         public float   SoulIntegrity    => _data.SoulIntegrity;
         public int     Credits          => _data.CorporateCredits;
         public ShiftPhase Phase         => _data.CurrentPhase;
-        public string  ArchetypeId      => _data.ArchetypeId;
+        public string  ArchetypeId      => _data?.ArchetypeId;
         public string  SeedCode         => _data.SeedCode;
         public int     ShiftNumber      => _data.ShiftNumber;
         public float   ImpatenceTimer   => _data.ImpatenceTimerRemaining;
@@ -208,6 +208,20 @@ namespace Desk42.Core
             _data.CorporateCredits -= amount;
             _data.Stats.CreditsSpent += amount;
             return true;
+        }
+
+        /// <summary>Applies a signed credit delta, clamped at zero.</summary>
+        public void ModifyCredits(int delta)
+        {
+            if (delta >= 0)
+            {
+                AddCredits(delta);
+                return;
+            }
+
+            int spent = Mathf.Min(_data.CorporateCredits, -delta);
+            _data.CorporateCredits -= spent;
+            _data.Stats.CreditsSpent += spent;
         }
 
         // ── Shift Phase ───────────────────────────────────────
@@ -328,6 +342,31 @@ namespace Desk42.Core
             _data.ClaimsProcessedThisAnte++;
         }
 
+        /// <summary>
+        /// Canonically applies one complete resolution before its deferred
+        /// ClaimResolvedEvent is enqueued. Event subscribers are notification-
+        /// only and must not mutate these resources again.
+        /// </summary>
+        public void ApplyClaimResolution(ClaimResolutionOutcome outcome)
+        {
+            RecordClaimResolved(!outcome.ResolvedCorrectly);
+            AddCredits(outcome.CreditsEarned);
+
+            if (outcome.SanityCost > 0f)
+                ModifySanity(-outcome.SanityCost);
+            if (outcome.SoulCost > 0f)
+                ModifySoulIntegrity(-outcome.SoulCost);
+
+            if (outcome.ResolvedCorrectly)
+                _data.ComboMultiplier += 0.1f;
+            else
+                _data.ComboMultiplier = 1.0f;
+
+            int resetInterval = ComplianceVowSystem.GetComboResetInterval();
+            if (resetInterval > 0 && _data.Stats.ClaimsProcessed % resetInterval == 0)
+                _data.ComboMultiplier = 1.0f;
+        }
+
         public void RecordCardSlam()
             => _data.Stats.CardSlamsTotal++;
 
@@ -428,7 +467,7 @@ namespace Desk42.Core
 
         private void SubscribeToRumorMill()
         {
-            RumorMill.OnClaimResolved       += HandleClaimResolved;
+            UnsubscribeFromRumorMill();
             RumorMill.OnMoralChoice         += HandleMoralChoice;
             RumorMill.OnOfficeHazard        += HandleOfficeHazard;
             RumorMill.OnExpenseUnmet        += HandleExpenseUnmet;
@@ -437,8 +476,10 @@ namespace Desk42.Core
         }
 
         private void OnDestroy()
+            => UnsubscribeFromRumorMill();
+
+        private void UnsubscribeFromRumorMill()
         {
-            RumorMill.OnClaimResolved       -= HandleClaimResolved;
             RumorMill.OnMoralChoice         -= HandleMoralChoice;
             RumorMill.OnOfficeHazard        -= HandleOfficeHazard;
             RumorMill.OnExpenseUnmet        -= HandleExpenseUnmet;
@@ -458,25 +499,6 @@ namespace Desk42.Core
         {
             _activeClaim = e.Claim;
             _lastClientState = ClientStateID.Pending; // Reset at start of encounter
-        }
-
-        private void HandleClaimResolved(ClaimResolvedEvent e)
-        {
-            RecordClaimResolved(!e.ResolvedCorrectly); // humane = not correct
-            AddCredits(e.CreditsEarned);
-
-            // Combo multiplier — consecutive approvals build the combo
-            if (e.ResolvedCorrectly)
-                _data.ComboMultiplier += 0.1f;
-            else
-                _data.ComboMultiplier = 1.0f;
-
-            int resetInterval = ComplianceVowSystem.GetComboResetInterval();
-            if (resetInterval > 0 && _data.Stats.ClaimsProcessed % resetInterval == 0)
-                _data.ComboMultiplier = 1.0f;
-
-            if (e.SoulCost > 0f)
-                ModifySoulIntegrity(-e.SoulCost);
         }
 
         private void HandleMoralChoice(MoralChoiceEvent e)
@@ -686,8 +708,10 @@ namespace Desk42.Core
             _moralInjury = new MoralInjurySystem();
             _moralInjury.LoadScarsFromMeta(meta);
 
-            // Build dilemma system from any MoralDilemmaData SOs in Resources
-            var dilemmaSOs = Resources.LoadAll<MoralDilemmaData>("");
+            // The persistent GameManager owns an explicit catalog. Avoid a
+            // Resources path contract that silently returns an empty pool.
+            var dilemmaSOs = GameManager.Instance?.MoralDilemmas?.Dilemmas
+                ?? Array.Empty<MoralDilemmaData>();
             _moralDilemmas = new MoralDilemmaSystem(dilemmaSOs, _moralInjury);
         }
 

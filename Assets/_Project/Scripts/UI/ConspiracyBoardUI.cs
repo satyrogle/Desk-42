@@ -30,7 +30,7 @@ namespace Desk42.UI
 
         private void OnDestroy()
         {
-            Desk42Services.Unregister<ConspiracyBoardUI>();
+            Desk42Services.Unregister(this);
         }
 
         private void Start()
@@ -113,4 +113,3 @@ namespace Desk42.UI
         }
     }
 }
-

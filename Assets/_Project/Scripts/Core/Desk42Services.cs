@@ -7,7 +7,7 @@
 // Usage:
 //   // Provider (MonoBehaviour Awake / OnDestroy):
 //   void Awake()    => Desk42Services.Register(this);
-//   void OnDestroy() => Desk42Services.Unregister<MyManager>();
+//   void OnDestroy() => Desk42Services.Unregister(this);
 //
 //   // Consumer:
 //   var mgr = Desk42Services.Get<MyManager>();        // returns null if not found
@@ -37,8 +37,13 @@ namespace Desk42.Core
             _registry[key] = service;
         }
 
-        public static void Unregister<T>() where T : class
-            => _registry.Remove(typeof(T));
+        public static void Unregister<T>(T service) where T : class
+        {
+            var key = typeof(T);
+            if (_registry.TryGetValue(key, out var registered) &&
+                ReferenceEquals(registered, service))
+                _registry.Remove(key);
+        }
 
         public static T Get<T>() where T : class
         {

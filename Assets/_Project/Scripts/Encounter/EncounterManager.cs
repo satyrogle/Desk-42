@@ -86,7 +86,7 @@ namespace Desk42.Encounter
 
         private void OnDestroy()
         {
-            Desk42Services.Unregister<EncounterManager>();
+            Desk42Services.Unregister(this);
         }
 
         protected override void Subscribe()   => RumorMill.OnClaimQueued += HandleClaimQueued;
@@ -170,14 +170,13 @@ namespace Desk42.Encounter
             if (run?.RawData != null)
                 run.RawData.DarkIntelligence += 3;
 
-            // Emit a "denied" resolution so the shift count advances,
-            // but with zero credits and zero soul cost — the claim
-            // bypasses normal scoring entirely.
+            // Liquify is an explicit policy outcome: it advances the shift
+            // while preserving its existing zero-resource-cost behaviour.
+            var outcome = ClaimResolutionConsequencePolicy.Liquify();
+            run?.ApplyClaimResolution(outcome);
             RumorMill.PublishDeferred(new ClaimResolvedEvent(
                 _activeClaim.ClaimId,
-                correct: false,
-                credits: 0,
-                soulCost: 0f,
+                outcome,
                 _activeClaim.ClientVariantId,
                 _activeClaim.ClientSpeciesId));
 
@@ -195,26 +194,40 @@ namespace Desk42.Encounter
         private void ResolveEncounter(bool resolvedCorrectly)
         {
             if (!_encounterActive || _activeClaim == null) return;
+
+            // Resolving clears the machine and stops its coroutine. Reject the
+            // click until OnSlamResolved so a same-frame decision cannot cancel
+            // the card effect at its first yield.
+            if (_punchCardMachine != null && _punchCardMachine.IsProcessing)
+            {
+                Debug.LogWarning("[EncounterManager] Finish processing the punch card before resolving.");
+                return;
+            }
+
             _encounterActive = false;
 
             var run = GameManager.Instance?.Run;
 
-            int baseCredits = resolvedCorrectly ? _baseCreditsApprove + (run?.ShiftNumber ?? 1) * 2 : 0;
-            baseCredits = Mathf.RoundToInt(baseCredits * ComplianceVowSystem.GetBasePayoutMultiplier());
+            var outcome = ClaimResolutionConsequencePolicy.Resolve(
+                resolvedCorrectly,
+                _activeClaim,
+                run?.ShiftNumber ?? 1,
+                _baseCreditsApprove,
+                ComplianceVowSystem.GetBasePayoutMultiplier());
 
-            // Combo and cross-claim bonuses are applied by
-            // RunStateController and ShiftManager via ClaimResolvedEvent
+            // Apply synchronously at the publish site. The deferred event below
+            // is notification-only and cannot re-apply resources during flush.
+            run?.ApplyClaimResolution(outcome);
 
             RumorMill.PublishDeferred(new ClaimResolvedEvent(
                 _activeClaim.ClaimId,
-                resolvedCorrectly,
-                baseCredits,
-                soulCost: 0f,
+                outcome,
                 _activeClaim.ClientVariantId,
                 _activeClaim.ClientSpeciesId));
 
             Debug.Log($"[EncounterManager] Resolved '{_activeClaim.ClaimId}' — " +
-                      $"{(resolvedCorrectly ? "APPROVE" : "DENY")}. Base credits: {baseCredits}.");
+                      $"{outcome.Kind}. Credits: {outcome.CreditsEarned}, " +
+                      $"Sanity: -{outcome.SanityCost}, Soul: -{outcome.SoulCost}.");
 
             TryTriggerDilemma(run);
 
@@ -252,8 +265,18 @@ namespace Desk42.Encounter
                 prompt:           dilemma.BuiltPrompt,
                 ethical:          data.EthicalChoiceLabel,
                 bureaucratic:     data.BureaucraticChoiceLabel,
-                onEthical:        () => run.MoralDilemmas.Resolve(dilemma, choseEthical: true),
-                onBureaucratic:   (inverted) => run.MoralDilemmas.Resolve(dilemma, choseEthical: false, inverted)));
+                onEthical:        () => ApplyDilemmaResolution(run,
+                    run.MoralDilemmas.Resolve(dilemma, choseEthical: true)),
+                onBureaucratic:   (inverted) => ApplyDilemmaResolution(run,
+                    run.MoralDilemmas.Resolve(dilemma, choseEthical: false, inverted))));
+        }
+
+        private static void ApplyDilemmaResolution(RunStateController run,
+            Desk42.MoralInjury.DilemmaResolutionResult result)
+        {
+            if (run == null || result == null) return;
+            run.ModifyCredits(result.CreditDelta);
+            run.ExtendTimer(result.TimeDelta);
         }
 
         // ── Editor Helpers ────────────────────────────────────

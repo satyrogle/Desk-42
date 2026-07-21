@@ -6,7 +6,7 @@
 //
 // Design:
 //   - One master seed (int) per run.
-//   - Seven named sub-streams, each with its own independent
+//   - Named sub-streams, each with its own independent
 //     System.Random instance seeded by hash(masterSeed, stream).
 //   - Streams are independent: drawing a card draft option
 //     does NOT affect what shop inventory appears.
@@ -47,6 +47,9 @@ namespace Desk42.Core
         FormCorruption,       // which form fields corrupt and how
         AudioVariation,       // procedural jazz pattern variation
         MoralDilemma,         // dilemma type selection + consequence weighting
+        // Ordinals are part of saved/share-code determinism. Append only.
+        OfficeHazards,        // Tide timing and office hazard selection
+        PersonalExpenses,     // end-of-shift expense selection
     }
 
     public static class SeedEngine
@@ -55,7 +58,7 @@ namespace Desk42.Core
 
         private static int _masterSeed;
         private static readonly Dictionary<SeedStream, System.Random> _streams
-            = new(12);
+            = new(14);
 
         private static bool _isInitialized;
 

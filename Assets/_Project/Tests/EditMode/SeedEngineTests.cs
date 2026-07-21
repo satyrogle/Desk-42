@@ -62,6 +62,32 @@ namespace Desk42.Tests.EditMode
                 "Draining one stream must not affect another stream.");
         }
 
+        [Test]
+        public void ExistingStreamOrdinals_AreFrozen_AndNewStreamsAreAppended()
+        {
+            Assert.AreEqual(0, (int)SeedStream.ClaimQueue);
+            Assert.AreEqual(11, (int)SeedStream.MoralDilemma);
+            Assert.AreEqual(12, (int)SeedStream.OfficeHazards);
+            Assert.AreEqual(13, (int)SeedStream.PersonalExpenses);
+        }
+
+        [Test]
+        public void NewStreams_DoNotPerturbExistingStreams()
+        {
+            SeedEngine.Init(42);
+            for (int i = 0; i < 100; i++)
+            {
+                SeedEngine.NextFloat(SeedStream.OfficeHazards);
+                SeedEngine.NextFloat(SeedStream.PersonalExpenses);
+            }
+            float after = SeedEngine.NextFloat(SeedStream.ClaimQueue);
+
+            SeedEngine.Init(42);
+            float fresh = SeedEngine.NextFloat(SeedStream.ClaimQueue);
+
+            Assert.AreEqual(fresh, after);
+        }
+
         // ── Range Validation ──────────────────────────────────
 
         [Test]

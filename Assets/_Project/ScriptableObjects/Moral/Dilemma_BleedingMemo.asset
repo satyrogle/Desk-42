@@ -10,22 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7998e12fa30c0074caa6d4cff06753ca, type: 3}
-  m_Name: Dilemma_ 3
+  m_Name: Dilemma_BleedingMemo
   m_EditorClassIdentifier: 
-  DilemmaId: Moral_SentientServer
-  PromptTemplate: The mainframe is begging for mercy via the command terminal.
-  EthicalChoiceLabel: Initiate sleep mode.
-  EthicalSoulDelta: 15
-  EthicalCreditDelta: -20
-  EthicalTimeDelta: -45
-  BureaucraticChoiceLabel: Overclock the CPU.
-  BureaucraticSoulDelta: -20
-  BureaucraticCreditDelta: 30
+  DilemmaId: Moral_BleedingMemo
+  PromptTemplate: A memo arrives leaking a thick, black substance. It contains a
+    list of upcoming layoffs.
+  EthicalChoiceLabel: Shred it immediately.
+  EthicalSoulDelta: 5
+  EthicalCreditDelta: -10
+  EthicalTimeDelta: -15
+  BureaucraticChoiceLabel: Forward to HR.
+  BureaucraticSoulDelta: -10
+  BureaucraticCreditDelta: 15
   BureaucraticTimeDelta: 0
-  ActionType: 1
+  ActionType: 3
   MaxSoulForEligibility: 100
-  MinSoulForEligibility: 20
-  MinShiftNumber: 2
+  MinSoulForEligibility: 0
+  MinShiftNumber: 1
   IsTrapDilemma: 0
   NarratorOverrideKey: 
-  SpawnWeight: 0.4
+  SpawnWeight: 0.8

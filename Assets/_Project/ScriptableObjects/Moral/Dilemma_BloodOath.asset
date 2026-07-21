@@ -10,23 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7998e12fa30c0074caa6d4cff06753ca, type: 3}
-  m_Name: Dilemma_
+  m_Name: Dilemma_BloodOath
   m_EditorClassIdentifier: 
-  DilemmaId: Moral_BleedingMemo
-  PromptTemplate: A memo arrives leaking a thick, black substance. It contains a
-    list of upcoming layoffs.
-  EthicalChoiceLabel: Shred it immediately.
-  EthicalSoulDelta: 5
-  EthicalCreditDelta: -10
-  EthicalTimeDelta: -15
-  BureaucraticChoiceLabel: Forward to HR.
-  BureaucraticSoulDelta: -10
-  BureaucraticCreditDelta: 15
+  DilemmaId: Moral_BloodOath (Trap)
+  PromptTemplate: Q3 projections require a mandatory blood oath to finalize the spreadsheet.
+  EthicalChoiceLabel: Sign in blood.
+  EthicalSoulDelta: -20
+  EthicalCreditDelta: 0
+  EthicalTimeDelta: -30
+  BureaucraticChoiceLabel: Pay the non-compliance fine.
+  BureaucraticSoulDelta: 0
+  BureaucraticCreditDelta: -50
   BureaucraticTimeDelta: 0
-  ActionType: 3
+  ActionType: 5
   MaxSoulForEligibility: 100
   MinSoulForEligibility: 0
-  MinShiftNumber: 1
-  IsTrapDilemma: 0
+  MinShiftNumber: 3
+  IsTrapDilemma: 1
   NarratorOverrideKey: 
-  SpawnWeight: 0.8
+  SpawnWeight: 0.3

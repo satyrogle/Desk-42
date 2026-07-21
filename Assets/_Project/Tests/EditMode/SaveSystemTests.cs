@@ -3,6 +3,7 @@
 // Tests use a temp directory to avoid polluting real saves.
 // ============================================================
 
+using System;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
@@ -13,6 +14,25 @@ namespace Desk42.Tests.EditMode
     [TestFixture]
     public sealed class SaveSystemTests
     {
+        private string _tempSaveDirectory;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _tempSaveDirectory = Path.Combine(
+                Path.GetTempPath(), $"Desk42_SaveTests_{Guid.NewGuid():N}");
+            SaveSystem.SetSaveDirectoryOverrideForTests(_tempSaveDirectory);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            SaveSystem.WipeAllSaveData();
+            SaveSystem.ClearSaveDirectoryOverrideForTests();
+            if (Directory.Exists(_tempSaveDirectory))
+                Directory.Delete(_tempSaveDirectory, recursive: true);
+        }
+
         // ── MetaProgressData Serialization ────────────────────
 
         [Test]

@@ -7452,6 +7452,7 @@ MonoBehaviour:
   _afternoonBlockQuota: 4
   _lunchBreakDuration: 60
   _overtimeDuration: 300
+  _tideTuning: {fileID: 11400000, guid: f4ce40dd02708994eb466161f93e3116, type: 2}
   _sequentialSynergyBonus: 3
   _uiController: {fileID: 1780777032}
   _unpaidOvertimeShiftThreshold: 5

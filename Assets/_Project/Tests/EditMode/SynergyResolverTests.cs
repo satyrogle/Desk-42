@@ -5,10 +5,8 @@
 // against real registered Ship Tier supply effects (Paperclip,
 // Rubber Stamp, Paper Weight — see ShipTierSupplies.cs).
 //
-// Includes a WIRING GAP test: ApplyDurationModifiers/
-// ApplyCreditCostModifiers compute per-step deltas (only visible
-// via Debug.Log) but expose no structured per-step trace API.
-// That test is expected to fail until such an API exists.
+// Includes a regression test for the structured per-step trace
+// exposed by ResolveCascade for tooltip/debug presentation.
 // ============================================================
 
 using System.Linq;
@@ -167,22 +165,20 @@ namespace Desk42.Tests.EditMode
         // ── WIRING GAP ─────────────────────────────────────────
 
         [Test]
-        [Explicit]
-        public void WIRING_GAP_DurationAndCostChains_HaveNoStructuredPerStepTrace()
+        public void DurationAndCostChains_ExposeStructuredPerStepTrace()
         {
             // Intended: ApplyDurationModifiers / ApplyCreditCostModifiers should expose
             // each contributing supply's individual delta through a public API, not just
             // a Debug.Log line. Today the only place that information exists is the log.
             var candidateMembers = typeof(SynergyResolver)
                 .GetMembers(BindingFlags.Public | BindingFlags.Instance)
-                .Where(m => m.Name.Contains("Trace") || m.Name.Contains("Step") || m.Name.Contains("Breakdown"))
+                .Where(m => m.Name.Contains("Trace") || m.Name.Contains("Step") ||
+                            m.Name.Contains("Breakdown") || m.Name.Contains("Cascade"))
                 .ToList();
 
             Assert.IsNotEmpty(candidateMembers,
-                "WIRING GAP: SynergyResolver computes per-step modifier deltas internally " +
-                "(visible only via Debug.Log in ApplyDurationModifiers/ApplyCreditCostModifiers) " +
-                "but exposes no structured per-step trace API (e.g. a method/property returning " +
-                "each contributing supply's individual delta). Intended for tooltip/debug UI use.");
+                "SynergyResolver must expose a structured per-step trace API for " +
+                "tooltip and debug UI use.");
         }
     }
 }

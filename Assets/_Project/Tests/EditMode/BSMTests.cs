@@ -743,6 +743,48 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void CSM_TryInject_PublishesOneTransitionWithCardProvenance()
+        {
+            var table = TransitionTable.CreateDefault();
+            table.AddRuntimeRule(new TransitionRule
+            {
+                TriggerAction = "PendingReview",
+                TargetState = ClientStateID.Cooperative,
+                Priority = 999,
+                Conditions = new List<ITransitionCondition>(),
+            });
+
+            var go = new GameObject("CSM_rumor_event");
+            _toDestroy.Add(go);
+            var csm = go.AddComponent<ClientStateMachine>();
+            csm.Initialize("rumor_event_test", "human", 0,
+                new List<string>(), table);
+
+            int count = 0;
+            StateTransitionEvent captured = default;
+            System.Action<StateTransitionEvent> handler = e =>
+            {
+                count++;
+                captured = e;
+            };
+            RumorMill.OnStateTransition += handler;
+            try
+            {
+                csm.TryInject("PendingReview", 5f);
+            }
+            finally
+            {
+                RumorMill.OnStateTransition -= handler;
+            }
+
+            Assert.AreEqual(1, count);
+            Assert.AreEqual(ClientStateID.Pending, captured.From);
+            Assert.AreEqual(ClientStateID.Cooperative, captured.To);
+            Assert.IsTrue(captured.WasForcedByCard);
+            Assert.IsFalse(captured.WasMutated);
+        }
+
+        [Test]
         public void CSM_RepeatOffender_ThreatAudit_BlockedByBlocker()
         {
             // Simulate a repeat offender who has the retained_counsel trait

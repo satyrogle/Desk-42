@@ -61,6 +61,9 @@ namespace Desk42.Core
         [Tooltip("Additional shift time (seconds) granted when Overtime begins.")]
         [SerializeField] private float _overtimeDuration   = 300f;
 
+        [Tooltip("Pressure thresholds and office-hazard timing.")]
+        [SerializeField] private TideTuningData _tideTuning;
+
         [Header("Sequential Synergy")]
         [Tooltip("Flat credit bonus awarded when two consecutive resolved claims share a tag category.")]
         [SerializeField] private int _sequentialSynergyBonus = 3;
@@ -100,6 +103,8 @@ namespace Desk42.Core
                 Debug.LogWarning("[ShiftManager] No AnomalyTagData assigned — anomaly tags unavailable.", this);
             if (_uiController == null)
                 Debug.LogWarning("[ShiftManager] _uiController not assigned — passive-aggressive UI will be silent.", this);
+            if (_tideTuning == null)
+                Debug.LogWarning("[ShiftManager] _tideTuning is required.", this);
         }
 #endif
 
@@ -118,7 +123,13 @@ namespace Desk42.Core
                 return;
             }
 
-            _tide = new TideSystem();
+            if (_tideTuning == null)
+            {
+                Debug.LogError("[ShiftManager] Cannot start without TideTuningData.", this);
+                return;
+            }
+
+            _tide = new TideSystem(_tideTuning);
             _tide.Initialize(run.ShiftNumber);
 
             SubscribeToRumorMill();
@@ -165,7 +176,7 @@ namespace Desk42.Core
         private void OnDestroy()
         {
             UnsubscribeFromRumorMill();
-            Desk42Services.Unregister<ShiftManager>();
+            Desk42Services.Unregister(this);
         }
 
         // ── Update ────────────────────────────────────────────
@@ -247,8 +258,6 @@ namespace Desk42.Core
                 runData.ResolvedClaims.Add(runData.ActiveClaim);
                 runData.ActiveClaim = null;
             }
-
-            runData.ClaimsProcessedThisAnte++;
 
             // Check whether the current ante is now complete
             if (IsAnteComplete(runData))

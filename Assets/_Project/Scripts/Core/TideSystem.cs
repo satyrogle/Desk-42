@@ -36,22 +36,7 @@ namespace Desk42.Core
 {
     public sealed class TideSystem
     {
-        // ── Constants ─────────────────────────────────────────
-
-        // Encounter faster than this (seconds) counts as overperformance
-        private const float FAST_THRESHOLD          = 90f;
-
-        // Consecutive fast resolutions needed to bump pressure
-        private const int   FAST_STREAK_THRESHOLD   = 3;
-
-        // Hazard intervals (seconds) indexed by pressure level 0-3
-        private static readonly float[] HazardIntervals = { 240f, 180f, 120f, 90f };
-
-        // Minimum gap between any two hazards regardless of pressure
-        private const float MIN_HAZARD_SPACING = 60f;
-
-        // Overtime hazard interval (always intense)
-        private const float OVERTIME_HAZARD_INTERVAL = 60f;
+        private readonly TideTuningData _tuning;
 
         // ── State ─────────────────────────────────────────────
 
@@ -62,7 +47,12 @@ namespace Desk42.Core
         private ShiftPhase _currentPhase = ShiftPhase.ClockIn;
 
         private OfficeHazardType? _lastFiredHazardType;
-        private const float CHAIN_WINDOW = 30f;
+        public TideSystem(TideTuningData tuning)
+        {
+            _tuning = tuning != null
+                ? tuning
+                : throw new System.ArgumentNullException(nameof(tuning));
+        }
 
         // ── Queries ───────────────────────────────────────────
 
@@ -81,9 +71,11 @@ namespace Desk42.Core
             _timeSinceLastHazard   = 0f;
 
             // Start first hazard on a somewhat randomised delay so shift 1 isn't instant
-            float baseInterval = HazardIntervals[0];
-            float shiftBonus   = Mathf.Max(0, (shiftNumber - 1) * 10f); // 10s faster per shift
-            _nextHazardIn = Mathf.Max(MIN_HAZARD_SPACING * 2f,
+            float baseInterval = _tuning.GetHazardInterval(0);
+            float shiftBonus   = Mathf.Max(0,
+                (shiftNumber - 1) * _tuning.IntervalReductionPerShift);
+            _nextHazardIn = Mathf.Max(
+                _tuning.MinimumHazardSpacing * _tuning.FirstHazardSpacingMultiplier,
                                       baseInterval - shiftBonus);
 
             Debug.Log($"[TideSystem] Initialized. Shift {shiftNumber}. " +
@@ -96,7 +88,7 @@ namespace Desk42.Core
             _timeSinceLastHazard += dt;
 
             if (_timeSinceLastHazard < _nextHazardIn) return;
-            if (_timeSinceLastHazard < MIN_HAZARD_SPACING) return;
+            if (_timeSinceLastHazard < _tuning.MinimumHazardSpacing) return;
 
             FireHazard();
         }
@@ -123,10 +115,10 @@ namespace Desk42.Core
                 return;
             }
 
-            if (durationSeconds < FAST_THRESHOLD)
+            if (durationSeconds < _tuning.FastResolutionThreshold)
             {
                 _consecutiveFastCount++;
-                if (_consecutiveFastCount >= FAST_STREAK_THRESHOLD)
+                if (_consecutiveFastCount >= _tuning.FastResolutionStreak)
                 {
                     _consecutiveFastCount = 0;
                     if (_pressureLevel < 3)
@@ -175,7 +167,7 @@ namespace Desk42.Core
             _pressureLevel        = 0;
             _consecutiveFastCount = 0;
             _timeSinceLastHazard  = 0f;
-            _nextHazardIn         = HazardIntervals[0];
+            _nextHazardIn         = _tuning.GetHazardInterval(0);
             _lastFiredHazardType  = null;
         }
 
@@ -189,7 +181,7 @@ namespace Desk42.Core
             OfficeEnvironmentState.ApplyHazard(type);
 
             // Hazard interaction chain — 30s window, one chain per primary
-            if (_lastFiredHazardType.HasValue && _timeSinceLastHazard <= CHAIN_WINDOW)
+            if (_lastFiredHazardType.HasValue && _timeSinceLastHazard <= _tuning.ChainWindow)
             {
                 var prev = _lastFiredHazardType.Value;
                 var chained = OfficeHazardInteractionTable.CheckChain(prev, type);
@@ -224,11 +216,12 @@ namespace Desk42.Core
         private void ScheduleNextHazard()
         {
             float interval = _currentPhase == ShiftPhase.Overtime
-                ? OVERTIME_HAZARD_INTERVAL
-                : HazardIntervals[Mathf.Clamp(_pressureLevel, 0, 3)];
+                ? _tuning.OvertimeHazardInterval
+                : _tuning.GetHazardInterval(_pressureLevel);
 
             // Small random jitter ±15% so hazards don't feel mechanical
-            float jitter  = SeedEngine.NextFloat(SeedStream.RumorMillEvents, -0.15f, 0.15f);
+            float jitter = SeedEngine.NextFloat(SeedStream.OfficeHazards,
+                -_tuning.IntervalJitterFraction, _tuning.IntervalJitterFraction);
             _nextHazardIn = interval * (1f + jitter);
         }
 
@@ -272,7 +265,7 @@ namespace Desk42.Core
 
         private static int PickFromWeighted(float[] weights, OfficeHazardType[] types)
         {
-            int idx = SeedEngine.WeightedRandom(SeedStream.RumorMillEvents, weights);
+            int idx = SeedEngine.WeightedRandom(SeedStream.OfficeHazards, weights);
             return (int)types[Mathf.Clamp(idx, 0, types.Length - 1)];
         }
 

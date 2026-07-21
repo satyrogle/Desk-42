@@ -39,12 +39,12 @@ namespace Desk42.Core
             int globalShift = meta.GlobalShiftNumber;
 
             // Pick 2-4 expenses deterministically
-            int count = SeedEngine.Next(SeedStream.ClaimQueue, 2, 5); // [2, 4]
+            int count = SeedEngine.Next(SeedStream.PersonalExpenses, 2, 5); // [2, 4]
 
             // Shuffle to vary which expenses appear
             int[] indices = new int[_allExpenses.Length];
             for (int i = 0; i < indices.Length; i++) indices[i] = i;
-            SeedEngine.Shuffle(SeedStream.ClaimQueue, indices);
+            SeedEngine.Shuffle(SeedStream.PersonalExpenses, indices);
 
             for (int i = 0; i < count && i < indices.Length; i++)
             {

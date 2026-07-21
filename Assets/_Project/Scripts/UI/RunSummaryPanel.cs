@@ -39,7 +39,7 @@ namespace Desk42.UI
 
         private void OnDestroy()
         {
-            Desk42Services.Unregister<RunSummaryPanel>();
+            Desk42Services.Unregister(this);
         }
 
         private void OnEnable()

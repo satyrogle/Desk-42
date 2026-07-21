@@ -28,8 +28,38 @@ namespace Desk42.Core
     {
         // ── Paths ─────────────────────────────────────────────
 
-        private static string SaveDir =>
-            Application.persistentDataPath;
+#if UNITY_EDITOR
+        private static string _saveDirectoryOverride;
+
+        /// <summary>
+        /// Redirects persistence for tests. This is editor-only so production
+        /// builds can never accidentally write somewhere other than Unity's
+        /// persistent data directory.
+        /// </summary>
+        public static void SetSaveDirectoryOverrideForTests(string directory)
+        {
+            if (string.IsNullOrWhiteSpace(directory))
+                throw new ArgumentException("A test save directory is required.", nameof(directory));
+
+            _saveDirectoryOverride = Path.GetFullPath(directory);
+            Directory.CreateDirectory(_saveDirectoryOverride);
+        }
+
+        public static void ClearSaveDirectoryOverrideForTests()
+            => _saveDirectoryOverride = null;
+#endif
+
+        private static string SaveDir
+        {
+            get
+            {
+#if UNITY_EDITOR
+                if (!string.IsNullOrEmpty(_saveDirectoryOverride))
+                    return _saveDirectoryOverride;
+#endif
+                return Application.persistentDataPath;
+            }
+        }
 
         private static string MetaPath    => Path.Combine(SaveDir, "meta.json");
         private static string MetaBakPath => Path.Combine(SaveDir, "meta.json.bak");

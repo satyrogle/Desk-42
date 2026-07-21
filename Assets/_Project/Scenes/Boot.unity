@@ -290,6 +290,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _cardLibrary: {fileID: 11400000, guid: a81c15e25fccb894cb13bb00c1672941, type: 2}
+  _moralDilemmaCatalog: {fileID: 11400000, guid: a356e52194d445748a09d0b609791868, type: 2}
 --- !u!4 &664654277
 Transform:
   m_ObjectHideFlags: 0

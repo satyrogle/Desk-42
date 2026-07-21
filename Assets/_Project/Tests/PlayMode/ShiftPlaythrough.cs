@@ -10,9 +10,8 @@
 // This file is a TEST HARNESS for the playtest report:
 //   * It is not gameplay code and must never ship.
 //   * It changes no game state outside Play Mode.
-//   * meta.json / run.json are backed up in OneTimeSetUp and
-//     restored in OneTimeTearDown so the developer's real save
-//     data is untouched.
+//   * SaveSystem is redirected before Boot, so the developer's
+//     real meta.json / run.json files are never opened or written.
 //
 // Artifacts (repo root, git-ignored by absence from Assets/):
 //   PlaytestLogs/shift<N>_seed<SEED>.log   — full event log
@@ -59,34 +58,30 @@ namespace Desk42.Tests.PlayMode
 
         // ── Save-data protection ──────────────────────────────
 
-        private static readonly string[] SaveFiles =
-            { "meta.json", "meta.json.bak", "run.json", "run.json.bak" };
-        private string _saveBackupDir;
+        private string _testSaveDirectory;
 
         [OneTimeSetUp]
-        public void BackupSaves()
+        public void IsolateSaves()
         {
-            _saveBackupDir = Path.Combine(LogDir, "save_backup");
-            Directory.CreateDirectory(_saveBackupDir);
-            foreach (var f in SaveFiles)
-            {
-                string src = Path.Combine(Application.persistentDataPath, f);
-                if (File.Exists(src))
-                    File.Copy(src, Path.Combine(_saveBackupDir, f), overwrite: true);
-            }
+            _testSaveDirectory = Path.Combine(
+                Path.GetTempPath(), $"Desk42_Playthrough_{Guid.NewGuid():N}");
+            SaveSystem.SetSaveDirectoryOverrideForTests(_testSaveDirectory);
         }
 
         [OneTimeTearDown]
-        public void RestoreSaves()
+        public void ReleaseIsolatedSaves()
         {
-            foreach (var f in SaveFiles)
-            {
-                string dst = Path.Combine(Application.persistentDataPath, f);
-                string bak = Path.Combine(_saveBackupDir, f);
-                if (File.Exists(bak)) File.Copy(bak, dst, overwrite: true);
-                else if (File.Exists(dst)) File.Delete(dst); // file created during test — remove
-            }
             Time.timeScale = 1f;
+            UnsubscribeAll();
+            Application.logMessageReceived -= CaptureConsole;
+
+            if (GameManager.Instance != null)
+                UnityEngine.Object.DestroyImmediate(GameManager.Instance.gameObject);
+
+            SaveSystem.WipeAllSaveData();
+            SaveSystem.ClearSaveDirectoryOverrideForTests();
+            if (Directory.Exists(_testSaveDirectory))
+                Directory.Delete(_testSaveDirectory, recursive: true);
         }
 
         // ── The four shifts ───────────────────────────────────
@@ -108,6 +103,11 @@ namespace Desk42.Tests.PlayMode
         private int           _claimsResolved;
         private int           _errors;
         private readonly List<(EventInfo evt, Delegate del)> _subs = new();
+        private Action<ClaimResolvedEvent> _claimResolvedHandler;
+        private Action<RunCompletedEvent> _runCompletedHandler;
+        private Action<DilemmaTriggeredEvent> _dilemmaHandler;
+        private DilemmaTriggeredEvent? _pendingDilemma;
+        private bool _pendingDilemmaEthical;
 
         private IEnumerator RunShift(int shiftNumber, int seed)
         {
@@ -117,6 +117,7 @@ namespace Desk42.Tests.PlayMode
             _runCompleted  = false;
             _claimsResolved = 0;
             _errors        = 0;
+            _pendingDilemma = null;
 
             Application.logMessageReceived += CaptureConsole;
             Line($"=== HARNESS SHIFT {shiftNumber} SEED {seed} timeScale={TIME_SCALE} {DateTime.Now:O} ===");
@@ -146,15 +147,26 @@ namespace Desk42.Tests.PlayMode
             Line($"[boot] Ready. GameManager.Phase={phaseStr}");
 
             // 2. Wire the universal event logger BEFORE the run starts.
+            UnsubscribeAll();
             SubscribeAll();
-            RumorMill.OnClaimResolved   += _ => _claimsResolved++;
-            RumorMill.OnRunCompleted    += _ => _runCompleted = true;
-            RumorMill.OnDilemmaTriggered += AutoResolveDilemma;
+            _claimResolvedHandler = _ => _claimsResolved++;
+            _runCompletedHandler = _ => _runCompleted = true;
+            _dilemmaHandler = AutoResolveDilemma;
+            RumorMill.OnClaimResolved += _claimResolvedHandler;
+            RumorMill.OnRunCompleted += _runCompletedHandler;
+            RumorMill.OnDilemmaTriggered += _dilemmaHandler;
 
             // 3. Fixed-seed run, fixed shift number (bypasses GlobalShiftNumber
             //    so the player's meta progression is not consumed).
             var gm = GameManager.Instance;
-            gm.Run.BeginNewRun(seed, "auditor", shiftNumber, gm.Meta);
+            var fixtureMeta = new MetaProgressData
+            {
+                TutorialCompleted = true,
+                HighestPhaseReached = 4,
+                GlobalShiftNumber = shiftNumber,
+            };
+            gm.SetMetaForTesting(fixtureMeta);
+            gm.Run.BeginNewRun(seed, "auditor", shiftNumber, fixtureMeta);
             gm.LoadScene(SceneID.Shift);
 
             t0 = Time.realtimeSinceStartup;
@@ -185,6 +197,13 @@ namespace Desk42.Tests.PlayMode
 
             while (!_runCompleted)
             {
+                if (_pendingDilemma.HasValue)
+                {
+                    ResolvePendingDilemma();
+                    yield return null;
+                    continue;
+                }
+
                 var encounters = Encounters();
                 if (encounters == null) { yield return null; continue; }
                 if (Time.realtimeSinceStartup - _shiftStartRealtime > SHIFT_TIMEOUT_S)
@@ -204,7 +223,8 @@ namespace Desk42.Tests.PlayMode
                     yield return Wait(NextFloat(THINK_TIME_MIN, THINK_TIME_MAX));
                     if (encounters.ActiveClient == null) continue; // resolved elsewhere (fugue etc.)
 
-                    TrySlamCard();
+                    yield return TrySlamCard();
+                    if (encounters.ActiveClient == null) continue;
 
                     bool approve = _policy.NextDouble() < APPROVE_CHANCE;
                     Line($"[input] {(approve ? "APPROVE" : "DENY")} " +
@@ -234,40 +254,87 @@ namespace Desk42.Tests.PlayMode
 
         // ── Player-input simulation ───────────────────────────
 
-        private void TrySlamCard()
+        private IEnumerator TrySlamCard()
         {
+            if (_policy.NextDouble() >= CARD_SLAM_CHANCE) yield break;
+
+            var run  = GameManager.Instance?.Run;
+            var hand = run?.Hand;
+            var machine = Desk42Services.Get<RedTape.PunchCardMachine>();
+            if (machine == null) // Unity fake-null aware (?? would miss destroyed objects)
+                machine = UnityEngine.Object.FindObjectOfType<RedTape.PunchCardMachine>();
+            if (hand == null || hand.Count == 0 || machine == null) yield break;
+
+            var card = hand.Cards[_policy.Next(hand.Count)];
+            Line($"[input] SLAM card={card.Data?.name} id={card.InstanceId}");
+            bool resolved = false;
+            Action<RedTape.SlamResult> onResolved = result =>
+            {
+                resolved = true;
+                Line($"[input] SLAM resolved={result}");
+            };
+            machine.OnSlamResolved += onResolved;
+            bool slamFailed = false;
             try
             {
-                if (_policy.NextDouble() >= CARD_SLAM_CHANCE) return;
-                var run  = GameManager.Instance?.Run;
-                var hand = run?.Hand;
-                var machine = Desk42Services.Get<RedTape.PunchCardMachine>();
-                if (machine == null) // Unity fake-null aware (?? would miss destroyed objects)
-                    machine = UnityEngine.Object.FindObjectOfType<RedTape.PunchCardMachine>();
-                if (hand == null || hand.Count == 0 || machine == null) return;
-
-                var card = hand.Cards[_policy.Next(hand.Count)];
-                Line($"[input] SLAM card={card.Data?.name} id={card.InstanceId}");
                 machine.SlamCard(card.Data, card.InstanceId);
             }
             catch (Exception ex)
             {
                 Line($"[harness-warn] card slam failed: {ex.Message}");
+                machine.OnSlamResolved -= onResolved;
+                slamFailed = true;
             }
+            if (slamFailed) yield break;
+
+            float started = Time.realtimeSinceStartup;
+            while (!resolved && machine != null &&
+                   Time.realtimeSinceStartup - started < 5f)
+                yield return null;
+
+            if (!resolved)
+                Line("[harness-warn] card slam did not resolve before timeout");
+            if (machine != null)
+                machine.OnSlamResolved -= onResolved;
         }
 
         private void AutoResolveDilemma(DilemmaTriggeredEvent e)
         {
             bool ethical = _policy.NextDouble() < ETHICAL_CHANCE;
             Line($"[input] DILEMMA -> {(ethical ? "ETHICAL" : "BUREAUCRATIC")}: {Truncate(DumpEvent(e), 200)}");
+            _pendingDilemma = e;
+            _pendingDilemmaEthical = ethical;
+        }
+
+        private void ResolvePendingDilemma()
+        {
+            if (!_pendingDilemma.HasValue) return;
+
+            var dilemma = _pendingDilemma.Value;
+            bool ethical = _pendingDilemmaEthical;
+            _pendingDilemma = null;
+
             try
             {
-                if (ethical) e.OnEthical?.Invoke();
-                else         e.OnBureaucratic?.Invoke(false);
+                // Exercise the real modal button path so it closes the panel
+                // and restores time before invoking the consequence callback.
+                var panel = UnityEngine.Object.FindObjectOfType<UI.MoralDilemmaPanel>();
+                string methodName = ethical ? "OnEthicalClicked" : "OnBureaucraticClicked";
+                var method = panel?.GetType().GetMethod(methodName,
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                if (method != null)
+                    method.Invoke(panel, null);
+                else if (ethical)
+                    dilemma.OnEthical?.Invoke();
+                else
+                    dilemma.OnBureaucratic?.Invoke(false);
+
+                Time.timeScale = TIME_SCALE;
             }
             catch (Exception ex)
             {
                 Line($"[harness-warn] dilemma resolve failed: {ex.Message}");
+                Time.timeScale = TIME_SCALE;
             }
         }
 
@@ -292,6 +359,17 @@ namespace Desk42.Tests.PlayMode
         {
             foreach (var (evt, del) in _subs) evt.RemoveEventHandler(null, del);
             _subs.Clear();
+
+            if (_claimResolvedHandler != null)
+                RumorMill.OnClaimResolved -= _claimResolvedHandler;
+            if (_runCompletedHandler != null)
+                RumorMill.OnRunCompleted -= _runCompletedHandler;
+            if (_dilemmaHandler != null)
+                RumorMill.OnDilemmaTriggered -= _dilemmaHandler;
+
+            _claimResolvedHandler = null;
+            _runCompletedHandler = null;
+            _dilemmaHandler = null;
         }
 
         private void OnAnyEvent<T>(T e)

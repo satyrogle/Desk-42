@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7998e12fa30c0074caa6d4cff06753ca, type: 3}
-  m_Name: Dilemma_ 2
+  m_Name: Dilemma_SpectralJanitor
   m_EditorClassIdentifier: 
   DilemmaId: Moral_SpectralJanitor
   PromptTemplate: The night cleaner is clearly a ghost, and he looks exhausted.

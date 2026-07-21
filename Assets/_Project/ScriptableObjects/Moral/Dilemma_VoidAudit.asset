@@ -10,19 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7998e12fa30c0074caa6d4cff06753ca, type: 3}
-  m_Name: Dilemma_ 5
+  m_Name: Dilemma_VoidAudit
   m_EditorClassIdentifier: 
-  DilemmaId: Moral_BloodOath (Trap)
-  PromptTemplate: Q3 projections require a mandatory blood oath to finalize the spreadsheet.
-  EthicalChoiceLabel: Sign in blood.
-  EthicalSoulDelta: -20
+  DilemmaId: Moral_VoidAudit
+  PromptTemplate: Faceless auditors from Upper Management demand to inspect your
+    terminal.
+  EthicalChoiceLabel: Surrender your memories.
+  EthicalSoulDelta: -25
   EthicalCreditDelta: 0
-  EthicalTimeDelta: -30
-  BureaucraticChoiceLabel: Pay the non-compliance fine.
+  EthicalTimeDelta: -60
+  BureaucraticChoiceLabel: Bribe them.
   BureaucraticSoulDelta: 0
-  BureaucraticCreditDelta: -50
-  BureaucraticTimeDelta: 0
-  ActionType: 5
+  BureaucraticCreditDelta: -40
+  BureaucraticTimeDelta: -15
+  ActionType: 0
   MaxSoulForEligibility: 100
   MinSoulForEligibility: 0
   MinShiftNumber: 3

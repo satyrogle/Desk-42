@@ -62,8 +62,18 @@ namespace Desk42.Core
         [SerializeField] private CardLibrary _cardLibrary;
         public CardLibrary Cards => _cardLibrary;
 
+        [Tooltip("Explicit dilemma pool used by the persistent run controller.")]
+        [SerializeField] private MoralDilemmaCatalog _moralDilemmaCatalog;
+        public MoralDilemmaCatalog MoralDilemmas => _moralDilemmaCatalog;
+
         // Loaded from disk in Boot and held for the session
         public MetaProgressData Meta { get; private set; }
+
+#if UNITY_EDITOR
+        /// <summary>Replaces session meta for isolated editor tests.</summary>
+        public void SetMetaForTesting(MetaProgressData meta)
+            => Meta = meta ?? new MetaProgressData();
+#endif
 
         // ── Scene Flow State ──────────────────────────────────
 

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ade672ac11217f489e3eebe924d0e0a, type: 3}
+  m_Name: MoralDilemmaCatalog
+  m_EditorClassIdentifier:
+  _dilemmas:
+  - {fileID: 11400000, guid: 62ad8a0543ac5d14fab441cffa6c36a8, type: 2}
+  - {fileID: 11400000, guid: f0702670ea64c9949807d47ad7f698ce, type: 2}
+  - {fileID: 11400000, guid: b0f2abbc2ac4cde43868fad53bb1ed34, type: 2}
+  - {fileID: 11400000, guid: e261274ec7491da44ac6628bb1f9ee36, type: 2}
+  - {fileID: 11400000, guid: 2221855f284092f49a82b9c4a364bba7, type: 2}
+  - {fileID: 11400000, guid: 28c146decd7722346ba7b587d5b19f63, type: 2}

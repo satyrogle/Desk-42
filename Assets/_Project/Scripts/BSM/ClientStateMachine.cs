@@ -201,12 +201,8 @@ namespace Desk42.BSM
             }
 
             // BSM mood state changes immediately
-            TransitionToState(targetState, fireEvent: true);
-
-            // Publish to RumorMill
-            RumorMill.Publish(new StateTransitionEvent(
-                _clientVariantId, _currentMoodState, targetState,
-                byCard: true, mutated: false));
+            TransitionToState(targetState, fireEvent: true,
+                byCard: true, mutated: false);
 
             return InjectionResult.Success;
         }
@@ -228,7 +224,8 @@ namespace Desk42.BSM
             TransitionToState(newState, true);
         }
 
-        private void TransitionToState(ClientStateID newState, bool fireEvent)
+        private void TransitionToState(ClientStateID newState, bool fireEvent,
+            bool byCard = false, bool mutated = false)
         {
             if (newState == _currentMoodState && fireEvent) return;
 
@@ -240,7 +237,7 @@ namespace Desk42.BSM
                 OnStateChanged?.Invoke(prev, newState);
                 RumorMill.Publish(new StateTransitionEvent(
                     _clientVariantId, prev, newState,
-                    byCard: false, mutated: false));
+                    byCard, mutated));
             }
         }
 

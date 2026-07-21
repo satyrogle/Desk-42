@@ -10,23 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7998e12fa30c0074caa6d4cff06753ca, type: 3}
-  m_Name: Dilemma_ 1
+  m_Name: Dilemma_SentientServer
   m_EditorClassIdentifier: 
-  DilemmaId: Moral_TemporalIntern
-  PromptTemplate: The new intern is stuck in a 5-minute time loop, repeating the
-    same coffee run.
-  EthicalChoiceLabel: Break the loop.
-  EthicalSoulDelta: 10
-  EthicalCreditDelta: -15
-  EthicalTimeDelta: -30
-  BureaucraticChoiceLabel: Have him run errands.
-  BureaucraticSoulDelta: -15
-  BureaucraticCreditDelta: 20
+  DilemmaId: Moral_SentientServer
+  PromptTemplate: The mainframe is begging for mercy via the command terminal.
+  EthicalChoiceLabel: Initiate sleep mode.
+  EthicalSoulDelta: 15
+  EthicalCreditDelta: -20
+  EthicalTimeDelta: -45
+  BureaucraticChoiceLabel: Overclock the CPU.
+  BureaucraticSoulDelta: -20
+  BureaucraticCreditDelta: 30
   BureaucraticTimeDelta: 0
-  ActionType: 2
+  ActionType: 1
   MaxSoulForEligibility: 100
-  MinSoulForEligibility: 0
-  MinShiftNumber: 1
+  MinSoulForEligibility: 20
+  MinShiftNumber: 2
   IsTrapDilemma: 0
   NarratorOverrideKey: 
-  SpawnWeight: 0.6
+  SpawnWeight: 0.4

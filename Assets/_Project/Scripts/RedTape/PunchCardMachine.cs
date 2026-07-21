@@ -114,7 +114,7 @@ namespace Desk42.RedTape
 
         private void OnDestroy()
         {
-            Desk42Services.Unregister<PunchCardMachine>();
+            Desk42Services.Unregister(this);
         }
 
         // ── Update: fatigue timers ────────────────────────────
