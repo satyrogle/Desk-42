@@ -46,7 +46,8 @@ MonoBehaviour:
   - Facilities
   - Document Retention
   SpeciesPool:
-  - human_standard
+  - gel_anomaly
+  - unregistered_alien
   BaseCorruption: 0.1
   AnomalyTagSlots: 1
   AnomalyTagFilter: []

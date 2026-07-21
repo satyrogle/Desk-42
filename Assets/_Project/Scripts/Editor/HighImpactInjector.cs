@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using Desk42.Audio;
@@ -256,3 +257,4 @@ namespace Desk42.EditorTools
         }
     }
 }
+#endif

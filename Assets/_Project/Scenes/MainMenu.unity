@@ -341,9 +341,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _autoBuildUI: 1
+  _officeBackground: {fileID: 21300000, guid: eb95ffa52db11f143bd1df23f154ecd7, type: 3}
   _startNewRunBtn: {fileID: 0}
   _continueBtn: {fileID: 0}
   _dailyBriefBtn: {fileID: 0}
+  _settingsBtn: {fileID: 0}
+  _replayTutorialBtn: {fileID: 0}
+  _resetOnboardingBtn: {fileID: 0}
   _quitBtn: {fileID: 0}
   _defaultArchetypeId: auditor
 --- !u!114 &1624297825

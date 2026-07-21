@@ -88,7 +88,7 @@ namespace Desk42.UI
             backdropRT.offsetMin = Vector2.zero;
             backdropRT.offsetMax = Vector2.zero;
             var backdropImg = backdrop.AddComponent<Image>();
-            backdropImg.color = new Color(0f, 0f, 0f, 0.85f);
+            backdropImg.color = UIPalette.Backdrop;
 
             // Centered card panel
             var card = new GameObject("Card");
@@ -100,6 +100,9 @@ namespace Desk42.UI
             cardRT.sizeDelta = new Vector2(800, 600);
             var cardImg = card.AddComponent<Image>();
             cardImg.color = UIPalette.CardBackground;
+            var cardOutline = card.AddComponent<Outline>();
+            cardOutline.effectColor = UIPalette.AccentTitle;
+            cardOutline.effectDistance = new Vector2(2f, -2f);
 
             // Title
             _titleText = CreateLabel(card.transform, "title",
@@ -115,7 +118,7 @@ namespace Desk42.UI
                 new Vector2(0, 0), new Vector2(1, 1), new Vector2(0.5f, 1),
                 Vector2.zero, Vector2.zero,
                 20, FontStyles.Normal, TextAlignmentOptions.TopLeft,
-                Color.white);
+                UIPalette.TextPrimary);
             var bodyRT = _bodyText.rectTransform;
             bodyRT.offsetMin = new Vector2(40, 100);
             bodyRT.offsetMax = new Vector2(-40, -110);
@@ -131,13 +134,13 @@ namespace Desk42.UI
             btnRT.anchoredPosition = new Vector2(0, 30);
 
             var btnImg = btnGO.AddComponent<Image>();
-            btnImg.color = new Color(0.2f, 0.45f, 0.25f);
+            btnImg.color = UIPalette.AccentTitle;
 
             _continueBtn = btnGO.AddComponent<Button>();
             var btnColors = _continueBtn.colors;
-            btnColors.normalColor      = new Color(0.20f, 0.45f, 0.25f);
-            btnColors.highlightedColor = new Color(0.35f, 0.60f, 0.40f);
-            btnColors.pressedColor     = new Color(0.10f, 0.30f, 0.15f);
+            btnColors.normalColor      = UIPalette.AccentTitle;
+            btnColors.highlightedColor = new Color(0.82f, 0.70f, 0.40f);
+            btnColors.pressedColor     = new Color(0.52f, 0.40f, 0.18f);
             _continueBtn.colors = btnColors;
             _continueBtn.onClick.AddListener(OnContinueClicked);
 
@@ -146,7 +149,7 @@ namespace Desk42.UI
                 Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
                 Vector2.zero, Vector2.zero,
                 26, FontStyles.Bold, TextAlignmentOptions.Center,
-                Color.white);
+                new Color(0.03f, 0.10f, 0.085f));
 
             _panelRoot.SetActive(false);
         }

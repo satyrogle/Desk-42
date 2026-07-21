@@ -180,7 +180,7 @@ namespace Desk42.Tests.PlayMode
             Time.timeScale = TIME_SCALE;
             _shiftStartRealtime = Time.realtimeSinceStartup;
             Line($"[shift] Scene active. Sanity={gm.Run.Sanity:F1}");
-            Screenshot(shiftNumber, seed, "start");
+            yield return Screenshot(shiftNumber, seed, "start");
             bool midShotTaken = false;
 
             // 4. Play until the run completes or the hard timeout hits.
@@ -215,7 +215,10 @@ namespace Desk42.Tests.PlayMode
 
                 if (!midShotTaken &&
                     gm.Run?.RawData?.CurrentPhase == ShiftPhase.LunchBreak)
-                { Screenshot(shiftNumber, seed, "mid"); midShotTaken = true; }
+                {
+                    yield return Screenshot(shiftNumber, seed, "mid");
+                    midShotTaken = true;
+                }
 
                 if (encounters.ActiveClient != null)
                 {
@@ -236,7 +239,7 @@ namespace Desk42.Tests.PlayMode
 
             // 5. Wrap up + artifacts.
             Time.timeScale = 1f;
-            Screenshot(shiftNumber, seed, "end");
+            yield return Screenshot(shiftNumber, seed, "end");
             var data = gm.Run?.RawData;
             Line($"=== SHIFT END === completed={_runCompleted} " +
                  $"claims={_claimsResolved} sanity={data?.Sanity:F1} soul={data?.SoulIntegrity:F1} " +
@@ -442,15 +445,35 @@ namespace Desk42.Tests.PlayMode
             while (Time.time < end) yield return null;
         }
 
-        private void Screenshot(int shiftNumber, int seed, string tag)
+        private IEnumerator Screenshot(int shiftNumber, int seed, string tag)
         {
+            yield return new WaitForEndOfFrame();
+
+            string path = Path.Combine(
+                LogDir, $"shift{shiftNumber}_seed{seed}_{tag}.png");
             try
             {
-                ScreenCapture.CaptureScreenshot(
-                    Path.Combine(LogDir, $"shift{shiftNumber}_seed{seed}_{tag}.png"));
+                if (File.Exists(path))
+                    File.Delete(path);
+
+                ScreenCapture.CaptureScreenshot(path);
                 Line($"[shot] {tag}");
             }
-            catch (Exception ex) { Line($"[harness-warn] screenshot failed: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                Line($"[harness-warn] screenshot failed: {ex.Message}");
+                yield break;
+            }
+
+            float deadline = Time.realtimeSinceStartup + 10f;
+            while ((!File.Exists(path) || new FileInfo(path).Length == 0)
+                   && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            if (!File.Exists(path) || new FileInfo(path).Length == 0)
+                Line($"[harness-warn] screenshot did not finish writing: {path}");
         }
 
         private static string Truncate(string s, int n)

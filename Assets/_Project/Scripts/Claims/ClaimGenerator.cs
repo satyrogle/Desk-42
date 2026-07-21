@@ -55,7 +55,7 @@ namespace Desk42.Claims
 
             // ── Step 3: Species + ClientVariantId ─────────────
             string speciesId = PickFrom(template.SpeciesPool, SeedStream.ClaimQueue)
-                               ?? "human_standard";
+                               ?? "unregistered_alien";
             int variantSuffix = SeedEngine.Next(SeedStream.ClaimQueue, 100, 999);
             string variantId  = $"{speciesId}_{variantSuffix}";
 
@@ -288,8 +288,8 @@ namespace Desk42.Claims
         private static ActiveClaimData MakeStubClaim(int shiftNumber) => new()
         {
             ClaimId         = $"CLM-00000",
-            ClientVariantId = "human_standard_001",
-            ClientSpeciesId = "human_standard",
+            ClientVariantId = "unregistered_alien_001",
+            ClientSpeciesId = "unregistered_alien",
             TemplateId      = "stub",
             AnomalyTagIds   = Array.Empty<string>(),
             HiddenTraitId   = null,

@@ -51,6 +51,24 @@ namespace Desk42.UI
             CacheTransform();
         }
 
+        public void SetPortrait(RectTransform portrait)
+        {
+            if (_portrait == portrait)
+                return;
+
+            if (_portrait != null && _hasCachedTransform)
+            {
+                _portrait.anchoredPosition = _basePosition;
+                _portrait.localScale = _baseScale;
+            }
+
+            _portrait = portrait;
+            _hasCachedTransform = false;
+            _reactionOffset = Vector2.zero;
+            _tellScale = 1f;
+            CacheTransform();
+        }
+
         private void Update()
         {
             if (_portrait == null || _isFrozen)

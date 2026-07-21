@@ -38,3 +38,18 @@ Generation defaults were 26-28 steps, CFG 7.0-7.5, `dpmpp_2m`, and `karras`.
 ## Important production note
 
 These images are visual-development references. Generated text, object count, anatomy, perspective, and exact palette usage are not authoritative. Final assets should be redrawn on the production pixel grid and checked against `DESK42_PIXEL_ART_IDENTITY.md`.
+
+## Locked v3.1 clean baseline
+
+The v3.1 Clean Populated Baseline was rebuilt on 20 July 2026 after the art direction lock. It does not use a generative room layout as the keeper: repeated diffusion passes introduced duplicate furniture, windows, or unreadable anchors and were rejected during curation.
+
+The keeper uses the approved `D42_Mockup_DeskStage_ClientFacing_v003.png` foreground, extracted through ComfyUI's local `birefnet-general.safetensors` background-removal node. The room shell is fixed numerically at 384x216 so the door, noticeboard, clock, fluorescent, wall/floor seam, filing cabinet, desk, claimant, and player chair cannot drift. ComfyUI performs the registered foreground-mask composite. The result is then remapped without dithering to the locked palette in `tools/pixel_art_finalize.py` and previewed only with nearest-neighbour scaling.
+
+| Curated file | Purpose |
+| --- | --- |
+| `D42_CleanRoomPlate_Native_384_v001.png` | Claimant-free clean room plate and fixed contact-shadow treatment |
+| `D42_CleanRoomPlate_Preview4x_v001.png` | Nearest-neighbour review image for the room plate |
+| `D42_CleanPopulatedBaseline_Native_384_v001.png` | Rejected clean Moth Accountant composition reference retained for layout history |
+| `D42_CleanPopulatedBaseline_Preview4x_v001.png` | Nearest-neighbour review image for the populated baseline |
+
+The clean baseline contains no anomaly state. The clock, board, cabinet, light, and door are all normal anchors. It was rejected as an art target because the background and detailed foreground did not form one coherent material style. Unity runtime wiring must not treat it as approved production art.

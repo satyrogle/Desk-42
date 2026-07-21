@@ -1,0 +1,83 @@
+{
+  "canvas": [
+    384,
+    216
+  ],
+  "composition_center": [
+    192,
+    108
+  ],
+  "claimant_room_anchor": [
+    192,
+    112
+  ],
+  "desk_claimant_contact_y": 112,
+  "claimant_cell": {
+    "size": [
+      128,
+      128
+    ],
+    "top_left": [
+      128,
+      0
+    ],
+    "pivot_local": [
+      64,
+      112
+    ]
+  },
+  "claimant_contact_shadow_bounds": [
+    144,
+    102,
+    239,
+    121
+  ],
+  "draw_order": [
+    "BG_WallsFloor",
+    "BG_Anchors",
+    "Desk_Base_Rear",
+    "Desk_Props_Back",
+    "Claimant_Chair",
+    "Claimant_ContactShadow",
+    "Claimant_MothAccountant_Pending",
+    "Desk_Foreground_Lip",
+    "Desk_Props_Front",
+    "FG_PlayerChair",
+    "Lighting"
+  ],
+  "palette": {
+    "ink": "#081513",
+    "deep": "#101F1B",
+    "green": "#173F32",
+    "green_mid": "#24503F",
+    "green_light": "#356650",
+    "green_high": "#4D7963",
+    "cream": "#F1E8CE",
+    "paper_shadow": "#D8C58B",
+    "paper_mid": "#BFA26F",
+    "blue_grey": "#8FA9A6",
+    "warm_grey": "#77736A",
+    "metal_shadow": "#4F5652",
+    "task_orange": "#CE713A",
+    "rust": "#A44E2D",
+    "wood": "#6A402B",
+    "wood_shadow": "#503021",
+    "approval_red": "#B73B32",
+    "soot": "#332C30",
+    "char": "#18191B",
+    "suit": "#292A2E",
+    "suit_light": "#45464B",
+    "brass": "#B68849",
+    "amber": "#E2A552",
+    "moth": "#D6A070",
+    "moth_light": "#F0C692"
+  },
+  "pixel_rules": {
+    "filter": "point",
+    "mipmaps": false,
+    "compression": "none",
+    "dither": "none"
+  },
+  "status": "rejected_visual_exploration",
+  "rejection_reason": "Procedural redraw solved layout constraints but flattened the approved material richness and atmosphere."
+}

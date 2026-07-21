@@ -77,9 +77,8 @@ namespace Desk42.Claims
         [Header("Client")]
         [Tooltip("Client species IDs that can appear with this claim type. " +
                  "These are matched to client prefab configurations by the encounter system.\n" +
-                 "Ship Tier species: human_standard, human_distressed, human_litigious, " +
-                 "corporate_entity, anomalous_adjacent")]
-        public string[] SpeciesPool = { "human_standard" };
+                 "Core species: moth_accountant, gel_anomaly, unregistered_alien, void_proxy")]
+        public string[] SpeciesPool = { "unregistered_alien" };
 
         // ── Claim Properties ──────────────────────────────────
 

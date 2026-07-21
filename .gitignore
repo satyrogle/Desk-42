@@ -78,3 +78,8 @@ unity_activation_log.txt
 # CI artifacts (kept outside repo)
 TestResults/
 artifacts/
+
+# Local agent/build scratch output
+/tmp/
+**/__pycache__/
+*.pyc
