@@ -27,6 +27,7 @@
 // ============================================================
 
 using UnityEngine;
+using UnityEngine.Serialization;
 using Desk42.Core;
 
 namespace Desk42.Claims
@@ -104,9 +105,9 @@ namespace Desk42.Claims
         public int BaseCreditReward = 5;
 
         [Range(0f, 20f)]
-        [Tooltip("Soul integrity cost when resolved bureaucratically " +
-                 "(i.e. the player denies a valid claim).")]
-        public float BaseSoulCostBureaucratic = 2f;
+        [Tooltip("Soul integrity cost when this claim is approved.")]
+        [FormerlySerializedAs("BaseSoulCostBureaucratic")]
+        public float BaseSoulCostApprove = 2f;
 
         [Range(0f, 1f)]
         [Tooltip("Probability this claim requires the player to sign an NDA " +
@@ -120,11 +121,13 @@ namespace Desk42.Claims
         public bool HasFactionAffinity = false;
         public FactionID FactionAffinity = FactionID.Filing;
 
-        [Tooltip("Reputation change on humane resolution (positive = more friendly).")]
-        public float FactionDeltaHumane = 2f;
+        [Tooltip("Reputation change when this claim is denied.")]
+        [FormerlySerializedAs("FactionDeltaHumane")]
+        public float FactionDeltaDeny = 2f;
 
-        [Tooltip("Reputation change on bureaucratic resolution (usually negative).")]
-        public float FactionDeltaBureaucratic = -1f;
+        [Tooltip("Reputation change when this claim is approved.")]
+        [FormerlySerializedAs("FactionDeltaBureaucratic")]
+        public float FactionDeltaApprove = -1f;
 
         // ── Spawn ─────────────────────────────────────────────
 

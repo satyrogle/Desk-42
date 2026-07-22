@@ -209,7 +209,7 @@ namespace Desk42.OfficeSupplies
         private void HandleClaimResolved(ClaimResolvedEvent e)
         {
             var ctx = MakeCtx();
-            ctx.ClaimWasHumane = !e.ResolvedCorrectly;
+            ctx.ResolutionKind = e.Kind;
 
             foreach (var inst in _active)
                 inst.DispatchClaimResolved(ctx);

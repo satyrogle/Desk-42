@@ -117,7 +117,10 @@ namespace Desk42.Core
         /// Returns null if no in-progress run exists.
         /// </summary>
         public static RunData LoadRun()
-            => Load<RunData>(RunPath, RunBakPath);
+        {
+            var data = Load<RunData>(RunPath, RunBakPath);
+            return data == null ? null : MigrateRunIfNeeded(data);
+        }
 
         /// <summary>
         /// Returns true if an in-progress (not completed) run is on disk.
@@ -140,7 +143,8 @@ namespace Desk42.Core
 
         // Bump this constant each time the MetaProgressData schema changes.
         // Add a corresponding case to MigrateMetaIfNeeded below.
-        public const int CurrentMetaSaveVersion = 2;
+        public const int CurrentMetaSaveVersion = 3;
+        public const int CurrentRunSaveVersion = 2;
 
         /// <summary>
         /// Run schema migrations sequentially from the save's stored version
@@ -160,6 +164,12 @@ namespace Desk42.Core
                             data.HighestPhaseReached = 4;
                         break;
 
+                    case 2:
+                        // 2 -> 3: load-only aliases captured the old totals.
+                        // New factual disposition buckets start clean.
+                        data.LifetimeStats ??= new LifetimeStats();
+                        break;
+
                     default:
                         Debug.LogWarning($"[SaveSystem] Unknown SaveVersion {data.SaveVersion} during migration — skipping to current.");
                         data.SaveVersion = CurrentMetaSaveVersion;
@@ -167,6 +177,37 @@ namespace Desk42.Core
                 }
                 data.SaveVersion++;
             }
+            return data;
+        }
+
+        /// <summary>
+        /// Migrate active run saves without reconstructing disposition history
+        /// that the old boolean could not represent faithfully.
+        /// </summary>
+        public static RunData MigrateRunIfNeeded(RunData data)
+        {
+            while (data.SaveVersion < CurrentRunSaveVersion)
+            {
+                switch (data.SaveVersion)
+                {
+                    case 1:
+                        // 1 -> 2: load-only aliases preserve legacy totals.
+                        // Historical resolved claims remain Unspecified because
+                        // WasHumane could not distinguish Deny from Liquify.
+                        data.Stats ??= new RunStatistics();
+                        data.PendingClaims ??= new System.Collections.Generic.List<ActiveClaimData>();
+                        data.ResolvedClaims ??= new System.Collections.Generic.List<ActiveClaimData>();
+                        break;
+
+                    default:
+                        Debug.LogWarning($"[SaveSystem] Unknown run SaveVersion {data.SaveVersion} during migration â€” skipping to current.");
+                        data.SaveVersion = CurrentRunSaveVersion;
+                        return data;
+                }
+
+                data.SaveVersion++;
+            }
+
             return data;
         }
 

@@ -1,12 +1,14 @@
+using System;
 using UnityEngine;
 
 namespace Desk42.Core
 {
     public enum ClaimResolutionKind
     {
-        Approve,
-        Deny,
-        Liquify,
+        Unspecified = 0,
+        Approve = 1,
+        Deny = 2,
+        Liquify = 3,
     }
 
     /// <summary>
@@ -17,17 +19,15 @@ namespace Desk42.Core
     public readonly struct ClaimResolutionOutcome
     {
         public readonly ClaimResolutionKind Kind;
-        public readonly bool ResolvedCorrectly;
         public readonly int CreditsEarned;
         public readonly float SanityCost;
         public readonly float SoulCost;
 
         public ClaimResolutionOutcome(ClaimResolutionKind kind,
-            bool resolvedCorrectly, int creditsEarned,
+            int creditsEarned,
             float sanityCost, float soulCost)
         {
             Kind = kind;
-            ResolvedCorrectly = resolvedCorrectly;
             CreditsEarned = Mathf.Max(0, creditsEarned);
             SanityCost = Mathf.Max(0f, sanityCost);
             SoulCost = Mathf.Max(0f, soulCost);
@@ -43,7 +43,7 @@ namespace Desk42.Core
         public const float ApprovalSoulCost = 1f;
 
         public static ClaimResolutionOutcome Resolve(
-            bool approved,
+            ClaimResolutionKind kind,
             ActiveClaimData claim,
             int shiftNumber,
             int baseApprovalCredits,
@@ -53,18 +53,26 @@ namespace Desk42.Core
             float sanityCost = BaseSanityCost +
                 Mathf.Min(anomalyCount, MaxChargedAnomalies) * SanityPerAnomaly;
 
-            if (!approved)
-                return new ClaimResolutionOutcome(
-                    ClaimResolutionKind.Deny, false, 0, sanityCost, 0f);
+            switch (kind)
+            {
+                case ClaimResolutionKind.Approve:
+                    int credits = Mathf.RoundToInt(
+                        (baseApprovalCredits + Mathf.Max(1, shiftNumber) * 2) * payoutMultiplier);
+                    return new ClaimResolutionOutcome(
+                        ClaimResolutionKind.Approve, credits,
+                        sanityCost, ApprovalSoulCost);
 
-            int credits = Mathf.RoundToInt(
-                (baseApprovalCredits + Mathf.Max(1, shiftNumber) * 2) * payoutMultiplier);
-            return new ClaimResolutionOutcome(
-                ClaimResolutionKind.Approve, true, credits,
-                sanityCost, ApprovalSoulCost);
+                case ClaimResolutionKind.Deny:
+                    return new ClaimResolutionOutcome(
+                        ClaimResolutionKind.Deny, 0, sanityCost, 0f);
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(kind), kind,
+                        "Normal claim resolution requires Approve or Deny.");
+            }
         }
 
         public static ClaimResolutionOutcome Liquify()
-            => new(ClaimResolutionKind.Liquify, false, 0, 0f, 0f);
+            => new(ClaimResolutionKind.Liquify, 0, 0f, 0f);
     }
 }

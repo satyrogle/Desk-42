@@ -148,10 +148,10 @@ namespace Desk42.Encounter
         // ── Resolution Buttons ────────────────────────────────
 
         /// <summary>Called by the Approve button in the Shift scene.</summary>
-        public void Approve() => ResolveEncounter(resolvedCorrectly: true);
+        public void Approve() => ResolveEncounter(ClaimResolutionKind.Approve);
 
         /// <summary>Called by the Deny button in the Shift scene.</summary>
-        public void Deny() => ResolveEncounter(resolvedCorrectly: false);
+        public void Deny() => ResolveEncounter(ClaimResolutionKind.Deny);
 
         /// <summary>
         /// Layer 3 Dark Economy — drag the client into the Pneumatic
@@ -191,7 +191,7 @@ namespace Desk42.Encounter
             StartCoroutine(DestroyClientAfter(resolvedCSM, 0.8f));
         }
 
-        private void ResolveEncounter(bool resolvedCorrectly)
+        private void ResolveEncounter(ClaimResolutionKind kind)
         {
             if (!_encounterActive || _activeClaim == null) return;
 
@@ -209,7 +209,7 @@ namespace Desk42.Encounter
             var run = GameManager.Instance?.Run;
 
             var outcome = ClaimResolutionConsequencePolicy.Resolve(
-                resolvedCorrectly,
+                kind,
                 _activeClaim,
                 run?.ShiftNumber ?? 1,
                 _baseCreditsApprove,

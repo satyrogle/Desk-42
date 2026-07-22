@@ -106,6 +106,68 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void MigrateLegacyRun_PreservesTotalsWithoutInventingDispositionHistory()
+        {
+            const string json = @"{
+              'SaveVersion': 1,
+              'Stats': {
+                'ClaimsProcessed': 7,
+                'HumaneResolutions': 5,
+                'BureaucraticResolutions': 2
+              },
+              'ResolvedClaims': [
+                { 'ClaimId': 'legacy-claim', 'IsResolved': true, 'WasHumane': true }
+              ]
+            }";
+
+            File.WriteAllText(Path.Combine(_tempSaveDirectory, "run.json"), json);
+            var run = SaveSystem.LoadRun();
+
+            Assert.AreEqual(SaveSystem.CurrentRunSaveVersion, run.SaveVersion);
+            Assert.AreEqual(5, run.Stats.LegacyHumaneResolutions);
+            Assert.AreEqual(2, run.Stats.LegacyBureaucraticResolutions);
+            Assert.AreEqual(0, run.Stats.ApprovedClaims);
+            Assert.AreEqual(0, run.Stats.DeniedClaims);
+            Assert.AreEqual(0, run.Stats.LiquifiedClaims);
+            Assert.AreEqual(ClaimResolutionKind.Unspecified,
+                run.ResolvedClaims[0].ResolutionKind);
+
+            Assert.IsTrue(SaveSystem.SaveRun(run));
+            string saved = File.ReadAllText(Path.Combine(_tempSaveDirectory, "run.json"));
+            StringAssert.DoesNotContain("\"HumaneResolutions\":", saved);
+            StringAssert.DoesNotContain("\"BureaucraticResolutions\":", saved);
+            StringAssert.DoesNotContain("\"WasHumane\":", saved);
+        }
+
+        [Test]
+        public void MigrateLegacyMeta_PreservesTotalsAndStartsFactualBucketsClean()
+        {
+            const string json = @"{
+              'SaveVersion': 2,
+              'LifetimeStats': {
+                'TotalClaimsProcessed': 11,
+                'TotalHumaneResolutions': 8,
+                'TotalBureaucraticResolutions': 3
+              }
+            }";
+
+            File.WriteAllText(Path.Combine(_tempSaveDirectory, "meta.json"), json);
+            var meta = SaveSystem.LoadMeta();
+
+            Assert.AreEqual(SaveSystem.CurrentMetaSaveVersion, meta.SaveVersion);
+            Assert.AreEqual(8, meta.LifetimeStats.LegacyTotalHumaneResolutions);
+            Assert.AreEqual(3, meta.LifetimeStats.LegacyTotalBureaucraticResolutions);
+            Assert.AreEqual(0, meta.LifetimeStats.TotalApprovedClaims);
+            Assert.AreEqual(0, meta.LifetimeStats.TotalDeniedClaims);
+            Assert.AreEqual(0, meta.LifetimeStats.TotalLiquifiedClaims);
+
+            Assert.IsTrue(SaveSystem.SaveMeta(meta));
+            string saved = File.ReadAllText(Path.Combine(_tempSaveDirectory, "meta.json"));
+            StringAssert.DoesNotContain("\"TotalHumaneResolutions\":", saved);
+            StringAssert.DoesNotContain("\"TotalBureaucraticResolutions\":", saved);
+        }
+
+        [Test]
         public void HasActiveRun_AfterSave_ReturnsTrue()
         {
             var run = new RunData { IsComplete = false, IsAbandoned = false };

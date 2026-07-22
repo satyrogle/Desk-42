@@ -98,13 +98,17 @@ namespace Desk42.UI
 #if DEVELOPMENT_BUILD
             Debugging.ConsensusAudit.MarkFeedbackOverlay();
 #endif
-            if (e.ResolvedCorrectly)
+            switch (e.Kind)
             {
-                ShowToast($"✓ CLAIM APPROVED  +¢{e.CreditsEarned}", ApproveColor, 36);
-            }
-            else
-            {
-                ShowToast("✗ CLAIM DENIED", DenyColor, 36);
+                case ClaimResolutionKind.Approve:
+                    ShowToast($"CLAIM APPROVED  CORPORATE CREDITS +¢{e.CreditsEarned}", ApproveColor, 30);
+                    break;
+                case ClaimResolutionKind.Deny:
+                    ShowToast("CLAIM DENIED  CORPORATE CREDITS ¢0", DenyColor, 30);
+                    break;
+                case ClaimResolutionKind.Liquify:
+                    ShowToast("CLAIM LIQUIFIED", BlockColor, 30);
+                    break;
             }
         }
 

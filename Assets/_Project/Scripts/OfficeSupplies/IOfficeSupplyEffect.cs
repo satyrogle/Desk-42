@@ -28,7 +28,7 @@ namespace Desk42.OfficeSupplies
         public string          LastCardInstanceId;
         public ClientStateID?  NewState;              // set on OnStateTransition
         public ClientStateID?  PrevState;
-        public bool            ClaimWasHumane;        // set on OnClaimResolved
+        public ClaimResolutionKind ResolutionKind;    // set on OnClaimResolved
         public OfficeHazardType? HazardType;          // set on OnHazard
 
         // ── Run state (read) ──────────────────────────────────

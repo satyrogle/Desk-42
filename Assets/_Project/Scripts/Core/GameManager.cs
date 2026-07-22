@@ -490,8 +490,9 @@ namespace Desk42.Core
             // Lifetime stats
             Meta.LifetimeStats.TotalShiftsCompleted++;
             Meta.LifetimeStats.TotalClaimsProcessed    += run.Stats.ClaimsProcessed;
-            Meta.LifetimeStats.TotalHumaneResolutions  += run.Stats.HumaneResolutions;
-            Meta.LifetimeStats.TotalBureaucraticResolutions += run.Stats.BureaucraticResolutions;
+            Meta.LifetimeStats.TotalApprovedClaims     += run.Stats.ApprovedClaims;
+            Meta.LifetimeStats.TotalDeniedClaims       += run.Stats.DeniedClaims;
+            Meta.LifetimeStats.TotalLiquifiedClaims    += run.Stats.LiquifiedClaims;
             Meta.LifetimeStats.TotalNDAsSigned         += run.Stats.NDAsSignedThisRun;
             Meta.LifetimeStats.TotalCardSlams          += run.Stats.CardSlamsTotal;
             Meta.LifetimeStats.TotalFugueStatesSurvived += run.Stats.FugueStatesSurvived;

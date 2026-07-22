@@ -254,7 +254,7 @@ namespace Desk42.Core
                 AwardCrossClaimBonus(runData.ActiveClaim, run, runData);
 
                 runData.ActiveClaim.IsResolved = true;
-                runData.ActiveClaim.WasHumane  = !e.ResolvedCorrectly;
+                runData.ActiveClaim.ResolutionKind = e.Kind;
                 runData.ResolvedClaims.Add(runData.ActiveClaim);
                 runData.ActiveClaim = null;
             }

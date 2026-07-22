@@ -77,7 +77,12 @@ namespace Desk42.Core
 
         // Resolution
         [JsonProperty] public bool    IsResolved;
-        [JsonProperty] public bool    WasHumane;
+        [JsonProperty] public ClaimResolutionKind ResolutionKind = ClaimResolutionKind.Unspecified;
+
+        // v1 compatibility only. Old saves did not contain enough information
+        // to distinguish Deny from Liquify, so no disposition is reconstructed.
+        [JsonProperty("WasHumane")]
+        private bool LegacyWasHumaneV1 { set { } }
 
         // Generated text content (so the same claim text shows on resume)
         [JsonProperty] public string  IncidentText;
@@ -127,8 +132,24 @@ namespace Desk42.Core
     public sealed class RunStatistics
     {
         [JsonProperty] public int   ClaimsProcessed;
-        [JsonProperty] public int   HumaneResolutions;
-        [JsonProperty] public int   BureaucraticResolutions;
+        [JsonProperty] public int   ApprovedClaims;
+        [JsonProperty] public int   DeniedClaims;
+        [JsonProperty] public int   LiquifiedClaims;
+        [JsonProperty] public int   LegacyHumaneResolutions;
+        [JsonProperty] public int   LegacyBureaucraticResolutions;
+
+        // Load-only v1 aliases. Preserve history without fabricating a split.
+        [JsonProperty("HumaneResolutions")]
+        private int LegacyHumaneResolutionsV1
+        {
+            set => LegacyHumaneResolutions = value;
+        }
+
+        [JsonProperty("BureaucraticResolutions")]
+        private int LegacyBureaucraticResolutionsV1
+        {
+            set => LegacyBureaucraticResolutions = value;
+        }
         [JsonProperty] public int   NDAsSignedThisRun;
         [JsonProperty] public int   CardSlamsTotal;
         [JsonProperty] public int   FugueStatesSurvived;
@@ -146,7 +167,7 @@ namespace Desk42.Core
     [Serializable]
     public sealed class RunData
     {
-        [JsonProperty] public int    SaveVersion     = 1;
+        [JsonProperty] public int    SaveVersion     = 2;
         [JsonProperty] public string SavedAtUtc;
         [JsonProperty] public bool   IsComplete;       // false = mid-run resume
         [JsonProperty] public bool   IsAbandoned;

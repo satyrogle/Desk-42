@@ -95,7 +95,7 @@ namespace Desk42.Meta.Analytics
             Analytics.Track("claim_resolved", new Dictionary<string, object>
             {
                 ["claim_id"]     = e.ClaimId,
-                ["bureaucratic"] = e.ResolvedCorrectly,
+                ["resolution_kind"] = e.Kind.ToString().ToLowerInvariant(),
                 ["credits"]      = e.CreditsEarned,
                 ["soul_cost"]    = e.SoulCost,
                 ["client"]       = e.ClientVariantId,

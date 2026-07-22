@@ -29,7 +29,7 @@ namespace Desk42.Tests.EditMode
             try
             {
                 var outcome = new ClaimResolutionOutcome(
-                    ClaimResolutionKind.Approve, true,
+                    ClaimResolutionKind.Approve,
                     creditsEarned: 12, sanityCost: 4f, soulCost: 1f);
                 run.ApplyClaimResolution(outcome);
 
@@ -38,6 +38,7 @@ namespace Desk42.Tests.EditMode
                 Assert.AreEqual(99f, data.SoulIntegrity);
                 Assert.AreEqual(1, data.ClaimsProcessedThisAnte);
                 Assert.AreEqual(1, data.Stats.ClaimsProcessed);
+                Assert.AreEqual(1, data.Stats.ApprovedClaims);
                 Assert.AreEqual(1, sanityEvents);
 
                 // ClaimResolvedEvent is now past tense and notification-only.

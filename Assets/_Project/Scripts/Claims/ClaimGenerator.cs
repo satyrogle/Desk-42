@@ -99,7 +99,7 @@ namespace Desk42.Claims
                 NDARequired     = ndaRequired,
                 NDASigned       = false,
                 IsResolved      = false,
-                WasHumane       = false,
+                ResolutionKind  = ClaimResolutionKind.Unspecified,
                 IncidentText    = incidentText,
                 ClaimantName    = claimantName,
                 ClaimAmount     = claimAmount,

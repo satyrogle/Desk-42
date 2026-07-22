@@ -133,7 +133,6 @@ namespace Desk42.Core
     public readonly struct ClaimResolvedEvent
     {
         public readonly string  ClaimId;
-        public readonly bool    ResolvedCorrectly;  // true = bureaucratic, false = humane
         public readonly ClaimResolutionKind Kind;
         public readonly int     CreditsEarned;
         public readonly float   SanityCost;         // positive = sanity lost
@@ -145,7 +144,6 @@ namespace Desk42.Core
             string clientId, string speciesId)
         {
             ClaimId           = claimId;
-            ResolvedCorrectly = outcome.ResolvedCorrectly;
             Kind              = outcome.Kind;
             CreditsEarned     = outcome.CreditsEarned;
             SanityCost        = outcome.SanityCost;

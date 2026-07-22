@@ -87,7 +87,8 @@ namespace Desk42.UI
                 && EntropyManager.CanActivate(EntropyLayer.ShadowBureaucrat)
                 && FeedbackBudget.RequestBurst(FeedbackKind.Particle))
             {
-                _deskItemReactor.PlayClaimResolutionReaction(resolution.ResolvedCorrectly);
+                _deskItemReactor.PlayClaimResolutionReaction(
+                    resolution.Kind == ClaimResolutionKind.Approve);
             }
 
             float combo = GameManager.Instance?.Run?.ComboMultiplier ?? 1f;
@@ -105,7 +106,7 @@ namespace Desk42.UI
             {
                 ShowQueueToast("Last client.");
             }
-            else if (!resolution.ResolvedCorrectly && queueRemaining >= 3)
+            else if (resolution.Kind == ClaimResolutionKind.Deny && queueRemaining >= 3)
             {
                 ShowQueueToast("The queue heard that.");
             }

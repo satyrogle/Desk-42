@@ -334,11 +334,24 @@ namespace Desk42.Core
 
         // ── Claim Stats ───────────────────────────────────────
 
-        public void RecordClaimResolved(bool humane)
+        public void RecordClaimResolved(ClaimResolutionKind kind)
         {
             _data.Stats.ClaimsProcessed++;
-            if (humane) _data.Stats.HumaneResolutions++;
-            else        _data.Stats.BureaucraticResolutions++;
+            switch (kind)
+            {
+                case ClaimResolutionKind.Approve:
+                    _data.Stats.ApprovedClaims++;
+                    break;
+                case ClaimResolutionKind.Deny:
+                    _data.Stats.DeniedClaims++;
+                    break;
+                case ClaimResolutionKind.Liquify:
+                    _data.Stats.LiquifiedClaims++;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(kind), kind,
+                        "A resolved claim requires a factual disposition.");
+            }
             _data.ClaimsProcessedThisAnte++;
         }
 
@@ -349,7 +362,7 @@ namespace Desk42.Core
         /// </summary>
         public void ApplyClaimResolution(ClaimResolutionOutcome outcome)
         {
-            RecordClaimResolved(!outcome.ResolvedCorrectly);
+            RecordClaimResolved(outcome.Kind);
             AddCredits(outcome.CreditsEarned);
 
             if (outcome.SanityCost > 0f)
@@ -357,7 +370,9 @@ namespace Desk42.Core
             if (outcome.SoulCost > 0f)
                 ModifySoulIntegrity(-outcome.SoulCost);
 
-            if (outcome.ResolvedCorrectly)
+            // Corporate preference, not correctness: Approve advances the
+            // Compliance Streak; Deny and Liquify end it.
+            if (outcome.Kind == ClaimResolutionKind.Approve)
                 _data.ComboMultiplier += 0.1f;
             else
                 _data.ComboMultiplier = 1.0f;

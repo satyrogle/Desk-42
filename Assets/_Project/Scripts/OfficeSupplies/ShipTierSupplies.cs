@@ -255,7 +255,7 @@ namespace Desk42.OfficeSupplies
     // 8. FILING CABINET
     //    Inbox / Uncommon
     //    "Alphabetically sorted by complaint severity."
-    //    On each humane claim resolution: shuffle the discard
+    //    On each denied claim: shuffle the discard
     //    pile back into the draw pile immediately (no waiting
     //    for the draw pile to empty).
     // ═══════════════════════════════════════════════════════════
@@ -266,12 +266,12 @@ namespace Desk42.OfficeSupplies
 
         public override void OnClaimResolved(SupplyContext ctx)
         {
-            if (!ctx.ClaimWasHumane) return;
+            if (ctx.ResolutionKind != ClaimResolutionKind.Deny) return;
             if (ctx.Deck == null || ctx.Deck.DiscardCount == 0) return;
 
             ctx.Deck.ReshuffleDiscardIntoDraw();
             ctx.EmitDarkHumour?.Invoke("filing_cabinet_reshuffle");
-            Debug.Log("[FilingCabinet] Humane resolution: discard reshuffled into draw.");
+            Debug.Log("[FilingCabinet] Denied claim: discard reshuffled into draw.");
         }
     }
 

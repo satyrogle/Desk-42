@@ -150,8 +150,24 @@ namespace Desk42.Core
         [JsonProperty] public int   TotalShiftsCompleted;
         [JsonProperty] public int   TotalShiftsFailed;
         [JsonProperty] public int   TotalClaimsProcessed;
-        [JsonProperty] public int   TotalHumaneResolutions;
-        [JsonProperty] public int   TotalBureaucraticResolutions;
+        [JsonProperty] public int   TotalApprovedClaims;
+        [JsonProperty] public int   TotalDeniedClaims;
+        [JsonProperty] public int   TotalLiquifiedClaims;
+        [JsonProperty] public int   LegacyTotalHumaneResolutions;
+        [JsonProperty] public int   LegacyTotalBureaucraticResolutions;
+
+        // Load-only v2 aliases. These totals remain legacy data and stop accruing.
+        [JsonProperty("TotalHumaneResolutions")]
+        private int LegacyTotalHumaneResolutionsV2
+        {
+            set => LegacyTotalHumaneResolutions = value;
+        }
+
+        [JsonProperty("TotalBureaucraticResolutions")]
+        private int LegacyTotalBureaucraticResolutionsV2
+        {
+            set => LegacyTotalBureaucraticResolutions = value;
+        }
         [JsonProperty] public int   TotalNDAsSigned;
         [JsonProperty] public int   TotalCardSlams;
         [JsonProperty] public float LowestSoulIntegrityReached;  // lifetime minimum
@@ -164,7 +180,7 @@ namespace Desk42.Core
     [Serializable]
     public sealed class MetaProgressData
     {
-        [JsonProperty] public int    SaveVersion = 2;      // for migration
+        [JsonProperty] public int    SaveVersion = 3;      // for migration
         [JsonProperty] public string LastSavedUtc;
 
         // Repeat Offender Database — keyed by client variant ID (SO GUID)
