@@ -22,15 +22,18 @@ namespace Desk42.Core
         public readonly int CreditsEarned;
         public readonly float SanityCost;
         public readonly float SoulCost;
+        public readonly int DarkIntelligenceGain;
 
         public ClaimResolutionOutcome(ClaimResolutionKind kind,
             int creditsEarned,
-            float sanityCost, float soulCost)
+            float sanityCost, float soulCost,
+            int darkIntelligenceGain = 0)
         {
             Kind = kind;
             CreditsEarned = Mathf.Max(0, creditsEarned);
             SanityCost = Mathf.Max(0f, sanityCost);
             SoulCost = Mathf.Max(0f, soulCost);
+            DarkIntelligenceGain = Mathf.Max(0, darkIntelligenceGain);
         }
     }
 
@@ -73,6 +76,7 @@ namespace Desk42.Core
         }
 
         public static ClaimResolutionOutcome Liquify()
-            => new(ClaimResolutionKind.Liquify, 0, 0f, 0f);
+            => new(ClaimResolutionKind.Liquify, 0, 0f, 0f,
+                darkIntelligenceGain: 3);
     }
 }

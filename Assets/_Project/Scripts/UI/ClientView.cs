@@ -176,6 +176,7 @@ namespace Desk42.UI
 
         private void HandleCardSlammed(CardSlammedEvent e)
         {
+            if (!e.Result.IsSuccess) return;
             (_fidgetDriver as BSM.IClientFidgetDriver)?.OnSlamRecoil(e.CardType);
             (_deskItems as BSM.IDeskItemReactor)?.OnCardSlammed(e.CardType);
         }

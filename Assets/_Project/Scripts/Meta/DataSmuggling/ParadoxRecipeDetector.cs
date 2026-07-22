@@ -69,6 +69,7 @@ namespace Desk42.Meta.DataSmuggling
 
         private void HandleCardSlammed(CardSlammedEvent e)
         {
+            if (!e.Result.IsSuccess) return;
             if (!(GameManager.Instance?.IsPhaseUnlocked(_requiredPhase) ?? false)) return;
 
             _sequence.Add(e.CardType);

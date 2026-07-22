@@ -162,23 +162,26 @@ namespace Desk42.Encounter
         public void Liquify()
         {
             if (!_encounterActive || _activeClaim == null) return;
-            _encounterActive = false;
 
             var run = GameManager.Instance?.Run;
+            if (run == null)
+            {
+                Debug.LogError("[EncounterManager] Cannot liquify without an active run.");
+                return;
+            }
 
-            // Grant Dark Intelligence (the whole reason for the tube)
-            if (run?.RawData != null)
-                run.RawData.DarkIntelligence += 3;
+            _encounterActive = false;
 
             // Liquify is an explicit policy outcome: it advances the shift
-            // while preserving its existing zero-resource-cost behaviour.
+            // while preserving its existing zero-resource-cost behaviour. Its
+            // Dark Intelligence gain is applied and reported through one result.
             var outcome = ClaimResolutionConsequencePolicy.Liquify();
-            run?.ApplyClaimResolution(outcome);
-            RumorMill.PublishDeferred(new ClaimResolvedEvent(
-                _activeClaim.ClaimId,
+            var applied = run.ApplyClaimResolution(
                 outcome,
+                _activeClaim.ClaimId,
                 _activeClaim.ClientVariantId,
-                _activeClaim.ClientSpeciesId));
+                _activeClaim.ClientSpeciesId);
+            RumorMill.PublishDeferred(new ClaimResolvedEvent(applied));
 
             Debug.Log($"[EncounterManager] LIQUIFIED '{_activeClaim.ClaimId}'. +3 Dark Intel.");
 
@@ -204,9 +207,14 @@ namespace Desk42.Encounter
                 return;
             }
 
-            _encounterActive = false;
-
             var run = GameManager.Instance?.Run;
+            if (run == null)
+            {
+                Debug.LogError("[EncounterManager] Cannot resolve a claim without an active run.");
+                return;
+            }
+
+            _encounterActive = false;
 
             var outcome = ClaimResolutionConsequencePolicy.Resolve(
                 kind,
@@ -217,17 +225,18 @@ namespace Desk42.Encounter
 
             // Apply synchronously at the publish site. The deferred event below
             // is notification-only and cannot re-apply resources during flush.
-            run?.ApplyClaimResolution(outcome);
-
-            RumorMill.PublishDeferred(new ClaimResolvedEvent(
-                _activeClaim.ClaimId,
+            var applied = run.ApplyClaimResolution(
                 outcome,
+                _activeClaim.ClaimId,
                 _activeClaim.ClientVariantId,
-                _activeClaim.ClientSpeciesId));
+                _activeClaim.ClientSpeciesId);
+
+            RumorMill.PublishDeferred(new ClaimResolvedEvent(applied));
 
             Debug.Log($"[EncounterManager] Resolved '{_activeClaim.ClaimId}' — " +
-                      $"{outcome.Kind}. Credits: {outcome.CreditsEarned}, " +
-                      $"Sanity: -{outcome.SanityCost}, Soul: -{outcome.SoulCost}.");
+                      $"{applied.Kind}. Credits: {applied.CreditsDelta}, " +
+                      $"Sanity: {applied.SanityDelta}, Soul: {applied.SoulIntegrityDelta}, " +
+                      $"Dark Intel: {applied.DarkIntelligenceDelta}.");
 
             TryTriggerDilemma(run);
 

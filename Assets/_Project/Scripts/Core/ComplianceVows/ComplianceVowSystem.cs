@@ -58,6 +58,8 @@ namespace Desk42.Core
 
         private void HandleCardSlammed_ReplyAll(CardSlammedEvent e)
         {
+            if (!e.Result.IsSuccess) return;
+
             int rank = Rank("reply_all_chain");
             if (rank <= 0) return;
 
@@ -94,6 +96,8 @@ namespace Desk42.Core
 
         private void HandleCardSlammed_CrossTraining(CardSlammedEvent e)
         {
+            if (!e.Result.IsSuccess) return;
+
             int rank = Rank("cross_training_initiative");
             if (rank <= 0) return;
 

@@ -58,11 +58,54 @@ namespace Desk42.RedTape
         /// </summary>
         public SlamResult TrySlam(PunchCardData card, string cardInstanceId)
         {
-            if (_activeClient == null)
-                return new SlamResult(SlamOutcome.NoActiveClient, card);
-
             if (card == null)
-                return new SlamResult(SlamOutcome.InvalidCard, null);
+            {
+                var invalid = new SlamResult(SlamOutcome.InvalidCard, null)
+                {
+                    Reason = "No punch card data was supplied."
+                };
+                var applied = new AppliedCardResolution(
+                    default,
+                    cardInstanceId,
+                    _activeClient?.ClientVariantId,
+                    CardSlamOutcome.InvalidCard,
+                    invalid.Reason,
+                    _activeClient?.CurrentMoodState,
+                    _activeClient?.CurrentMoodState,
+                    creditsDelta: 0,
+                    sanityDelta: 0f,
+                    soulIntegrityDelta: 0f,
+                    requiredCredits: 0,
+                    fatigueBefore: 0,
+                    fatigueAfter: 0,
+                    default,
+                    hasCascade: false);
+                RumorMill.Publish(new CardSlammedEvent(applied));
+                return invalid;
+            }
+
+            var run = GameManager.Instance?.Run;
+            int creditsBefore = run?.Credits ?? 0;
+            float sanityBefore = run?.Sanity ?? 0f;
+            float soulBefore = run?.SoulIntegrity ?? 0f;
+            int fatigueBefore = _fatigue?.GetFatigue(cardInstanceId) ?? 0;
+
+            if (_activeClient == null)
+            {
+                var noClient = new SlamResult(SlamOutcome.NoActiveClient, card)
+                {
+                    Reason = "No active client."
+                };
+                PublishAppliedCard(card, cardInstanceId, null,
+                    CardSlamOutcome.NoActiveClient, noClient.Reason,
+                    null, null, creditsBefore, sanityBefore, soulBefore,
+                    requiredCredits: 0, fatigueBefore,
+                    default, hasCascade: false);
+                return noClient;
+            }
+
+            string clientId = _activeClient.ClientVariantId;
+            ClientStateID stateBefore = _activeClient.CurrentMoodState;
 
             // ── Step 0: ATB edge case ──────────────────────────
             // If the client's impatience gauge has overflowed, the state
@@ -81,8 +124,14 @@ namespace Desk42.RedTape
                 var fatigueOutcome = _fatigue.IsJammed(cardInstanceId)
                     ? SlamOutcome.CardJammed
                     : SlamOutcome.CardCrumpled;
-                PublishSlamEvent(card, cardInstanceId, CardSlamOutcome.CardJammed);
-                return new SlamResult(fatigueOutcome, card) { Reason = reason };
+                var result = new SlamResult(fatigueOutcome, card) { Reason = reason };
+                PublishAppliedCard(card, cardInstanceId, clientId,
+                    MapToEventOutcome(fatigueOutcome), result.Reason,
+                    stateBefore, _activeClient.CurrentMoodState,
+                    creditsBefore, sanityBefore, soulBefore,
+                    requiredCredits: 0, fatigueBefore,
+                    default, hasCascade: false);
+                return result;
             }
 
             // ── Supply cascade: one evaluation feeds both mechanics & UI ──
@@ -96,6 +145,7 @@ namespace Desk42.RedTape
 
             // ── Step 2: Credit check ──────────────────────────
             int effectiveCost = ApplyFlatCreditModifiers(card, cascade.FinalCreditCost);
+            int creditsSpent = 0;
 
             // ── Vow: Zero-Based Budgeting — convert credit cost to sanity ──
             float sanityCostFraction = Core.ComplianceVowSystem.GetSanityCostFraction();
@@ -105,19 +155,41 @@ namespace Desk42.RedTape
                 int creditPortion = Mathf.RoundToInt(effectiveCost * (1f - sanityCostFraction));
 
                 if (creditPortion > 0 &&
-                    !(GameManager.Instance?.Run?.SpendCredits(creditPortion) ?? false))
+                    !(run?.SpendCredits(creditPortion) ?? false))
                 {
-                    PublishSlamEvent(card, cardInstanceId, CardSlamOutcome.InsufficientCredits, effectiveCost);
-                    return new SlamResult(SlamOutcome.InsufficientCredits, card);
+                    var insufficient = new SlamResult(SlamOutcome.InsufficientCredits, card)
+                    {
+                        Reason = "Current corporate credit balance is too low."
+                    };
+                    PublishAppliedCard(card, cardInstanceId, clientId,
+                        CardSlamOutcome.InsufficientCredits, insufficient.Reason,
+                        stateBefore, _activeClient.CurrentMoodState,
+                        creditsBefore, sanityBefore, soulBefore,
+                        creditPortion, fatigueBefore, cascade, hasCascade: true);
+                    return insufficient;
                 }
 
-                GameManager.Instance?.Run?.ModifySanity(-sanityCost);
+                creditsSpent = creditPortion;
+
+                run?.ModifySanity(-sanityCost);
             }
             else if (effectiveCost > 0 &&
-                !(GameManager.Instance?.Run?.SpendCredits(effectiveCost) ?? false))
+                !(run?.SpendCredits(effectiveCost) ?? false))
             {
-                PublishSlamEvent(card, cardInstanceId, CardSlamOutcome.InsufficientCredits, effectiveCost);
-                return new SlamResult(SlamOutcome.InsufficientCredits, card);
+                var insufficient = new SlamResult(SlamOutcome.InsufficientCredits, card)
+                {
+                    Reason = "Current corporate credit balance is too low."
+                };
+                PublishAppliedCard(card, cardInstanceId, clientId,
+                    CardSlamOutcome.InsufficientCredits, insufficient.Reason,
+                    stateBefore, _activeClient.CurrentMoodState,
+                    creditsBefore, sanityBefore, soulBefore,
+                    effectiveCost, fatigueBefore, cascade, hasCascade: true);
+                return insufficient;
+            }
+            else
+            {
+                creditsSpent = effectiveCost;
             }
 
             // ── Step 3: Attempt injection on client BSM ───────
@@ -128,11 +200,17 @@ namespace Desk42.RedTape
             if (injectionResult != ClientStateMachine.InjectionResult.Success)
             {
                 // Refund credits if injection failed
-                if (effectiveCost > 0)
-                    GameManager.Instance?.Run?.AddCredits(effectiveCost);
+                if (creditsSpent > 0)
+                    run?.RefundFailedSpend(creditsSpent);
 
                 var mapped = MapInjectionFailure(injectionResult, card);
-                PublishSlamEvent(card, cardInstanceId, MapToEventOutcome(mapped.Outcome));
+                if (string.IsNullOrWhiteSpace(mapped.Reason))
+                    mapped.Reason = "This card produced no state change.";
+                PublishAppliedCard(card, cardInstanceId, clientId,
+                    MapToEventOutcome(mapped.Outcome), mapped.Reason,
+                    stateBefore, _activeClient.CurrentMoodState,
+                    creditsBefore, sanityBefore, soulBefore,
+                    requiredCredits: 0, fatigueBefore, cascade, hasCascade: true);
                 return mapped;
             }
 
@@ -140,7 +218,6 @@ namespace Desk42.RedTape
             var fatigueResult = _fatigue.RecordPlay(cardInstanceId, card);
 
             // ── Step 4b: Move card from Hand → Discard/Archive ────
-            var run = GameManager.Instance?.Run;
             if (run != null)
             {
                 var cardInst = run.Hand.FindById(cardInstanceId);
@@ -153,7 +230,7 @@ namespace Desk42.RedTape
             // is zeroed below phase 3 (see BuildCascade), so the old phase /
             // SoulCost gate is preserved without re-running the chain.
             if (cascade.FinalSoulCost > 0f)
-                GameManager.Instance?.Run?.ModifySoulIntegrity(-cascade.FinalSoulCost);
+                run?.ModifySoulIntegrity(-cascade.FinalSoulCost);
 
             // ── Step 5b: Render the resolution (FF-style cascade) ────
             RumorMill.Publish(new CardCascadeResolvedEvent(cascade, cardInstanceId));
@@ -162,15 +239,13 @@ namespace Desk42.RedTape
             OfficeEnvironmentState.ApplyCardEffect(card.CardType);
 
             // ── Step 6: Publish to Rumor Mill ─────────────────
-            GameManager.Instance?.Run?.RecordCardSlam();
+            run?.RecordCardSlam();
 
-            RumorMill.Publish(new CardSlammedEvent(
-                card.CardType,
-                cardInstanceId,
-                _activeClient.ClientVariantId,
-                _activeClient.CurrentMoodState,
-                _fatigue.GetFatigue(cardInstanceId),
-                CardSlamOutcome.Success));
+            PublishAppliedCard(card, cardInstanceId, clientId,
+                CardSlamOutcome.Success, null,
+                stateBefore, _activeClient.CurrentMoodState,
+                creditsBefore, sanityBefore, soulBefore,
+                requiredCredits: 0, fatigueBefore, cascade, hasCascade: true);
 
             // ── Step 7: Update Repeat Offender DB ────────────
             GameManager.Instance?.Meta?.RecordCardUsed(
@@ -338,18 +413,40 @@ namespace Desk42.RedTape
             };
         }
 
-        private void PublishSlamEvent(PunchCardData card, string cardInstanceId,
-            CardSlamOutcome outcome, int creditCost = 0)
+        private void PublishAppliedCard(
+            PunchCardData card,
+            string cardInstanceId,
+            string clientId,
+            CardSlamOutcome outcome,
+            string failureReason,
+            ClientStateID? stateBefore,
+            ClientStateID? stateAfter,
+            int creditsBefore,
+            float sanityBefore,
+            float soulBefore,
+            int requiredCredits,
+            int fatigueBefore,
+            SynergyResolutionPacket cascade,
+            bool hasCascade)
         {
-            if (_activeClient == null) return;
-            RumorMill.Publish(new CardSlammedEvent(
+            var run = GameManager.Instance?.Run;
+            var applied = new AppliedCardResolution(
                 card.CardType,
                 cardInstanceId,
-                _activeClient.ClientVariantId,
-                _activeClient.CurrentMoodState,
-                _fatigue?.GetFatigue(cardInstanceId) ?? 0,
+                clientId,
                 outcome,
-                creditCost));
+                failureReason,
+                stateBefore,
+                stateAfter,
+                (run?.Credits ?? creditsBefore) - creditsBefore,
+                (run?.Sanity ?? sanityBefore) - sanityBefore,
+                (run?.SoulIntegrity ?? soulBefore) - soulBefore,
+                requiredCredits,
+                fatigueBefore,
+                _fatigue?.GetFatigue(cardInstanceId) ?? fatigueBefore,
+                cascade,
+                hasCascade);
+            RumorMill.Publish(new CardSlammedEvent(applied));
         }
 
         private static CardSlamOutcome MapToEventOutcome(SlamOutcome outcome)
@@ -360,6 +457,9 @@ namespace Desk42.RedTape
                 SlamOutcome.ClientNotResponding        => CardSlamOutcome.ClientNotResponding,
                 SlamOutcome.InsufficientCredits        => CardSlamOutcome.InsufficientCredits,
                 SlamOutcome.CardJammed                 => CardSlamOutcome.CardJammed,
+                SlamOutcome.CardCrumpled               => CardSlamOutcome.CardCrumpled,
+                SlamOutcome.NoActiveClient             => CardSlamOutcome.NoActiveClient,
+                SlamOutcome.InvalidCard                => CardSlamOutcome.InvalidCard,
                 _                                      => CardSlamOutcome.BlockedByState,
             };
         }

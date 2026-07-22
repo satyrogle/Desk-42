@@ -188,6 +188,8 @@ namespace Desk42.OfficeSupplies
 
         private void HandleCardSlammed(CardSlammedEvent e)
         {
+            if (!e.Result.IsSuccess) return;
+
             var ctx = MakeCtx();
             ctx.LastCardType       = e.CardType;
             ctx.LastCardInstanceId = e.CardInstanceId;

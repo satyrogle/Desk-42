@@ -45,6 +45,8 @@ namespace Desk42.Core
 
         private void HandleCardSlammed(CardSlammedEvent e)
         {
+            if (!e.Result.IsSuccess) return;
+
             // Guard: don't react to our own auto-slams
             if (_internIsPlaying) return;
 

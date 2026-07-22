@@ -73,9 +73,12 @@ namespace Desk42.Core
         Success,
         BlockedByExemption,
         CardJammed,
+        CardCrumpled,
         InsufficientCredits,
         ClientNotResponding,
         BlockedByState,
+        NoActiveClient,
+        InvalidCard,
     }
 
     // ── Event Structs ─────────────────────────────────────────
@@ -84,28 +87,27 @@ namespace Desk42.Core
     /// <summary>Player slammed a punch card into the machine.</summary>
     public readonly struct CardSlammedEvent
     {
-        public readonly PunchCardType    CardType;
-        public readonly string           CardInstanceId;   // per-run GUID (fatigue key)
-        public readonly string           ClientVariantId;
-        public readonly ClientStateID    StateBefore;
-        public readonly int              CurrentFatigue;   // how many times used this shift
-        public readonly CardSlamOutcome  Outcome;
-        public readonly int              CreditCost;       // shown on InsufficientCredits toast
+        public readonly AppliedCardResolution Result;
+
+        public PunchCardType CardType => Result.CardType;
+        public string CardInstanceId => Result.CardInstanceId;
+        public string ClientVariantId => Result.ClientVariantId;
+        public ClientStateID? StateBefore => Result.StateBefore;
+        public ClientStateID? StateAfter => Result.StateAfter;
+        public int CurrentFatigue => Result.FatigueAfter;
+        public CardSlamOutcome Outcome => Result.Outcome;
+        public int RequiredCredits => Result.RequiredCredits;
+        public string FailureReason => Result.FailureReason;
+        public int CreditsDelta => Result.CreditsDelta;
+        public float SanityDelta => Result.SanityDelta;
+        public float SoulIntegrityDelta => Result.SoulIntegrityDelta;
 
         // Backward-compat alias
         public string CardId => CardInstanceId;
 
-        public CardSlammedEvent(PunchCardType type, string cardInstanceId,
-            string clientId, ClientStateID before, int fatigue,
-            CardSlamOutcome outcome = CardSlamOutcome.Success, int creditCost = 0)
+        public CardSlammedEvent(AppliedCardResolution result)
         {
-            CardType        = type;
-            CardInstanceId  = cardInstanceId;
-            ClientVariantId = clientId;
-            StateBefore     = before;
-            CurrentFatigue  = fatigue;
-            Outcome         = outcome;
-            CreditCost      = creditCost;
+            Result = result;
         }
     }
 
@@ -129,27 +131,23 @@ namespace Desk42.Core
         }
     }
 
-    /// <summary>A claim was resolved — includes the moral choice made.</summary>
+    /// <summary>A claim was resolved — includes its factual disposition and applied result.</summary>
     public readonly struct ClaimResolvedEvent
     {
-        public readonly string  ClaimId;
-        public readonly ClaimResolutionKind Kind;
-        public readonly int     CreditsEarned;
-        public readonly float   SanityCost;         // positive = sanity lost
-        public readonly float   SoulCost;           // positive = soul lost
-        public readonly string  ClientVariantId;
-        public readonly string  ClientSpeciesId;
+        public readonly AppliedClaimResolution Result;
 
-        public ClaimResolvedEvent(string claimId, ClaimResolutionOutcome outcome,
-            string clientId, string speciesId)
+        public string ClaimId => Result.ClaimId;
+        public ClaimResolutionKind Kind => Result.Kind;
+        public int CreditsDelta => Result.CreditsDelta;
+        public float SanityDelta => Result.SanityDelta;
+        public float SoulIntegrityDelta => Result.SoulIntegrityDelta;
+        public int DarkIntelligenceDelta => Result.DarkIntelligenceDelta;
+        public string ClientVariantId => Result.ClientVariantId;
+        public string ClientSpeciesId => Result.ClientSpeciesId;
+
+        public ClaimResolvedEvent(AppliedClaimResolution result)
         {
-            ClaimId           = claimId;
-            Kind              = outcome.Kind;
-            CreditsEarned     = outcome.CreditsEarned;
-            SanityCost        = outcome.SanityCost;
-            SoulCost          = outcome.SoulCost;
-            ClientVariantId   = clientId;
-            ClientSpeciesId   = speciesId;
+            Result = result;
         }
     }
 

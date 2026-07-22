@@ -3,8 +3,7 @@
 //
 // Self-bootstrapping visual feedback layer. Subscribes to
 // RumorMill events and shows animated toast messages for:
-//   - Claim resolution (APPROVED / DENIED with credit amount)
-//   - Card slam results (SUCCESS / JAMMED / CRUMPLED / BLOCKED)
+//   - Persistent factual claim receipts (APPROVE / DENY / LIQUIFY)
 //   - Phase transitions (MORNING → LUNCH → AFTERNOON → OVERTIME)
 //   - Credit gains/losses
 //
@@ -33,6 +32,8 @@ namespace Desk42.UI
         // ── State ─────────────────────────────────────────────
 
         private Transform _toastContainer;
+        private GameObject _receiptPanel;
+        private TMP_Text _receiptText;
         private readonly Queue<GameObject> _activeToasts = new();
 
         // ── Colors ────────────────────────────────────────────
@@ -50,12 +51,12 @@ namespace Desk42.UI
         private void Awake()
         {
             BuildToastContainer();
+            BuildReceiptPanel();
         }
 
         private void OnEnable()
         {
             RumorMill.OnClaimResolved       += HandleClaimResolved;
-            RumorMill.OnCardSlammed         += HandleCardSlammed;
             RumorMill.OnShiftPhaseChanged   += HandlePhaseChanged;
             RumorMill.OnCounterTraitGenerated += HandleCounterTrait;
         }
@@ -63,7 +64,6 @@ namespace Desk42.UI
         private void OnDisable()
         {
             RumorMill.OnClaimResolved       -= HandleClaimResolved;
-            RumorMill.OnCardSlammed         -= HandleCardSlammed;
             RumorMill.OnShiftPhaseChanged   -= HandlePhaseChanged;
             RumorMill.OnCounterTraitGenerated -= HandleCounterTrait;
         }
@@ -98,53 +98,84 @@ namespace Desk42.UI
 #if DEVELOPMENT_BUILD
             Debugging.ConsensusAudit.MarkFeedbackOverlay();
 #endif
-            switch (e.Kind)
-            {
-                case ClaimResolutionKind.Approve:
-                    ShowToast($"CLAIM APPROVED  CORPORATE CREDITS +¢{e.CreditsEarned}", ApproveColor, 30);
-                    break;
-                case ClaimResolutionKind.Deny:
-                    ShowToast("CLAIM DENIED  CORPORATE CREDITS ¢0", DenyColor, 30);
-                    break;
-                case ClaimResolutionKind.Liquify:
-                    ShowToast("CLAIM LIQUIFIED", BlockColor, 30);
-                    break;
-            }
+            ShowClaimReceipt(e.Result);
         }
 
-        private void HandleCardSlammed(CardSlammedEvent e)
+        private static string FormatSignedCredits(int delta)
+            => delta > 0 ? $"+¢{delta}" : delta < 0 ? $"-¢{-delta}" : "¢0";
+
+        private void BuildReceiptPanel()
         {
-            string cardType = e.CardType.ToString().ToUpper();
+            _receiptPanel = new GameObject("LatestClaimReceipt");
+            _receiptPanel.transform.SetParent(transform, false);
+            var rt = _receiptPanel.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(1f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.sizeDelta = new Vector2(420f, 248f);
+            rt.anchoredPosition = new Vector2(-24f, -138f);
 
-            switch (e.Outcome)
+            var paper = _receiptPanel.AddComponent<Image>();
+            paper.color = new Color(0.90f, 0.87f, 0.75f, 0.97f);
+            paper.raycastTarget = false;
+            var outline = _receiptPanel.AddComponent<Outline>();
+            outline.effectColor = new Color(0.12f, 0.17f, 0.18f, 0.95f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            var textObject = new GameObject("ReceiptText");
+            textObject.transform.SetParent(_receiptPanel.transform, false);
+            var textRt = textObject.AddComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = new Vector2(20f, 16f);
+            textRt.offsetMax = new Vector2(-20f, -16f);
+
+            _receiptText = textObject.AddComponent<TextMeshProUGUI>();
+            _receiptText.fontSize = Desk42.Accessibility.AccessibilitySettings.Scaled(21f);
+            _receiptText.color = new Color(0.08f, 0.13f, 0.14f, 1f);
+            _receiptText.alignment = TextAlignmentOptions.TopLeft;
+            _receiptText.enableWordWrapping = true;
+            _receiptText.raycastTarget = false;
+            _receiptPanel.SetActive(false);
+        }
+
+        private void ShowClaimReceipt(AppliedClaimResolution result)
+        {
+            if (_receiptPanel == null) BuildReceiptPanel();
+
+            string heading = result.Kind switch
             {
-                case CardSlamOutcome.Success:
-                    if (e.CurrentFatigue > 0 && e.CurrentFatigue >= 3)
-                        ShowToast($"⚠ {cardType} JAMMED", JamColor, 22);
-                    else
-                        ShowToast($"▸ {cardType} FILED", SlamColor, 18);
-                    break;
+                ClaimResolutionKind.Approve => "CLAIM APPROVED",
+                ClaimResolutionKind.Deny => "CLAIM DENIED",
+                ClaimResolutionKind.Liquify => "CLAIM LIQUIFIED",
+                _ => "CLAIM RESOLVED",
+            };
 
-                case CardSlamOutcome.BlockedByExemption:
-                    ShowToast($"⚡ COUNTER-TRAIT: {cardType}", BlockColor, 26);
-                    break;
+            string quota = result.QuotaRequired > 0
+                ? $"{result.QuotaAfter}/{result.QuotaRequired}"
+                : result.QuotaAfter.ToString();
+            string streak = Mathf.Approximately(
+                    result.ComplianceStreakBefore, result.ComplianceStreakAfter)
+                ? $"{result.ComplianceStreakAfter:0.0}x"
+                : $"{result.ComplianceStreakBefore:0.0}x → {result.ComplianceStreakAfter:0.0}x";
 
-                case CardSlamOutcome.CardJammed:
-                    ShowToast($"⚠ {cardType} JAMMED", JamColor, 22);
-                    break;
+            _receiptText.text =
+                $"<b>{heading}</b>\n" +
+                $"Corporate credits  {FormatSignedCredits(result.CreditsDelta)}\n" +
+                $"Sanity  {FormatSignedAmount(result.SanityDelta)}\n" +
+                $"Soul integrity  {FormatSignedAmount(result.SoulIntegrityDelta)}\n" +
+                $"Dark intelligence  {FormatSignedAmount(result.DarkIntelligenceDelta)}\n" +
+                $"Quota  {quota}\n" +
+                $"Compliance streak  {streak}";
+            _receiptPanel.SetActive(true);
+            _receiptPanel.transform.SetAsLastSibling();
+        }
 
-                case CardSlamOutcome.InsufficientCredits:
-                    ShowToast($"✗ INSUFFICIENT CREDITS (¢{e.CreditCost})", DenyColor, 22);
-                    break;
-
-                case CardSlamOutcome.ClientNotResponding:
-                    ShowToast("✗ CLIENT NOT RESPONDING", DenyColor, 22);
-                    break;
-
-                case CardSlamOutcome.BlockedByState:
-                    ShowToast($"✗ {cardType} BLOCKED", BlockColor, 22);
-                    break;
-            }
+        private static string FormatSignedAmount(float delta)
+        {
+            if (Mathf.Approximately(delta, 0f)) return "0";
+            string sign = delta > 0f ? "+" : "−";
+            return $"{sign}{Mathf.Abs(delta):0.##}";
         }
 
         private void HandleCounterTrait(CounterTraitGeneratedEvent e)

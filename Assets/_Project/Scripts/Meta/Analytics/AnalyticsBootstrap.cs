@@ -96,8 +96,10 @@ namespace Desk42.Meta.Analytics
             {
                 ["claim_id"]     = e.ClaimId,
                 ["resolution_kind"] = e.Kind.ToString().ToLowerInvariant(),
-                ["credits"]      = e.CreditsEarned,
-                ["soul_cost"]    = e.SoulCost,
+                ["credits_delta"] = e.CreditsDelta,
+                ["sanity_delta"] = e.SanityDelta,
+                ["soul_delta"]   = e.SoulIntegrityDelta,
+                ["dark_intelligence_delta"] = e.DarkIntelligenceDelta,
                 ["client"]       = e.ClientVariantId,
                 ["species"]      = e.ClientSpeciesId,
             });

@@ -151,8 +151,9 @@ namespace Desk42.Tutorial
             if (CurrentStep().AdvanceOn == TutorialTrigger.ClaimQueued) Advance();
         }
 
-        private void HandleCardSlammed(CardSlammedEvent _)
+        private void HandleCardSlammed(CardSlammedEvent e)
         {
+            if (!e.Result.IsSuccess) return;
             if (CurrentStep().AdvanceOn == TutorialTrigger.CardSlammed) Advance();
         }
 

@@ -210,6 +210,18 @@ namespace Desk42.Core
             return true;
         }
 
+        /// <summary>
+        /// Reverses a credit spend that belonged to an action which did not
+        /// apply. This is not income: both the balance and spend statistic are
+        /// restored to their pre-attempt values.
+        /// </summary>
+        public void RefundFailedSpend(int amount)
+        {
+            if (amount <= 0) return;
+            _data.CorporateCredits += amount;
+            _data.Stats.CreditsSpent = Mathf.Max(0, _data.Stats.CreditsSpent - amount);
+        }
+
         /// <summary>Applies a signed credit delta, clamped at zero.</summary>
         public void ModifyCredits(int delta)
         {
@@ -360,8 +372,19 @@ namespace Desk42.Core
         /// ClaimResolvedEvent is enqueued. Event subscribers are notification-
         /// only and must not mutate these resources again.
         /// </summary>
-        public void ApplyClaimResolution(ClaimResolutionOutcome outcome)
+        public AppliedClaimResolution ApplyClaimResolution(
+            ClaimResolutionOutcome outcome,
+            string claimId,
+            string clientVariantId,
+            string clientSpeciesId)
         {
+            int creditsBefore = _data.CorporateCredits;
+            float sanityBefore = _data.Sanity;
+            float soulBefore = _data.SoulIntegrity;
+            int darkIntelligenceBefore = _data.DarkIntelligence;
+            int quotaBefore = _data.ClaimsProcessedThisAnte;
+            float streakBefore = _data.ComboMultiplier;
+
             RecordClaimResolved(outcome.Kind);
             AddCredits(outcome.CreditsEarned);
 
@@ -369,6 +392,8 @@ namespace Desk42.Core
                 ModifySanity(-outcome.SanityCost);
             if (outcome.SoulCost > 0f)
                 ModifySoulIntegrity(-outcome.SoulCost);
+            if (outcome.DarkIntelligenceGain > 0)
+                _data.DarkIntelligence += outcome.DarkIntelligenceGain;
 
             // Corporate preference, not correctness: Approve advances the
             // Compliance Streak; Deny and Liquify end it.
@@ -380,6 +405,21 @@ namespace Desk42.Core
             int resetInterval = ComplianceVowSystem.GetComboResetInterval();
             if (resetInterval > 0 && _data.Stats.ClaimsProcessed % resetInterval == 0)
                 _data.ComboMultiplier = 1.0f;
+
+            return new AppliedClaimResolution(
+                claimId,
+                clientVariantId,
+                clientSpeciesId,
+                outcome.Kind,
+                _data.CorporateCredits - creditsBefore,
+                _data.Sanity - sanityBefore,
+                _data.SoulIntegrity - soulBefore,
+                _data.DarkIntelligence - darkIntelligenceBefore,
+                quotaBefore,
+                _data.ClaimsProcessedThisAnte,
+                _data.QuotaForCurrentAnte,
+                streakBefore,
+                _data.ComboMultiplier);
         }
 
         public void RecordCardSlam()
