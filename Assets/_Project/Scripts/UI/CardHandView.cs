@@ -41,12 +41,22 @@ namespace Desk42.UI
         {
             RumorMill.OnShiftLifecycle += HandleShiftLifecycle;
             RumorMill.OnClaimQueued   += HandleClaimQueued;
+            RumorMill.OnStateTransition += HandleProjectionChanged;
+            RumorMill.OnCardSlammed += HandleProjectionChanged;
+            RumorMill.OnCounterTraitGenerated += HandleProjectionChanged;
+            RumorMill.OnSupplySignal += HandleProjectionChanged;
+            RumorMill.OnOfficeHazard += HandleProjectionChanged;
         }
 
         private void OnDisable()
         {
             RumorMill.OnShiftLifecycle -= HandleShiftLifecycle;
             RumorMill.OnClaimQueued   -= HandleClaimQueued;
+            RumorMill.OnStateTransition -= HandleProjectionChanged;
+            RumorMill.OnCardSlammed -= HandleProjectionChanged;
+            RumorMill.OnCounterTraitGenerated -= HandleProjectionChanged;
+            RumorMill.OnSupplySignal -= HandleProjectionChanged;
+            RumorMill.OnOfficeHazard -= HandleProjectionChanged;
             UnsubscribeHand();
         }
 
@@ -77,6 +87,18 @@ namespace Desk42.UI
         {
             TryBindHand();
             Rebuild();
+        }
+
+        private void HandleProjectionChanged(StateTransitionEvent e) => RefreshFaces();
+        private void HandleProjectionChanged(CardSlammedEvent e) => RefreshFaces();
+        private void HandleProjectionChanged(CounterTraitGeneratedEvent e) => RefreshFaces();
+        private void HandleProjectionChanged(SupplySignalEvent e) => RefreshFaces();
+        private void HandleProjectionChanged(OfficeHazardEvent e) => RefreshFaces();
+
+        private void RefreshFaces()
+        {
+            foreach (var button in _activeButtons)
+                button?.RefreshFace();
         }
 
         private void TryBindHand()
@@ -153,6 +175,12 @@ namespace Desk42.UI
                 Debug.LogWarning($"[CardHandView] Drift detected: hand={handCount}, buttons={buttonCount}. Forcing rebuild.");
                 TryBindHand();
                 Rebuild();
+            }
+            else
+            {
+                // Safety refresh for fatigue expiry and any modifier whose
+                // source does not publish a dedicated change event yet.
+                RefreshFaces();
             }
         }
     }

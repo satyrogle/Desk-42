@@ -24,6 +24,72 @@ namespace Desk42.EditorTools
 {
     public static class CardButtonPrefabRebuilder
     {
+        [MenuItem("Tools/Desk 42/Apply Card Foresight Layout")]
+        public static void ApplyForesightLayout()
+        {
+            string[] guids = AssetDatabase.FindAssets("CardButton t:Prefab");
+            string path = null;
+            foreach (string guid in guids)
+            {
+                string candidate = AssetDatabase.GUIDToAssetPath(guid);
+                if (candidate.EndsWith("CardButton.prefab"))
+                {
+                    path = candidate;
+                    break;
+                }
+            }
+
+            if (path == null)
+                throw new System.InvalidOperationException("CardButton.prefab not found.");
+
+            var prefab = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                ConfigureLabel(prefab.transform.Find("NameLabel"),
+                    new Vector2(0, -8), new Vector2(-12, 46), 15,
+                    FontStyles.Bold, TextAlignmentOptions.Top);
+                ConfigureLabel(prefab.transform.Find("TypeLabel"),
+                    new Vector2(0, -58), new Vector2(-14, 78), 13,
+                    FontStyles.Bold, TextAlignmentOptions.Center);
+                ConfigureLabel(prefab.transform.Find("FatigueLabel"),
+                    new Vector2(0, 45), new Vector2(-12, 28), 11,
+                    FontStyles.Bold, TextAlignmentOptions.Center);
+                ConfigureLabel(prefab.transform.Find("CostLabel"),
+                    new Vector2(0, 12), new Vector2(-12, 30), 13,
+                    FontStyles.Bold, TextAlignmentOptions.Center);
+
+                PrefabUtility.SaveAsPrefabAsset(prefab, path);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefab);
+            }
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[CardButtonRebuilder] Foresight layout applied at {path}.");
+        }
+
+        private static void ConfigureLabel(Transform labelTransform,
+            Vector2 anchoredPosition, Vector2 sizeDelta, float fontSize,
+            FontStyles fontStyle, TextAlignmentOptions alignment)
+        {
+            if (labelTransform == null) return;
+            var rt = labelTransform.GetComponent<RectTransform>();
+            var label = labelTransform.GetComponent<TMP_Text>();
+            if (rt != null)
+            {
+                rt.anchoredPosition = anchoredPosition;
+                rt.sizeDelta = sizeDelta;
+            }
+            if (label != null)
+            {
+                label.fontSize = fontSize;
+                label.fontStyle = fontStyle;
+                label.alignment = alignment;
+                label.enableWordWrapping = true;
+                label.overflowMode = TextOverflowModes.Truncate;
+            }
+        }
+
         [MenuItem("Tools/Desk 42/Rebuild CardButton Prefab")]
         public static void Rebuild()
         {

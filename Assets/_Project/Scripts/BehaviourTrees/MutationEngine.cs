@@ -288,6 +288,11 @@ namespace Desk42.RedTape
                     Debug.LogWarning($"[MutationEngine] No application logic for trait: {traitId}");
                     break;
             }
+
+            // Traits created by this engine or loaded from the Repeat Offender
+            // database are known information. Future template-authored hidden
+            // traits must use the client's concealed registration path instead.
+            client.RegisterCounterTrait(traitId, revealed: true);
         }
 
         // ── Transition Rule Helpers ───────────────────────────

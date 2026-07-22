@@ -101,6 +101,7 @@ namespace Desk42.Core
         public int CreditsDelta => Result.CreditsDelta;
         public float SanityDelta => Result.SanityDelta;
         public float SoulIntegrityDelta => Result.SoulIntegrityDelta;
+        public string BlockingModifierId => Result.BlockingModifierId;
 
         // Backward-compat alias
         public string CardId => CardInstanceId;

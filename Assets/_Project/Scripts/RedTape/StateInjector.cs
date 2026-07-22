@@ -143,6 +143,31 @@ namespace Desk42.RedTape
 
             var injection = _activeClient.PreviewInject(
                 card.CardType.ToString(), out var targetState, evaluationState);
+            bool hasConcealedBlockRisk = false;
+            string disclosedBlockerId = null;
+            bool blockerIsRevealed = false;
+
+            if (injection == ClientStateMachine.InjectionResult.BlockedByCounterTrait)
+            {
+                GetBlockingDisclosure(card, out disclosedBlockerId,
+                    out blockerIsRevealed);
+                if (!blockerIsRevealed)
+                {
+                    // Project the rule the player can currently see, while
+                    // truthfully marking that concealed client information may
+                    // intercept it. Never leak the hidden trait identifier.
+                    var visibleRulesResult = _activeClient.PreviewInject(
+                        card.CardType.ToString(), out targetState,
+                        evaluationState, ignoreCounterTrait: true);
+                    if (visibleRulesResult == ClientStateMachine.InjectionResult.Success)
+                    {
+                        injection = visibleRulesResult;
+                        hasConcealedBlockRisk = true;
+                        notices.Add("A concealed client trait may block this card.");
+                    }
+                }
+            }
+
             if (injection != ClientStateMachine.InjectionResult.Success)
             {
                 string reason = DescribeInjectionFailure(
@@ -152,7 +177,9 @@ namespace Desk42.RedTape
                     stateBefore, evaluationState, 0,
                     projectedSanityDelta, 0f, 0,
                     fatigueBefore, fatigueBefore,
-                    cascade, true, notices);
+                    cascade, true, notices,
+                    blockingModifierId: blockerIsRevealed ? disclosedBlockerId : null,
+                    isBlockingModifierRevealed: blockerIsRevealed);
             }
 
             int fatigueAfter = fatigueBefore + 1;
@@ -170,7 +197,10 @@ namespace Desk42.RedTape
                 projectedSanityDelta,
                 run?.ProjectSoulIntegrityDelta(-cascade.FinalSoulCost) ?? 0f,
                 0, fatigueBefore, fatigueAfter,
-                cascade, true, notices, clientEffect, clientEffectDuration);
+                cascade, true, notices, clientEffect, clientEffectDuration,
+                blockingModifierId: null,
+                isBlockingModifierRevealed: false,
+                hasConcealedBlockRisk: hasConcealedBlockRisk);
         }
 
         /// <summary>
@@ -326,11 +356,16 @@ namespace Desk42.RedTape
 
                 var mapped = MapInjectionFailure(
                     injectionResult, card, _activeClient.CurrentMoodState);
+                GetBlockingDisclosure(card, out string blockingModifierId,
+                    out _);
+                if (!string.IsNullOrWhiteSpace(blockingModifierId))
+                    _activeClient.RevealCounterTrait(blockingModifierId);
                 PublishAppliedCard(card, cardInstanceId, clientId,
                     MapToEventOutcome(mapped.Outcome), mapped.Reason,
                     stateBefore, _activeClient.CurrentMoodState,
                     creditsBefore, sanityBefore, soulBefore,
-                    requiredCredits: 0, fatigueBefore, cascade, hasCascade: true);
+                    requiredCredits: 0, fatigueBefore, cascade, hasCascade: true,
+                    blockingModifierId: blockingModifierId);
                 return mapped;
             }
 
@@ -602,7 +637,10 @@ namespace Desk42.RedTape
             bool hasCascade,
             List<string> notices,
             string clientEffect = null,
-            float clientEffectDuration = 0f)
+            float clientEffectDuration = 0f,
+            string blockingModifierId = null,
+            bool isBlockingModifierRevealed = false,
+            bool hasConcealedBlockRisk = false)
         {
             return new ProjectedCardResolution(
                 card.CardType,
@@ -622,7 +660,20 @@ namespace Desk42.RedTape
                 hasCascade,
                 notices?.ToArray(),
                 clientEffect,
-                clientEffectDuration);
+                clientEffectDuration,
+                blockingModifierId,
+                isBlockingModifierRevealed,
+                hasConcealedBlockRisk);
+        }
+
+        private void GetBlockingDisclosure(PunchCardData card,
+            out string blockerId, out bool isRevealed)
+        {
+            blockerId = null;
+            isRevealed = false;
+            if (card == null || _activeClient == null) return;
+            _activeClient.TryGetBlockingTrait(
+                card.CardType.ToString(), out blockerId, out isRevealed);
         }
 
         private static bool TryDescribeInjectedEffect(
@@ -692,7 +743,8 @@ namespace Desk42.RedTape
             SynergyResolutionPacket cascade,
             bool hasCascade,
             string clientEffect = null,
-            float clientEffectDuration = 0f)
+            float clientEffectDuration = 0f,
+            string blockingModifierId = null)
         {
             var run = GameManager.Instance?.Run;
             var applied = new AppliedCardResolution(
@@ -712,7 +764,8 @@ namespace Desk42.RedTape
                 cascade,
                 hasCascade,
                 clientEffect,
-                clientEffectDuration);
+                clientEffectDuration,
+                blockingModifierId);
             RumorMill.Publish(new CardSlammedEvent(applied));
         }
 

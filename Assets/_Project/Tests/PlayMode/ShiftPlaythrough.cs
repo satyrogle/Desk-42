@@ -266,7 +266,21 @@ namespace Desk42.Tests.PlayMode
 
         private IEnumerator CapturePredictionPreviews(int shiftNumber, int seed)
         {
-            var cardButton = UnityEngine.Object.FindObjectOfType<UI.CardButtonView>();
+            var cardButtons = UnityEngine.Object.FindObjectsOfType<UI.CardButtonView>();
+            Assert.IsNotEmpty(cardButtons,
+                "A rendered hand is required to verify at-rest card foresight.");
+            foreach (var renderedCard in cardButtons)
+            {
+                Assert.IsFalse(string.IsNullOrWhiteSpace(
+                        renderedCard.RenderedEffectText),
+                    "Every card face must name its projected effect without hover.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(
+                        renderedCard.RenderedCertaintyText),
+                    "Every card face must state certainty or availability without hover.");
+            }
+            yield return Screenshot(shiftNumber, seed, "card-face");
+
+            var cardButton = cardButtons[0];
             Assert.IsNotNull(cardButton,
                 "A rendered hand card is required to verify the card preview.");
             cardButton.OnPointerEnter(null);

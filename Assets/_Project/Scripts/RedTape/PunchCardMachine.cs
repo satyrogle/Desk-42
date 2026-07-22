@@ -102,6 +102,9 @@ namespace Desk42.RedTape
 
         public void SetActiveClient(BSM.ClientStateMachine client)
         {
+            _mutation.ResetForNewEncounter();
+            _mutation.LoadExistingCounterTraits(
+                client, GameManager.Instance?.Meta);
             _injector.Initialize(client, _fatigue, _mutation);
         }
 

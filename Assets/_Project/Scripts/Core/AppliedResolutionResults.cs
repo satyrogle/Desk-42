@@ -78,6 +78,7 @@ namespace Desk42.Core
         public readonly bool HasCascade;
         public readonly string ClientEffect;
         public readonly float ClientEffectDuration;
+        public readonly string BlockingModifierId;
 
         public bool IsSuccess => Outcome == CardSlamOutcome.Success;
 
@@ -98,7 +99,8 @@ namespace Desk42.Core
             SynergyResolutionPacket cascade,
             bool hasCascade,
             string clientEffect = null,
-            float clientEffectDuration = 0f)
+            float clientEffectDuration = 0f,
+            string blockingModifierId = null)
         {
             CardType = cardType;
             CardInstanceId = cardInstanceId;
@@ -117,6 +119,7 @@ namespace Desk42.Core
             HasCascade = hasCascade;
             ClientEffect = clientEffect;
             ClientEffectDuration = clientEffectDuration;
+            BlockingModifierId = blockingModifierId;
         }
     }
 
@@ -189,6 +192,9 @@ namespace Desk42.Core
         public readonly bool HasCascade;
         public readonly string ClientEffect;
         public readonly float ClientEffectDuration;
+        public readonly string BlockingModifierId;
+        public readonly bool IsBlockingModifierRevealed;
+        public readonly bool HasConcealedBlockRisk;
         public readonly string[] Notices;
 
         public bool IsExpectedSuccess => Outcome == CardSlamOutcome.Success;
@@ -211,7 +217,10 @@ namespace Desk42.Core
             bool hasCascade,
             string[] notices = null,
             string clientEffect = null,
-            float clientEffectDuration = 0f)
+            float clientEffectDuration = 0f,
+            string blockingModifierId = null,
+            bool isBlockingModifierRevealed = false,
+            bool hasConcealedBlockRisk = false)
         {
             CardType = cardType;
             CardDisplayName = cardDisplayName;
@@ -230,6 +239,9 @@ namespace Desk42.Core
             HasCascade = hasCascade;
             ClientEffect = clientEffect;
             ClientEffectDuration = clientEffectDuration;
+            BlockingModifierId = blockingModifierId;
+            IsBlockingModifierRevealed = isBlockingModifierRevealed;
+            HasConcealedBlockRisk = hasConcealedBlockRisk;
             Notices = notices ?? System.Array.Empty<string>();
         }
     }

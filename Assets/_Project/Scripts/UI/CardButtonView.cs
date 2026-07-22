@@ -13,6 +13,7 @@ using UnityEngine.UI;
 using TMPro;
 using Desk42.Cards;
 using Desk42.Core;
+using System.Collections.Generic;
 
 namespace Desk42.UI
 {
@@ -42,6 +43,8 @@ namespace Desk42.UI
         private bool _previewVisible;
 
         public CardInstance Card => _card;
+        public string RenderedEffectText => _typeLabel != null ? _typeLabel.text : "";
+        public string RenderedCertaintyText => _fatigueLabel != null ? _fatigueLabel.text : "";
 
         // ── Init ──────────────────────────────────────────────
 
@@ -50,7 +53,7 @@ namespace Desk42.UI
             _card    = card;
             _machine = machine;
 
-            Refresh();
+            RefreshFace();
 
             if (_button != null)
             {
@@ -61,22 +64,26 @@ namespace Desk42.UI
 
         // ── Display ───────────────────────────────────────────
 
-        private void Refresh()
+        public void RefreshFace()
         {
             if (_card == null) return;
 
-            if (_nameLabel) _nameLabel.text = _card.Data.DisplayName;
-            if (_typeLabel) _typeLabel.text = _card.Data.CardType.ToString();
-            if (_costLabel) _costLabel.text = _card.Data.CreditCost > 0
-                ? $"¢{_card.Data.CreditCost}"
-                : "Free";
+            if (_nameLabel) _nameLabel.text = FormatIdentifier(_card.Data.CardType.ToString());
+
+            ProjectedCardResolution projection = _machine != null
+                ? _machine.PreviewCard(_card.Data, _card.InstanceId)
+                : default;
+            ApplyProjectionFace(projection);
 
             if (_fatigueLabel)
             {
-                _fatigueLabel.text = _card.IsCrumpled ? "CRUMPLED"
-                    : _card.IsJammed               ? "JAMMED"
-                    : _card.Fatigue > 0            ? $"×{_card.Fatigue}"
-                    :                                "";
+                if (_machine == null)
+                {
+                    _fatigueLabel.text = _card.IsCrumpled ? "CRUMPLED"
+                        : _card.IsJammed               ? "JAMMED"
+                        : _card.Fatigue > 0            ? $"FATIGUE {_card.Fatigue}"
+                        :                                "";
+                }
             }
 
             if (_background)
@@ -92,6 +99,101 @@ namespace Desk42.UI
                 _button.interactable = weaponizedEntropy || (!_card.IsJammed && !_card.IsCrumpled);
             }
         }
+
+        private void ApplyProjectionFace(ProjectedCardResolution projection)
+        {
+            if (_machine == null)
+            {
+                if (_typeLabel) _typeLabel.text = FormatIdentifier(_card.Data.CardType.ToString());
+                if (_costLabel) _costLabel.text = _card.Data.CreditCost > 0
+                    ? $"¢{_card.Data.CreditCost}"
+                    : "FREE";
+                return;
+            }
+
+            if (_typeLabel) _typeLabel.text = FormatExpectedEffect(projection);
+            if (_fatigueLabel) _fatigueLabel.text = FormatCertainty(projection);
+            if (_costLabel) _costLabel.text = FormatFacts(projection);
+        }
+
+        private static string FormatExpectedEffect(ProjectedCardResolution projection)
+        {
+            if (!projection.IsExpectedSuccess)
+            {
+                return projection.Outcome switch
+                {
+                    CardSlamOutcome.BlockedByExemption
+                        => $"BLOCKED BY\n{FormatIdentifier(projection.BlockingModifierId)}",
+                    CardSlamOutcome.BlockedByState
+                        => projection.StateBefore.HasValue
+                            ? $"NO EFFECT FROM\n{FormatIdentifier(projection.StateBefore.Value.ToString())}"
+                            : "NO APPLICABLE\nPROCEDURE",
+                    CardSlamOutcome.InsufficientCredits
+                        => $"REQUIRES ¢{projection.RequiredCredits}",
+                    CardSlamOutcome.CardJammed => "CARD JAMMED",
+                    CardSlamOutcome.CardCrumpled => "CARD CRUMPLED",
+                    CardSlamOutcome.ClientNotResponding => "CLIENT NOT\nRESPONDING",
+                    CardSlamOutcome.NoActiveClient => "NO ACTIVE CLIENT",
+                    _ => "NO EFFECT",
+                };
+            }
+
+            if (!string.IsNullOrWhiteSpace(projection.ClientEffect))
+                return $"{projection.ClientEffect}\n{projection.ClientEffectDuration:0.##}s";
+
+            return projection.StateBefore.HasValue && projection.StateAfter.HasValue
+                ? $"{FormatIdentifier(projection.StateBefore.Value.ToString())} →\n" +
+                  FormatIdentifier(projection.StateAfter.Value.ToString())
+                : "STATE CHANGE";
+        }
+
+        private static string FormatCertainty(ProjectedCardResolution projection)
+        {
+            if (projection.HasConcealedBlockRisk)
+                return "EXPECTED · RISK";
+            if (!projection.IsExpectedSuccess)
+                return projection.Outcome == CardSlamOutcome.BlockedByState
+                    ? "NO PROCEDURE"
+                    : "UNAVAILABLE";
+            return "EXPECTED";
+        }
+
+        private static string FormatFacts(ProjectedCardResolution projection)
+        {
+            var facts = new List<string>(3);
+            if (projection.CreditsDelta < 0)
+                facts.Add($"¢{Mathf.Abs(projection.CreditsDelta)}");
+            else if (projection.RequiredCredits > 0)
+                facts.Add($"NEED ¢{projection.RequiredCredits}");
+            else
+                facts.Add("FREE");
+
+            int fatigueDelta = projection.FatigueAfter - projection.FatigueBefore;
+            if (fatigueDelta != 0)
+                facts.Add($"FAT +{fatigueDelta}");
+            if (!Mathf.Approximately(projection.SanityDelta, 0f))
+                facts.Add($"SAN {FormatSigned(projection.SanityDelta)}");
+            if (!Mathf.Approximately(projection.SoulIntegrityDelta, 0f))
+                facts.Add($"SOUL {FormatSigned(projection.SoulIntegrityDelta)}");
+            return string.Join(" · ", facts);
+        }
+
+        private static string FormatIdentifier(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "CLIENT TRAIT";
+            var chars = new List<char>(value.Length + 4);
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i] == '_' ? ' ' : value[i];
+                if (i > 0 && char.IsUpper(c) && char.IsLower(value[i - 1]))
+                    chars.Add(' ');
+                chars.Add(char.ToUpperInvariant(c));
+            }
+            return new string(chars.ToArray());
+        }
+
+        private static string FormatSigned(float value)
+            => value > 0f ? $"+{value:0.##}" : $"−{Mathf.Abs(value):0.##}";
 
         // ── Input ─────────────────────────────────────────────
 

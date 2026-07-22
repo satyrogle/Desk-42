@@ -60,6 +60,7 @@ namespace Desk42.BSM
 
         // Counter-traits loaded from RepeatOffenderDB at spawn
         private List<string> _activeCounterTraits = new();
+        private readonly HashSet<string> _revealedCounterTraits = new();
 
         // ── Events ────────────────────────────────────────────
 
@@ -114,7 +115,17 @@ namespace Desk42.BSM
             _clientVariantId     = clientVariantId;
             _clientSpeciesId     = clientSpeciesId;
             _visitCount          = visitCount;
-            _activeCounterTraits = counterTraits ?? new();
+            // Keep encounter state independent from the persisted profile list;
+            // MutationEngine persists explicitly after a generated trait lands.
+            _activeCounterTraits = counterTraits != null
+                ? new List<string>(counterTraits)
+                : new();
+            _revealedCounterTraits.Clear();
+            foreach (string traitId in _activeCounterTraits)
+            {
+                if (!string.IsNullOrWhiteSpace(traitId))
+                    _revealedCounterTraits.Add(traitId);
+            }
             _transitionTable     = transitionTable ?? TransitionTable.CreateDefault();
 
             _tells   = new ClientTellSystem(null, visitCount);
@@ -210,7 +221,8 @@ namespace Desk42.BSM
         /// </summary>
         public InjectionResult PreviewInject(string cardType,
             out ClientStateID targetState,
-            ClientStateID? stateOverride = null)
+            ClientStateID? stateOverride = null,
+            bool ignoreCounterTrait = false)
         {
             ClientStateID evaluationState = stateOverride ?? _currentMoodState;
             targetState = evaluationState;
@@ -218,7 +230,7 @@ namespace Desk42.BSM
             if (_baseBT == null || _transitionTable == null)
                 return InjectionResult.BlockedByCurrentState;
 
-            if (_baseBT.HasBlockerForCard(cardType))
+            if (!ignoreCounterTrait && _baseBT.HasBlockerForCard(cardType))
                 return InjectionResult.BlockedByCounterTrait;
 
             if (evaluationState == ClientStateID.Dissociating)
@@ -231,6 +243,46 @@ namespace Desk42.BSM
                 return InjectionResult.BlockedByCurrentState;
 
             return InjectionResult.Success;
+        }
+
+        /// <summary>
+        /// Returns the blocker installed for a card and whether the player is
+        /// allowed to see its identity. Preview UI must not infer disclosure
+        /// from the behaviour tree itself.
+        /// </summary>
+        public bool TryGetBlockingTrait(string cardType,
+            out string traitId, out bool isRevealed)
+        {
+            traitId = null;
+            isRevealed = false;
+            if (_baseBT == null
+                || !_baseBT.TryGetBlockerForCard(cardType, out var blocker))
+                return false;
+
+            traitId = blocker.CounterTraitId;
+            isRevealed = !string.IsNullOrWhiteSpace(traitId)
+                && _revealedCounterTraits.Contains(traitId);
+            return true;
+        }
+
+        /// <summary>
+        /// Registers a trait as active for this encounter. Persisted Repeat
+        /// Offender traits and newly generated mutations are already known;
+        /// future concealed traits can register with revealed=false.
+        /// </summary>
+        public void RegisterCounterTrait(string traitId, bool revealed)
+        {
+            if (string.IsNullOrWhiteSpace(traitId)) return;
+            if (!_activeCounterTraits.Contains(traitId))
+                _activeCounterTraits.Add(traitId);
+            if (revealed)
+                _revealedCounterTraits.Add(traitId);
+        }
+
+        public void RevealCounterTrait(string traitId)
+        {
+            if (!string.IsNullOrWhiteSpace(traitId))
+                _revealedCounterTraits.Add(traitId);
         }
 
         // ── Runtime Rule Injection (called by MutationEngine) ────
