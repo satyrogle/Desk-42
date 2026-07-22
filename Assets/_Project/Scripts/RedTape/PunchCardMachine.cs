@@ -137,10 +137,9 @@ namespace Desk42.RedTape
         /// </summary>
         public void OnCardDropped(CardView droppedCard)
         {
-            if (_state != MachineState.Idle && _state != MachineState.CardHovering)
-                return;
-
-            StartCoroutine(SlamSequence(droppedCard));
+            BeginSlam(droppedCard?.CardData,
+                droppedCard?.CardInstanceId ?? "", droppedCard,
+                allowHoverState: true);
         }
 
         // ── Hover highlight (from IPointerHandler) ────────────
@@ -158,7 +157,17 @@ namespace Desk42.RedTape
 
         // ── Slam Coroutine ────────────────────────────────────
 
-        private IEnumerator SlamSequence(CardView cardView)
+        private void BeginSlam(PunchCardData data, string instanceId,
+            CardView cardView, bool allowHoverState)
+        {
+            bool available = _state == MachineState.Idle
+                || (allowHoverState && _state == MachineState.CardHovering);
+            if (!available || data == null) return;
+            StartCoroutine(SlamSequence(data, instanceId, cardView));
+        }
+
+        private IEnumerator SlamSequence(PunchCardData data,
+            string instanceId, CardView cardView)
         {
             _state = MachineState.CardInserting;
 
@@ -167,7 +176,7 @@ namespace Desk42.RedTape
                 _machineAnimator.SetTrigger(_animInsert);
 
             // Snap card to slot position
-            if (cardView != null)
+            if (cardView != null && _slotTransform != null)
                 cardView.SnapToSlot(_slotTransform.position);
 
             PlaySound(_clipSlam);
@@ -182,12 +191,13 @@ namespace Desk42.RedTape
             PlaySound(_clipProcess);
             _processParticles?.Play();
 
-            yield return new WaitForSeconds(_processDelay);
+            yield return new WaitForSeconds(_processDelay * 0.7f);
 
             // ── Phase 3: Inject ───────────────────────────────
-            var result = _injector.TrySlam(
-                cardView?.CardData,
-                cardView?.CardInstanceId ?? "");
+            // Punch impact is the single authoritative application point for
+            // both click and drag input. Everything after this line renders
+            // from AppliedCardResolution/CardSlammedEvent.
+            var result = _injector.TrySlam(data, instanceId);
 
             // ── Phase 4: Resolve feedback ─────────────────────
             _state = MachineState.Resolved;
@@ -206,7 +216,8 @@ namespace Desk42.RedTape
             {
                 case SlamOutcome.Success:
                     // Screen shake scaled by card impact
-                    CameraShake(_screenShakeMagnitude);
+                    if (!AccessibilitySettings.ReducedMotion)
+                        CameraShake(_screenShakeMagnitude);
                     cardView?.PlaySlamSuccess();
                     break;
 
@@ -235,6 +246,7 @@ namespace Desk42.RedTape
                     if (_machineAnimator != null)
                         _machineAnimator.SetTrigger(_animReject);
                     PlaySound(_clipReject);
+                    _rejectParticles?.Play();
                     cardView?.PlayReject();
                     break;
             }
@@ -264,53 +276,8 @@ namespace Desk42.RedTape
         /// </summary>
         public void SlamCard(Cards.PunchCardData data, string instanceId)
         {
-            if (_state != MachineState.Idle) return;
-            if (data == null) return;
-
-            StartCoroutine(SlamSequenceSimple(data, instanceId));
-        }
-
-        private System.Collections.IEnumerator SlamSequenceSimple(
-            Cards.PunchCardData data, string instanceId)
-        {
-            _state = MachineState.Processing;
-
-            PlaySound(_clipSlam);
-            if (_machineAnimator != null)
-                _machineAnimator.SetTrigger(_animInsert);
-
-            yield return new WaitForSeconds(_processDelay * 0.4f);
-
-            if (_machineAnimator != null)
-                _machineAnimator.SetTrigger(_animProcess);
-
-            PlaySound(_clipProcess);
-            _processParticles?.Play();
-
-            yield return new WaitForSeconds(_processDelay * 0.6f);
-
-            var result = _injector.TrySlam(data, instanceId);
-
-            _state = MachineState.Resolved;
-
-            if (!result.IsSuccess)
-            {
-                if (_machineAnimator != null)
-                    _machineAnimator.SetTrigger(_animReject);
-                PlaySound(_clipReject);
-                _rejectParticles?.Play();
-            }
-            else
-            {
-                // Give some feedback so clicking doesn't feel completely silent
-                if (!AccessibilitySettings.ReducedMotion)
-                    CameraShake(_screenShakeMagnitude);
-            }
-
-            OnSlamResolved?.Invoke(result);
-
-            yield return new WaitForSeconds(0.2f);
-            _state = MachineState.Idle;
+            BeginSlam(data, instanceId, cardView: null,
+                allowHoverState: false);
         }
 
         // ── New Shift Handshake ───────────────────────────────
