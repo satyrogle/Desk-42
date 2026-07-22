@@ -58,6 +58,9 @@ namespace Desk42.UI
         private bool _cardProjectionVisible;
         private bool _concealedRiskProjected;
         private float _modifierRefreshTimer;
+        private CascadePresenter _cascadePresenter;
+        private readonly HashSet<string> _cascadeModifierKeys = new();
+        private bool _cascadeAnimating;
 
         public string RenderedOfficeModifiers
             => _officeModifiersText != null ? _officeModifiersText.text : "";
@@ -102,6 +105,7 @@ namespace Desk42.UI
                 _modifierRefreshTimer = 0f;
                 RefreshModifierRows();
             }
+            TryBindCascadePresenter();
         }
 
         private void OnEnable()
@@ -122,6 +126,40 @@ namespace Desk42.UI
             RumorMill.OnCardPreview         -= HandleCardPreview;
             RumorMill.OnCardSlammed         -= HandleCardSlammed;
             RumorMill.OnClaimQueued         -= HandleClaimQueued;
+            UnbindCascadePresenter();
+        }
+
+        private void TryBindCascadePresenter()
+        {
+            if (_cascadePresenter != null) return;
+            _cascadePresenter = FindObjectOfType<CascadePresenter>();
+            if (_cascadePresenter == null) return;
+            _cascadePresenter.IntentStateChanged += HandleCascadeState;
+            _cascadePresenter.ModifierPresented += HandleCascadeModifier;
+        }
+
+        private void UnbindCascadePresenter()
+        {
+            if (_cascadePresenter == null) return;
+            _cascadePresenter.IntentStateChanged -= HandleCascadeState;
+            _cascadePresenter.ModifierPresented -= HandleCascadeModifier;
+            _cascadePresenter = null;
+        }
+
+        private void HandleCascadeState(bool active)
+        {
+            _cascadeAnimating = active;
+            _cascadeModifierKeys.Clear();
+            RefreshModifierRows();
+        }
+
+        private void HandleCascadeModifier(CascadeValueKind _,
+            ModifierStep step)
+        {
+            _cascadeModifierKeys.Clear();
+            if (step.Changed && !string.IsNullOrWhiteSpace(step.SourceId))
+                _cascadeModifierKeys.Add(step.SourceKey);
+            RefreshModifierRows();
         }
 
         private void BuildModifierRows()
@@ -308,9 +346,11 @@ namespace Desk42.UI
             if (_officeModifiersText == null || _clientModifiersText == null)
                 return;
 
-            var highlighted = _cardProjectionVisible
-                ? _projectedModifierKeys
-                : _appliedModifierKeys;
+            var highlighted = _cascadeAnimating
+                ? _cascadeModifierKeys
+                : _cardProjectionVisible
+                    ? _projectedModifierKeys
+                    : _appliedModifierKeys;
             var office = new List<string>();
             var run = GameManager.Instance?.Run;
             if (run?.Archetype != null)
@@ -434,7 +474,7 @@ namespace Desk42.UI
         private static string FormatModifierChip(string label, string sourceKey,
             HashSet<string> highlighted)
         {
-            string safeLabel = FormatIdentifier(label);
+            string safeLabel = $"{CascadePresenter.SourceGlyph(sourceKey)} {FormatIdentifier(label)}";
             return highlighted.Contains(sourceKey)
                 ? $"<color=#F4D35E><b>[{safeLabel}]</b></color>"
                 : $"<color=#B7C5BB>[{safeLabel}]</color>";

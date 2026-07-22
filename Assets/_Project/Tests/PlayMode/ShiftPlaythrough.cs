@@ -558,6 +558,16 @@ namespace Desk42.Tests.PlayMode
 
         private IEnumerator Screenshot(int shiftNumber, int seed, string tag)
         {
+            // Headless test runs never produce an end-of-frame render callback,
+            // so waiting for one would stall the entire deterministic suite.
+            // Visible runs still capture the same evidence screenshots.
+            if (SystemInfo.graphicsDeviceType
+                == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                Line($"[shot] {tag} skipped (headless)");
+                yield break;
+            }
+
             yield return new WaitForEndOfFrame();
 
             string path = Path.Combine(

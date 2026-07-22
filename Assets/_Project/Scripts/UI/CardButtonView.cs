@@ -90,6 +90,12 @@ namespace Desk42.UI
             {
                 _background.color = _card.IsCrumpled ? _crumpledColor
                     : _card.IsJammed               ? _jammedColor
+                    : _machine != null && projection.HasConcealedBlockRisk
+                        ? Color.Lerp(_normalColor,
+                            new Color(0.95f, 0.68f, 0.18f, 1f), 0.24f)
+                    : _machine != null && !projection.IsExpectedSuccess
+                        ? Color.Lerp(_normalColor,
+                            new Color(0.82f, 0.25f, 0.2f, 1f), 0.16f)
                     :                                _normalColor;
             }
 

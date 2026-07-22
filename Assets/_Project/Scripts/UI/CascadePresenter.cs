@@ -151,7 +151,9 @@ namespace Desk42.UI
         {
             string chain = $"{label}: {FormatValue(baseValue, valueKind)}";
 
-            if (steps == null || steps.Count == 0)
+            bool hasChangedStep = steps != null
+                && steps.Exists(step => step.Changed);
+            if (!hasChangedStep)
             {
                 _revealedChains.Add(chain);
                 RefreshChainText();
@@ -160,7 +162,9 @@ namespace Desk42.UI
 
             foreach (ModifierStep step in steps)
             {
-                chain += $" → {step.DisplayName} {FormatDelta(step.Delta, valueKind)}" +
+                if (!step.Changed) continue;
+                chain += $" → {SourceGlyph(step.SourceKind)} {step.DisplayName} " +
+                         $"{FormatDelta(step.Delta, valueKind)}" +
                          $" = {FormatValue(step.NewValue, valueKind)}";
                 RefreshChainText(chain);
                 SetBarValue(targetBar, step.NewValue);
@@ -229,6 +233,33 @@ namespace Desk42.UI
                 CascadeValueKind.CreditCost => $"{sign}¢{magnitude}",
                 _ => $"{sign}{magnitude}",
             };
+        }
+
+        internal static string SourceGlyph(ModifierSourceKind kind)
+            => kind switch
+            {
+                ModifierSourceKind.Supply => "S",
+                ModifierSourceKind.Archetype => "A",
+                ModifierSourceKind.Vow => "V",
+                ModifierSourceKind.Faction => "F",
+                ModifierSourceKind.Regulation => "R",
+                ModifierSourceKind.Environment => "E",
+                ModifierSourceKind.ClientState => "C",
+                ModifierSourceKind.CounterTrait => "?",
+                _ => "*",
+            };
+
+        internal static string SourceGlyph(string sourceKey)
+        {
+            if (string.IsNullOrWhiteSpace(sourceKey)) return "*";
+
+            int separator = sourceKey.IndexOf(':');
+            string kindName = separator >= 0
+                ? sourceKey.Substring(0, separator)
+                : sourceKey;
+            return System.Enum.TryParse(kindName, out ModifierSourceKind kind)
+                ? SourceGlyph(kind)
+                : "*";
         }
 
         private void BuildRuntimeUI()

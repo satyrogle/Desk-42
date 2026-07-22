@@ -3,6 +3,8 @@ using Desk42.BSM;
 using Desk42.Cards;
 using Desk42.Core;
 using Desk42.RedTape;
+using Desk42.OfficeSupplies;
+using Desk42.UI;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -11,6 +13,73 @@ namespace Desk42.Tests.PlayMode
 {
     public sealed class PunchCardMachinePlayModeTests
     {
+        [UnityTest]
+        public IEnumerator Cascade_PresentsOnlyModifiersThatChangedTheResult()
+        {
+            var presenterObject = new GameObject("ChangedOnlyCascade");
+            var presenter = presenterObject.AddComponent<CascadePresenter>();
+            int presented = 0;
+            string presentedSource = null;
+            presenter.ModifierPresented += (_, step) =>
+            {
+                presented++;
+                presentedSource = step.SourceId;
+            };
+
+            var packet = new SynergyResolutionPacket
+            {
+                CardType = PunchCardType.PendingReview,
+                BaseDuration = 10f,
+                FinalDuration = 15f,
+                BaseCreditCost = 0,
+                FinalCreditCost = 0,
+                BaseSoulCost = 0f,
+                FinalSoulCost = 0f,
+                DurationSteps = new System.Collections.Generic.List<ModifierStep>
+                {
+                    new()
+                    {
+                        SourceId = "no_op",
+                        SourceKind = ModifierSourceKind.Supply,
+                        SourceSide = ModifierSourceSide.Office,
+                        DisplayName = "No-op supply",
+                        PrevValue = 10f,
+                        NewValue = 10f,
+                        Delta = 0f,
+                    },
+                    new()
+                    {
+                        SourceId = "stapler",
+                        SourceKind = ModifierSourceKind.Supply,
+                        SourceSide = ModifierSourceSide.Office,
+                        DisplayName = "Stapler",
+                        PrevValue = 10f,
+                        NewValue = 15f,
+                        Delta = 5f,
+                    },
+                },
+                CreditCostSteps = new System.Collections.Generic.List<ModifierStep>(),
+                SoulCostSteps = new System.Collections.Generic.List<ModifierStep>(),
+            };
+
+            try
+            {
+                presenter.PlaySequence(packet);
+                float deadline = Time.realtimeSinceStartup + 1.5f;
+                while (presented == 0 && Time.realtimeSinceStartup < deadline)
+                    yield return null;
+
+                Assert.AreEqual(1, presented,
+                    "Balatro-style sequencing should fire contributors, not no-op clutter.");
+                Assert.AreEqual("stapler", presentedSource);
+            }
+            finally
+            {
+                Object.Destroy(presenterObject);
+                RumorMill.ClearAllSubscriptions();
+            }
+        }
+
         [UnityTest]
         public IEnumerator ClickAndDrag_UseOneImpactSequenceAndOneResultEach()
         {

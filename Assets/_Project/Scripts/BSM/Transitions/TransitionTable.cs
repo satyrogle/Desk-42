@@ -50,7 +50,7 @@ namespace Desk42.BSM.Transitions
         /// target state of the highest-priority matching rule.
         /// Returns _fallbackState if no rule matches.
         /// </summary>
-        public ClientStateID Resolve(TransitionContext ctx)
+        public ClientStateID Resolve(TransitionContext ctx, bool logMatch = true)
         {
             EnsureSorted();
 
@@ -59,7 +59,8 @@ namespace Desk42.BSM.Transitions
                 if (rule.Evaluate(ctx))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[TransitionTable] Rule matched: {rule} -> {rule.TargetState}");
+                    if (logMatch)
+                        Debug.Log($"[TransitionTable] Rule matched: {rule} -> {rule.TargetState}");
 #endif
                     return rule.TargetState;
                 }

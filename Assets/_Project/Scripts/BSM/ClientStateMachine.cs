@@ -248,7 +248,8 @@ namespace Desk42.BSM
             RefreshContext();
             _context.TriggerAction = cardType;
 
-            var evaluation = PreviewInject(cardType, out var targetState);
+            var evaluation = PreviewInject(cardType, out var targetState,
+                logResolution: true);
             if (evaluation == InjectionResult.BlockedByCounterTrait)
             {
                 OnDarkHumour?.Invoke("pre_filed_exemption");
@@ -287,7 +288,8 @@ namespace Desk42.BSM
         public InjectionResult PreviewInject(string cardType,
             out ClientStateID targetState,
             ClientStateID? stateOverride = null,
-            bool ignoreCounterTrait = false)
+            bool ignoreCounterTrait = false,
+            bool logResolution = false)
         {
             ClientStateID evaluationState = stateOverride ?? _currentMoodState;
             targetState = evaluationState;
@@ -302,7 +304,8 @@ namespace Desk42.BSM
                 return InjectionResult.ClientDissociating;
 
             targetState = _transitionTable.Resolve(
-                BuildTransitionContext(cardType, evaluationState));
+                BuildTransitionContext(cardType, evaluationState),
+                logResolution);
 
             if (!CreatesInjectedState(cardType) && targetState == evaluationState)
                 return InjectionResult.BlockedByCurrentState;

@@ -57,6 +57,7 @@ namespace Desk42.EditorTools
                 ConfigureLabel(prefab.transform.Find("CostLabel"),
                     new Vector2(0, 12), new Vector2(-12, 30), 13,
                     FontStyles.Bold, TextAlignmentOptions.Center);
+                EnsurePunchCardDecoration(prefab);
 
                 PrefabUtility.SaveAsPrefabAsset(prefab, path);
             }
@@ -88,6 +89,71 @@ namespace Desk42.EditorTools
                 label.enableWordWrapping = true;
                 label.overflowMode = TextOverflowModes.Truncate;
             }
+        }
+
+        private static void EnsurePunchCardDecoration(GameObject prefab)
+        {
+            Transform existingRail = prefab.transform.Find("PunchRail");
+            if (existingRail == null)
+            {
+                var railObject = new GameObject("PunchRail");
+                railObject.transform.SetParent(prefab.transform, false);
+                var railRt = railObject.AddComponent<RectTransform>();
+                railRt.anchorMin = new Vector2(0f, 0f);
+                railRt.anchorMax = new Vector2(0f, 1f);
+                railRt.pivot = new Vector2(0f, 0.5f);
+                railRt.sizeDelta = new Vector2(14f, -14f);
+                railRt.anchoredPosition = new Vector2(4f, 0f);
+                var rail = railObject.AddComponent<TextMeshProUGUI>();
+                rail.text = "●\n●\n●\n●\n●";
+                rail.fontSize = 6f;
+                rail.color = new Color(0.08f, 0.14f, 0.14f, 0.72f);
+                rail.alignment = TextAlignmentOptions.Center;
+                rail.raycastTarget = false;
+            }
+
+            Transform existingRule = prefab.transform.Find("HeaderRule");
+            if (existingRule == null)
+            {
+                var ruleObject = new GameObject("HeaderRule");
+                ruleObject.transform.SetParent(prefab.transform, false);
+                var ruleRt = ruleObject.AddComponent<RectTransform>();
+                ruleRt.anchorMin = new Vector2(0f, 1f);
+                ruleRt.anchorMax = new Vector2(1f, 1f);
+                ruleRt.pivot = new Vector2(0.5f, 1f);
+                ruleRt.sizeDelta = new Vector2(-18f, 3f);
+                ruleRt.anchoredPosition = new Vector2(5f, -4f);
+                var rule = ruleObject.AddComponent<Image>();
+                rule.color = new Color(0.08f, 0.14f, 0.14f, 0.86f);
+                rule.raycastTarget = false;
+            }
+
+            Transform existingSerial = prefab.transform.Find("SerialMark");
+            if (existingSerial == null)
+            {
+                var serialObject = new GameObject("SerialMark");
+                serialObject.transform.SetParent(prefab.transform, false);
+                var serialRt = serialObject.AddComponent<RectTransform>();
+                serialRt.anchorMin = new Vector2(1f, 1f);
+                serialRt.anchorMax = new Vector2(1f, 1f);
+                serialRt.pivot = new Vector2(1f, 1f);
+                serialRt.sizeDelta = new Vector2(30f, 12f);
+                serialRt.anchoredPosition = new Vector2(-5f, -4f);
+                var serial = serialObject.AddComponent<TextMeshProUGUI>();
+                serial.text = "D42";
+                serial.fontSize = 6f;
+                serial.fontStyle = FontStyles.Bold;
+                serial.color = new Color(0.08f, 0.14f, 0.14f, 0.72f);
+                serial.alignment = TextAlignmentOptions.TopRight;
+                serial.raycastTarget = false;
+            }
+
+            existingRail = prefab.transform.Find("PunchRail");
+            existingRule = prefab.transform.Find("HeaderRule");
+            existingSerial = prefab.transform.Find("SerialMark");
+            existingRail?.SetAsFirstSibling();
+            existingRule?.SetAsFirstSibling();
+            existingSerial?.SetAsFirstSibling();
         }
 
         [MenuItem("Tools/Desk 42/Rebuild CardButton Prefab")]
