@@ -703,6 +703,41 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void CSM_PreviewInject_MatchesTargetWithoutMutatingClient()
+        {
+            var table = TransitionTable.CreateDefault();
+            table.AddRuntimeRule(new TransitionRule
+            {
+                TriggerAction = "PendingReview",
+                TargetState = ClientStateID.Suspicious,
+                Priority = 999,
+                Conditions = new List<ITransitionCondition>(),
+            });
+
+            var go = new GameObject("CSM_preview");
+            _toDestroy.Add(go);
+            var csm = go.AddComponent<ClientStateMachine>();
+            csm.Initialize("preview", "human", 0, new List<string>(), table);
+            int transitionEvents = 0;
+            csm.OnStateChanged += (_, __) => transitionEvents++;
+
+            var preview = csm.PreviewInject(
+                "PendingReview", out var projectedTarget);
+
+            Assert.AreEqual(ClientStateMachine.InjectionResult.Success, preview);
+            Assert.AreEqual(ClientStateID.Suspicious, projectedTarget);
+            Assert.AreEqual(ClientStateID.Pending, csm.CurrentMoodState);
+            Assert.IsFalse(csm.IsInInjectedState);
+            Assert.IsFalse(csm.BaseBT.IsPaused);
+            Assert.AreEqual(0, transitionEvents);
+
+            var applied = csm.TryInject("PendingReview", 5f);
+            Assert.AreEqual(ClientStateMachine.InjectionResult.Success, applied);
+            Assert.AreEqual(projectedTarget, csm.CurrentMoodState);
+            Assert.AreEqual(1, transitionEvents);
+        }
+
+        [Test]
         public void CSM_TryInject_OrganicCard_ReturnsBlockedByCurrentState()
         {
             // ThreatAudit → CreateInjectedState returns null → BlockedByCurrentState

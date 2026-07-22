@@ -101,7 +101,7 @@ namespace Desk42.Tutorial
             _steps.Add(new TutorialStep
             {
                 Title = "MEMO FROM HR: WELCOME",
-                Body  = "You're a claims adjuster at an organization that does not officially exist.\n\nYour job: process claims, route clients, and try not to lose your soul. Click CONTINUE when you're ready.",
+                Body  = "Alter the client, settle the claim, meet quota, and cover your obligations.\n\nYou're a claims adjuster at an organization that does not officially exist. Click CONTINUE when you're ready.",
                 AdvanceOn = TutorialTrigger.ContinueButtonOnly,
             });
             _steps.Add(new TutorialStep
@@ -113,19 +113,19 @@ namespace Desk42.Tutorial
             _steps.Add(new TutorialStep
             {
                 Title = "MEMO FROM HR: PUNCH CARD PROTOCOL",
-                Body  = "Drag a punch card from your hand into the SLOT to slam it. Each card pushes the client toward a different state.\n\nTry slamming any card to see how the client reacts.",
+                Body  = "Hover or focus a punch card to preview its expected state change and cost. Then click it or drag it into the SLOT to slam it.\n\nThe receipt confirms what actually landed.",
                 AdvanceOn = TutorialTrigger.CardSlammed,
             });
             _steps.Add(new TutorialStep
             {
                 Title = "MEMO FROM HR: CLIENT MONITORING",
-                Body  = "Different cards push clients between Cooperative, Agitated, Litigious, and worse. Match cards to client mood and you'll resolve claims cleanly.\n\nResolve a claim to continue.",
+                Body  = "Clients can shift while a card processes, and counter-traits can block familiar tactics. EXPECTED marks a projection; the applied receipt is the final result.\n\nHover APPROVE or DENY to preview its cost, then settle the claim.",
                 AdvanceOn = TutorialTrigger.ClaimResolved,
             });
             _steps.Add(new TutorialStep
             {
                 Title = "MEMO FROM HR: CLEARED FOR DUTY",
-                Body  = "Resolve every claim before the shift ends to clock out.\n\nTrack sanity in the HUD. Watch the memos. Don't sign more NDAs than you have to.\n\nGood luck.",
+                Body  = "Settle every claim to meet quota and clock out.\n\nTrack Sanity, corporate credits, and the obligations due at clock-out. Every choice reports what it costs; none is graded as correct.\n\nGood luck.",
                 AdvanceOn = TutorialTrigger.ContinueButtonOnly,
             });
         }

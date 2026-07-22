@@ -29,11 +29,22 @@ namespace Desk42.UI
         private Image      _flashImage;
         private GameObject _resultPanel;
         private TMP_Text   _slamLabel;
+        private string     _latestAppliedText;
+        private string     _activePreviewCardId;
 
         // ── Lifecycle ─────────────────────────────────────────
 
-        protected override void Subscribe()   => RumorMill.OnCardSlammed += HandleSlam;
-        protected override void Unsubscribe() => RumorMill.OnCardSlammed -= HandleSlam;
+        protected override void Subscribe()
+        {
+            RumorMill.OnCardSlammed += HandleSlam;
+            RumorMill.OnCardPreview += HandlePreview;
+        }
+
+        protected override void Unsubscribe()
+        {
+            RumorMill.OnCardSlammed -= HandleSlam;
+            RumorMill.OnCardPreview -= HandlePreview;
+        }
         private void Start()
         {
             if (_flashRoot == null) BuildUI();
@@ -45,8 +56,10 @@ namespace Desk42.UI
         {
             if (_flashRoot == null) BuildUI();
 
+            _activePreviewCardId = null;
+            _latestAppliedText = FormatResult(e.Result);
             _resultPanel.SetActive(true);
-            _slamLabel.text = FormatResult(e.Result);
+            _slamLabel.text = _latestAppliedText;
             _slamLabel.color = Color.white;
 
             // Only the cosmetic pulse is budgeted. The semantic result above
@@ -57,6 +70,26 @@ namespace Desk42.UI
                 StopAllCoroutines();
                 StartCoroutine(FlashVisual());
             }
+        }
+
+        private void HandlePreview(CardPreviewEvent e)
+        {
+            if (_flashRoot == null) BuildUI();
+
+            if (e.IsVisible)
+            {
+                _activePreviewCardId = e.CardInstanceId;
+                _resultPanel.SetActive(true);
+                _slamLabel.text = FormatProjection(e.Projection);
+                _slamLabel.color = new Color(0.92f, 0.84f, 0.58f, 1f);
+                return;
+            }
+
+            if (_activePreviewCardId != e.CardInstanceId) return;
+            _activePreviewCardId = null;
+            _slamLabel.text = _latestAppliedText ?? "";
+            _slamLabel.color = Color.white;
+            _resultPanel.SetActive(!string.IsNullOrWhiteSpace(_latestAppliedText));
         }
 
         // ── UI Construction ───────────────────────────────────
@@ -96,7 +129,7 @@ namespace Desk42.UI
             panelRt.anchorMin = new Vector2(0.5f, 0);
             panelRt.anchorMax = new Vector2(0.5f, 0);
             panelRt.pivot = new Vector2(0.5f, 0);
-            panelRt.sizeDelta = new Vector2(760, 118);
+            panelRt.sizeDelta = new Vector2(760, 138);
             panelRt.anchoredPosition = new Vector2(0, 248);
             var panelImage = _resultPanel.AddComponent<Image>();
             panelImage.color = new Color(0.06f, 0.12f, 0.14f, 0.94f);
@@ -114,7 +147,7 @@ namespace Desk42.UI
             lrt.offsetMax = new Vector2(-18, -10);
             _slamLabel = labelGO.AddComponent<TextMeshProUGUI>();
             _slamLabel.text = "";
-            _slamLabel.fontSize = AccessibilitySettings.Scaled(22);
+            _slamLabel.fontSize = AccessibilitySettings.Scaled(20);
             _slamLabel.fontStyle = FontStyles.Bold;
             _slamLabel.color = Color.white;
             _slamLabel.alignment = TextAlignmentOptions.Center;
@@ -153,6 +186,72 @@ namespace Desk42.UI
             _flashImage.color = new Color(1f, 1f, 1f, 0f);
         }
 
+        private static string FormatProjection(ProjectedCardResolution result)
+        {
+            string card = string.IsNullOrWhiteSpace(result.CardDisplayName)
+                ? result.CardType.ToString().ToUpperInvariant()
+                : result.CardDisplayName.ToUpperInvariant();
+            string notice = result.Notices != null && result.Notices.Length > 0
+                ? result.Notices[0]
+                : "";
+
+            if (!result.IsExpectedSuccess)
+            {
+                string heading = result.Outcome switch
+                {
+                    CardSlamOutcome.CardJammed => "CARD JAMMED",
+                    CardSlamOutcome.CardCrumpled => "CARD CRUMPLED",
+                    CardSlamOutcome.InsufficientCredits => "INSUFFICIENT CORPORATE CREDITS",
+                    CardSlamOutcome.BlockedByExemption => "BLOCKED BY PRE-FILED EXEMPTION",
+                    CardSlamOutcome.ClientNotResponding => "CLIENT NOT RESPONDING",
+                    CardSlamOutcome.NoActiveClient => "NO ACTIVE CLIENT",
+                    CardSlamOutcome.InvalidCard => "INVALID CARD",
+                    _ => "NO EFFECT",
+                };
+                string reason = string.IsNullOrWhiteSpace(result.FailureReason)
+                    ? heading
+                    : result.FailureReason;
+                var failureFacts = BuildProjectionFacts(result, includeFatigue: false);
+                if (!string.IsNullOrWhiteSpace(notice)) failureFacts.Add(notice);
+                return $"{card} · EXPECTED {heading}\n{reason}" +
+                       (failureFacts.Count > 0
+                           ? $"\n{string.Join(" · ", failureFacts)}"
+                           : "");
+            }
+
+            string transition = FormatProjectedClientChange(result);
+            var facts = BuildProjectionFacts(result, includeFatigue: true);
+            if (!string.IsNullOrWhiteSpace(notice)) facts.Add(notice);
+
+            return $"{card} · EXPECTED\n{transition}\n{string.Join(" · ", facts)}";
+        }
+
+        private static string FormatProjectedClientChange(ProjectedCardResolution result)
+        {
+            if (!string.IsNullOrWhiteSpace(result.ClientEffect))
+                return $"{result.ClientEffect} · {result.ClientEffectDuration:0.##}s";
+
+            return result.StateBefore.HasValue && result.StateAfter.HasValue
+                ? $"{result.StateBefore.Value.ToString().ToUpperInvariant()} → " +
+                  result.StateAfter.Value.ToString().ToUpperInvariant()
+                : "STATE EXPECTED";
+        }
+
+        private static List<string> BuildProjectionFacts(
+            ProjectedCardResolution result, bool includeFatigue)
+        {
+            var facts = new List<string>();
+            if (result.CreditsDelta != 0)
+                facts.Add($"Credits {FormatSigned(result.CreditsDelta, "¢")}");
+            if (!Mathf.Approximately(result.SanityDelta, 0f))
+                facts.Add($"Sanity {FormatSigned(result.SanityDelta)}");
+            if (!Mathf.Approximately(result.SoulIntegrityDelta, 0f))
+                facts.Add($"Soul {FormatSigned(result.SoulIntegrityDelta)}");
+            if (includeFatigue)
+                facts.Add($"Fatigue {result.FatigueBefore}→{result.FatigueAfter}");
+            return facts;
+        }
+
         private static string FormatResult(AppliedCardResolution result)
         {
             string card = result.CardType.ToString().ToUpperInvariant();
@@ -173,21 +272,36 @@ namespace Desk42.UI
                 string reason = string.IsNullOrWhiteSpace(result.FailureReason)
                     ? heading
                     : result.FailureReason;
-                if (result.Outcome == CardSlamOutcome.InsufficientCredits
-                    && result.RequiredCredits > 0)
-                {
-                    reason = $"{reason}  Need ¢{result.RequiredCredits}.";
-                }
                 if (result.Outcome == CardSlamOutcome.InvalidCard)
                     return $"{heading}\n{reason}";
 
-                return $"{card} — {heading}\n{reason}";
+                var failureFacts = new List<string>();
+                if (result.StateBefore.HasValue && result.StateAfter.HasValue
+                    && result.StateBefore.Value != result.StateAfter.Value)
+                {
+                    failureFacts.Add(
+                        $"{result.StateBefore.Value.ToString().ToUpperInvariant()} → " +
+                        result.StateAfter.Value.ToString().ToUpperInvariant());
+                }
+                if (result.CreditsDelta != 0)
+                    failureFacts.Add($"Credits {FormatSigned(result.CreditsDelta, "¢")}");
+                if (!Mathf.Approximately(result.SanityDelta, 0f))
+                    failureFacts.Add($"Sanity {FormatSigned(result.SanityDelta)}");
+                if (!Mathf.Approximately(result.SoulIntegrityDelta, 0f))
+                    failureFacts.Add($"Soul {FormatSigned(result.SoulIntegrityDelta)}");
+
+                return $"{card} — {heading}\n{reason}" +
+                       (failureFacts.Count > 0
+                           ? $"\n{string.Join(" · ", failureFacts)}"
+                           : "");
             }
 
-            string transition = result.StateBefore.HasValue && result.StateAfter.HasValue
-                ? $"{result.StateBefore.Value.ToString().ToUpperInvariant()} → " +
-                  result.StateAfter.Value.ToString().ToUpperInvariant()
-                : "STATE CONFIRMED";
+            string transition = !string.IsNullOrWhiteSpace(result.ClientEffect)
+                ? $"{result.ClientEffect} · {result.ClientEffectDuration:0.##}s"
+                : result.StateBefore.HasValue && result.StateAfter.HasValue
+                    ? $"{result.StateBefore.Value.ToString().ToUpperInvariant()} → " +
+                      result.StateAfter.Value.ToString().ToUpperInvariant()
+                    : "STATE CONFIRMED";
 
             var facts = new List<string>();
             if (result.CreditsDelta != 0)

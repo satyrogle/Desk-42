@@ -154,6 +154,41 @@ namespace Desk42.Encounter
         public void Deny() => ResolveEncounter(ClaimResolutionKind.Deny);
 
         /// <summary>
+        /// Side-effect-free consequence projection for decision UI. The caller
+        /// must present it as expected, never as a guaranteed applied result.
+        /// </summary>
+        public bool TryPreviewResolution(
+            ClaimResolutionKind kind,
+            out ProjectedClaimResolution projection,
+            out string unavailableReason)
+        {
+            projection = default;
+            unavailableReason = null;
+
+            if (!_encounterActive || _activeClaim == null)
+            {
+                unavailableReason = "No active claim.";
+                return false;
+            }
+
+            if (_punchCardMachine != null && _punchCardMachine.IsProcessing)
+            {
+                unavailableReason = "Finish processing the punch card first.";
+                return false;
+            }
+
+            var run = GameManager.Instance?.Run;
+            if (run == null)
+            {
+                unavailableReason = "No active run.";
+                return false;
+            }
+
+            projection = run.PreviewClaimResolution(BuildOutcome(kind, run));
+            return true;
+        }
+
+        /// <summary>
         /// Layer 3 Dark Economy — drag the client into the Pneumatic
         /// Tube. Bypasses the claim with no payout, no soul cost, no
         /// dilemma. Grants Dark Intelligence. ~30% chance of an OSHA
@@ -175,7 +210,7 @@ namespace Desk42.Encounter
             // Liquify is an explicit policy outcome: it advances the shift
             // while preserving its existing zero-resource-cost behaviour. Its
             // Dark Intelligence gain is applied and reported through one result.
-            var outcome = ClaimResolutionConsequencePolicy.Liquify();
+            var outcome = BuildOutcome(ClaimResolutionKind.Liquify, run);
             var applied = run.ApplyClaimResolution(
                 outcome,
                 _activeClaim.ClaimId,
@@ -216,12 +251,7 @@ namespace Desk42.Encounter
 
             _encounterActive = false;
 
-            var outcome = ClaimResolutionConsequencePolicy.Resolve(
-                kind,
-                _activeClaim,
-                run?.ShiftNumber ?? 1,
-                _baseCreditsApprove,
-                ComplianceVowSystem.GetBasePayoutMultiplier());
+            var outcome = BuildOutcome(kind, run);
 
             // Apply synchronously at the publish site. The deferred event below
             // is notification-only and cannot re-apply resources during flush.
@@ -245,6 +275,20 @@ namespace Desk42.Encounter
             _activeClaim = null;
             _punchCardMachine?.ClearActiveClient();
             StartCoroutine(DestroyClientAfter(resolvedCSM, 0.8f));
+        }
+
+        private ClaimResolutionOutcome BuildOutcome(
+            ClaimResolutionKind kind, RunStateController run)
+        {
+            if (kind == ClaimResolutionKind.Liquify)
+                return ClaimResolutionConsequencePolicy.Liquify();
+
+            return ClaimResolutionConsequencePolicy.Resolve(
+                kind,
+                _activeClaim,
+                run?.ShiftNumber ?? 1,
+                _baseCreditsApprove,
+                ComplianceVowSystem.GetBasePayoutMultiplier());
         }
 
         private static System.Collections.IEnumerator DestroyClientAfter(

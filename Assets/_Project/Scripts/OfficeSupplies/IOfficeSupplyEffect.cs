@@ -132,10 +132,23 @@ namespace Desk42.OfficeSupplies
             IReadOnlyList<string> cardTags);
 
         /// <summary>
+        /// Side-effect-free version used by intent previews. Stateful supplies
+        /// must report what ModifyInjectionDuration would do without consuming it.
+        /// </summary>
+        float PreviewInjectionDuration(PunchCardType cardType, float currentDuration,
+            IReadOnlyList<string> cardTags);
+
+        /// <summary>
         /// Called by SynergyResolver to apply credit cost modifiers.
         /// Return the modified cost (clamped ≥0 by caller).
         /// </summary>
         int ModifyCreditCost(PunchCardType cardType, int currentCost);
+
+        /// <summary>
+        /// Side-effect-free version used by intent previews. Stateful discounts
+        /// remain armed until the real resolution calls ModifyCreditCost.
+        /// </summary>
+        int PreviewCreditCost(PunchCardType cardType, int currentCost);
 
         /// <summary>
         /// Called by SynergyResolver to apply soul cost modifiers.
@@ -143,6 +156,9 @@ namespace Desk42.OfficeSupplies
         /// Paper Weight reduces all soul costs by 1; future supplies may also hook here.
         /// </summary>
         float ModifySoulCost(float currentCost);
+
+        /// <summary>Side-effect-free soul-cost projection.</summary>
+        float PreviewSoulCost(float currentCost);
     }
 
     // ── Supply Effect Base ─────────────────────────────────────
@@ -168,9 +184,18 @@ namespace Desk42.OfficeSupplies
             PunchCardType cardType, float duration, IReadOnlyList<string> tags)
             => duration;
 
+        public virtual float PreviewInjectionDuration(
+            PunchCardType cardType, float duration, IReadOnlyList<string> tags)
+            => ModifyInjectionDuration(cardType, duration, tags);
+
         public virtual int ModifyCreditCost(PunchCardType cardType, int cost)
             => cost;
 
+        public virtual int PreviewCreditCost(PunchCardType cardType, int cost)
+            => ModifyCreditCost(cardType, cost);
+
         public virtual float ModifySoulCost(float cost) => cost;
+
+        public virtual float PreviewSoulCost(float cost) => ModifySoulCost(cost);
     }
 }

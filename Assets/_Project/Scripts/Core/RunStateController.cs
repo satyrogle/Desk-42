@@ -150,11 +150,9 @@ namespace Desk42.Core
         /// <param name="delta">Negative to drain, positive to recover.</param>
         public void ModifySanity(float delta)
         {
-            // Phase 3 drip-feed: No sanity loss before Phase 3
-            if (delta < 0f && !(GameManager.Instance?.IsPhaseUnlocked(3) ?? true)) return;
-
             float prev = _data.Sanity;
-            _data.Sanity = Mathf.Clamp(_data.Sanity + delta, 0f, 100f);
+            float appliedDelta = ProjectSanityDelta(delta);
+            _data.Sanity += appliedDelta;
 
             if (Mathf.Approximately(prev, _data.Sanity)) return;
 
@@ -173,19 +171,9 @@ namespace Desk42.Core
         /// <param name="delta">Negative to lose soul, positive to restore.</param>
         public void ModifySoulIntegrity(float delta)
         {
-            // Phase 3 drip-feed: No soul loss before Phase 3
-            if (delta < 0f && !(GameManager.Instance?.IsPhaseUnlocked(3) ?? true)) return;
-
-            if (delta < 0)
-            {
-                // Zero Tolerance vow increases soul damage by 20% per rank
-                int zeroTolRank = GetVowRank("zero_tolerance");
-                if (zeroTolRank > 0)
-                    delta *= (1f + (0.20f * zeroTolRank));
-            }
-
             float prev = _data.SoulIntegrity;
-            _data.SoulIntegrity = Mathf.Clamp(_data.SoulIntegrity + delta, 0f, 100f);
+            float appliedDelta = ProjectSoulIntegrityDelta(delta);
+            _data.SoulIntegrity += appliedDelta;
 
             if (Mathf.Approximately(prev, _data.SoulIntegrity)) return;
 
@@ -193,6 +181,39 @@ namespace Desk42.Core
                 new SoulIntegrityChangedEvent(prev, _data.SoulIntegrity));
 
             CheckNarratorToneThreshold(prev, _data.SoulIntegrity);
+        }
+
+        /// <summary>Side-effect-free sanity delta after phase gating and clamps.</summary>
+        public float ProjectSanityDelta(float requestedDelta)
+        {
+            if (requestedDelta < 0f
+                && !(GameManager.Instance?.IsPhaseUnlocked(3) ?? true))
+                return 0f;
+
+            return Mathf.Clamp(_data.Sanity + requestedDelta, 0f, 100f)
+                - _data.Sanity;
+        }
+
+        /// <summary>
+        /// Side-effect-free soul delta after phase gating, vow amplification,
+        /// and clamps. ModifySoulIntegrity consumes this exact projection.
+        /// </summary>
+        public float ProjectSoulIntegrityDelta(float requestedDelta)
+        {
+            if (requestedDelta < 0f
+                && !(GameManager.Instance?.IsPhaseUnlocked(3) ?? true))
+                return 0f;
+
+            float adjustedDelta = requestedDelta;
+            if (adjustedDelta < 0f)
+            {
+                int zeroTolRank = GetVowRank("zero_tolerance");
+                if (zeroTolRank > 0)
+                    adjustedDelta *= 1f + (0.20f * zeroTolRank);
+            }
+
+            return Mathf.Clamp(_data.SoulIntegrity + adjustedDelta, 0f, 100f)
+                - _data.SoulIntegrity;
         }
 
         // ── Credits ───────────────────────────────────────────
@@ -399,16 +420,8 @@ namespace Desk42.Core
             if (outcome.DarkIntelligenceGain > 0)
                 _data.DarkIntelligence += outcome.DarkIntelligenceGain;
 
-            // Corporate preference, not correctness: Approve advances the
-            // Compliance Streak; Deny and Liquify end it.
-            if (outcome.Kind == ClaimResolutionKind.Approve)
-                _data.ComboMultiplier += 0.1f;
-            else
-                _data.ComboMultiplier = 1.0f;
-
-            int resetInterval = ComplianceVowSystem.GetComboResetInterval();
-            if (resetInterval > 0 && _data.Stats.ClaimsProcessed % resetInterval == 0)
-                _data.ComboMultiplier = 1.0f;
+            _data.ComboMultiplier = ProjectComplianceStreakAfter(
+                outcome.Kind, _data.Stats.ClaimsProcessed);
 
             return new AppliedClaimResolution(
                 claimId,
@@ -424,6 +437,46 @@ namespace Desk42.Core
                 _data.QuotaForCurrentAnte,
                 streakBefore,
                 _data.ComboMultiplier);
+        }
+
+        /// <summary>
+        /// Projects the exact currently knowable claim deltas without changing
+        /// resources, statistics, quota, or the Compliance Streak.
+        /// </summary>
+        public ProjectedClaimResolution PreviewClaimResolution(
+            ClaimResolutionOutcome outcome)
+        {
+            int claimsProcessedAfter = _data.Stats.ClaimsProcessed + 1;
+            float streakAfter = ProjectComplianceStreakAfter(
+                outcome.Kind, claimsProcessedAfter);
+
+            return new ProjectedClaimResolution(
+                outcome.Kind,
+                outcome.CreditsEarned,
+                ProjectSanityDelta(-outcome.SanityCost),
+                ProjectSoulIntegrityDelta(-outcome.SoulCost),
+                outcome.DarkIntelligenceGain,
+                _data.ClaimsProcessedThisAnte,
+                _data.ClaimsProcessedThisAnte + 1,
+                _data.QuotaForCurrentAnte,
+                _data.ComboMultiplier,
+                streakAfter);
+        }
+
+        private float ProjectComplianceStreakAfter(
+            ClaimResolutionKind kind, int claimsProcessedAfter)
+        {
+            // Corporate preference, not correctness: Approve advances the
+            // Compliance Streak; Deny and Liquify end it.
+            float projected = kind == ClaimResolutionKind.Approve
+                ? _data.ComboMultiplier + 0.1f
+                : 1.0f;
+
+            int resetInterval = ComplianceVowSystem.GetComboResetInterval();
+            if (resetInterval > 0 && claimsProcessedAfter % resetInterval == 0)
+                projected = 1.0f;
+
+            return projected;
         }
 
         public void RecordCardSlam()

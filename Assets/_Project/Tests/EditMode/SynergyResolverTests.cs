@@ -119,6 +119,29 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void PreviewCascade_DoesNotConsumeRubberStamp()
+        {
+            PlaceTestSupply("rubber_stamp", DeskZone.Tray);
+
+            var firstPreview = _resolver.PreviewCascade(
+                PunchCardType.PendingReview, 10f, 5, 0f);
+            var secondPreview = _resolver.PreviewCascade(
+                PunchCardType.PendingReview, 10f, 5, 0f);
+            var applied = _resolver.ResolveCascade(
+                PunchCardType.PendingReview, 10f, 5, 0f);
+            var afterApplication = _resolver.ResolveCascade(
+                PunchCardType.PendingReview, 10f, 5, 0f);
+
+            Assert.AreEqual(0, firstPreview.FinalCreditCost);
+            Assert.AreEqual(0, secondPreview.FinalCreditCost,
+                "Repeated hover must not consume the projected free slam.");
+            Assert.AreEqual(0, applied.FinalCreditCost,
+                "The real slam must still receive the projected discount.");
+            Assert.AreEqual(5, afterApplication.FinalCreditCost,
+                "Only the applied cascade consumes the Rubber Stamp.");
+        }
+
+        [Test]
         public void NoActiveSupplies_CreditCostUnchanged()
         {
             int result = _resolver.ApplyCreditCostModifiers(PunchCardType.PendingReview, 5);

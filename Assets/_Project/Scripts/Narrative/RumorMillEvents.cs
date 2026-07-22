@@ -151,6 +151,31 @@ namespace Desk42.Core
         }
     }
 
+    /// <summary>
+    /// Ephemeral card intent preview. IsVisible=false restores the latest
+    /// applied receipt; it never represents or triggers an applied action.
+    /// </summary>
+    public readonly struct CardPreviewEvent
+    {
+        public readonly ProjectedCardResolution Projection;
+        public readonly string CardInstanceId;
+        public readonly bool IsVisible;
+
+        public CardPreviewEvent(ProjectedCardResolution projection)
+        {
+            Projection = projection;
+            CardInstanceId = projection.CardInstanceId;
+            IsVisible = true;
+        }
+
+        public CardPreviewEvent(string cardInstanceId)
+        {
+            Projection = default;
+            CardInstanceId = cardInstanceId;
+            IsVisible = false;
+        }
+    }
+
     /// <summary>Player made an active moral choice at a dilemma prompt.</summary>
     public readonly struct MoralChoiceEvent
     {

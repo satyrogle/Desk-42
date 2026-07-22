@@ -14,9 +14,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Desk42.Core;
+using Desk42.Encounter;
 
 namespace Desk42.UI
 {
@@ -37,6 +39,9 @@ namespace Desk42.UI
         private TMP_Text _receiptText;
         private GameObject _obligationsPanel;
         private TMP_Text _obligationsText;
+        private string _latestReceiptText;
+        private ClaimResolutionKind _activeProjectionKind;
+        private EncounterManager _encounter;
         private int _lastObligationCredits = int.MinValue;
         private int _lastObligationCount = -1;
         private bool _lastObligationsApplied;
@@ -60,11 +65,16 @@ namespace Desk42.UI
             BuildToastContainer();
             BuildReceiptPanel();
             BuildObligationsPanel();
+            WireDecisionPreviewTriggers();
         }
 
         private void Start() => RefreshObligations(force: true);
 
-        private void Update() => RefreshObligations(force: false);
+        private void Update()
+        {
+            RefreshObligations(force: false);
+            RefreshClaimProjection();
+        }
 
         private void OnEnable()
         {
@@ -133,6 +143,7 @@ namespace Desk42.UI
 #if DEVELOPMENT_BUILD
             Debugging.ConsensusAudit.MarkFeedbackOverlay();
 #endif
+            _activeProjectionKind = ClaimResolutionKind.Unspecified;
             ShowClaimReceipt(e.Result);
         }
 
@@ -267,6 +278,89 @@ namespace Desk42.UI
             _obligationsPanel.transform.SetAsLastSibling();
         }
 
+        private void WireDecisionPreviewTriggers()
+        {
+            WireDecisionPreviewTrigger("ApproveBtn", ClaimResolutionKind.Approve);
+            WireDecisionPreviewTrigger("DenyBtn", ClaimResolutionKind.Deny);
+        }
+
+        private void WireDecisionPreviewTrigger(
+            string objectName, ClaimResolutionKind kind)
+        {
+            var buttonObject = GameObject.Find(objectName);
+            if (buttonObject == null) return;
+
+            var trigger = buttonObject.GetComponent<ClaimDecisionPreviewTrigger>();
+            if (trigger == null)
+                trigger = buttonObject.AddComponent<ClaimDecisionPreviewTrigger>();
+            trigger.Initialize(this, kind);
+        }
+
+        public void BeginClaimProjection(ClaimResolutionKind kind)
+        {
+            _activeProjectionKind = kind;
+            RefreshClaimProjection();
+        }
+
+        public void EndClaimProjection(ClaimResolutionKind kind)
+        {
+            if (_activeProjectionKind != kind) return;
+            _activeProjectionKind = ClaimResolutionKind.Unspecified;
+            _receiptText.text = _latestReceiptText ?? "";
+            _receiptPanel.SetActive(!string.IsNullOrWhiteSpace(_latestReceiptText));
+        }
+
+        private void RefreshClaimProjection()
+        {
+            if (_activeProjectionKind == ClaimResolutionKind.Unspecified) return;
+            if (_receiptPanel == null) BuildReceiptPanel();
+
+            if (_encounter == null)
+                _encounter = Desk42Services.Get<EncounterManager>()
+                    ?? FindObjectOfType<EncounterManager>();
+
+            string unavailableReason = null;
+            if (_encounter == null
+                || !_encounter.TryPreviewResolution(
+                    _activeProjectionKind,
+                    out var projection,
+                    out unavailableReason))
+            {
+                _receiptText.text =
+                    $"<b>{_activeProjectionKind.ToString().ToUpperInvariant()} · UNAVAILABLE</b>\n" +
+                    (string.IsNullOrWhiteSpace(unavailableReason)
+                        ? "No active claim."
+                        : unavailableReason);
+                _receiptPanel.SetActive(true);
+                return;
+            }
+
+            ShowClaimProjection(projection);
+        }
+
+        private void ShowClaimProjection(ProjectedClaimResolution result)
+        {
+            string quota = result.QuotaRequired > 0
+                ? $"{result.QuotaAfter}/{result.QuotaRequired}"
+                : result.QuotaAfter.ToString();
+            string streak = Mathf.Approximately(
+                    result.ComplianceStreakBefore, result.ComplianceStreakAfter)
+                ? $"{result.ComplianceStreakAfter:0.0}x"
+                : $"{result.ComplianceStreakBefore:0.0}x → {result.ComplianceStreakAfter:0.0}x";
+
+            _receiptText.text =
+                $"<b>{result.Kind.ToString().ToUpperInvariant()} · EXPECTED</b>\n" +
+                $"Corporate credits  {FormatSignedCredits(result.CreditsDelta)}\n" +
+                $"Sanity  {FormatSignedAmount(result.SanityDelta)}\n" +
+                $"Soul integrity  {FormatSignedAmount(result.SoulIntegrityDelta)}\n" +
+                $"Dark intelligence  {FormatSignedAmount(result.DarkIntelligenceDelta)}\n" +
+                $"Quota  {quota}\n" +
+                $"Compliance streak  {streak}\n" +
+                "<i>Projection — receipt confirms what lands.</i>";
+            _receiptPanel.SetActive(true);
+            _receiptPanel.transform.SetAsLastSibling();
+        }
+
         private void ShowClaimReceipt(AppliedClaimResolution result)
         {
             if (_receiptPanel == null) BuildReceiptPanel();
@@ -287,7 +381,7 @@ namespace Desk42.UI
                 ? $"{result.ComplianceStreakAfter:0.0}x"
                 : $"{result.ComplianceStreakBefore:0.0}x → {result.ComplianceStreakAfter:0.0}x";
 
-            _receiptText.text =
+            _latestReceiptText =
                 $"<b>{heading}</b>\n" +
                 $"Corporate credits  {FormatSignedCredits(result.CreditsDelta)}\n" +
                 $"Sanity  {FormatSignedAmount(result.SanityDelta)}\n" +
@@ -295,6 +389,7 @@ namespace Desk42.UI
                 $"Dark intelligence  {FormatSignedAmount(result.DarkIntelligenceDelta)}\n" +
                 $"Quota  {quota}\n" +
                 $"Compliance streak  {streak}";
+            _receiptText.text = _latestReceiptText;
             _receiptPanel.SetActive(true);
             _receiptPanel.transform.SetAsLastSibling();
         }
@@ -420,6 +515,48 @@ namespace Desk42.UI
             }
 
             if (go != null) Destroy(go);
+        }
+    }
+
+    /// <summary>
+    /// Lightweight hover/focus bridge attached to the existing Approve and
+    /// Deny buttons at runtime by ShiftFeedbackOverlay.
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class ClaimDecisionPreviewTrigger : MonoBehaviour,
+        IPointerEnterHandler, IPointerExitHandler,
+        ISelectHandler, IDeselectHandler
+    {
+        private ShiftFeedbackOverlay _overlay;
+        private ClaimResolutionKind _kind;
+        private bool _visible;
+
+        public void Initialize(
+            ShiftFeedbackOverlay overlay, ClaimResolutionKind kind)
+        {
+            _overlay = overlay;
+            _kind = kind;
+        }
+
+        public void OnPointerEnter(PointerEventData eventData) => Show();
+        public void OnPointerExit(PointerEventData eventData) => Hide();
+        public void OnSelect(BaseEventData eventData) => Show();
+        public void OnDeselect(BaseEventData eventData) => Hide();
+
+        private void OnDisable() => Hide();
+
+        private void Show()
+        {
+            if (_overlay == null) return;
+            _visible = true;
+            _overlay.BeginClaimProjection(_kind);
+        }
+
+        private void Hide()
+        {
+            if (!_visible || _overlay == null) return;
+            _visible = false;
+            _overlay.EndClaimProjection(_kind);
         }
     }
 }

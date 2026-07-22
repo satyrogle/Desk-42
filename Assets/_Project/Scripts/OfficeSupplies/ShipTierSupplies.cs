@@ -87,6 +87,9 @@ namespace Desk42.OfficeSupplies
             return cost;
         }
 
+        public override int PreviewCreditCost(PunchCardType cardType, int cost)
+            => _discountReady && cost > 0 ? Mathf.Max(0, cost - 1) : cost;
+
         // Persist discount state across save/load via RuntimeState
         public override void OnEncounterStart(SupplyContext ctx)
         {
@@ -249,6 +252,9 @@ namespace Desk42.OfficeSupplies
             Debug.Log("[RubberStamp] First slam this encounter is free.");
             return 0;
         }
+
+        public override int PreviewCreditCost(PunchCardType cardType, int cost)
+            => _used || cost <= 0 ? cost : 0;
     }
 
     // ═══════════════════════════════════════════════════════════

@@ -109,6 +109,57 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void ClaimProjection_MatchesNextAppliedResultWithoutMutatingRun()
+        {
+            var go = new GameObject("RunStateController_ProjectionTest");
+            var run = go.AddComponent<RunStateController>();
+            var data = new RunData
+            {
+                Sanity = 2f,
+                SoulIntegrity = 0.5f,
+                CorporateCredits = 4,
+                ClaimsProcessedThisAnte = 1,
+                QuotaForCurrentAnte = 3,
+                ComboMultiplier = 1.2f,
+            };
+            typeof(RunStateController)
+                .GetField("_data", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(run, data);
+
+            try
+            {
+                var outcome = new ClaimResolutionOutcome(
+                    ClaimResolutionKind.Approve,
+                    creditsEarned: 12, sanityCost: 4f, soulCost: 1f);
+                var projected = run.PreviewClaimResolution(outcome);
+
+                Assert.AreEqual(4, data.CorporateCredits);
+                Assert.AreEqual(2f, data.Sanity);
+                Assert.AreEqual(0.5f, data.SoulIntegrity);
+                Assert.AreEqual(1, data.ClaimsProcessedThisAnte);
+                Assert.AreEqual(0, data.Stats.ClaimsProcessed);
+
+                var applied = run.ApplyClaimResolution(
+                    outcome, "claim", "client", "human");
+
+                Assert.AreEqual(projected.Kind, applied.Kind);
+                Assert.AreEqual(projected.CreditsDelta, applied.CreditsDelta);
+                Assert.AreEqual(projected.SanityDelta, applied.SanityDelta, 0.001f);
+                Assert.AreEqual(projected.SoulIntegrityDelta, applied.SoulIntegrityDelta, 0.001f);
+                Assert.AreEqual(projected.DarkIntelligenceDelta, applied.DarkIntelligenceDelta);
+                Assert.AreEqual(projected.QuotaBefore, applied.QuotaBefore);
+                Assert.AreEqual(projected.QuotaAfter, applied.QuotaAfter);
+                Assert.AreEqual(projected.QuotaRequired, applied.QuotaRequired);
+                Assert.AreEqual(projected.ComplianceStreakBefore, applied.ComplianceStreakBefore, 0.001f);
+                Assert.AreEqual(projected.ComplianceStreakAfter, applied.ComplianceStreakAfter, 0.001f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+
+        [Test]
         public void FailedSpendRefund_RestoresBalanceWithoutCreatingIncome()
         {
             var go = new GameObject("RunStateController_RefundTest");

@@ -112,6 +112,11 @@ namespace Desk42.RedTape
             _state = MachineState.Idle;
         }
 
+        /// <summary>Side-effect-free intent projection for hand UI.</summary>
+        public ProjectedCardResolution PreviewCard(
+            PunchCardData data, string instanceId)
+            => _injector.PreviewSlam(data, instanceId);
+
         private void OnDestroy()
         {
             Desk42Services.Unregister(this);

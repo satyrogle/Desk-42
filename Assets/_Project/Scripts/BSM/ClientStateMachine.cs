@@ -169,22 +169,18 @@ namespace Desk42.BSM
 
         public InjectionResult TryInject(string cardType, float overrideDuration = 0f)
         {
-            // Check BT blocker (mutation-generated counter-node)
-            if (_baseBT.HasBlockerForCard(cardType))
-            {
-                OnDarkHumour?.Invoke("pre_filed_exemption");
-                return InjectionResult.BlockedByCounterTrait;
-            }
-
-            // Can't inject into dissociating client (they're not present)
-            if (_currentMoodState == ClientStateID.Dissociating)
-                return InjectionResult.ClientDissociating;
-
-            // Resolve the BSM transition for this card type
             RefreshContext();
             _context.TriggerAction = cardType;
-            var targetState = _transitionTable.Resolve(
-                BuildTransitionContext(cardType));
+
+            var evaluation = PreviewInject(cardType, out var targetState);
+            if (evaluation == InjectionResult.BlockedByCounterTrait)
+            {
+                OnDarkHumour?.Invoke("pre_filed_exemption");
+                return evaluation;
+            }
+
+            if (evaluation != InjectionResult.Success)
+                return evaluation;
 
             // Build the correct injected state object
             var injectedState = CreateInjectedState(cardType, targetState, overrideDuration);
@@ -203,6 +199,36 @@ namespace Desk42.BSM
             // BSM mood state changes immediately
             TransitionToState(targetState, fireEvent: true,
                 byCard: true, mutated: false);
+
+            return InjectionResult.Success;
+        }
+
+        /// <summary>
+        /// Evaluates an injection without changing mood, stack, BT pause state,
+        /// events, or counters. stateOverride lets StateInjector account for a
+        /// known impatience overflow before the real card resolves.
+        /// </summary>
+        public InjectionResult PreviewInject(string cardType,
+            out ClientStateID targetState,
+            ClientStateID? stateOverride = null)
+        {
+            ClientStateID evaluationState = stateOverride ?? _currentMoodState;
+            targetState = evaluationState;
+
+            if (_baseBT == null || _transitionTable == null)
+                return InjectionResult.BlockedByCurrentState;
+
+            if (_baseBT.HasBlockerForCard(cardType))
+                return InjectionResult.BlockedByCounterTrait;
+
+            if (evaluationState == ClientStateID.Dissociating)
+                return InjectionResult.ClientDissociating;
+
+            targetState = _transitionTable.Resolve(
+                BuildTransitionContext(cardType, evaluationState));
+
+            if (!CreatesInjectedState(cardType) && targetState == evaluationState)
+                return InjectionResult.BlockedByCurrentState;
 
             return InjectionResult.Success;
         }
@@ -276,18 +302,23 @@ namespace Desk42.BSM
             return ctx;
         }
 
-        private TransitionContext BuildTransitionContext(string triggerAction)
+        private TransitionContext BuildTransitionContext(string triggerAction,
+            ClientStateID? stateOverride = null)
         {
+            var run = GameManager.Instance?.Run;
+            float impatienceRatio = run != null
+                ? 1f - (run.ImpatenceTimer / 1440f)
+                : _context?.ImpatienceTimerRatio ?? 0f;
             return new TransitionContext
             {
                 TriggerAction        = triggerAction,
                 ClientSpeciesId      = _clientSpeciesId,
                 ActiveCounterTraits  = _activeCounterTraits,
-                CurrentState         = _currentMoodState,
-                SoulIntegrity        = GameManager.Instance?.Run?.SoulIntegrity ?? 100f,
-                ImpatienceRatio      = _context.ImpatienceTimerRatio,
-                LegalReputation      = GameManager.Instance?.Run?.GetFactionRep(FactionID.Legal) ?? 0f,
-                ManagementReputation = GameManager.Instance?.Run?.GetFactionRep(FactionID.Management) ?? 0f,
+                CurrentState         = stateOverride ?? _currentMoodState,
+                SoulIntegrity        = run?.SoulIntegrity ?? 100f,
+                ImpatienceRatio      = impatienceRatio,
+                LegalReputation      = run?.GetFactionRep(FactionID.Legal) ?? 0f,
+                ManagementReputation = run?.GetFactionRep(FactionID.Management) ?? 0f,
                 VisitCount           = _visitCount,
                 HiddenTraitRevealed  = _context.HiddenTraitRevealed,
                 ClaimCorruption      = _context.ClaimCorruption,
@@ -374,6 +405,14 @@ namespace Desk42.BSM
 
                 _ => null,
             };
+        }
+
+        private static bool CreatesInjectedState(string cardType)
+        {
+            return cardType == nameof(PunchCardType.PendingReview)
+                || cardType == nameof(PunchCardType.LegalHold)
+                || cardType == nameof(PunchCardType.Expedite)
+                || cardType == nameof(PunchCardType.CooperationRoute);
         }
 
         // ── World State Accessors ─────────────────────────────

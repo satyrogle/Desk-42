@@ -132,6 +132,9 @@ namespace Desk42.BehaviourTrees
         public bool HasBlockerForCard(string cardType)
             => _blockers.ContainsKey(cardType);
 
+        public bool TryGetBlockerForCard(string cardType, out BTBlockerNode blocker)
+            => _blockers.TryGetValue(cardType, out blocker);
+
         public IReadOnlyDictionary<string, BTBlockerNode> AllBlockers => _blockers;
 
         // ── Debug ─────────────────────────────────────────────

@@ -53,6 +53,127 @@ namespace Desk42.RedTape
         // ── Main Entry Point ──────────────────────────────────
 
         /// <summary>
+        /// Projects a slam from the current live snapshot without mutating the
+        /// client, resources, fatigue, supplies, statistics, or event bus.
+        /// The UI labels this expected because state can move before processing.
+        /// </summary>
+        public ProjectedCardResolution PreviewSlam(
+            PunchCardData card, string cardInstanceId)
+        {
+            if (card == null)
+            {
+                return new ProjectedCardResolution(
+                    default, "INVALID CARD", cardInstanceId,
+                    CardSlamOutcome.InvalidCard,
+                    "No punch card data was supplied.",
+                    null, null, 0, 0f, 0f, 0, 0, 0,
+                    default, hasCascade: false);
+            }
+
+            var run = GameManager.Instance?.Run;
+            int fatigueBefore = _fatigue?.GetFatigue(cardInstanceId) ?? 0;
+            var notices = new List<string>();
+
+            if (_activeClient == null)
+            {
+                return NewProjection(card, cardInstanceId,
+                    CardSlamOutcome.NoActiveClient, "No active client.",
+                    null, null, 0, 0f, 0f, 0,
+                    fatigueBefore, fatigueBefore, default, false, notices);
+            }
+
+            ClientStateID stateBefore = _activeClient.CurrentMoodState;
+            ClientStateID evaluationState = stateBefore;
+            float atbSanityCost = 0f;
+
+            if (_activeClient.Impatience >= ClientStateMachine.MaxImpatience)
+            {
+                evaluationState = ClientStateID.Agitated;
+                atbSanityCost = ATB_OVERFLOW_SANITY_COST;
+                notices.Add("Impatience overflow will force AGITATED before processing.");
+            }
+
+            if (_fatigue != null
+                && !_fatigue.CanPlay(cardInstanceId, card, out string fatigueReason))
+            {
+                CardSlamOutcome fatigueOutcome = _fatigue.IsJammed(cardInstanceId)
+                    ? CardSlamOutcome.CardJammed
+                    : CardSlamOutcome.CardCrumpled;
+                return NewProjection(card, cardInstanceId,
+                    fatigueOutcome, fatigueReason,
+                    stateBefore, evaluationState, 0,
+                    run?.ProjectSanityDelta(-atbSanityCost) ?? 0f,
+                    0f, 0, fatigueBefore, fatigueBefore,
+                    default, false, notices);
+            }
+
+            SynergyResolutionPacket cascade = BuildCascade(card, previewOnly: true);
+            int effectiveCost = ApplyFlatCreditModifiers(card, cascade.FinalCreditCost);
+            float sanityCostFraction = Core.ComplianceVowSystem.GetSanityCostFraction();
+            float convertedSanityCost = 0f;
+            int creditPortion = effectiveCost;
+
+            if (sanityCostFraction > 0f && effectiveCost > 0)
+            {
+                convertedSanityCost = effectiveCost * sanityCostFraction;
+                creditPortion = Mathf.RoundToInt(effectiveCost * (1f - sanityCostFraction));
+                notices.Add($"Zero-Based Budgeting converts {convertedSanityCost:0.##} cost to Sanity.");
+            }
+
+            AddCascadeNotices(cascade, notices);
+
+            int availableCredits = run?.Credits ?? 0;
+            if (creditPortion > 0 && availableCredits < creditPortion)
+            {
+                string reason = $"Balance ¢{availableCredits}; {card.DisplayName} requires ¢{creditPortion}.";
+                return NewProjection(card, cardInstanceId,
+                    CardSlamOutcome.InsufficientCredits, reason,
+                    stateBefore, evaluationState, 0,
+                    run?.ProjectSanityDelta(-atbSanityCost) ?? 0f,
+                    0f, creditPortion, fatigueBefore, fatigueBefore,
+                    cascade, true, notices);
+            }
+
+            float projectedSanityDelta = run?.ProjectSanityDelta(
+                -(atbSanityCost + convertedSanityCost)) ?? 0f;
+            float durationOverride = ApplyStateEffectiveness(
+                card, cascade.FinalDuration, evaluationState);
+            if (!Mathf.Approximately(durationOverride, cascade.FinalDuration))
+                notices.Add($"Client or office state changes effect duration to {durationOverride:0.##}s.");
+
+            var injection = _activeClient.PreviewInject(
+                card.CardType.ToString(), out var targetState, evaluationState);
+            if (injection != ClientStateMachine.InjectionResult.Success)
+            {
+                string reason = DescribeInjectionFailure(
+                    injection, card, evaluationState);
+                return NewProjection(card, cardInstanceId,
+                    MapInjectionOutcome(injection), reason,
+                    stateBefore, evaluationState, 0,
+                    projectedSanityDelta, 0f, 0,
+                    fatigueBefore, fatigueBefore,
+                    cascade, true, notices);
+            }
+
+            int fatigueAfter = fatigueBefore + 1;
+            if (card.JamFatigue >= 0 && fatigueAfter == card.JamFatigue)
+                notices.Add("This use will jam the card briefly.");
+            if (card.MaxFatigue >= 0 && fatigueAfter >= card.MaxFatigue)
+                notices.Add("This use will crumple the card.");
+
+            TryDescribeInjectedEffect(card.CardType, durationOverride,
+                out string clientEffect, out float clientEffectDuration);
+
+            return NewProjection(card, cardInstanceId,
+                CardSlamOutcome.Success, null,
+                stateBefore, targetState, -creditPortion,
+                projectedSanityDelta,
+                run?.ProjectSoulIntegrityDelta(-cascade.FinalSoulCost) ?? 0f,
+                0, fatigueBefore, fatigueAfter,
+                cascade, true, notices, clientEffect, clientEffectDuration);
+        }
+
+        /// <summary>
         /// Called by PunchCardMachine when a card is physically slammed.
         /// Returns the result so the machine can play appropriate feedback.
         /// </summary>
@@ -141,7 +262,7 @@ namespace Desk42.RedTape
             // publish the per-step trace for the CascadePresenter. Calling the scalar
             // Apply* methods in addition would double-run consumable effects (e.g. the
             // Stapler discount), desyncing what's shown from what's actually charged.
-            SynergyResolutionPacket cascade = BuildCascade(card);
+            SynergyResolutionPacket cascade = BuildCascade(card, previewOnly: false);
 
             // ── Step 2: Credit check ──────────────────────────
             int effectiveCost = ApplyFlatCreditModifiers(card, cascade.FinalCreditCost);
@@ -159,7 +280,7 @@ namespace Desk42.RedTape
                 {
                     var insufficient = new SlamResult(SlamOutcome.InsufficientCredits, card)
                     {
-                        Reason = "Current corporate credit balance is too low."
+                        Reason = $"Balance ¢{creditsBefore}; {card.DisplayName} requires ¢{creditPortion}."
                     };
                     PublishAppliedCard(card, cardInstanceId, clientId,
                         CardSlamOutcome.InsufficientCredits, insufficient.Reason,
@@ -178,7 +299,7 @@ namespace Desk42.RedTape
             {
                 var insufficient = new SlamResult(SlamOutcome.InsufficientCredits, card)
                 {
-                    Reason = "Current corporate credit balance is too low."
+                    Reason = $"Balance ¢{creditsBefore}; {card.DisplayName} requires ¢{effectiveCost}."
                 };
                 PublishAppliedCard(card, cardInstanceId, clientId,
                     CardSlamOutcome.InsufficientCredits, insufficient.Reason,
@@ -203,9 +324,8 @@ namespace Desk42.RedTape
                 if (creditsSpent > 0)
                     run?.RefundFailedSpend(creditsSpent);
 
-                var mapped = MapInjectionFailure(injectionResult, card);
-                if (string.IsNullOrWhiteSpace(mapped.Reason))
-                    mapped.Reason = "This card produced no state change.";
+                var mapped = MapInjectionFailure(
+                    injectionResult, card, _activeClient.CurrentMoodState);
                 PublishAppliedCard(card, cardInstanceId, clientId,
                     MapToEventOutcome(mapped.Outcome), mapped.Reason,
                     stateBefore, _activeClient.CurrentMoodState,
@@ -245,7 +365,10 @@ namespace Desk42.RedTape
                 CardSlamOutcome.Success, null,
                 stateBefore, _activeClient.CurrentMoodState,
                 creditsBefore, sanityBefore, soulBefore,
-                requiredCredits: 0, fatigueBefore, cascade, hasCascade: true);
+                requiredCredits: 0, fatigueBefore, cascade, hasCascade: true,
+                clientEffect: GetInjectedEffectLabel(card.CardType),
+                clientEffectDuration: GetInjectedEffectDuration(
+                    card.CardType, durationOverride));
 
             // ── Step 7: Update Repeat Offender DB ────────────
             GameManager.Instance?.Meta?.RecordCardUsed(
@@ -275,7 +398,8 @@ namespace Desk42.RedTape
         /// phase-gated: below phase 3 the soul chain is suppressed so no phantom
         /// soul cost is shown or charged.
         /// </summary>
-        private SynergyResolutionPacket BuildCascade(PunchCardData card)
+        private SynergyResolutionPacket BuildCascade(
+            PunchCardData card, bool previewOnly)
         {
             var archetype = GameManager.Instance?.Run?.Archetype;
 
@@ -298,7 +422,9 @@ namespace Desk42.RedTape
 
             var resolver = GameManager.Instance?.Supplies?.Resolver;
             SynergyResolutionPacket packet = resolver != null
-                ? resolver.ResolveCascade(card.CardType, baseDuration, baseCredit, baseSoul, card.TypeTags)
+                ? (previewOnly
+                    ? resolver.PreviewCascade(card.CardType, baseDuration, baseCredit, baseSoul, card.TypeTags)
+                    : resolver.ResolveCascade(card.CardType, baseDuration, baseCredit, baseSoul, card.TypeTags))
                 : new SynergyResolutionPacket
                 {
                     CardType        = card.CardType,
@@ -328,12 +454,13 @@ namespace Desk42.RedTape
         /// supply-resolved duration. Separate from the supply cascade because
         /// it depends on live client mood, not desk supplies.
         /// </summary>
-        private float ApplyStateEffectiveness(PunchCardData card, float duration)
+        private float ApplyStateEffectiveness(PunchCardData card, float duration,
+            ClientStateID? moodOverride = null)
         {
             // BSM State Effectiveness 
             if (_activeClient != null)
             {
-                var mood = _activeClient.CurrentMoodState;
+                var mood = moodOverride ?? _activeClient.CurrentMoodState;
                 if (mood == ClientStateID.Suspicious && card.CardType == PunchCardType.CooperationRoute)
                     duration *= 0.5f;
                 else if (mood == ClientStateID.Paranoid && 
@@ -396,21 +523,157 @@ namespace Desk42.RedTape
 
         // ── Failure Mapping ───────────────────────────────────
 
-        private static SlamResult MapInjectionFailure(
-            ClientStateMachine.InjectionResult result, PunchCardData card)
+        private SlamResult MapInjectionFailure(
+            ClientStateMachine.InjectionResult result, PunchCardData card,
+            ClientStateID evaluationState)
+        {
+            var mapped = result switch
+            {
+                ClientStateMachine.InjectionResult.BlockedByCounterTrait =>
+                    new SlamResult(SlamOutcome.BlockedByPreFiledExemption, card)
+                    { Reason = DescribeInjectionFailure(result, card, evaluationState) },
+
+                ClientStateMachine.InjectionResult.ClientDissociating =>
+                    new SlamResult(SlamOutcome.ClientNotResponding, card)
+                    { Reason = DescribeInjectionFailure(result, card, evaluationState) },
+
+                _ => new SlamResult(SlamOutcome.BlockedByCurrentState, card)
+                    { Reason = DescribeInjectionFailure(result, card, evaluationState) }
+            };
+            return mapped;
+        }
+
+        private string DescribeInjectionFailure(
+            ClientStateMachine.InjectionResult result, PunchCardData card,
+            ClientStateID evaluationState)
+        {
+            string cardName = string.IsNullOrWhiteSpace(card?.DisplayName)
+                ? card?.CardType.ToString() ?? "This card"
+                : card.DisplayName;
+
+            switch (result)
+            {
+                case ClientStateMachine.InjectionResult.BlockedByCounterTrait:
+                    string trait = "a pre-filed exemption";
+                    if (_activeClient?.BaseBT != null
+                        && _activeClient.BaseBT.TryGetBlockerForCard(
+                            card.CardType.ToString(), out var blocker)
+                        && !string.IsNullOrWhiteSpace(blocker.CounterTraitId))
+                    {
+                        trait = blocker.CounterTraitId.Replace('_', ' ');
+                    }
+                    return $"Pre-filed exemption: {trait} blocks {cardName}.";
+
+                case ClientStateMachine.InjectionResult.ClientDissociating:
+                    return $"{cardName} cannot affect a DISSOCIATING client.";
+
+                default:
+                    return $"{cardName} has no transition from {evaluationState.ToString().ToUpperInvariant()}.";
+            }
+        }
+
+        private static CardSlamOutcome MapInjectionOutcome(
+            ClientStateMachine.InjectionResult result)
         {
             return result switch
             {
                 ClientStateMachine.InjectionResult.BlockedByCounterTrait =>
-                    new SlamResult(SlamOutcome.BlockedByPreFiledExemption, card)
-                    { Reason = "Pre-Filed Exemption on file." },
-
+                    CardSlamOutcome.BlockedByExemption,
                 ClientStateMachine.InjectionResult.ClientDissociating =>
-                    new SlamResult(SlamOutcome.ClientNotResponding, card)
-                    { Reason = "Client is not responsive." },
-
-                _ => new SlamResult(SlamOutcome.BlockedByCurrentState, card)
+                    CardSlamOutcome.ClientNotResponding,
+                _ => CardSlamOutcome.BlockedByState,
             };
+        }
+
+        private static ProjectedCardResolution NewProjection(
+            PunchCardData card,
+            string cardInstanceId,
+            CardSlamOutcome outcome,
+            string failureReason,
+            ClientStateID? stateBefore,
+            ClientStateID? stateAfter,
+            int creditsDelta,
+            float sanityDelta,
+            float soulIntegrityDelta,
+            int requiredCredits,
+            int fatigueBefore,
+            int fatigueAfter,
+            SynergyResolutionPacket cascade,
+            bool hasCascade,
+            List<string> notices,
+            string clientEffect = null,
+            float clientEffectDuration = 0f)
+        {
+            return new ProjectedCardResolution(
+                card.CardType,
+                card.DisplayName,
+                cardInstanceId,
+                outcome,
+                failureReason,
+                stateBefore,
+                stateAfter,
+                creditsDelta,
+                sanityDelta,
+                soulIntegrityDelta,
+                requiredCredits,
+                fatigueBefore,
+                fatigueAfter,
+                cascade,
+                hasCascade,
+                notices?.ToArray(),
+                clientEffect,
+                clientEffectDuration);
+        }
+
+        private static bool TryDescribeInjectedEffect(
+            PunchCardType cardType,
+            float requestedDuration,
+            out string effectLabel,
+            out float effectDuration)
+        {
+            effectLabel = GetInjectedEffectLabel(cardType);
+            effectDuration = GetInjectedEffectDuration(cardType, requestedDuration);
+            return !string.IsNullOrEmpty(effectLabel);
+        }
+
+        private static string GetInjectedEffectLabel(PunchCardType cardType)
+        {
+            return cardType switch
+            {
+                PunchCardType.PendingReview => "CLIENT ACTIONS PAUSED FOR REVIEW",
+                PunchCardType.LegalHold => "CLIENT ACTIONS SUSPENDED",
+                PunchCardType.Expedite => "CLIENT PROCESSING EXPEDITED",
+                PunchCardType.CooperationRoute => "CLIENT FORCED COOPERATIVE",
+                _ => null,
+            };
+        }
+
+        private static float GetInjectedEffectDuration(
+            PunchCardType cardType, float requestedDuration)
+        {
+            if (requestedDuration > 0f) return requestedDuration;
+
+            return cardType switch
+            {
+                PunchCardType.PendingReview => 10f,
+                PunchCardType.LegalHold => 15f,
+                PunchCardType.Expedite => 5f,
+                PunchCardType.CooperationRoute => 8f,
+                _ => 0f,
+            };
+        }
+
+        private static void AddCascadeNotices(
+            SynergyResolutionPacket cascade, List<string> notices)
+        {
+            if (notices == null) return;
+
+            if (!Mathf.Approximately(cascade.BaseDuration, cascade.FinalDuration))
+                notices.Add($"Desk supplies change duration {cascade.BaseDuration:0.##}s → {cascade.FinalDuration:0.##}s.");
+            if (cascade.BaseCreditCost != cascade.FinalCreditCost)
+                notices.Add($"Desk supplies change cost ¢{cascade.BaseCreditCost} → ¢{cascade.FinalCreditCost}.");
+            if (!Mathf.Approximately(cascade.BaseSoulCost, cascade.FinalSoulCost))
+                notices.Add($"Desk supplies change Soul cost {cascade.BaseSoulCost:0.##} → {cascade.FinalSoulCost:0.##}.");
         }
 
         private void PublishAppliedCard(
@@ -427,7 +690,9 @@ namespace Desk42.RedTape
             int requiredCredits,
             int fatigueBefore,
             SynergyResolutionPacket cascade,
-            bool hasCascade)
+            bool hasCascade,
+            string clientEffect = null,
+            float clientEffectDuration = 0f)
         {
             var run = GameManager.Instance?.Run;
             var applied = new AppliedCardResolution(
@@ -445,7 +710,9 @@ namespace Desk42.RedTape
                 fatigueBefore,
                 _fatigue?.GetFatigue(cardInstanceId) ?? fatigueBefore,
                 cascade,
-                hasCascade);
+                hasCascade,
+                clientEffect,
+                clientEffectDuration);
             RumorMill.Publish(new CardSlammedEvent(applied));
         }
 

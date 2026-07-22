@@ -212,6 +212,22 @@ namespace Desk42.OfficeSupplies
         public SynergyResolutionPacket ResolveCascade(PunchCardType cardType,
             float baseDuration, int baseCreditCost, float baseSoulCost,
             IReadOnlyList<string> cardTags = null)
+            => ResolveCascadeInternal(cardType, baseDuration, baseCreditCost,
+                baseSoulCost, cardTags, previewOnly: false);
+
+        /// <summary>
+        /// Computes the same traced cascade without consuming stateful supply
+        /// effects. Hovering a card must never spend a Rubber Stamp or Stapler.
+        /// </summary>
+        public SynergyResolutionPacket PreviewCascade(PunchCardType cardType,
+            float baseDuration, int baseCreditCost, float baseSoulCost,
+            IReadOnlyList<string> cardTags = null)
+            => ResolveCascadeInternal(cardType, baseDuration, baseCreditCost,
+                baseSoulCost, cardTags, previewOnly: true);
+
+        private SynergyResolutionPacket ResolveCascadeInternal(PunchCardType cardType,
+            float baseDuration, int baseCreditCost, float baseSoulCost,
+            IReadOnlyList<string> cardTags, bool previewOnly)
         {
             var packet = new SynergyResolutionPacket
             {
@@ -237,7 +253,9 @@ namespace Desk42.OfficeSupplies
             foreach (var inst in GetOrderedSupplies())
             {
                 float prev = duration;
-                duration   = inst.Effect.ModifyInjectionDuration(cardType, duration, cardTags);
+                duration = previewOnly
+                    ? inst.Effect.PreviewInjectionDuration(cardType, duration, cardTags)
+                    : inst.Effect.ModifyInjectionDuration(cardType, duration, cardTags);
                 packet.DurationSteps.Add(new ModifierStep
                 {
                     SupplyId    = inst.Data.SupplyId,
@@ -254,7 +272,9 @@ namespace Desk42.OfficeSupplies
             int creditDelta = 0;
             foreach (var inst in GetOrderedSupplies())
             {
-                int result = inst.Effect.ModifyCreditCost(cardType, baseCreditCost);
+                int result = previewOnly
+                    ? inst.Effect.PreviewCreditCost(cardType, baseCreditCost)
+                    : inst.Effect.ModifyCreditCost(cardType, baseCreditCost);
                 int delta  = result - baseCreditCost;
                 creditDelta += delta;
                 packet.CreditCostSteps.Add(new ModifierStep
@@ -273,7 +293,9 @@ namespace Desk42.OfficeSupplies
             float soulDelta = 0f;
             foreach (var inst in GetOrderedSupplies())
             {
-                float result = inst.Effect.ModifySoulCost(baseSoulCost);
+                float result = previewOnly
+                    ? inst.Effect.PreviewSoulCost(baseSoulCost)
+                    : inst.Effect.ModifySoulCost(baseSoulCost);
                 float delta  = result - baseSoulCost;
                 soulDelta += delta;
                 packet.SoulCostSteps.Add(new ModifierStep

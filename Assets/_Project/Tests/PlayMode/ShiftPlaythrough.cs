@@ -182,6 +182,7 @@ namespace Desk42.Tests.PlayMode
             Line($"[shift] Scene active. Sanity={gm.Run.Sanity:F1}");
             yield return Screenshot(shiftNumber, seed, "start");
             bool midShotTaken = false;
+            bool predictionShotsTaken = false;
 
             // 4. Play until the run completes or the hard timeout hits.
             // DEFECT (evidence in report): on Shift scene reload the new scene's
@@ -222,6 +223,12 @@ namespace Desk42.Tests.PlayMode
 
                 if (encounters.ActiveClient != null)
                 {
+                    if (shiftNumber == 1 && !predictionShotsTaken)
+                    {
+                        yield return CapturePredictionPreviews(shiftNumber, seed);
+                        predictionShotsTaken = true;
+                    }
+
                     // Think, optionally slam one card, then decide.
                     yield return Wait(NextFloat(THINK_TIME_MIN, THINK_TIME_MAX));
                     if (encounters.ActiveClient == null) continue; // resolved elsewhere (fugue etc.)
@@ -256,6 +263,26 @@ namespace Desk42.Tests.PlayMode
         }
 
         // ── Player-input simulation ───────────────────────────
+
+        private IEnumerator CapturePredictionPreviews(int shiftNumber, int seed)
+        {
+            var cardButton = UnityEngine.Object.FindObjectOfType<UI.CardButtonView>();
+            Assert.IsNotNull(cardButton,
+                "A rendered hand card is required to verify the card preview.");
+            cardButton.OnPointerEnter(null);
+            yield return Screenshot(shiftNumber, seed, "card-preview");
+            cardButton.OnPointerExit(null);
+
+            var approveObject = GameObject.Find("ApproveBtn");
+            var decisionTrigger = approveObject != null
+                ? approveObject.GetComponent<UI.ClaimDecisionPreviewTrigger>()
+                : null;
+            Assert.IsNotNull(decisionTrigger,
+                "ApproveBtn must receive its runtime decision-preview trigger.");
+            decisionTrigger.OnPointerEnter(null);
+            yield return Screenshot(shiftNumber, seed, "decision-preview");
+            decisionTrigger.OnPointerExit(null);
+        }
 
         private IEnumerator TrySlamCard()
         {

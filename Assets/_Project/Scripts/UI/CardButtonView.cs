@@ -8,6 +8,7 @@
 // ============================================================
 
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Desk42.Cards;
@@ -16,7 +17,9 @@ using Desk42.Core;
 namespace Desk42.UI
 {
     [DisallowMultipleComponent]
-    public sealed class CardButtonView : MonoBehaviour
+    public sealed class CardButtonView : MonoBehaviour,
+        IPointerEnterHandler, IPointerExitHandler,
+        ISelectHandler, IDeselectHandler
     {
         // ── Inspector ─────────────────────────────────────────
 
@@ -36,6 +39,7 @@ namespace Desk42.UI
 
         private CardInstance             _card;
         private RedTape.PunchCardMachine _machine;
+        private bool _previewVisible;
 
         public CardInstance Card => _card;
 
@@ -99,6 +103,28 @@ namespace Desk42.UI
             if (!weaponizedEntropy && (_card.IsJammed || _card.IsCrumpled)) return;
 
             _machine.SlamCard(_card.Data, _card.InstanceId);
+        }
+
+        public void OnPointerEnter(PointerEventData eventData) => ShowPreview();
+        public void OnPointerExit(PointerEventData eventData) => HidePreview();
+        public void OnSelect(BaseEventData eventData) => ShowPreview();
+        public void OnDeselect(BaseEventData eventData) => HidePreview();
+
+        private void OnDisable() => HidePreview();
+
+        private void ShowPreview()
+        {
+            if (_card == null || _machine == null) return;
+            _previewVisible = true;
+            RumorMill.Publish(new CardPreviewEvent(
+                _machine.PreviewCard(_card.Data, _card.InstanceId)));
+        }
+
+        private void HidePreview()
+        {
+            if (!_previewVisible || _card == null) return;
+            _previewVisible = false;
+            RumorMill.Publish(new CardPreviewEvent(_card.InstanceId));
         }
     }
 }
