@@ -34,6 +34,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Desk42.Core;
+using Desk42.BSM;
 using Desk42.Encounter;
 
 namespace Desk42.Tests.PlayMode
@@ -304,6 +305,21 @@ namespace Desk42.Tests.PlayMode
             decisionTrigger.OnPointerEnter(null);
             yield return Screenshot(shiftNumber, seed, "decision-preview");
             decisionTrigger.OnPointerExit(null);
+
+            var encounter = Desk42Services.Get<EncounterManager>()
+                ?? UnityEngine.Object.FindObjectOfType<EncounterManager>();
+            var client = encounter?.ActiveClient;
+            Assert.IsNotNull(client,
+                "An active client is required to verify the authoritative state marker.");
+            var injected = client.TryInject(
+                nameof(PunchCardType.CooperationRoute), 8f);
+            Assert.AreEqual(ClientStateMachine.InjectionResult.Success, injected);
+            yield return null;
+            StringAssert.Contains("CLIENT FORCED COOPERATIVE",
+                modifierOverlay.RenderedInjectedState);
+            StringAssert.Contains("s", modifierOverlay.RenderedInjectedState,
+                "The marker must render the authoritative remaining duration.");
+            yield return Screenshot(shiftNumber, seed, "injected-state");
         }
 
         private IEnumerator TrySlamCard()

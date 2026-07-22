@@ -51,6 +51,9 @@ namespace Desk42.BSM
         public bool         IsEmpty       => _stack.Count == 0;
         public IClientState ActiveState   => IsEmpty ? null : _stack.Peek().State;
         public int          Depth         => _stack.Count;
+        public float        ActiveDuration => IsEmpty
+            ? 0f
+            : _stack.Peek().MaxDuration;
 
         /// <summary>How many seconds remain on the current injection timer.</summary>
         public float TimeRemaining

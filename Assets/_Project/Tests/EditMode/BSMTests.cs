@@ -69,6 +69,7 @@ namespace Desk42.Tests.EditMode
             Assert.IsTrue(stack.IsEmpty);
             Assert.AreEqual(0, stack.Depth);
             Assert.AreEqual(0f, stack.TimeRemaining);
+            Assert.AreEqual(0f, stack.ActiveDuration);
         }
 
         [Test]
@@ -131,6 +132,29 @@ namespace Desk42.Tests.EditMode
 
             Assert.Less(after, before);
             Assert.AreEqual(0.6f, after, 0.001f);
+        }
+
+        [Test]
+        public void Stack_OnlyTopTimerAdvances_AndUnderlyingTimerResumes()
+        {
+            var ctx = MakeCtx();
+            var stack = new ClientStateStack();
+            var underlying = new StubState(duration: 10f);
+            var top = new StubState(duration: 5f);
+
+            stack.Push(underlying, ctx);
+            stack.Tick(ctx, 2f);
+            Assert.AreEqual(8f, stack.TimeRemaining, 0.001f);
+
+            stack.Push(top, ctx);
+            stack.Tick(ctx, 2f);
+            Assert.AreEqual(top, stack.ActiveState);
+            Assert.AreEqual(3f, stack.TimeRemaining, 0.001f);
+
+            stack.ForcePopTop(ctx);
+            Assert.AreEqual(underlying, stack.ActiveState);
+            Assert.AreEqual(8f, stack.TimeRemaining, 0.001f,
+                "A covered state must not run a parallel UI/mechanics timer.");
         }
 
         [Test]
@@ -841,6 +865,12 @@ namespace Desk42.Tests.EditMode
 
             Assert.AreEqual(ClientStateMachine.InjectionResult.Success, result);
             Assert.IsTrue(csm.IsInInjectedState);
+            Assert.IsTrue(csm.TryGetActiveInjectedState(out var active));
+            Assert.AreEqual("legal_hold", active.EffectId);
+            Assert.AreEqual("CLIENT ACTIONS SUSPENDED", active.DisplayName);
+            Assert.AreEqual(8f, active.TotalDuration, 0.001f);
+            Assert.AreEqual(8f, active.TimeRemaining, 0.001f);
+            Assert.AreEqual(1, active.StackDepth);
         }
 
         [Test]

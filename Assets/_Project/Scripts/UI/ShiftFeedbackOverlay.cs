@@ -44,6 +44,8 @@ namespace Desk42.UI
         private TMP_Text _officeModifiersText;
         private GameObject _clientModifiersPanel;
         private TMP_Text _clientModifiersText;
+        private GameObject _injectedStatePanel;
+        private TMP_Text _injectedStateText;
         private string _latestReceiptText;
         private ClaimResolutionKind _activeProjectionKind;
         private EncounterManager _encounter;
@@ -61,6 +63,8 @@ namespace Desk42.UI
             => _officeModifiersText != null ? _officeModifiersText.text : "";
         public string RenderedClientModifiers
             => _clientModifiersText != null ? _clientModifiersText.text : "";
+        public string RenderedInjectedState
+            => _injectedStateText != null ? _injectedStateText.text : "";
 
         // ── Colors ────────────────────────────────────────────
 
@@ -81,6 +85,7 @@ namespace Desk42.UI
             BuildReceiptPanel();
             BuildObligationsPanel();
             BuildModifierRows();
+            BuildInjectedStateMarker();
             WireDecisionPreviewTriggers();
         }
 
@@ -90,6 +95,7 @@ namespace Desk42.UI
         {
             RefreshObligations(force: false);
             RefreshClaimProjection();
+            RefreshInjectedStateMarker();
             _modifierRefreshTimer += Time.unscaledDeltaTime;
             if (_modifierRefreshTimer >= 0.25f)
             {
@@ -129,6 +135,71 @@ namespace Desk42.UI
                 new Vector2(-16f, 92f), out _clientModifiersPanel,
                 out _clientModifiersText);
             RefreshModifierRows();
+        }
+
+        private void BuildInjectedStateMarker()
+        {
+            _injectedStatePanel = new GameObject("ActiveInjectedState");
+            _injectedStatePanel.transform.SetParent(_uiRoot, false);
+            var rt = _injectedStatePanel.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 1f);
+            rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.sizeDelta = new Vector2(560f, 70f);
+            rt.anchoredPosition = new Vector2(0f, -100f);
+
+            var background = _injectedStatePanel.AddComponent<Image>();
+            background.color = new Color(0.055f, 0.11f, 0.12f, 0.96f);
+            background.raycastTarget = false;
+            var outline = _injectedStatePanel.AddComponent<Outline>();
+            outline.effectColor = new Color(0.95f, 0.76f, 0.3f, 0.95f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            var textObject = new GameObject("InjectedStateText");
+            textObject.transform.SetParent(_injectedStatePanel.transform, false);
+            var textRt = textObject.AddComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = new Vector2(12f, 6f);
+            textRt.offsetMax = new Vector2(-12f, -6f);
+
+            _injectedStateText = textObject.AddComponent<TextMeshProUGUI>();
+            _injectedStateText.fontSize =
+                Desk42.Accessibility.AccessibilitySettings.Scaled(19f);
+            _injectedStateText.fontStyle = FontStyles.Bold;
+            _injectedStateText.color = new Color(0.95f, 0.88f, 0.64f, 1f);
+            _injectedStateText.alignment = TextAlignmentOptions.Center;
+            _injectedStateText.enableWordWrapping = true;
+            _injectedStateText.raycastTarget = false;
+            _injectedStatePanel.SetActive(false);
+        }
+
+        private void RefreshInjectedStateMarker()
+        {
+            if (_injectedStatePanel == null) return;
+            if (_encounter == null)
+                _encounter = Desk42Services.Get<EncounterManager>()
+                    ?? FindObjectOfType<EncounterManager>();
+
+            var client = _encounter?.ActiveClient;
+            if (client == null
+                || !client.TryGetActiveInjectedState(out var active))
+            {
+                _injectedStateText.text = "";
+                _injectedStatePanel.SetActive(false);
+                return;
+            }
+
+            string time = float.IsPositiveInfinity(active.TimeRemaining)
+                ? "UNTIL CLEARED"
+                : $"{active.TimeRemaining:0.0}s";
+            string stack = active.StackDepth > 1
+                ? $"\nTOP EFFECT · {active.StackDepth} STACKED"
+                : "";
+            _injectedStateText.text =
+                $"{active.DisplayName} · {time}{stack}";
+            _injectedStatePanel.SetActive(true);
+            _injectedStatePanel.transform.SetAsLastSibling();
         }
 
         private void BuildModifierRow(string objectName,

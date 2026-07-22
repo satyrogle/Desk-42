@@ -53,6 +53,28 @@ namespace Desk42.BSM
         }
     }
 
+    public readonly struct ActiveInjectedStateSnapshot
+    {
+        public readonly string EffectId;
+        public readonly string DisplayName;
+        public readonly ClientStateID StateId;
+        public readonly float TotalDuration;
+        public readonly float TimeRemaining;
+        public readonly int StackDepth;
+
+        public ActiveInjectedStateSnapshot(string effectId,
+            string displayName, ClientStateID stateId, float totalDuration,
+            float timeRemaining, int stackDepth)
+        {
+            EffectId = effectId;
+            DisplayName = displayName;
+            StateId = stateId;
+            TotalDuration = totalDuration;
+            TimeRemaining = timeRemaining;
+            StackDepth = stackDepth;
+        }
+    }
+
     [DisallowMultipleComponent]
     public sealed class ClientStateMachine : MonoBehaviour
     {
@@ -98,6 +120,32 @@ namespace Desk42.BSM
         public int           VisitCount       => _visitCount;
         public BehaviourTree BaseBT           => _baseBT;
         public bool          IsInInjectedState => !_stateStack.IsEmpty;
+
+        /// <summary>
+        /// Returns the one state the mechanics are currently ticking. The UI
+        /// renders this snapshot directly; it must not maintain its own timer.
+        /// </summary>
+        public bool TryGetActiveInjectedState(
+            out ActiveInjectedStateSnapshot snapshot)
+        {
+            IClientState active = _stateStack.ActiveState;
+            if (active == null || !active.IsInjected)
+            {
+                snapshot = default;
+                return false;
+            }
+
+            GetInjectedStateIdentity(active, out string effectId,
+                out string displayName);
+            snapshot = new ActiveInjectedStateSnapshot(
+                effectId,
+                displayName,
+                active.StateID,
+                _stateStack.ActiveDuration,
+                _stateStack.TimeRemaining,
+                _stateStack.Depth);
+            return true;
+        }
 
         // ── Impatience (ATB) ───────────────────────────────────
 
@@ -507,6 +555,34 @@ namespace Desk42.BSM
 
                 _ => null,
             };
+        }
+
+        private static void GetInjectedStateIdentity(IClientState state,
+            out string effectId, out string displayName)
+        {
+            switch (state)
+            {
+                case PendingReviewInjectedState:
+                    effectId = "pending_review";
+                    displayName = "CLIENT ACTIONS PAUSED FOR REVIEW";
+                    break;
+                case LegalHoldInjectedState:
+                    effectId = "legal_hold";
+                    displayName = "CLIENT ACTIONS SUSPENDED";
+                    break;
+                case CooperativeRouteInjectedState:
+                    effectId = "cooperation_route";
+                    displayName = "CLIENT FORCED COOPERATIVE";
+                    break;
+                case ExpediteInjectedState:
+                    effectId = "expedite";
+                    displayName = "CLIENT PROCESSING EXPEDITED";
+                    break;
+                default:
+                    effectId = state.GetType().Name;
+                    displayName = state.StateID.ToString().ToUpperInvariant();
+                    break;
+            }
         }
 
         private static bool CreatesInjectedState(string cardType)
