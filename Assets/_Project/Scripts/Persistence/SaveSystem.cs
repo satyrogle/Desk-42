@@ -144,7 +144,7 @@ namespace Desk42.Core
         // Bump this constant each time the MetaProgressData schema changes.
         // Add a corresponding case to MigrateMetaIfNeeded below.
         public const int CurrentMetaSaveVersion = 3;
-        public const int CurrentRunSaveVersion = 2;
+        public const int CurrentRunSaveVersion = 3;
 
         /// <summary>
         /// Run schema migrations sequentially from the save's stored version
@@ -197,6 +197,17 @@ namespace Desk42.Core
                         data.Stats ??= new RunStatistics();
                         data.PendingClaims ??= new System.Collections.Generic.List<ActiveClaimData>();
                         data.ResolvedClaims ??= new System.Collections.Generic.List<ActiveClaimData>();
+                        break;
+
+                    case 2:
+                        // 2 -> 3: old mid-shift saves never generated or showed
+                        // obligations. Do not invent a bill on resume. Mark the
+                        // empty legacy ledger applied; new shifts generate rows
+                        // synchronously in BeginNewRun before the scene opens.
+                        data.PersonalObligations ??=
+                            new System.Collections.Generic.List<PersonalObligationData>();
+                        data.ObligationsShiftNumber = data.ShiftNumber;
+                        data.ObligationsApplied = true;
                         break;
 
                     default:

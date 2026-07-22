@@ -70,6 +70,10 @@ namespace Desk42.Core
                 ImpatenceTimerRemaining = ComputeShiftDuration(meta, null), // Vows applied here when UI is ready
             };
 
+            // The player sees this exact serialized list throughout the shift.
+            // Resume restores it and must never draw the expense stream again.
+            PersonalExpenseGenerator.GenerateForShift(_data, meta);
+
             // Draft an Escalating Regulation for this shift
             var cards = System.Enum.GetValues(typeof(PunchCardType));
             var illegalCard = (PunchCardType)cards.GetValue(SeedEngine.Next(SeedStream.RegulationOrder, 0, cards.Length));

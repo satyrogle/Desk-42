@@ -97,7 +97,7 @@ namespace Desk42.UI
             cardRT.anchorMin = new Vector2(0.5f, 0.5f);
             cardRT.anchorMax = new Vector2(0.5f, 0.5f);
             cardRT.pivot     = new Vector2(0.5f, 0.5f);
-            cardRT.sizeDelta = new Vector2(800, 600);
+            cardRT.sizeDelta = new Vector2(840, 760);
             var cardImg = card.AddComponent<Image>();
             cardImg.color = UIPalette.CardBackground;
             var cardOutline = card.AddComponent<Outline>();
@@ -202,6 +202,23 @@ namespace Desk42.UI
             sb.AppendLine($"  Sanity..................  {ColorBar(e.Sanity)} {e.Sanity:F0}/100");
             if (e.PersonalExpenseDebt > 0)
                 sb.AppendLine($"  <color=#E84A4A>Personal expense debt...  ¢{e.PersonalExpenseDebt}</color>");
+
+            var runData = GameManager.Instance?.Run?.RawData;
+            var obligations = runData?.PersonalObligations;
+            if (obligations != null && obligations.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("<b><size=24>Clock-out ledger</size></b>");
+                foreach (var obligation in obligations)
+                {
+                    if (obligation == null) continue;
+                    string result = obligation.AmountShort > 0
+                        ? $"paid ¢{obligation.AmountPaid}, <color=#E84A4A>short ¢{obligation.AmountShort}</color>"
+                        : $"paid ¢{obligation.AmountPaid}";
+                    sb.AppendLine($"  {obligation.Label} (¢{obligation.Amount})...  {result}");
+                }
+                sb.AppendLine($"  Corporate credits after ledger...  ¢{runData.CorporateCredits}");
+            }
 
             if (e.FugueTriggered)
             {

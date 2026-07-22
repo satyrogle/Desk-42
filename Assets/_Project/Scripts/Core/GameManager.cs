@@ -357,7 +357,7 @@ namespace Desk42.Core
             if (_isTransitioning || Run == null) return;
 
             // Drain personal expenses before finalising the run
-            PersonalExpenseGenerator.ProcessEndOfShiftExpenses(Run.RawData, Meta);
+            PersonalExpenseGenerator.ProcessEndOfShiftExpenses(Run.RawData);
 
             // Update Repeat Offender DB and meta-progress from the completed run
             CommitRunResultsToMeta();

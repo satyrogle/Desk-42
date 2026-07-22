@@ -34,6 +34,11 @@ namespace Desk42.UI
         private Transform _toastContainer;
         private GameObject _receiptPanel;
         private TMP_Text _receiptText;
+        private GameObject _obligationsPanel;
+        private TMP_Text _obligationsText;
+        private int _lastObligationCredits = int.MinValue;
+        private int _lastObligationCount = -1;
+        private bool _lastObligationsApplied;
         private readonly Queue<GameObject> _activeToasts = new();
 
         // ── Colors ────────────────────────────────────────────
@@ -52,7 +57,12 @@ namespace Desk42.UI
         {
             BuildToastContainer();
             BuildReceiptPanel();
+            BuildObligationsPanel();
         }
+
+        private void Start() => RefreshObligations(force: true);
+
+        private void Update() => RefreshObligations(force: false);
 
         private void OnEnable()
         {
@@ -137,6 +147,101 @@ namespace Desk42.UI
             _receiptText.enableWordWrapping = true;
             _receiptText.raycastTarget = false;
             _receiptPanel.SetActive(false);
+        }
+
+        private void BuildObligationsPanel()
+        {
+            _obligationsPanel = new GameObject("PersonalObligations");
+            _obligationsPanel.transform.SetParent(transform, false);
+            var rt = _obligationsPanel.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.sizeDelta = new Vector2(420f, 256f);
+            rt.anchoredPosition = new Vector2(24f, -138f);
+
+            var paper = _obligationsPanel.AddComponent<Image>();
+            paper.color = new Color(0.08f, 0.15f, 0.16f, 0.96f);
+            paper.raycastTarget = false;
+            var outline = _obligationsPanel.AddComponent<Outline>();
+            outline.effectColor = new Color(0.73f, 0.64f, 0.37f, 0.95f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            var textObject = new GameObject("ObligationsText");
+            textObject.transform.SetParent(_obligationsPanel.transform, false);
+            var textRt = textObject.AddComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = new Vector2(18f, 14f);
+            textRt.offsetMax = new Vector2(-18f, -14f);
+
+            _obligationsText = textObject.AddComponent<TextMeshProUGUI>();
+            _obligationsText.fontSize =
+                Desk42.Accessibility.AccessibilitySettings.Scaled(18f);
+            _obligationsText.color = new Color(0.91f, 0.88f, 0.74f, 1f);
+            _obligationsText.alignment = TextAlignmentOptions.TopLeft;
+            _obligationsText.enableWordWrapping = true;
+            _obligationsText.raycastTarget = false;
+            _obligationsPanel.SetActive(false);
+        }
+
+        private void RefreshObligations(bool force)
+        {
+            var data = GameManager.Instance?.Run?.RawData;
+            var obligations = data?.PersonalObligations;
+            if (obligations == null || obligations.Count == 0)
+            {
+                if (_obligationsPanel != null) _obligationsPanel.SetActive(false);
+                return;
+            }
+
+            if (!force
+                && _lastObligationCredits == data.CorporateCredits
+                && _lastObligationCount == obligations.Count
+                && _lastObligationsApplied == data.ObligationsApplied)
+            {
+                return;
+            }
+
+            _lastObligationCredits = data.CorporateCredits;
+            _lastObligationCount = obligations.Count;
+            _lastObligationsApplied = data.ObligationsApplied;
+
+            int totalDue = 0;
+            int totalPaid = 0;
+            int totalShort = 0;
+            var lines = new List<string>();
+            foreach (var obligation in obligations)
+            {
+                if (obligation == null) continue;
+                totalDue += obligation.Amount;
+                totalPaid += obligation.AmountPaid;
+                totalShort += obligation.AmountShort;
+                lines.Add($"{obligation.Label}  <color=#FFD75A>¢{obligation.Amount}</color>");
+            }
+
+            if (data.ObligationsApplied)
+            {
+                _obligationsText.text =
+                    "<b>CLOCK-OUT OBLIGATIONS — APPLIED</b>\n" +
+                    string.Join("\n", lines) + "\n" +
+                    $"Paid  ¢{totalPaid}   Short  <color=#E84A4A>¢{totalShort}</color>";
+            }
+            else
+            {
+                int projectedShortfall = Mathf.Max(0, totalDue - data.CorporateCredits);
+                string pressure = projectedShortfall > 0
+                    ? $"Projected shortfall  <color=#E84A4A>¢{projectedShortfall}</color>"
+                    : $"Projected remainder  <color=#5DD58A>¢{data.CorporateCredits - totalDue}</color>";
+                _obligationsText.text =
+                    "<b>PERSONAL OBLIGATIONS</b>  <size=14>DUE AT CLOCK-OUT</size>\n" +
+                    string.Join("\n", lines) + "\n" +
+                    $"Total due  ¢{totalDue}   Credits  ¢{data.CorporateCredits}\n" +
+                    pressure;
+            }
+
+            _obligationsPanel.SetActive(true);
+            _obligationsPanel.transform.SetAsLastSibling();
         }
 
         private void ShowClaimReceipt(AppliedClaimResolution result)

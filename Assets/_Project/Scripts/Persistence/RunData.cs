@@ -162,12 +162,23 @@ namespace Desk42.Core
         [JsonProperty] public List<string> BadgesEarnedIds = new();
     }
 
+    [Serializable]
+    public sealed class PersonalObligationData
+    {
+        [JsonProperty] public string Id;
+        [JsonProperty] public string Label;
+        [JsonProperty] public int Amount;
+        [JsonProperty] public bool Applied;
+        [JsonProperty] public int AmountPaid;
+        [JsonProperty] public int AmountShort;
+    }
+
     // ── Root Run Data ─────────────────────────────────────────
 
     [Serializable]
     public sealed class RunData
     {
-        [JsonProperty] public int    SaveVersion     = 2;
+        [JsonProperty] public int    SaveVersion     = 3;
         [JsonProperty] public string SavedAtUtc;
         [JsonProperty] public bool   IsComplete;       // false = mid-run resume
         [JsonProperty] public bool   IsAbandoned;
@@ -186,6 +197,12 @@ namespace Desk42.Core
         [JsonProperty] public int    CorporateCredits;
         [JsonProperty] public int    PersonalExpenseDebt;
         [JsonProperty] public int    DarkIntelligence; // Sprint 2 override currency
+
+        // Concrete obligations are rolled once at shift start and serialized.
+        // Clock-out applies these exact rows; resume never regenerates them.
+        [JsonProperty] public int ObligationsShiftNumber;
+        [JsonProperty] public List<PersonalObligationData> PersonalObligations = new();
+        [JsonProperty] public bool ObligationsApplied;
 
         // Shift structure
         [JsonProperty] public ShiftPhase CurrentPhase;

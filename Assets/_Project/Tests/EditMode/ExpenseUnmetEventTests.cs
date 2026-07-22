@@ -1,20 +1,7 @@
-// ============================================================
-// DESK 42 — ExpenseUnmetEvent Unit Tests (Edit Mode)
-//
-// Real publisher: PersonalExpenseGenerator.ProcessEndOfShiftExpenses
-// (Desk42.Core). It draws 2-4 expenses via SeedEngine and, for any
-// expense the player can't cover, publishes ExpenseUnmetEvent via
-// RumorMill.PublishDeferred and accumulates RunData.PersonalExpenseDebt.
-//
-// RumorMill.DrainQueue() is internal to Desk42.Core (no
-// InternalsVisibleTo to the test assembly), so deferred dispatch is
-// driven here via reflection — the same white-box pattern already
-// used in BSMTests.cs — rather than changing runtime visibility.
-// ============================================================
-
+using System.Linq;
 using System.Reflection;
-using NUnit.Framework;
 using Desk42.Core;
+using NUnit.Framework;
 
 namespace Desk42.Tests.EditMode
 {
@@ -38,59 +25,107 @@ namespace Desk42.Tests.EditMode
 
         private static void DrainDeferredQueue()
         {
-            var method = typeof(RumorMill).GetMethod("DrainQueue", BindingFlags.NonPublic | BindingFlags.Static);
-            Assert.IsNotNull(method, "RumorMill.DrainQueue() not found — has it been renamed?");
+            var method = typeof(RumorMill).GetMethod(
+                "DrainQueue", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(method);
             method.Invoke(null, null);
         }
 
-        [Test]
-        public void InsufficientCredits_PublishesExpenseUnmetEvent_AndAccumulatesDebt()
+        private static RunData GenerateRun(int credits)
         {
-            var runData = new RunData { CorporateCredits = 0 };
-            var meta = new MetaProgressData { GlobalShiftNumber = 1 };
-
-            int fireCount = 0;
-            int lastAmountShort = 0;
-            RumorMill.OnExpenseUnmet += e => { fireCount++; lastAmountShort = e.AmountShort; };
-
-            PersonalExpenseGenerator.ProcessEndOfShiftExpenses(runData, meta);
-            DrainDeferredQueue();
-
-            Assert.Greater(fireCount, 0,
-                "ExpenseUnmetEvent should fire when CorporateCredits cannot cover a drawn expense.");
-            Assert.Greater(runData.PersonalExpenseDebt, 0,
-                "PersonalExpenseDebt should accumulate for every unmet expense.");
-            Assert.Greater(lastAmountShort, 0);
+            var runData = new RunData
+            {
+                ShiftNumber = 3,
+                CorporateCredits = credits,
+            };
+            PersonalExpenseGenerator.GenerateForShift(
+                runData, new MetaProgressData { GlobalShiftNumber = 3 });
+            return runData;
         }
 
         [Test]
-        public void SufficientCredits_NeverPublishesExpenseUnmetEvent()
+        public void GenerateForShift_RepeatedCallKeepsExactStoredLedger()
         {
-            var runData = new RunData { CorporateCredits = 100000 };
-            var meta = new MetaProgressData { GlobalShiftNumber = 1 };
+            var runData = GenerateRun(100);
+            string first = string.Join("|", runData.PersonalObligations
+                .Select(x => $"{x.Id}:{x.Amount}"));
 
+            // Advance the stream. An accidental redraw would now differ.
+            SeedEngine.Next(SeedStream.PersonalExpenses, 0, 1000);
+            PersonalExpenseGenerator.GenerateForShift(
+                runData, new MetaProgressData { GlobalShiftNumber = 3 });
+
+            string second = string.Join("|", runData.PersonalObligations
+                .Select(x => $"{x.Id}:{x.Amount}"));
+            Assert.AreEqual(first, second);
+            Assert.AreEqual(3, runData.ObligationsShiftNumber);
+            Assert.IsFalse(runData.ObligationsApplied);
+        }
+
+        [Test]
+        public void InsufficientCredits_AppliesLedgerOnceAndPublishesShortfallsOnce()
+        {
+            var runData = GenerateRun(0);
+            int expectedDebt = runData.PersonalObligations.Sum(x => x.Amount);
+            int fireCount = 0;
+            int reportedShortfall = 0;
+            RumorMill.OnExpenseUnmet += e =>
+            {
+                fireCount++;
+                reportedShortfall += e.AmountShort;
+            };
+
+            PersonalExpenseGenerator.ProcessEndOfShiftExpenses(runData);
+            int debtAfterFirstApply = runData.PersonalExpenseDebt;
+            PersonalExpenseGenerator.ProcessEndOfShiftExpenses(runData);
+            DrainDeferredQueue();
+
+            Assert.AreEqual(expectedDebt, debtAfterFirstApply);
+            Assert.AreEqual(expectedDebt, runData.PersonalExpenseDebt);
+            Assert.AreEqual(expectedDebt, reportedShortfall);
+            Assert.AreEqual(runData.PersonalObligations.Count, fireCount);
+            Assert.IsTrue(runData.ObligationsApplied);
+            Assert.IsTrue(runData.PersonalObligations.All(x => x.Applied));
+        }
+
+        [Test]
+        public void SufficientCredits_RecordsPaidLedgerWithoutDebt()
+        {
+            var runData = GenerateRun(100000);
+            int due = runData.PersonalObligations.Sum(x => x.Amount);
+            int creditsBefore = runData.CorporateCredits;
             int fireCount = 0;
             RumorMill.OnExpenseUnmet += _ => fireCount++;
 
-            PersonalExpenseGenerator.ProcessEndOfShiftExpenses(runData, meta);
+            PersonalExpenseGenerator.ProcessEndOfShiftExpenses(runData);
             DrainDeferredQueue();
 
-            Assert.AreEqual(0, fireCount);
+            Assert.AreEqual(creditsBefore - due, runData.CorporateCredits);
             Assert.AreEqual(0, runData.PersonalExpenseDebt);
+            Assert.AreEqual(0, fireCount);
+            Assert.IsTrue(runData.PersonalObligations.All(
+                x => x.Applied && x.AmountPaid == x.Amount && x.AmountShort == 0));
         }
 
         [Test]
-        public void NullRunData_DoesNotThrow()
+        public void MissingLedger_DoesNotGenerateOrChargeAtClockOut()
         {
-            Assert.DoesNotThrow(() =>
-                PersonalExpenseGenerator.ProcessEndOfShiftExpenses(null, new MetaProgressData()));
+            var runData = new RunData { CorporateCredits = 42, ShiftNumber = 1 };
+
+            PersonalExpenseGenerator.ProcessEndOfShiftExpenses(runData);
+
+            Assert.AreEqual(42, runData.CorporateCredits);
+            Assert.IsEmpty(runData.PersonalObligations);
+            Assert.IsFalse(runData.ObligationsApplied);
         }
 
         [Test]
-        public void NullMeta_DoesNotThrow()
+        public void NullInputs_DoNotThrow()
         {
             Assert.DoesNotThrow(() =>
-                PersonalExpenseGenerator.ProcessEndOfShiftExpenses(new RunData(), null));
+                PersonalExpenseGenerator.GenerateForShift(null, new MetaProgressData()));
+            Assert.DoesNotThrow(() =>
+                PersonalExpenseGenerator.ProcessEndOfShiftExpenses(null));
         }
     }
 }

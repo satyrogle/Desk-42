@@ -89,6 +89,15 @@ namespace Desk42.Tests.EditMode
                 SoulIntegrity = 42.1f,
                 CorporateCredits = 150,
                 CurrentPhase  = ShiftPhase.AfternoonBlock,
+                ObligationsShiftNumber = 3,
+                PersonalObligations = new System.Collections.Generic.List<PersonalObligationData>
+                {
+                    new()
+                    {
+                        Id = "rent", Label = "Rent", Amount = 24,
+                        Applied = false,
+                    },
+                },
             };
             run.RefreshTimestamp();
 
@@ -103,6 +112,10 @@ namespace Desk42.Tests.EditMode
             Assert.AreEqual(42.1f,        loaded.SoulIntegrity,    0.001f);
             Assert.AreEqual(150,          loaded.CorporateCredits);
             Assert.AreEqual(ShiftPhase.AfternoonBlock, loaded.CurrentPhase);
+            Assert.AreEqual(3, loaded.ObligationsShiftNumber);
+            Assert.AreEqual(1, loaded.PersonalObligations.Count);
+            Assert.AreEqual("rent", loaded.PersonalObligations[0].Id);
+            Assert.AreEqual(24, loaded.PersonalObligations[0].Amount);
         }
 
         [Test]
@@ -131,6 +144,9 @@ namespace Desk42.Tests.EditMode
             Assert.AreEqual(0, run.Stats.LiquifiedClaims);
             Assert.AreEqual(ClaimResolutionKind.Unspecified,
                 run.ResolvedClaims[0].ResolutionKind);
+            Assert.IsTrue(run.ObligationsApplied,
+                "Legacy resumes must not receive a newly invented clock-out bill.");
+            Assert.IsEmpty(run.PersonalObligations);
 
             Assert.IsTrue(SaveSystem.SaveRun(run));
             string saved = File.ReadAllText(Path.Combine(_tempSaveDirectory, "run.json"));
