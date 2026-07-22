@@ -193,7 +193,7 @@ namespace Desk42.UI
             sb.AppendLine($"<b><size=24>Performance</size></b>");
             sb.AppendLine($"  Claims processed........  {e.ClaimsProcessed}");
             sb.AppendLine($"  Credits earned..........  ¢{e.CreditsEarned:N0}");
-            sb.AppendLine($"  Combo multiplier........  ×{e.ComboMultiplier:F2}");
+            sb.AppendLine($"  Compliance streak.......  ×{e.ComboMultiplier:F2}");
             sb.AppendLine($"  <b>Efficiency rating</b>.......  <color=#FFD75A>{e.EfficiencyRating:F0}</color>");
             sb.AppendLine();
 

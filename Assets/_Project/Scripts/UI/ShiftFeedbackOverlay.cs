@@ -32,6 +32,7 @@ namespace Desk42.UI
         // ── State ─────────────────────────────────────────────
 
         private Transform _toastContainer;
+        private Transform _uiRoot;
         private GameObject _receiptPanel;
         private TMP_Text _receiptText;
         private GameObject _obligationsPanel;
@@ -55,6 +56,7 @@ namespace Desk42.UI
 
         private void Awake()
         {
+            EnsureCanvas();
             BuildToastContainer();
             BuildReceiptPanel();
             BuildObligationsPanel();
@@ -80,10 +82,33 @@ namespace Desk42.UI
 
         // ── Toast Container ───────────────────────────────────
 
+        private void EnsureCanvas()
+        {
+            var parentCanvas = GetComponentInParent<Canvas>();
+            if (parentCanvas != null)
+            {
+                // Scene repair may leave this component on a scaled/off-screen
+                // RectTransform. Parent generated UI to the full canvas itself.
+                _uiRoot = parentCanvas.transform;
+                return;
+            }
+
+            var canvasObject = new GameObject("ShiftFeedbackCanvas");
+            canvasObject.transform.SetParent(transform, false);
+            var canvas = canvasObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 625;
+            var scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            canvasObject.AddComponent<GraphicRaycaster>();
+            _uiRoot = canvasObject.transform;
+        }
+
         private void BuildToastContainer()
         {
             var go = new GameObject("ToastContainer");
-            go.transform.SetParent(transform, false);
+            go.transform.SetParent(_uiRoot, false);
             var rt = go.AddComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
@@ -117,7 +142,7 @@ namespace Desk42.UI
         private void BuildReceiptPanel()
         {
             _receiptPanel = new GameObject("LatestClaimReceipt");
-            _receiptPanel.transform.SetParent(transform, false);
+            _receiptPanel.transform.SetParent(_uiRoot, false);
             var rt = _receiptPanel.AddComponent<RectTransform>();
             rt.anchorMin = new Vector2(1f, 1f);
             rt.anchorMax = new Vector2(1f, 1f);
@@ -152,13 +177,13 @@ namespace Desk42.UI
         private void BuildObligationsPanel()
         {
             _obligationsPanel = new GameObject("PersonalObligations");
-            _obligationsPanel.transform.SetParent(transform, false);
+            _obligationsPanel.transform.SetParent(_uiRoot, false);
             var rt = _obligationsPanel.AddComponent<RectTransform>();
             rt.anchorMin = new Vector2(0f, 1f);
             rt.anchorMax = new Vector2(0f, 1f);
             rt.pivot = new Vector2(0f, 1f);
-            rt.sizeDelta = new Vector2(420f, 256f);
-            rt.anchoredPosition = new Vector2(24f, -138f);
+            rt.sizeDelta = new Vector2(650f, 96f);
+            rt.anchoredPosition = new Vector2(16f, -66f);
 
             var paper = _obligationsPanel.AddComponent<Image>();
             paper.color = new Color(0.08f, 0.15f, 0.16f, 0.96f);
@@ -172,12 +197,12 @@ namespace Desk42.UI
             var textRt = textObject.AddComponent<RectTransform>();
             textRt.anchorMin = Vector2.zero;
             textRt.anchorMax = Vector2.one;
-            textRt.offsetMin = new Vector2(18f, 14f);
-            textRt.offsetMax = new Vector2(-18f, -14f);
+            textRt.offsetMin = new Vector2(14f, 8f);
+            textRt.offsetMax = new Vector2(-14f, -8f);
 
             _obligationsText = textObject.AddComponent<TextMeshProUGUI>();
             _obligationsText.fontSize =
-                Desk42.Accessibility.AccessibilitySettings.Scaled(18f);
+                Desk42.Accessibility.AccessibilitySettings.Scaled(20f);
             _obligationsText.color = new Color(0.91f, 0.88f, 0.74f, 1f);
             _obligationsText.alignment = TextAlignmentOptions.TopLeft;
             _obligationsText.enableWordWrapping = true;
@@ -210,34 +235,32 @@ namespace Desk42.UI
             int totalDue = 0;
             int totalPaid = 0;
             int totalShort = 0;
-            var lines = new List<string>();
+            var labels = new List<string>();
             foreach (var obligation in obligations)
             {
                 if (obligation == null) continue;
                 totalDue += obligation.Amount;
                 totalPaid += obligation.AmountPaid;
                 totalShort += obligation.AmountShort;
-                lines.Add($"{obligation.Label}  <color=#FFD75A>¢{obligation.Amount}</color>");
+                labels.Add($"{obligation.Label} ¢{obligation.Amount}");
             }
 
             if (data.ObligationsApplied)
             {
                 _obligationsText.text =
                     "<b>CLOCK-OUT OBLIGATIONS — APPLIED</b>\n" +
-                    string.Join("\n", lines) + "\n" +
-                    $"Paid  ¢{totalPaid}   Short  <color=#E84A4A>¢{totalShort}</color>";
+                    $"Paid ¢{totalPaid}  ·  Short <color=#E84A4A>¢{totalShort}</color>";
             }
             else
             {
                 int projectedShortfall = Mathf.Max(0, totalDue - data.CorporateCredits);
                 string pressure = projectedShortfall > 0
-                    ? $"Projected shortfall  <color=#E84A4A>¢{projectedShortfall}</color>"
-                    : $"Projected remainder  <color=#5DD58A>¢{data.CorporateCredits - totalDue}</color>";
+                    ? $"SHORT <color=#E84A4A>¢{projectedShortfall}</color>"
+                    : $"AFTER <color=#5DD58A>¢{data.CorporateCredits - totalDue}</color>";
                 _obligationsText.text =
-                    "<b>PERSONAL OBLIGATIONS</b>  <size=14>DUE AT CLOCK-OUT</size>\n" +
-                    string.Join("\n", lines) + "\n" +
-                    $"Total due  ¢{totalDue}   Credits  ¢{data.CorporateCredits}\n" +
-                    pressure;
+                    "<b>PERSONAL OBLIGATIONS · DUE AT CLOCK-OUT</b>\n" +
+                    string.Join(" · ", labels) + "\n" +
+                    $"Due ¢{totalDue}  ·  Credits ¢{data.CorporateCredits}  ·  {pressure}";
             }
 
             _obligationsPanel.SetActive(true);

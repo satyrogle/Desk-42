@@ -664,6 +664,14 @@ namespace Desk42.EditorTools
                 EditorUtility.SetDirty(overlay);
                 Debug.Log("[ShiftAutoLayout] Added ShiftFeedbackOverlay to ShiftUI.");
             }
+
+            if (Object.FindObjectOfType<CascadePresenter>() == null)
+            {
+                var presenterObject = new GameObject("CascadePresenter");
+                var presenter = presenterObject.AddComponent<CascadePresenter>();
+                EditorUtility.SetDirty(presenter);
+                Debug.Log("[ShiftAutoLayout] Added CascadePresenter to Shift scene.");
+            }
         }
     }
 }

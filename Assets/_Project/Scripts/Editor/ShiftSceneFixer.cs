@@ -65,6 +65,42 @@ namespace Desk42.EditorTools
                 "Fixes applied. Save scene (Ctrl+S), then play from Boot.", "OK");
         }
 
+        /// <summary>
+        /// Batch-safe targeted scene operation used by the confirmation-layer
+        /// pass. It does not run the broader layout fixer or show dialogs.
+        /// </summary>
+        public static void EnsureConfirmationLayerAndSave()
+        {
+            var scene = EditorSceneManager.OpenScene(
+                "Assets/_Project/Scenes/Shift.unity", OpenSceneMode.Single);
+
+            if (Object.FindObjectOfType<ShiftFeedbackOverlay>() == null)
+            {
+                var shiftUI = GameObject.Find("ShiftUI");
+                if (shiftUI == null)
+                    throw new System.InvalidOperationException("ShiftUI was not found.");
+                shiftUI.AddComponent<ShiftFeedbackOverlay>();
+            }
+
+            if (Object.FindObjectOfType<CardSlamFeedback>() == null)
+            {
+                var go = new GameObject("CardSlamFeedback");
+                go.AddComponent<CardSlamFeedback>();
+            }
+
+            if (Object.FindObjectOfType<CascadePresenter>() == null)
+            {
+                var go = new GameObject("CascadePresenter");
+                go.AddComponent<CascadePresenter>();
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!EditorSceneManager.SaveScene(scene))
+                throw new System.InvalidOperationException("Could not save Shift.unity.");
+
+            Debug.Log("[ShiftSceneFixer] Confirmation layer verified and saved.");
+        }
+
         // ── 1. Disable Slider Interactivity ───────────────────
 
         private static void DisableAllSliderInteractivity()
@@ -461,6 +497,14 @@ namespace Desk42.EditorTools
                 var go = new GameObject("CardSlamFeedback");
                 go.AddComponent<CardSlamFeedback>();
                 Debug.Log("[ShiftSceneFixer] Created CardSlamFeedback.");
+            }
+
+            // CascadePresenter — factual, step-by-step supply math readout
+            if (Object.FindObjectOfType<CascadePresenter>() == null)
+            {
+                var go = new GameObject("CascadePresenter");
+                go.AddComponent<CascadePresenter>();
+                Debug.Log("[ShiftSceneFixer] Created CascadePresenter.");
             }
 
             // Re-enable ClientView's species/variant labels in case a prior fix

@@ -150,7 +150,7 @@ namespace Desk42.UI
                 float combo = run.ComboMultiplier;
                 int visits = _csm.VisitCount;
                 string stateName = _csm.CurrentMoodState.ToString();
-                _clairvoyanceLabel.text = $"[CLAIRVOYANCE]\nMOOD THRESHOLD: {stateName} ({visits}v)\nPAYOUT MULT: {combo:F1}x";
+                _clairvoyanceLabel.text = $"[CLAIRVOYANCE]\nMOOD THRESHOLD: {stateName} ({visits}v)\nCORPORATE COMPLIANCE STREAK: {combo:F1}x";
             }
             else
             {
