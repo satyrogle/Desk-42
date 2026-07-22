@@ -139,6 +139,17 @@ namespace Desk42.Tests.EditMode
                 "The real slam must still receive the projected discount.");
             Assert.AreEqual(5, afterApplication.FinalCreditCost,
                 "Only the applied cascade consumes the Rubber Stamp.");
+            var projectedStep = firstPreview.CreditCostSteps
+                .Single(step => step.Changed);
+            var appliedStep = applied.CreditCostSteps
+                .Single(step => step.Changed);
+            Assert.AreEqual("rubber_stamp", projectedStep.SourceId);
+            Assert.AreEqual(ModifierSourceKind.Supply,
+                projectedStep.SourceKind);
+            Assert.AreEqual(ModifierSourceSide.Office,
+                projectedStep.SourceSide);
+            Assert.AreEqual(projectedStep.SourceKey, appliedStep.SourceKey,
+                "Projection and receipt must point to the same visible modifier.");
         }
 
         [Test]

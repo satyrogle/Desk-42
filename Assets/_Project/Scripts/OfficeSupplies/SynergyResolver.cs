@@ -258,6 +258,9 @@ namespace Desk42.OfficeSupplies
                     : inst.Effect.ModifyInjectionDuration(cardType, duration, cardTags);
                 packet.DurationSteps.Add(new ModifierStep
                 {
+                    SourceId    = inst.Data.SupplyId,
+                    SourceKind  = ModifierSourceKind.Supply,
+                    SourceSide  = ModifierSourceSide.Office,
                     SupplyId    = inst.Data.SupplyId,
                     DisplayName = inst.Data.DisplayName,
                     Zone        = inst.Data.Zone,
@@ -279,6 +282,9 @@ namespace Desk42.OfficeSupplies
                 creditDelta += delta;
                 packet.CreditCostSteps.Add(new ModifierStep
                 {
+                    SourceId    = inst.Data.SupplyId,
+                    SourceKind  = ModifierSourceKind.Supply,
+                    SourceSide  = ModifierSourceSide.Office,
                     SupplyId    = inst.Data.SupplyId,
                     DisplayName = inst.Data.DisplayName,
                     Zone        = inst.Data.Zone,
@@ -300,6 +306,9 @@ namespace Desk42.OfficeSupplies
                 soulDelta += delta;
                 packet.SoulCostSteps.Add(new ModifierStep
                 {
+                    SourceId    = inst.Data.SupplyId,
+                    SourceKind  = ModifierSourceKind.Supply,
+                    SourceSide  = ModifierSourceSide.Office,
                     SupplyId    = inst.Data.SupplyId,
                     DisplayName = inst.Data.DisplayName,
                     Zone        = inst.Data.Zone,

@@ -36,6 +36,23 @@ using Desk42.BehaviourTrees;
 
 namespace Desk42.BSM
 {
+    public readonly struct ClientModifierSnapshot
+    {
+        public readonly string SourceId;
+        public readonly string DisplayName;
+        public readonly string BlockedCardType;
+        public readonly bool IsRevealed;
+
+        public ClientModifierSnapshot(string sourceId, string displayName,
+            string blockedCardType, bool isRevealed)
+        {
+            SourceId = sourceId;
+            DisplayName = displayName;
+            BlockedCardType = blockedCardType;
+            IsRevealed = isRevealed;
+        }
+    }
+
     [DisallowMultipleComponent]
     public sealed class ClientStateMachine : MonoBehaviour
     {
@@ -283,6 +300,39 @@ namespace Desk42.BSM
         {
             if (!string.IsNullOrWhiteSpace(traitId))
                 _revealedCounterTraits.Add(traitId);
+        }
+
+        /// <summary>
+        /// Disclosure-safe view of the modifiers attached to this client.
+        /// Concealed traits retain an opaque row entry but never expose their
+        /// identity or blocked card until the encounter has revealed them.
+        /// </summary>
+        public IReadOnlyList<ClientModifierSnapshot> GetModifierSnapshot()
+        {
+            var result = new List<ClientModifierSnapshot>(
+                _activeCounterTraits.Count);
+            foreach (string traitId in _activeCounterTraits)
+            {
+                if (string.IsNullOrWhiteSpace(traitId)) continue;
+                bool revealed = _revealedCounterTraits.Contains(traitId);
+                string blockedCard = null;
+                if (revealed && _baseBT != null)
+                {
+                    foreach (var blocker in _baseBT.AllBlockers.Values)
+                    {
+                        if (blocker.CounterTraitId != traitId) continue;
+                        blockedCard = blocker.BlockedCardType;
+                        break;
+                    }
+                }
+
+                result.Add(new ClientModifierSnapshot(
+                    revealed ? traitId : null,
+                    revealed ? traitId : null,
+                    blockedCard,
+                    revealed));
+            }
+            return result;
         }
 
         // ── Runtime Rule Injection (called by MutationEngine) ────

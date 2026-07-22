@@ -108,7 +108,7 @@ namespace Desk42.RedTape
             }
 
             SynergyResolutionPacket cascade = BuildCascade(card, previewOnly: true);
-            int effectiveCost = ApplyFlatCreditModifiers(card, cascade.FinalCreditCost);
+            int effectiveCost = ApplyFlatCreditModifiers(card, ref cascade);
             float sanityCostFraction = Core.ComplianceVowSystem.GetSanityCostFraction();
             float convertedSanityCost = 0f;
             int creditPortion = effectiveCost;
@@ -117,10 +117,11 @@ namespace Desk42.RedTape
             {
                 convertedSanityCost = effectiveCost * sanityCostFraction;
                 creditPortion = Mathf.RoundToInt(effectiveCost * (1f - sanityCostFraction));
+                AppendCreditStep(ref cascade,
+                    "zero_based_budgeting", ModifierSourceKind.Vow,
+                    "Zero-Based Budgeting", effectiveCost, creditPortion);
                 notices.Add($"Zero-Based Budgeting converts {convertedSanityCost:0.##} cost to Sanity.");
             }
-
-            AddCascadeNotices(cascade, notices);
 
             int availableCredits = run?.Credits ?? 0;
             if (creditPortion > 0 && availableCredits < creditPortion)
@@ -136,10 +137,12 @@ namespace Desk42.RedTape
 
             float projectedSanityDelta = run?.ProjectSanityDelta(
                 -(atbSanityCost + convertedSanityCost)) ?? 0f;
+            float durationBeforeState = cascade.FinalDuration;
             float durationOverride = ApplyStateEffectiveness(
-                card, cascade.FinalDuration, evaluationState);
-            if (!Mathf.Approximately(durationOverride, cascade.FinalDuration))
+                card, ref cascade, evaluationState);
+            if (!Mathf.Approximately(durationOverride, durationBeforeState))
                 notices.Add($"Client or office state changes effect duration to {durationOverride:0.##}s.");
+            AddCascadeNotices(cascade, notices);
 
             var injection = _activeClient.PreviewInject(
                 card.CardType.ToString(), out var targetState, evaluationState);
@@ -295,7 +298,7 @@ namespace Desk42.RedTape
             SynergyResolutionPacket cascade = BuildCascade(card, previewOnly: false);
 
             // ── Step 2: Credit check ──────────────────────────
-            int effectiveCost = ApplyFlatCreditModifiers(card, cascade.FinalCreditCost);
+            int effectiveCost = ApplyFlatCreditModifiers(card, ref cascade);
             int creditsSpent = 0;
 
             // ── Vow: Zero-Based Budgeting — convert credit cost to sanity ──
@@ -304,6 +307,9 @@ namespace Desk42.RedTape
             {
                 float sanityCost = effectiveCost * sanityCostFraction;
                 int creditPortion = Mathf.RoundToInt(effectiveCost * (1f - sanityCostFraction));
+                AppendCreditStep(ref cascade,
+                    "zero_based_budgeting", ModifierSourceKind.Vow,
+                    "Zero-Based Budgeting", effectiveCost, creditPortion);
 
                 if (creditPortion > 0 &&
                     !(run?.SpendCredits(creditPortion) ?? false))
@@ -344,7 +350,7 @@ namespace Desk42.RedTape
             }
 
             // ── Step 3: Attempt injection on client BSM ───────
-            float durationOverride = ApplyStateEffectiveness(card, cascade.FinalDuration);
+            float durationOverride = ApplyStateEffectiveness(card, ref cascade);
             var injectionResult = _activeClient.TryInject(
                 card.CardType.ToString(), durationOverride);
 
@@ -438,20 +444,22 @@ namespace Desk42.RedTape
         {
             var archetype = GameManager.Instance?.Run?.Archetype;
 
-            // Post-archetype duration base
-            float baseDuration = card.InjectionDuration;
+            float rawDuration = card.InjectionDuration;
+            float baseDuration = rawDuration;
             if (archetype != null)
                 baseDuration = archetype.ModifyInjectionDuration(card.CardType, baseDuration);
             else
                 baseDuration *= card.ArchetypeMultiplier;
 
-            // Post-archetype credit base
-            int baseCredit = card.CreditCost;
+            int rawCredit = card.CreditCost;
+            int baseCredit = rawCredit;
             if (archetype != null)
                 baseCredit = archetype.ModifyCreditCost(card.CardType, baseCredit);
 
-            // Post-archetype, phase-gated soul base
-            float baseSoul = (GameManager.Phase >= 3 && card.SoulCost > 0f) ? card.SoulCost : 0f;
+            float rawSoul = (GameManager.Phase >= 3 && card.SoulCost > 0f)
+                ? card.SoulCost
+                : 0f;
+            float baseSoul = rawSoul;
             if (archetype != null && baseSoul > 0f)
                 baseSoul = archetype.ModifySoulCost(card.CardType, baseSoul);
 
@@ -471,8 +479,33 @@ namespace Desk42.RedTape
                     SoulCostSteps   = new List<ModifierStep>(),
                 };
 
+            // Restore the actual card values as the trace bases and prepend any
+            // archetype contribution. The resolver still received the established
+            // post-archetype values, so mechanics and order are unchanged.
+            packet.BaseDuration = rawDuration;
+            packet.BaseCreditCost = rawCredit;
+            packet.BaseSoulCost = rawSoul;
+
+            string archetypeId = archetype?.ArchetypeId ?? card.ArchetypeId;
+            string archetypeName = archetype?.DisplayName ?? "Card affinity";
+            if (!Mathf.Approximately(rawDuration, baseDuration))
+                packet.DurationSteps.Insert(0, NewModifierStep(
+                    archetypeId, ModifierSourceKind.Archetype,
+                    ModifierSourceSide.Office, archetypeName,
+                    rawDuration, baseDuration));
+            if (rawCredit != baseCredit)
+                packet.CreditCostSteps.Insert(0, NewModifierStep(
+                    archetypeId, ModifierSourceKind.Archetype,
+                    ModifierSourceSide.Office, archetypeName,
+                    rawCredit, baseCredit));
+            if (!Mathf.Approximately(rawSoul, baseSoul))
+                packet.SoulCostSteps.Insert(0, NewModifierStep(
+                    archetypeId, ModifierSourceKind.Archetype,
+                    ModifierSourceSide.Office, archetypeName,
+                    rawSoul, baseSoul));
+
             // Suppress phantom soul when soul cost is inactive this slam.
-            if (baseSoul <= 0f)
+            if (rawSoul <= 0f)
             {
                 packet.BaseSoulCost  = 0f;
                 packet.FinalSoulCost = 0f;
@@ -489,13 +522,17 @@ namespace Desk42.RedTape
         /// supply-resolved duration. Separate from the supply cascade because
         /// it depends on live client mood, not desk supplies.
         /// </summary>
-        private float ApplyStateEffectiveness(PunchCardData card, float duration,
+        private float ApplyStateEffectiveness(PunchCardData card,
+            ref SynergyResolutionPacket cascade,
             ClientStateID? moodOverride = null)
         {
+            float duration = cascade.FinalDuration;
+
             // BSM State Effectiveness 
             if (_activeClient != null)
             {
                 var mood = moodOverride ?? _activeClient.CurrentMoodState;
+                float beforeMood = duration;
                 if (mood == ClientStateID.Suspicious && card.CardType == PunchCardType.CooperationRoute)
                     duration *= 0.5f;
                 else if (mood == ClientStateID.Paranoid && 
@@ -504,16 +541,40 @@ namespace Desk42.RedTape
                 else if (mood == ClientStateID.Dissociating)
                     duration = 0f;
 
+                if (!Mathf.Approximately(beforeMood, duration))
+                    cascade.DurationSteps.Add(NewModifierStep(
+                        $"state_{mood.ToString().ToLowerInvariant()}",
+                        ModifierSourceKind.ClientState,
+                        ModifierSourceSide.Client,
+                        $"Client: {mood}", beforeMood, duration));
+
                 // Form Predelegation mutation passive
                 if (card.CardType == PunchCardType.PendingReview && 
                     (GameManager.Instance?.Meta?.HasCounterTrait(_activeClient.ClientVariantId, "form_predelegation") ?? false))
                 {
+                    float beforeTrait = duration;
                     duration *= 0.5f;
+                    cascade.DurationSteps.Add(NewModifierStep(
+                        "form_predelegation", ModifierSourceKind.CounterTrait,
+                        ModifierSourceSide.Client, "Form Predelegation",
+                        beforeTrait, duration));
                 }
             }
 
-            duration *= Core.OfficeEnvironmentState.GetInjectionDurationMultiplier();
+            float environmentMultiplier =
+                Core.OfficeEnvironmentState.GetInjectionDurationMultiplier();
+            if (!Mathf.Approximately(environmentMultiplier, 1f))
+            {
+                float beforeEnvironment = duration;
+                duration *= environmentMultiplier;
+                cascade.DurationSteps.Add(NewModifierStep(
+                    "office_temperature", ModifierSourceKind.Environment,
+                    ModifierSourceSide.Office,
+                    Core.OfficeEnvironmentState.GetTemperatureState(),
+                    beforeEnvironment, duration));
+            }
 
+            cascade.FinalDuration = duration;
             return duration;
         }
 
@@ -525,12 +586,20 @@ namespace Desk42.RedTape
         /// supply-resolved cost. Order preserved from the original chain:
         /// archetype + supply (in the cascade) → these flat adjustments.
         /// </summary>
-        private int ApplyFlatCreditModifiers(PunchCardData card, int cost)
+        private int ApplyFlatCreditModifiers(PunchCardData card,
+            ref SynergyResolutionPacket cascade)
         {
+            int cost = cascade.FinalCreditCost;
 
             int stricterNDARank = GameManager.Instance?.Run?.GetVowRank("stricter_nondisclosure") ?? 0;
             if (stricterNDARank > 0 && (card.CardType == PunchCardType.Redact || card.CardType == PunchCardType.NonDisclosure))
+            {
+                int before = cost;
                 cost += stricterNDARank * 2;
+                AppendCreditStep(ref cascade,
+                    "stricter_nondisclosure", ModifierSourceKind.Vow,
+                    "Stricter Non-Disclosure", before, cost);
+            }
 
             // Faction Cost Modifiers
             if (GameManager.Instance?.Run != null)
@@ -538,22 +607,75 @@ namespace Desk42.RedTape
                 var run = GameManager.Instance.Run;
                 if (card.CardType == PunchCardType.LegalHold || card.CardType == PunchCardType.ThreatAudit) 
                 {
+                    int before = cost;
                     if (run.GetFactionRep(Desk42.Core.FactionID.Legal) > 50) cost -= 2;
                     else if (run.GetFactionRep(Desk42.Core.FactionID.Legal) < -50) cost += 3;
+                    AppendCreditStep(ref cascade,
+                        "legal", ModifierSourceKind.Faction,
+                        "Legal reputation", before, cost);
                 }
 
+                int beforeAccounting = cost;
                 if (run.GetFactionRep(Desk42.Core.FactionID.Accounting) > 50) cost -= 1; // Accounting cuts base costs
                 else if (run.GetFactionRep(Desk42.Core.FactionID.Accounting) < -50) cost += 1;
+                AppendCreditStep(ref cascade,
+                    "accounting", ModifierSourceKind.Faction,
+                    "Accounting reputation", beforeAccounting, cost);
 
                 // ── Phase 3: Escalating Regulations ──
                 if (!string.IsNullOrEmpty(run.EscalatingRegulationCardId) && 
                     card.CardType.ToString() == run.EscalatingRegulationCardId)
                 {
+                    int before = cost;
                     cost *= 3; // Triple cost penalty!
+                    AppendCreditStep(ref cascade,
+                        run.EscalatingRegulationCardId,
+                        ModifierSourceKind.Regulation,
+                        "Escalating regulation", before, cost);
                 }
             }
 
-            return Mathf.Max(0, cost);
+            cascade.FinalCreditCost = Mathf.Max(0, cost);
+            return cascade.FinalCreditCost;
+        }
+
+        private static ModifierStep NewModifierStep(
+            string sourceId,
+            ModifierSourceKind sourceKind,
+            ModifierSourceSide sourceSide,
+            string displayName,
+            float previous,
+            float next)
+        {
+            return new ModifierStep
+            {
+                SourceId = sourceId,
+                SourceKind = sourceKind,
+                SourceSide = sourceSide,
+                SupplyId = sourceKind == ModifierSourceKind.Supply
+                    ? sourceId
+                    : null,
+                DisplayName = displayName,
+                PrevValue = previous,
+                NewValue = next,
+                Delta = next - previous,
+            };
+        }
+
+        private static void AppendCreditStep(
+            ref SynergyResolutionPacket cascade,
+            string sourceId,
+            ModifierSourceKind sourceKind,
+            string displayName,
+            int previous,
+            int next)
+        {
+            if (previous == next) return;
+            cascade.CreditCostSteps ??= new List<ModifierStep>();
+            cascade.CreditCostSteps.Add(NewModifierStep(
+                sourceId, sourceKind, ModifierSourceSide.Office,
+                displayName, previous, next));
+            cascade.FinalCreditCost = next;
         }
 
         // ── Failure Mapping ───────────────────────────────────
@@ -720,11 +842,11 @@ namespace Desk42.RedTape
             if (notices == null) return;
 
             if (!Mathf.Approximately(cascade.BaseDuration, cascade.FinalDuration))
-                notices.Add($"Desk supplies change duration {cascade.BaseDuration:0.##}s → {cascade.FinalDuration:0.##}s.");
+                notices.Add($"Active modifiers change duration {cascade.BaseDuration:0.##}s → {cascade.FinalDuration:0.##}s.");
             if (cascade.BaseCreditCost != cascade.FinalCreditCost)
-                notices.Add($"Desk supplies change cost ¢{cascade.BaseCreditCost} → ¢{cascade.FinalCreditCost}.");
+                notices.Add($"Active modifiers change cost ¢{cascade.BaseCreditCost} → ¢{cascade.FinalCreditCost}.");
             if (!Mathf.Approximately(cascade.BaseSoulCost, cascade.FinalSoulCost))
-                notices.Add($"Desk supplies change Soul cost {cascade.BaseSoulCost:0.##} → {cascade.FinalSoulCost:0.##}.");
+                notices.Add($"Active modifiers change Soul cost {cascade.BaseSoulCost:0.##} → {cascade.FinalSoulCost:0.##}.");
         }
 
         private void PublishAppliedCard(

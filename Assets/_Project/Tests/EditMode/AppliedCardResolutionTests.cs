@@ -148,6 +148,7 @@ namespace Desk42.Tests.EditMode
                 new System.Collections.Generic.List<string>());
             client.BaseBT.InsertBlockerForCard(
                 nameof(PunchCardType.PendingReview), "pre_filed_exemption");
+            client.RegisterCounterTrait("pre_filed_exemption", revealed: false);
 
             var injectorGo = new GameObject("StateInjector_ConcealedBlockTest");
             var injector = injectorGo.AddComponent<StateInjector>();
@@ -177,6 +178,12 @@ namespace Desk42.Tests.EditMode
                 StringAssert.DoesNotContain("pre_filed_exemption", before.FailureReason ?? "");
                 StringAssert.DoesNotContain("pre filed exemption",
                     string.Join(" ", before.Notices).ToLowerInvariant());
+                var concealedSnapshot = client.GetModifierSnapshot();
+                Assert.AreEqual(1, concealedSnapshot.Count);
+                Assert.IsFalse(concealedSnapshot[0].IsRevealed);
+                Assert.IsNull(concealedSnapshot[0].SourceId);
+                Assert.IsNull(concealedSnapshot[0].BlockedCardType,
+                    "The row must not disclose which card the facedown trait blocks.");
 
                 var applied = injector.TrySlam(card, "pending-hidden");
 
@@ -188,6 +195,12 @@ namespace Desk42.Tests.EditMode
                 Assert.IsFalse(after.HasConcealedBlockRisk);
                 Assert.IsTrue(after.IsBlockingModifierRevealed);
                 Assert.AreEqual("pre_filed_exemption", after.BlockingModifierId);
+                var revealedSnapshot = client.GetModifierSnapshot();
+                Assert.IsTrue(revealedSnapshot[0].IsRevealed);
+                Assert.AreEqual("pre_filed_exemption",
+                    revealedSnapshot[0].SourceId);
+                Assert.AreEqual(nameof(PunchCardType.PendingReview),
+                    revealedSnapshot[0].BlockedCardType);
             }
             finally
             {

@@ -278,6 +278,14 @@ namespace Desk42.Tests.PlayMode
                         renderedCard.RenderedCertaintyText),
                     "Every card face must state certainty or availability without hover.");
             }
+            var modifierOverlay = UnityEngine.Object
+                .FindObjectOfType<UI.ShiftFeedbackOverlay>();
+            Assert.IsNotNull(modifierOverlay,
+                "The Shift UI must expose separate office and client modifier rows.");
+            StringAssert.Contains("OFFICE MODIFIERS",
+                modifierOverlay.RenderedOfficeModifiers);
+            StringAssert.Contains("CLIENT MODIFIERS",
+                modifierOverlay.RenderedClientModifiers);
             yield return Screenshot(shiftNumber, seed, "card-face");
 
             var cardButton = cardButtons[0];

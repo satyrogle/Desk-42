@@ -170,7 +170,9 @@ namespace Desk42.UI
 
                 ModifierPresented?.Invoke(valueKind, step);
 
-                string comboKey = $"{step.SupplyId}_{step.Zone}";
+                string comboKey = string.IsNullOrWhiteSpace(step.SourceId)
+                    ? $"{step.SupplyId}_{step.Zone}"
+                    : step.SourceKey;
                 bool fastForward = Input.GetKey(_fastForwardKey)
                     || GetSeenComboCount(comboKey) >= AutoFastForwardCount;
                 yield return new WaitForSeconds(fastForward ? SkipDelay : BaseDelay);

@@ -19,6 +19,7 @@ using UnityEngine.UI;
 using TMPro;
 using Desk42.Core;
 using Desk42.Encounter;
+using Desk42.OfficeSupplies;
 
 namespace Desk42.UI
 {
@@ -39,6 +40,10 @@ namespace Desk42.UI
         private TMP_Text _receiptText;
         private GameObject _obligationsPanel;
         private TMP_Text _obligationsText;
+        private GameObject _officeModifiersPanel;
+        private TMP_Text _officeModifiersText;
+        private GameObject _clientModifiersPanel;
+        private TMP_Text _clientModifiersText;
         private string _latestReceiptText;
         private ClaimResolutionKind _activeProjectionKind;
         private EncounterManager _encounter;
@@ -46,6 +51,16 @@ namespace Desk42.UI
         private int _lastObligationCount = -1;
         private bool _lastObligationsApplied;
         private readonly Queue<GameObject> _activeToasts = new();
+        private readonly HashSet<string> _projectedModifierKeys = new();
+        private readonly HashSet<string> _appliedModifierKeys = new();
+        private bool _cardProjectionVisible;
+        private bool _concealedRiskProjected;
+        private float _modifierRefreshTimer;
+
+        public string RenderedOfficeModifiers
+            => _officeModifiersText != null ? _officeModifiersText.text : "";
+        public string RenderedClientModifiers
+            => _clientModifiersText != null ? _clientModifiersText.text : "";
 
         // ── Colors ────────────────────────────────────────────
 
@@ -65,6 +80,7 @@ namespace Desk42.UI
             BuildToastContainer();
             BuildReceiptPanel();
             BuildObligationsPanel();
+            BuildModifierRows();
             WireDecisionPreviewTriggers();
         }
 
@@ -74,6 +90,12 @@ namespace Desk42.UI
         {
             RefreshObligations(force: false);
             RefreshClaimProjection();
+            _modifierRefreshTimer += Time.unscaledDeltaTime;
+            if (_modifierRefreshTimer >= 0.25f)
+            {
+                _modifierRefreshTimer = 0f;
+                RefreshModifierRows();
+            }
         }
 
         private void OnEnable()
@@ -81,6 +103,9 @@ namespace Desk42.UI
             RumorMill.OnClaimResolved       += HandleClaimResolved;
             RumorMill.OnShiftPhaseChanged   += HandlePhaseChanged;
             RumorMill.OnCounterTraitGenerated += HandleCounterTrait;
+            RumorMill.OnCardPreview         += HandleCardPreview;
+            RumorMill.OnCardSlammed         += HandleCardSlammed;
+            RumorMill.OnClaimQueued         += HandleClaimQueued;
         }
 
         private void OnDisable()
@@ -88,6 +113,278 @@ namespace Desk42.UI
             RumorMill.OnClaimResolved       -= HandleClaimResolved;
             RumorMill.OnShiftPhaseChanged   -= HandlePhaseChanged;
             RumorMill.OnCounterTraitGenerated -= HandleCounterTrait;
+            RumorMill.OnCardPreview         -= HandleCardPreview;
+            RumorMill.OnCardSlammed         -= HandleCardSlammed;
+            RumorMill.OnClaimQueued         -= HandleClaimQueued;
+        }
+
+        private void BuildModifierRows()
+        {
+            BuildModifierRow("OfficeModifiers", new Vector2(0f, 0f),
+                new Vector2(0f, 0f), new Vector2(0f, 0f),
+                new Vector2(16f, 92f), out _officeModifiersPanel,
+                out _officeModifiersText);
+            BuildModifierRow("ClientModifiers", new Vector2(1f, 0f),
+                new Vector2(1f, 0f), new Vector2(1f, 0f),
+                new Vector2(-16f, 92f), out _clientModifiersPanel,
+                out _clientModifiersText);
+            RefreshModifierRows();
+        }
+
+        private void BuildModifierRow(string objectName,
+            Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
+            Vector2 position, out GameObject panel, out TMP_Text label)
+        {
+            panel = new GameObject(objectName);
+            panel.transform.SetParent(_uiRoot, false);
+            var rt = panel.AddComponent<RectTransform>();
+            rt.anchorMin = anchorMin;
+            rt.anchorMax = anchorMax;
+            rt.pivot = pivot;
+            rt.sizeDelta = new Vector2(390f, 92f);
+            rt.anchoredPosition = position;
+
+            var background = panel.AddComponent<Image>();
+            background.color = new Color(0.055f, 0.11f, 0.12f, 0.94f);
+            background.raycastTarget = false;
+            var outline = panel.AddComponent<Outline>();
+            outline.effectColor = new Color(0.33f, 0.68f, 0.72f, 0.82f);
+            outline.effectDistance = new Vector2(2f, -2f);
+
+            var textObject = new GameObject("ModifierText");
+            textObject.transform.SetParent(panel.transform, false);
+            var textRt = textObject.AddComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = new Vector2(12f, 8f);
+            textRt.offsetMax = new Vector2(-12f, -8f);
+
+            label = textObject.AddComponent<TextMeshProUGUI>();
+            label.fontSize = Desk42.Accessibility.AccessibilitySettings.Scaled(18f);
+            label.color = new Color(0.87f, 0.9f, 0.8f, 1f);
+            label.alignment = TextAlignmentOptions.TopLeft;
+            label.enableWordWrapping = true;
+            label.overflowMode = TextOverflowModes.Ellipsis;
+            label.raycastTarget = false;
+        }
+
+        private void HandleCardPreview(CardPreviewEvent e)
+        {
+            _cardProjectionVisible = e.IsVisible;
+            _projectedModifierKeys.Clear();
+            _concealedRiskProjected = false;
+            if (e.IsVisible)
+            {
+                CollectChangedSources(e.Projection.Cascade,
+                    _projectedModifierKeys);
+                if (e.Projection.IsBlockingModifierRevealed
+                    && !string.IsNullOrWhiteSpace(e.Projection.BlockingModifierId))
+                {
+                    _projectedModifierKeys.Add(SourceKey(
+                        ModifierSourceKind.CounterTrait,
+                        e.Projection.BlockingModifierId));
+                }
+                _concealedRiskProjected = e.Projection.HasConcealedBlockRisk;
+            }
+            RefreshModifierRows();
+        }
+
+        private void HandleCardSlammed(CardSlammedEvent e)
+        {
+            _cardProjectionVisible = false;
+            _projectedModifierKeys.Clear();
+            _appliedModifierKeys.Clear();
+            CollectChangedSources(e.Result.Cascade, _appliedModifierKeys);
+            if (!string.IsNullOrWhiteSpace(e.BlockingModifierId))
+                _appliedModifierKeys.Add(SourceKey(
+                    ModifierSourceKind.CounterTrait,
+                    e.BlockingModifierId));
+            _concealedRiskProjected = false;
+            RefreshModifierRows();
+        }
+
+        private void HandleClaimQueued(ClaimQueuedEvent _)
+        {
+            _appliedModifierKeys.Clear();
+            _projectedModifierKeys.Clear();
+            _cardProjectionVisible = false;
+            _concealedRiskProjected = false;
+            RefreshModifierRows();
+        }
+
+        private static void CollectChangedSources(
+            SynergyResolutionPacket packet, HashSet<string> destination)
+        {
+            CollectChangedSources(packet.DurationSteps, destination);
+            CollectChangedSources(packet.CreditCostSteps, destination);
+            CollectChangedSources(packet.SoulCostSteps, destination);
+        }
+
+        private static void CollectChangedSources(
+            List<ModifierStep> steps, HashSet<string> destination)
+        {
+            if (steps == null) return;
+            foreach (var step in steps)
+            {
+                if (!step.Changed || string.IsNullOrWhiteSpace(step.SourceId))
+                    continue;
+                destination.Add(step.SourceKey);
+            }
+        }
+
+        private void RefreshModifierRows()
+        {
+            if (_officeModifiersText == null || _clientModifiersText == null)
+                return;
+
+            var highlighted = _cardProjectionVisible
+                ? _projectedModifierKeys
+                : _appliedModifierKeys;
+            var office = new List<string>();
+            var run = GameManager.Instance?.Run;
+            if (run?.Archetype != null)
+            {
+                office.Add(FormatModifierChip(
+                    run.Archetype.DisplayName,
+                    SourceKey(ModifierSourceKind.Archetype,
+                        run.Archetype.ArchetypeId), highlighted));
+            }
+
+            var supplies = GameManager.Instance?.Supplies?.AllActive;
+            if (supplies != null)
+            {
+                foreach (var supply in supplies)
+                {
+                    if (supply?.Data == null) continue;
+                    office.Add(FormatModifierChip(supply.Data.DisplayName,
+                        SourceKey(ModifierSourceKind.Supply,
+                            supply.Data.SupplyId), highlighted));
+                }
+            }
+
+            if (run?.ActiveVows != null)
+            {
+                foreach (var vow in run.ActiveVows)
+                {
+                    if (vow == null || string.IsNullOrWhiteSpace(vow.VowId))
+                        continue;
+                    string rank = vow.Rank > 1 ? $" {vow.Rank}" : "";
+                    office.Add(FormatModifierChip(
+                        $"{FormatIdentifier(vow.VowId)}{rank}",
+                        SourceKey(ModifierSourceKind.Vow, vow.VowId),
+                        highlighted));
+                }
+            }
+
+            if (run != null)
+            {
+                AddFactionChip(office, run, FactionID.Legal, "LEGAL",
+                    highlighted);
+                AddFactionChip(office, run, FactionID.Accounting,
+                    "ACCOUNTING", highlighted);
+                if (!string.IsNullOrWhiteSpace(run.EscalatingRegulationCardId))
+                {
+                    office.Add(FormatModifierChip(
+                        $"REG: {run.EscalatingRegulationCardId}",
+                        SourceKey(ModifierSourceKind.Regulation,
+                            run.EscalatingRegulationCardId), highlighted));
+                }
+            }
+
+            if (!Mathf.Approximately(
+                OfficeEnvironmentState.GetInjectionDurationMultiplier(), 1f))
+            {
+                office.Add(FormatModifierChip(
+                    OfficeEnvironmentState.GetTemperatureState(),
+                    SourceKey(ModifierSourceKind.Environment,
+                        "office_temperature"), highlighted));
+            }
+
+            var client = new List<string>();
+            if (_encounter == null)
+                _encounter = Desk42Services.Get<EncounterManager>()
+                    ?? FindObjectOfType<EncounterManager>();
+            var activeClient = _encounter?.ActiveClient;
+            if (activeClient != null)
+            {
+                string moodId = $"state_{activeClient.CurrentMoodState.ToString().ToLowerInvariant()}";
+                client.Add(FormatModifierChip(
+                    $"MOOD: {activeClient.CurrentMoodState}",
+                    SourceKey(ModifierSourceKind.ClientState, moodId),
+                    highlighted));
+            }
+
+            var snapshots = activeClient?.GetModifierSnapshot();
+            if (snapshots != null)
+            {
+                foreach (var modifier in snapshots)
+                {
+                    if (!modifier.IsRevealed)
+                    {
+                        bool activeRisk = _cardProjectionVisible
+                            && _concealedRiskProjected;
+                        client.Add(activeRisk
+                            ? "<color=#F4D35E><b>[? MAY BLOCK]</b></color>"
+                            : "<color=#87938C>[? CONCEALED]</color>");
+                        continue;
+                    }
+
+                    string label = FormatIdentifier(modifier.DisplayName);
+                    if (!string.IsNullOrWhiteSpace(modifier.BlockedCardType))
+                        label += $" Â· BLOCKS {FormatIdentifier(modifier.BlockedCardType)}";
+                    client.Add(FormatModifierChip(label,
+                        SourceKey(ModifierSourceKind.CounterTrait,
+                            modifier.SourceId), highlighted));
+                }
+                if (snapshots.Count == 0)
+                    client.Add("<color=#87938C>[NO KNOWN TRAITS]</color>");
+            }
+
+            _officeModifiersText.text = "<b>OFFICE MODIFIERS</b>\n" +
+                (office.Count > 0 ? string.Join(" ", office) : "<color=#87938C>[NONE]</color>");
+            _clientModifiersText.text = "<b>CLIENT MODIFIERS</b>\n" +
+                (client.Count > 0 ? string.Join(" ", client) : "<color=#87938C>[NO KNOWN TRAITS]</color>");
+            _officeModifiersPanel.SetActive(true);
+            _clientModifiersPanel.SetActive(true);
+        }
+
+        private static void AddFactionChip(List<string> output,
+            RunStateController run, FactionID faction, string label,
+            HashSet<string> highlighted)
+        {
+            float reputation = run.GetFactionRep(faction);
+            if (reputation <= 50f && reputation >= -50f) return;
+            string standing = reputation > 50f ? "FAVOUR" : "DISFAVOUR";
+            output.Add(FormatModifierChip($"{label} {standing}",
+                SourceKey(ModifierSourceKind.Faction,
+                    faction.ToString().ToLowerInvariant()), highlighted));
+        }
+
+        private static string FormatModifierChip(string label, string sourceKey,
+            HashSet<string> highlighted)
+        {
+            string safeLabel = FormatIdentifier(label);
+            return highlighted.Contains(sourceKey)
+                ? $"<color=#F4D35E><b>[{safeLabel}]</b></color>"
+                : $"<color=#B7C5BB>[{safeLabel}]</color>";
+        }
+
+        private static string SourceKey(ModifierSourceKind kind, string sourceId)
+            => $"{kind}:{sourceId}";
+
+        private static string FormatIdentifier(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "MODIFIER";
+            var result = new System.Text.StringBuilder(value.Length + 8);
+            for (int i = 0; i < value.Length; i++)
+            {
+                char current = value[i] == '_' ? ' ' : value[i];
+                if (i > 0 && char.IsUpper(current)
+                    && char.IsLower(value[i - 1]))
+                    result.Append(' ');
+                result.Append(char.ToUpperInvariant(current));
+            }
+            return result.ToString();
         }
 
         // ── Toast Container ───────────────────────────────────

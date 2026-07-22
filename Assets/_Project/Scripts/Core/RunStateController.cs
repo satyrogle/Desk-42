@@ -140,6 +140,10 @@ namespace Desk42.Core
             set => _data.ComboMultiplier = value;
         }
         public string EscalatingRegulationCardId => _data.EscalatingRegulationCardId;
+        public System.Collections.Generic.IReadOnlyList<ActiveVow> ActiveVows
+            => _data?.ActiveVows != null
+                ? _data.ActiveVows
+                : System.Array.Empty<ActiveVow>();
 
         // Derived
         public bool    IsInFugueState   => _data.Sanity <= 0f;
