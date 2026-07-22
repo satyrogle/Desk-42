@@ -177,6 +177,28 @@ namespace Desk42.Core
         }
     }
 
+    /// <summary>
+    /// Accepted card input moving toward punch impact. This is choreography,
+    /// never an applied result; CardSlammedEvent remains the only outcome.
+    /// </summary>
+    public readonly struct CardSlamIntentEvent
+    {
+        public readonly PunchCardType CardType;
+        public readonly string CardDisplayName;
+        public readonly string CardInstanceId;
+        public readonly float TimeToImpact;
+
+        public CardSlamIntentEvent(PunchCardType cardType,
+            string cardDisplayName, string cardInstanceId,
+            float timeToImpact)
+        {
+            CardType = cardType;
+            CardDisplayName = cardDisplayName;
+            CardInstanceId = cardInstanceId;
+            TimeToImpact = timeToImpact;
+        }
+    }
+
     /// <summary>Player made an active moral choice at a dilemma prompt.</summary>
     public readonly struct MoralChoiceEvent
     {

@@ -163,6 +163,9 @@ namespace Desk42.RedTape
             bool available = _state == MachineState.Idle
                 || (allowHoverState && _state == MachineState.CardHovering);
             if (!available || data == null) return;
+            RumorMill.Publish(new CardSlamIntentEvent(
+                data.CardType, data.DisplayName, instanceId,
+                Mathf.Max(0f, _processDelay)));
             StartCoroutine(SlamSequence(data, instanceId, cardView));
         }
 

@@ -23,6 +23,9 @@ namespace Desk42.Tests.PlayMode
             var machineObject = new GameObject("UnifiedSlamMachine");
             var machine = machineObject.AddComponent<PunchCardMachine>();
             machine.SetActiveClient(client);
+            var feedbackObject = new GameObject("LifecycleSafeCardFeedback");
+            var feedback = feedbackObject.AddComponent<Desk42.UI.CardSlamFeedback>();
+            yield return null;
 
             var card = ScriptableObject.CreateInstance<PunchCardData>();
             card.CardType = PunchCardType.PendingReview;
@@ -61,11 +64,15 @@ namespace Desk42.Tests.PlayMode
                     "Each input route must produce exactly one semantic result.");
                 Assert.AreEqual(clickImpactDelay, dragImpactDelay, 0.08f,
                     "Click and drag must reach punch impact on the same timing path.");
+                machine.ClearActiveClient();
+                StringAssert.Contains("APPLIED", feedback.RenderedImpactText,
+                    "Post-impact confirmation must survive machine coroutine cleanup.");
                 Object.Destroy(cardObject);
             }
             finally
             {
                 Object.Destroy(card);
+                Object.Destroy(feedbackObject);
                 Object.Destroy(machineObject);
                 Object.Destroy(clientObject);
                 RumorMill.ClearAllSubscriptions();

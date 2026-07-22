@@ -35,6 +35,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Desk42.Core;
 using Desk42.BSM;
+using Desk42.Cards;
 using Desk42.Encounter;
 
 namespace Desk42.Tests.PlayMode
@@ -320,6 +321,51 @@ namespace Desk42.Tests.PlayMode
             StringAssert.Contains("s", modifierOverlay.RenderedInjectedState,
                 "The marker must render the authoritative remaining duration.");
             yield return Screenshot(shiftNumber, seed, "injected-state");
+
+            var machine = Desk42Services.Get<RedTape.PunchCardMachine>()
+                ?? UnityEngine.Object.FindObjectOfType<RedTape.PunchCardMachine>();
+            var feedback = UnityEngine.Object.FindObjectOfType<UI.CardSlamFeedback>();
+            Assert.IsNotNull(machine);
+            Assert.IsNotNull(feedback);
+
+            var analyse = GameManager.Instance.Run.Hand.Cards.FirstOrDefault(
+                c => c.Data.CardType == PunchCardType.Analyse);
+            Assert.IsNotNull(analyse,
+                "The slice needs Analyse to verify a specific no-procedure reaction.");
+            yield return SlamAndWait(machine, analyse);
+            StringAssert.Contains("NO APPLICABLE PROCEDURE",
+                feedback.RenderedImpactText);
+            yield return Screenshot(shiftNumber, seed, "card-impact-no-procedure");
+
+            yield return new WaitForSecondsRealtime(0.3f);
+            client.BaseBT.InsertBlockerForCard(
+                nameof(PunchCardType.Redact), "redact_exemption");
+            client.RegisterCounterTrait("redact_exemption", revealed: false);
+            var redact = GameManager.Instance.Run.Hand.Cards.FirstOrDefault(
+                c => c.Data.CardType == PunchCardType.Redact);
+            Assert.IsNotNull(redact,
+                "The slice needs Redact to verify a counter-trait intercept.");
+            yield return SlamAndWait(machine, redact);
+            StringAssert.Contains("EXEMPTION INTERCEPTED",
+                feedback.RenderedImpactText);
+            StringAssert.Contains("REDACT EXEMPTION",
+                modifierOverlay.RenderedClientModifiers);
+            yield return Screenshot(shiftNumber, seed, "card-impact-blocked");
+        }
+
+        private static IEnumerator SlamAndWait(
+            RedTape.PunchCardMachine machine, CardInstance card)
+        {
+            bool resolved = false;
+            Action<RedTape.SlamResult> handler = _ => resolved = true;
+            machine.OnSlamResolved += handler;
+            machine.SlamCard(card.Data, card.InstanceId);
+            float deadline = Time.realtimeSinceStartup + 3f;
+            while (!resolved && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            machine.OnSlamResolved -= handler;
+            Assert.IsTrue(resolved, "Physical feedback slam did not resolve.");
+            yield return null;
         }
 
         private IEnumerator TrySlamCard()

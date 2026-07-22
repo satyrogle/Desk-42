@@ -29,8 +29,22 @@ namespace Desk42.UI
         private Image      _flashImage;
         private GameObject _resultPanel;
         private TMP_Text   _slamLabel;
+        private RectTransform _motionCard;
+        private TMP_Text _motionCardLabel;
+        private GameObject _impactPanel;
+        private TMP_Text _impactLabel;
         private string     _latestAppliedText;
         private string     _activePreviewCardId;
+        private string     _activeMotionCardId;
+        private Coroutine _motionSequence;
+        private Coroutine _impactSequence;
+        private Coroutine _flashSequence;
+
+        private static readonly Vector2 MotionStart = new(960f, 105f);
+        private static readonly Vector2 MotionImpact = new(1140f, 520f);
+
+        public string RenderedImpactText
+            => _impactLabel != null ? _impactLabel.text : "";
 
         // ── Lifecycle ─────────────────────────────────────────
 
@@ -38,12 +52,14 @@ namespace Desk42.UI
         {
             RumorMill.OnCardSlammed += HandleSlam;
             RumorMill.OnCardPreview += HandlePreview;
+            RumorMill.OnCardSlamIntent += HandleSlamIntent;
         }
 
         protected override void Unsubscribe()
         {
             RumorMill.OnCardSlammed -= HandleSlam;
             RumorMill.OnCardPreview -= HandlePreview;
+            RumorMill.OnCardSlamIntent -= HandleSlamIntent;
         }
         private void Start()
         {
@@ -57,19 +73,40 @@ namespace Desk42.UI
             if (_flashRoot == null) BuildUI();
 
             _activePreviewCardId = null;
+            _activeMotionCardId = null;
             _latestAppliedText = FormatResult(e.Result);
             _resultPanel.SetActive(true);
             _slamLabel.text = _latestAppliedText;
             _slamLabel.color = Color.white;
+            ShowImpact(e.Result);
 
             // Only the cosmetic pulse is budgeted. The semantic result above
             // is persistent and cannot be dropped.
             if (!AccessibilitySettings.ReducedMotion
                 && FeedbackBudget.RequestBurst(FeedbackKind.Flash))
             {
-                StopAllCoroutines();
-                StartCoroutine(FlashVisual());
+                if (_flashSequence != null)
+                    StopCoroutine(_flashSequence);
+                _flashSequence = StartCoroutine(FlashVisual());
             }
+        }
+
+        private void HandleSlamIntent(CardSlamIntentEvent e)
+        {
+            if (_flashRoot == null) BuildUI();
+            _activeMotionCardId = e.CardInstanceId;
+            _motionCardLabel.text = string.IsNullOrWhiteSpace(e.CardDisplayName)
+                ? FormatCardName(e.CardType)
+                : e.CardDisplayName.ToUpperInvariant();
+            _motionCard.gameObject.SetActive(true);
+            _motionCard.anchoredPosition = MotionStart;
+            _motionCard.localScale = Vector3.one;
+            _motionCard.localRotation = Quaternion.Euler(0f, 0f, -4f);
+
+            if (_motionSequence != null)
+                StopCoroutine(_motionSequence);
+            _motionSequence = StartCoroutine(
+                MoveCardToImpact(e.CardInstanceId, e.TimeToImpact));
         }
 
         private void HandlePreview(CardPreviewEvent e)
@@ -155,6 +192,88 @@ namespace Desk42.UI
             _slamLabel.outlineColor = Color.black;
             _slamLabel.raycastTarget = false;
             _resultPanel.SetActive(false);
+
+            // A simple physical punch card that travels from the hand toward
+            // the machine before impact. This is choreography only; it never
+            // computes or applies the result.
+            var motionObject = new GameObject("PunchCardInFlight");
+            motionObject.transform.SetParent(canvasGO.transform, false);
+            _motionCard = motionObject.AddComponent<RectTransform>();
+            _motionCard.anchorMin = Vector2.zero;
+            _motionCard.anchorMax = Vector2.zero;
+            _motionCard.pivot = new Vector2(0.5f, 0.5f);
+            _motionCard.sizeDelta = new Vector2(176f, 228f);
+            _motionCard.anchoredPosition = MotionStart;
+            var cardPaper = motionObject.AddComponent<Image>();
+            cardPaper.color = new Color(0.91f, 0.88f, 0.74f, 1f);
+            cardPaper.raycastTarget = false;
+            var cardOutline = motionObject.AddComponent<Outline>();
+            cardOutline.effectColor = new Color(0.07f, 0.13f, 0.14f, 1f);
+            cardOutline.effectDistance = new Vector2(4f, -4f);
+
+            var holesObject = new GameObject("PunchHoles");
+            holesObject.transform.SetParent(motionObject.transform, false);
+            var holesRt = holesObject.AddComponent<RectTransform>();
+            holesRt.anchorMin = new Vector2(0f, 0f);
+            holesRt.anchorMax = new Vector2(0f, 1f);
+            holesRt.pivot = new Vector2(0f, 0.5f);
+            holesRt.sizeDelta = new Vector2(24f, 0f);
+            holesRt.anchoredPosition = new Vector2(8f, 0f);
+            var holes = holesObject.AddComponent<TextMeshProUGUI>();
+            holes.text = "●\n●\n●\n●\n●";
+            holes.fontSize = AccessibilitySettings.Scaled(13f);
+            holes.color = new Color(0.08f, 0.14f, 0.14f, 0.8f);
+            holes.alignment = TextAlignmentOptions.Center;
+            holes.raycastTarget = false;
+
+            var motionLabelObject = new GameObject("CardName");
+            motionLabelObject.transform.SetParent(motionObject.transform, false);
+            var motionLabelRt = motionLabelObject.AddComponent<RectTransform>();
+            motionLabelRt.anchorMin = Vector2.zero;
+            motionLabelRt.anchorMax = Vector2.one;
+            motionLabelRt.offsetMin = new Vector2(30f, 18f);
+            motionLabelRt.offsetMax = new Vector2(-12f, -18f);
+            _motionCardLabel = motionLabelObject.AddComponent<TextMeshProUGUI>();
+            _motionCardLabel.fontSize = AccessibilitySettings.Scaled(19f);
+            _motionCardLabel.fontStyle = FontStyles.Bold;
+            _motionCardLabel.color = new Color(0.08f, 0.14f, 0.14f, 1f);
+            _motionCardLabel.alignment = TextAlignmentOptions.Center;
+            _motionCardLabel.enableWordWrapping = true;
+            _motionCardLabel.raycastTarget = false;
+            motionObject.SetActive(false);
+
+            // Protected semantic stamp at the point of impact. It is never
+            // gated by FeedbackBudget; only its scale motion is cosmetic.
+            _impactPanel = new GameObject("PunchImpactStamp");
+            _impactPanel.transform.SetParent(canvasGO.transform, false);
+            var impactRt = _impactPanel.AddComponent<RectTransform>();
+            impactRt.anchorMin = Vector2.zero;
+            impactRt.anchorMax = Vector2.zero;
+            impactRt.pivot = new Vector2(0.5f, 0.5f);
+            impactRt.sizeDelta = new Vector2(480f, 88f);
+            impactRt.anchoredPosition = new Vector2(1140f, 665f);
+            var impactPaper = _impactPanel.AddComponent<Image>();
+            impactPaper.color = new Color(0.06f, 0.12f, 0.14f, 0.97f);
+            impactPaper.raycastTarget = false;
+            var impactOutline = _impactPanel.AddComponent<Outline>();
+            impactOutline.effectColor = new Color(0.95f, 0.78f, 0.3f, 1f);
+            impactOutline.effectDistance = new Vector2(3f, -3f);
+
+            var impactLabelObject = new GameObject("ImpactText");
+            impactLabelObject.transform.SetParent(_impactPanel.transform, false);
+            var impactLabelRt = impactLabelObject.AddComponent<RectTransform>();
+            impactLabelRt.anchorMin = Vector2.zero;
+            impactLabelRt.anchorMax = Vector2.one;
+            impactLabelRt.offsetMin = new Vector2(12f, 8f);
+            impactLabelRt.offsetMax = new Vector2(-12f, -8f);
+            _impactLabel = impactLabelObject.AddComponent<TextMeshProUGUI>();
+            _impactLabel.fontSize = AccessibilitySettings.Scaled(21f);
+            _impactLabel.fontStyle = FontStyles.Bold;
+            _impactLabel.color = new Color(0.95f, 0.88f, 0.64f, 1f);
+            _impactLabel.alignment = TextAlignmentOptions.Center;
+            _impactLabel.enableWordWrapping = true;
+            _impactLabel.raycastTarget = false;
+            _impactPanel.SetActive(false);
         }
 
         // ── Coroutine ─────────────────────────────────────────
@@ -184,6 +303,175 @@ namespace Desk42.UI
             }
 
             _flashImage.color = new Color(1f, 1f, 1f, 0f);
+            _flashSequence = null;
+        }
+
+        private IEnumerator MoveCardToImpact(string cardInstanceId,
+            float duration)
+        {
+            float elapsed = 0f;
+            float travelTime = Mathf.Max(0.08f, duration);
+            while (elapsed < travelTime
+                && _activeMotionCardId == cardInstanceId)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / travelTime);
+                float eased = 1f - Mathf.Pow(1f - t, 3f);
+                _motionCard.anchoredPosition = Vector2.LerpUnclamped(
+                    MotionStart, MotionImpact, eased);
+                _motionCard.localScale = Vector3.one
+                    * Mathf.Lerp(1f, 0.68f, eased);
+                _motionCard.localRotation = Quaternion.Euler(
+                    0f, 0f, Mathf.Lerp(-4f, 3f, eased));
+                yield return null;
+            }
+
+            if (_activeMotionCardId == cardInstanceId)
+            {
+                _motionCard.anchoredPosition = MotionImpact;
+                _motionCard.localScale = Vector3.one * 0.68f;
+                yield return new WaitForSecondsRealtime(0.8f);
+                if (_activeMotionCardId == cardInstanceId)
+                {
+                    _activeMotionCardId = null;
+                    _motionCard.gameObject.SetActive(false);
+                }
+            }
+            _motionSequence = null;
+        }
+
+        private void ShowImpact(AppliedCardResolution result)
+        {
+            if (_motionSequence != null)
+            {
+                StopCoroutine(_motionSequence);
+                _motionSequence = null;
+            }
+
+            _motionCard.gameObject.SetActive(true);
+            _motionCard.anchoredPosition = MotionImpact;
+            _motionCard.localScale = Vector3.one * 0.68f;
+            _motionCard.localRotation = Quaternion.Euler(0f, 0f, 3f);
+
+            _impactLabel.text = GetImpactMessage(result);
+            Color accent = GetImpactColor(result.Outcome);
+            _impactLabel.color = accent;
+            _impactPanel.GetComponent<Outline>().effectColor = accent;
+            _impactPanel.SetActive(true);
+            _impactPanel.transform.SetAsLastSibling();
+
+            if (_impactSequence != null)
+                StopCoroutine(_impactSequence);
+            _impactSequence = StartCoroutine(PlayImpact(result.IsSuccess));
+        }
+
+        private IEnumerator PlayImpact(bool success)
+        {
+            var impactRt = _impactPanel.GetComponent<RectTransform>();
+            impactRt.localScale = AccessibilitySettings.ReducedMotion
+                ? Vector3.one
+                : Vector3.one * 1.28f;
+
+            if (!AccessibilitySettings.ReducedMotion)
+            {
+                float elapsed = 0f;
+                const float settleDuration = 0.16f;
+                while (elapsed < settleDuration)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(elapsed / settleDuration);
+                    impactRt.localScale = Vector3.one
+                        * Mathf.Lerp(1.28f, 1f, t);
+                    _motionCard.anchoredPosition = MotionImpact
+                        + Vector2.right * Mathf.Sin(t * Mathf.PI)
+                        * (success ? 28f : -18f);
+                    yield return null;
+                }
+
+                Vector2 reactionStart = _motionCard.anchoredPosition;
+                Vector2 reactionTarget = success
+                    ? MotionImpact + new Vector2(18f, -95f)
+                    : MotionStart;
+                Vector3 scaleStart = _motionCard.localScale;
+                Vector3 scaleTarget = success
+                    ? Vector3.one * 0.12f
+                    : Vector3.one;
+                elapsed = 0f;
+                const float reactionDuration = 0.26f;
+                while (elapsed < reactionDuration)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(elapsed / reactionDuration);
+                    float eased = success
+                        ? t * t
+                        : 1f - Mathf.Pow(1f - t, 3f);
+                    _motionCard.anchoredPosition = Vector2.LerpUnclamped(
+                        reactionStart, reactionTarget, eased);
+                    _motionCard.localScale = Vector3.LerpUnclamped(
+                        scaleStart, scaleTarget, eased);
+                    _motionCard.localRotation = Quaternion.Euler(
+                        0f, 0f, Mathf.Lerp(3f, success ? 8f : -4f, eased));
+                    yield return null;
+                }
+
+                if (success)
+                    _motionCard.gameObject.SetActive(false);
+            }
+
+            impactRt.localScale = Vector3.one;
+            yield return new WaitForSecondsRealtime(1.05f);
+            _impactPanel.SetActive(false);
+            _motionCard.gameObject.SetActive(false);
+            _impactSequence = null;
+        }
+
+        private static string GetImpactMessage(AppliedCardResolution result)
+        {
+            if (!result.IsSuccess)
+            {
+                return result.Outcome switch
+                {
+                    CardSlamOutcome.BlockedByExemption =>
+                        "EXEMPTION INTERCEPTED · CARD RETURNED",
+                    CardSlamOutcome.BlockedByState =>
+                        "NO APPLICABLE PROCEDURE · CARD RETURNED",
+                    CardSlamOutcome.CardJammed =>
+                        "MACHINE JAMMED · CARD NOT APPLIED",
+                    CardSlamOutcome.CardCrumpled =>
+                        "CARD CRUMPLED · NOT APPLIED",
+                    CardSlamOutcome.InsufficientCredits =>
+                        $"PAYMENT REJECTED · NEED ¢{result.RequiredCredits}",
+                    CardSlamOutcome.ClientNotResponding =>
+                        "CLIENT NOT RESPONDING · CARD RETURNED",
+                    _ => "CARD REJECTED · NOT APPLIED",
+                };
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.ClientEffect))
+                return $"APPLIED · {result.ClientEffect}";
+            if (result.StateBefore.HasValue && result.StateAfter.HasValue)
+                return $"APPLIED · {result.StateBefore.Value.ToString().ToUpperInvariant()} → " +
+                       result.StateAfter.Value.ToString().ToUpperInvariant();
+            return "CARD APPLIED";
+        }
+
+        private static Color GetImpactColor(CardSlamOutcome outcome)
+        {
+            return outcome switch
+            {
+                CardSlamOutcome.Success => new Color(0.38f, 0.86f, 0.63f, 1f),
+                CardSlamOutcome.BlockedByExemption => new Color(0.76f, 0.48f, 0.96f, 1f),
+                CardSlamOutcome.CardJammed or CardSlamOutcome.CardCrumpled
+                    => new Color(1f, 0.55f, 0.2f, 1f),
+                _ => new Color(0.95f, 0.32f, 0.28f, 1f),
+            };
+        }
+
+        private static string FormatCardName(PunchCardType cardType)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(
+                cardType.ToString(), "([a-z])([A-Z])", "$1 $2")
+                .ToUpperInvariant();
         }
 
         private static string FormatProjection(ProjectedCardResolution result)

@@ -31,6 +31,7 @@ namespace Desk42.Core
 
         public static event Action<CardSlammedEvent>           OnCardSlammed;
         public static event Action<CardPreviewEvent>           OnCardPreview;
+        public static event Action<CardSlamIntentEvent>        OnCardSlamIntent;
         public static event Action<StateTransitionEvent>       OnStateTransition;
         public static event Action<ClaimResolvedEvent>         OnClaimResolved;
         public static event Action<MoralChoiceEvent>           OnMoralChoice;
@@ -84,6 +85,7 @@ namespace Desk42.Core
         /// </summary>
         public static void Publish(CardSlammedEvent e)           => OnCardSlammed?.Invoke(e);
         public static void Publish(CardPreviewEvent e)           => OnCardPreview?.Invoke(e);
+        public static void Publish(CardSlamIntentEvent e)        => OnCardSlamIntent?.Invoke(e);
         public static void Publish(StateTransitionEvent e)       => OnStateTransition?.Invoke(e);
         public static void Publish(SanityChangedEvent e)         => OnSanityChanged?.Invoke(e);
         public static void Publish(NarratorToneChangedEvent e)   => OnNarratorToneChanged?.Invoke(e);
@@ -194,6 +196,7 @@ namespace Desk42.Core
         {
             OnCardSlammed           = null;
             OnCardPreview           = null;
+            OnCardSlamIntent        = null;
             OnStateTransition       = null;
             OnClaimResolved         = null;
             OnMoralChoice           = null;

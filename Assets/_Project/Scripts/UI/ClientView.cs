@@ -65,6 +65,7 @@ namespace Desk42.UI
 
         private ClientStateMachine _csm;
         private string _speciesId;
+        private Coroutine _appliedReaction;
 
         // ── Lifecycle ─────────────────────────────────────────
 
@@ -176,9 +177,62 @@ namespace Desk42.UI
 
         private void HandleCardSlammed(CardSlammedEvent e)
         {
-            if (!e.Result.IsSuccess) return;
-            (_fidgetDriver as BSM.IClientFidgetDriver)?.OnSlamRecoil(e.CardType);
-            (_deskItems as BSM.IDeskItemReactor)?.OnCardSlammed(e.CardType);
+            if (_csm == null || e.ClientVariantId != _csm.ClientVariantId)
+                return;
+
+            if (e.Result.IsSuccess)
+            {
+                (_fidgetDriver as BSM.IClientFidgetDriver)?.OnSlamRecoil(e.CardType);
+                (_deskItems as BSM.IDeskItemReactor)?.OnCardSlammed(e.CardType);
+            }
+
+            // The reaction reads only the applied event. Machine cleanup may
+            // stop insertion coroutines, but it cannot change what this renders.
+            if (_portraitImage != null
+                && !Desk42.Accessibility.AccessibilitySettings.ReducedMotion)
+            {
+                if (_appliedReaction != null)
+                    StopCoroutine(_appliedReaction);
+                _appliedReaction = StartCoroutine(
+                    PlayAppliedReaction(e.Result));
+            }
+        }
+
+        private System.Collections.IEnumerator PlayAppliedReaction(
+            AppliedCardResolution result)
+        {
+            RectTransform portrait = _portraitImage.rectTransform;
+            Vector2 startPosition = portrait.anchoredPosition;
+            Vector3 startScale = portrait.localScale;
+            Color startColor = _portraitImage.color;
+            Color reactionColor = result.IsSuccess
+                ? new Color(0.62f, 1f, 0.72f, 1f)
+                : result.Outcome == CardSlamOutcome.BlockedByExemption
+                    ? new Color(0.82f, 0.58f, 1f, 1f)
+                    : new Color(1f, 0.58f, 0.48f, 1f);
+
+            float elapsed = 0f;
+            const float duration = 0.28f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float pulse = Mathf.Sin(t * Mathf.PI);
+                portrait.localScale = startScale
+                    * (1f + (result.IsSuccess ? 0.045f : 0.02f) * pulse);
+                portrait.anchoredPosition = startPosition
+                    + (result.IsSuccess
+                        ? Vector2.up * (5f * pulse)
+                        : Vector2.right * (Mathf.Sin(t * Mathf.PI * 6f) * 7f));
+                _portraitImage.color = Color.Lerp(
+                    reactionColor, startColor, t);
+                yield return null;
+            }
+
+            portrait.anchoredPosition = startPosition;
+            portrait.localScale = startScale;
+            _portraitImage.color = startColor;
+            _appliedReaction = null;
         }
 
         private void HandleDarkHumour(string key)
