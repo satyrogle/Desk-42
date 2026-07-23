@@ -73,6 +73,7 @@ namespace Desk42.Core
         public readonly float SanityDelta;
         public readonly float SoulIntegrityDelta;
         public readonly float ComplianceStreakDelta;
+        public readonly float AuditRiskDelta;
         public readonly string AddressBefore;
         public readonly string AddressAfter;
         public readonly string MiriamRegistrationReference;
@@ -95,7 +96,8 @@ namespace Desk42.Core
             string addressBefore,
             string addressAfter,
             string miriamRegistrationReference,
-            string receiptId)
+            string receiptId,
+            float auditRiskDelta = 0f)
         {
             ProofSessionId = proofSessionId;
             AppearanceKey = appearanceKey;
@@ -108,6 +110,7 @@ namespace Desk42.Core
             SanityDelta = sanityDelta;
             SoulIntegrityDelta = soulIntegrityDelta;
             ComplianceStreakDelta = complianceStreakDelta;
+            AuditRiskDelta = auditRiskDelta;
             AddressBefore = addressBefore;
             AddressAfter = addressAfter;
             MiriamRegistrationReference = miriamRegistrationReference;

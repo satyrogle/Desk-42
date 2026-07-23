@@ -239,6 +239,15 @@ namespace Desk42.Tests.PlayMode
                     yield return TrySlamCard();
                     if (encounters.ActiveClient == null) continue;
 
+                    // Authored Elias claims use the production two-stage
+                    // grammar: apply the nonterminal procedure first, then
+                    // make the ordinary disposition below. Without this the
+                    // harness would repeatedly press a correctly locked
+                    // Approve/Deny button and manufacture a softlock.
+                    yield return CompleteAuthoredProcedureIfRequired(
+                        encounters);
+                    if (encounters.ActiveClient == null) continue;
+
                     bool approve = _policy.NextDouble() < APPROVE_CHANCE;
                     Line($"[input] {(approve ? "APPROVE" : "DENY")} " +
                          $"(sanity={gm.Run.Sanity:F1}, phase={gm.Run.RawData.CurrentPhase})");
@@ -266,6 +275,65 @@ namespace Desk42.Tests.PlayMode
         }
 
         // ── Player-input simulation ───────────────────────────
+
+        private IEnumerator CompleteAuthoredProcedureIfRequired(
+            EncounterManager encounter)
+        {
+            ActiveClaimData claim = encounter?.ActiveClaim;
+            if (claim == null
+                || !string.Equals(
+                    claim.ClientVariantId,
+                    EliasProofContent.CanonicalClaimantId,
+                    StringComparison.Ordinal))
+            {
+                yield break;
+            }
+
+            EliasProcedureActionId action =
+                claim.AuthoredAppearanceKey switch
+                {
+                    EliasProofContent.Shift2AppearanceKey =>
+                        EliasProcedureActionId.AmendRecord,
+                    EliasProofContent.Shift5AppearanceKey =>
+                        EliasProcedureActionId.RequestClarification,
+                    _ => EliasProcedureActionId.Unspecified,
+                };
+            if (action == EliasProcedureActionId.Unspecified)
+                yield break;
+
+            var state = GameManager.Instance?.EliasProof?.State;
+            if (state?.AppliedProcedureAppearanceKeys.Contains(
+                    claim.AuthoredAppearanceKey) == true)
+            {
+                yield break;
+            }
+
+            bool applied = encounter.TryApplyEliasProcedure(
+                action, out AppliedEliasProcedure result,
+                out string unavailableReason);
+            Assert.IsTrue(
+                applied,
+                $"Harness could not apply {action} to " +
+                $"{claim.AuthoredAppearanceKey}: {unavailableReason}");
+            Line(
+                $"[input] PROCEDURE {result.ActionId} " +
+                $"branch={result.ResultingBranch} " +
+                $"receipt={result.ReceiptId}");
+
+            var receipt =
+                UnityEngine.Object.FindObjectOfType<
+                    UI.EliasProcedureReceiptPresenter>();
+            float deadline = Time.realtimeSinceStartup + 15f;
+            while (receipt != null
+                && receipt.IsPresenting
+                && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+            Assert.IsFalse(
+                receipt != null && receipt.IsPresenting,
+                "Authored procedure receipt did not complete.");
+        }
 
         private IEnumerator CapturePredictionPreviews(int shiftNumber, int seed)
         {

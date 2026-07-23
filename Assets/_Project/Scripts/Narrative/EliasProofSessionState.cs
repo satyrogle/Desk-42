@@ -116,11 +116,23 @@ namespace Desk42.Core
             { get; internal set; }
 
         [JsonProperty]
+        public float Shift2ComplianceStreakDelta
+            { get; internal set; }
+
+        [JsonProperty]
+        public float Shift2AuditRiskDelta
+            { get; internal set; }
+
+        [JsonProperty]
         public EliasProcedureActionId Shift5ProcedureAction
             { get; internal set; } = EliasProcedureActionId.Unspecified;
 
         [JsonProperty]
         public string Shift5ProcedureReceiptId
+            { get; internal set; }
+
+        [JsonProperty]
+        public string Shift5LoadedClaimId
             { get; internal set; }
 
         [JsonProperty]

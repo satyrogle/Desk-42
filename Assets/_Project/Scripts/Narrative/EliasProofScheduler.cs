@@ -64,6 +64,7 @@ namespace Desk42.Core
             generatedClaims[slotIndex] = scheduledClaim;
             if (shiftNumber == 5)
             {
+                state.Shift5LoadedClaimId = claimId;
                 ReplaceAftermathClaims(
                     generatedClaims, content, state.Shift2Branch);
             }

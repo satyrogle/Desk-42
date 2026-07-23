@@ -155,7 +155,17 @@ namespace Desk42.Core
                 projection.AddressBefore,
                 projection.AddressAfter,
                 projection.MiriamRegistrationReference,
-                projection.ReceiptId);
+                projection.ReceiptId,
+                auditRiskDelta: 0f);
+
+            if (string.Equals(appearanceKey,
+                    EliasProofContent.Shift2AppearanceKey,
+                    StringComparison.Ordinal))
+            {
+                State.Shift2ComplianceStreakDelta =
+                    applied.ComplianceStreakDelta;
+                State.Shift2AuditRiskDelta = applied.AuditRiskDelta;
+            }
 
             failureReason = EliasProcedureFailureReason.None;
             RumorMill.Publish(new EliasProcedureAppliedEvent(applied));
@@ -166,6 +176,14 @@ namespace Desk42.Core
                 $"streakDelta={applied.ComplianceStreakDelta:+0.##;-0.##;0}.");
             return true;
         }
+
+        /// <summary>
+        /// Produces the one factual instrumentation record for this proof run.
+        /// All fields are read from canonical proof state; UI text is never
+        /// parsed and mutable economy values are not used to infer the branch.
+        /// </summary>
+        public EliasProofRunRecord CaptureInstrumentation()
+            => EliasProofRunRecord.Capture(State);
 
         /// <summary>
         /// Validates the terminal claim disposition before normal resources or
@@ -361,6 +379,10 @@ namespace Desk42.Core
                 $"claim={claimId} applied={applied.AppliedCount}/" +
                 $"{applied.TotalClaimCount} remaining=" +
                 $"{applied.RemainingClaimCount}.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (modifier.IsExpired)
+                Debug.Log(CaptureInstrumentation().ToString());
+#endif
             return true;
         }
 
