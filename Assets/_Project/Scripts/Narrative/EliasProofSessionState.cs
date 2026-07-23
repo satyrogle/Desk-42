@@ -59,7 +59,23 @@ namespace Desk42.Core
         public HashSet<string> AppliedClaimIds { get; private set; } = new();
 
         [JsonIgnore]
-        public bool IsActive => !string.IsNullOrWhiteSpace(ModifierId);
+        public bool IsActive => !string.IsNullOrWhiteSpace(ModifierId)
+            && PendingClaimIds.Count > 0;
+
+        [JsonIgnore]
+        public bool IsExpired => !string.IsNullOrWhiteSpace(ModifierId)
+            && PendingClaimIds.Count == 0;
+
+        internal static EliasAftermathModifierState Create(
+            EliasAftermathDefinition definition)
+            => new()
+            {
+                ModifierId = definition.ModifierId,
+                PendingClaimIds = new HashSet<string>(
+                    definition.ClaimIds, StringComparer.Ordinal),
+                AppliedClaimIds = new HashSet<string>(
+                    StringComparer.Ordinal),
+            };
     }
 
     /// <summary>
@@ -85,6 +101,10 @@ namespace Desk42.Core
 
         [JsonProperty]
         public ClaimResolutionKind Shift2FinalDisposition
+            { get; internal set; } = ClaimResolutionKind.Unspecified;
+
+        [JsonProperty]
+        public ClaimResolutionKind Shift5FinalDisposition
             { get; internal set; } = ClaimResolutionKind.Unspecified;
 
         [JsonProperty]

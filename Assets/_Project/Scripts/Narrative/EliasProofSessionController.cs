@@ -272,6 +272,96 @@ namespace Desk42.Core
                 }
                 State.Shift2FinalDisposition = resolution.Kind;
             }
+            else if (string.Equals(appearanceKey,
+                         EliasProofContent.Shift5AppearanceKey,
+                         StringComparison.Ordinal))
+            {
+                if (State.Shift5FinalDisposition
+                        != ClaimResolutionKind.Unspecified
+                    && State.Shift5FinalDisposition != resolution.Kind)
+                {
+                    throw new InvalidOperationException(
+                        "Elias Shift 5 disposition cannot be overwritten.");
+                }
+                State.Shift5FinalDisposition = resolution.Kind;
+            }
+        }
+
+        public EliasAftermathModifierState ActivateShift5Aftermath(
+            EliasProofContent content)
+        {
+            if (!HasActiveSession)
+            {
+                throw new InvalidOperationException(
+                    "An active Elias proof session is required.");
+            }
+            if (State.Shift2Branch == EliasShift2Branch.None)
+            {
+                throw new InvalidOperationException(
+                    "Shift 5 aftermath requires an Elias branch.");
+            }
+            if (State.Shift5FinalDisposition
+                == ClaimResolutionKind.Unspecified)
+            {
+                throw new InvalidOperationException(
+                    "Shift 5 aftermath cannot activate before Elias resolves.");
+            }
+            if (!string.IsNullOrWhiteSpace(
+                    State.ActiveAftermathModifier?.ModifierId))
+            {
+                throw new InvalidOperationException(
+                    "Elias aftermath cannot be activated more than once.");
+            }
+
+            EliasAftermathDefinition definition =
+                EliasAftermathPolicy.ForBranch(
+                    content, State.Shift2Branch);
+            State.ActiveAftermathModifier =
+                EliasAftermathModifierState.Create(definition);
+            Debug.Log(
+                $"[EliasProof] aftermath={definition.ModifierId} " +
+                $"pending={string.Join(",", definition.ClaimIds)}.");
+            return State.ActiveAftermathModifier;
+        }
+
+        public bool TryApplyAftermathToClaim(
+            string claimId, out AppliedEliasAftermath applied)
+        {
+            applied = default;
+            EliasAftermathModifierState modifier =
+                State.ActiveAftermathModifier;
+            if (modifier?.IsActive != true
+                || string.IsNullOrWhiteSpace(claimId)
+                || !modifier.PendingClaimIds.Contains(claimId))
+            {
+                return false;
+            }
+
+            if (modifier.AppliedClaimIds.Contains(claimId))
+            {
+                throw new InvalidOperationException(
+                    $"Aftermath already applied to '{claimId}'.");
+            }
+            modifier.PendingClaimIds.Remove(claimId);
+            modifier.AppliedClaimIds.Add(claimId);
+
+            int total = modifier.AppliedClaimIds.Count
+                + modifier.PendingClaimIds.Count;
+            applied = new AppliedEliasAftermath(
+                State.ProofSessionId,
+                State.Shift2Branch,
+                modifier.ModifierId,
+                claimId,
+                modifier.AppliedClaimIds.Count,
+                total,
+                modifier.PendingClaimIds.Count);
+            RumorMill.Publish(new EliasAftermathAppliedEvent(applied));
+            Debug.Log(
+                $"[EliasProof] aftermath={applied.ModifierId} " +
+                $"claim={claimId} applied={applied.AppliedCount}/" +
+                $"{applied.TotalClaimCount} remaining=" +
+                $"{applied.RemainingClaimCount}.");
+            return true;
         }
 
         /// <summary>

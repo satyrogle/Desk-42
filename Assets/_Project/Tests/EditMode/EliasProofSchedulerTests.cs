@@ -111,17 +111,55 @@ namespace Desk42.Tests.EditMode
             AdvanceThroughShift2(actionId);
             List<ActiveClaimData> queue = MakeOrdinaryQueue(9);
 
+            SeedEngine.Init(5500 + (int)actionId);
             Assert.IsTrue(
                 EliasProofScheduler.TryReplaceScheduledClaim(
                     queue, 5, _content, _proof.State,
                     out ActiveClaimData elias));
+            int nextAfterScheduling =
+                SeedEngine.Next(SeedStream.ClaimQueue, int.MaxValue);
+            SeedEngine.Init(5500 + (int)actionId);
+            int nextWithoutScheduling =
+                SeedEngine.Next(SeedStream.ClaimQueue, int.MaxValue);
 
             Assert.AreSame(elias, queue[2]);
+            Assert.AreEqual(
+                nextWithoutScheduling, nextAfterScheduling);
             AssertAuthoredClaim(
                 elias,
                 EliasProofContent.Shift5AppearanceKey,
                 expectedClaimId);
             Assert.AreEqual(1, queue.Count(IsElias));
+
+            string[] expectedAftermath = actionId switch
+            {
+                EliasProcedureActionId.AmendRecord =>
+                    new[]
+                    {
+                        "elias_aftermath_5a_1",
+                        "elias_aftermath_5a_2",
+                    },
+                EliasProcedureActionId.RetainLegacyUnit =>
+                    new[] { "elias_aftermath_5b_1" },
+                EliasProcedureActionId.ReferForReview =>
+                    new[]
+                    {
+                        "elias_aftermath_5c_1",
+                        "elias_aftermath_5c_2",
+                    },
+                _ => throw new System.InvalidOperationException(),
+            };
+            for (int i = 0; i < expectedAftermath.Length; i++)
+            {
+                Assert.AreEqual(
+                    expectedAftermath[i],
+                    queue[3 + i].ClaimId);
+                Assert.AreEqual(
+                    "authored_elias_aftermath",
+                    queue[3 + i].TemplateId);
+            }
+            if (expectedAftermath.Length == 1)
+                Assert.AreEqual("ordinary-5", queue[4].ClaimId);
         }
 
         [Test]

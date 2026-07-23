@@ -166,6 +166,16 @@ namespace Desk42.Core
         }
     }
 
+    public readonly struct EliasAftermathAppliedEvent
+    {
+        public readonly AppliedEliasAftermath Result;
+
+        public EliasAftermathAppliedEvent(AppliedEliasAftermath result)
+        {
+            Result = result;
+        }
+    }
+
     /// <summary>
     /// Ephemeral card intent preview. IsVisible=false restores the latest
     /// applied receipt; it never represents or triggers an applied action.

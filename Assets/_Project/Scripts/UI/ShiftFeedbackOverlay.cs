@@ -112,6 +112,7 @@ namespace Desk42.UI
         private void OnEnable()
         {
             RumorMill.OnClaimResolved       += HandleClaimResolved;
+            RumorMill.OnEliasAftermathApplied += HandleEliasAftermathApplied;
             RumorMill.OnShiftPhaseChanged   += HandlePhaseChanged;
             RumorMill.OnCounterTraitGenerated += HandleCounterTrait;
             RumorMill.OnCardPreview         += HandleCardPreview;
@@ -122,6 +123,7 @@ namespace Desk42.UI
         private void OnDisable()
         {
             RumorMill.OnClaimResolved       -= HandleClaimResolved;
+            RumorMill.OnEliasAftermathApplied -= HandleEliasAftermathApplied;
             RumorMill.OnShiftPhaseChanged   -= HandlePhaseChanged;
             RumorMill.OnCounterTraitGenerated -= HandleCounterTrait;
             RumorMill.OnCardPreview         -= HandleCardPreview;
@@ -417,6 +419,19 @@ namespace Desk42.UI
                 _encounter = Desk42Services.Get<EncounterManager>()
                     ?? FindObjectOfType<EncounterManager>();
             var activeClient = _encounter?.ActiveClient;
+            ActiveClaimData activeClaim = _encounter?.ActiveClaim;
+            EliasAftermathModifierState aftermath =
+                GameManager.Instance?.EliasProof?.State
+                    .ActiveAftermathModifier;
+            if (activeClaim != null
+                && aftermath != null
+                && aftermath.AppliedClaimIds.Contains(
+                    activeClaim.ClaimId))
+            {
+                client.Add(
+                    $"<color=#F4D35E><b>[" +
+                    $"{FormatIdentifier(aftermath.ModifierId)}]</b></color>");
+            }
             if (activeClient != null)
             {
                 string moodId = $"state_{activeClient.CurrentMoodState.ToString().ToLowerInvariant()}";
@@ -554,6 +569,24 @@ namespace Desk42.UI
 #endif
             _activeProjectionKind = ClaimResolutionKind.Unspecified;
             ShowClaimReceipt(e.Result);
+        }
+
+        private void HandleEliasAftermathApplied(
+            EliasAftermathAppliedEvent e)
+        {
+            if (_receiptPanel == null)
+                BuildReceiptPanel();
+            AppliedEliasAftermath result = e.Result;
+            _latestReceiptText =
+                "<b>SYSTEM CONDITION ACTIVE</b>\n" +
+                $"{FormatIdentifier(result.ModifierId)}\n" +
+                $"Affected file  {result.AppliedCount}/" +
+                $"{result.TotalClaimCount}\n" +
+                $"Remaining  {result.RemainingClaimCount}";
+            _receiptText.text = _latestReceiptText;
+            _receiptPanel.SetActive(true);
+            _receiptPanel.transform.SetAsLastSibling();
+            RefreshModifierRows();
         }
 
         private static string FormatSignedCredits(int delta)

@@ -223,6 +223,80 @@ namespace Desk42.Tests.PlayMode
             UnityEngine.Object.Destroy(host);
         }
 
+        [UnityTest]
+        public IEnumerator AuthoredAftermath_ConsumesOnEncounter_AndRemainsVisible()
+        {
+            SceneManager.LoadScene("Boot");
+            float deadline = Time.realtimeSinceStartup + 20f;
+            while ((GameManager.Instance == null
+                    || SceneManager.GetActiveScene().name != "MainMenu")
+                && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            GameManager manager = GameManager.Instance;
+            var fixtureMeta = new MetaProgressData
+            {
+                TutorialCompleted = true,
+                HighestPhaseReached = 4,
+            };
+            manager.SetMetaForTesting(fixtureMeta);
+            manager.Run.BeginNewRun(
+                421005, "auditor", 5, fixtureMeta);
+            AdvanceProofToShift5(manager);
+            EliasAftermathModifierState modifier =
+                manager.EliasProof.ActivateShift5Aftermath(
+                    manager.EliasContent);
+            string claimId =
+                modifier.PendingClaimIds.OrderBy(id => id).First();
+
+            var overlayHost = new GameObject("AftermathOverlay");
+            var overlay =
+                overlayHost.AddComponent<ShiftFeedbackOverlay>();
+            var encounterHost = new GameObject("AftermathEncounter");
+            LogAssert.Expect(LogType.Error,
+                "[EncounterManager] _punchCardMachine not assigned.");
+            LogAssert.Expect(LogType.Error,
+                "[EncounterManager] _clientView not assigned.");
+            LogAssert.Expect(LogType.Error,
+                "[EncounterManager] _claimPanel not assigned.");
+            LogAssert.Expect(LogType.Error,
+                "[EncounterManager] _cardHandView not assigned.");
+            LogAssert.Expect(LogType.Error,
+                "[EncounterManager] _clientAnchor not assigned.");
+            var encounter =
+                encounterHost.AddComponent<Desk42.Encounter.EncounterManager>();
+            var claim = new ActiveClaimData
+            {
+                ClaimId = claimId,
+                ClientVariantId = "authored_aftermath_test",
+                ClientSpeciesId = "moth_accountant",
+                ClaimantName = "Aftermath Test",
+                IncidentText = "Authored aftermath integration.",
+            };
+
+            RumorMill.PublishDeferred(
+                new ClaimQueuedEvent(claim, remaining: 0));
+            deadline = Time.realtimeSinceStartup + 3f;
+            while ((!modifier.AppliedClaimIds.Contains(claimId)
+                    || !overlay.RenderedClientModifiers.Contains(
+                        "HOUSEHOLD DUPLICATE REVIEW"))
+                && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            Assert.AreSame(claim, encounter.ActiveClaim);
+            Assert.IsTrue(modifier.AppliedClaimIds.Contains(claimId));
+            StringAssert.Contains(
+                "HOUSEHOLD DUPLICATE REVIEW",
+                overlay.RenderedClientModifiers);
+
+            UnityEngine.Object.Destroy(encounterHost);
+            UnityEngine.Object.Destroy(overlayHost);
+        }
+
         private static void AssertBsmConsumesPriorVisits(
             EliasVisitTransaction transaction, int expectedPriorVisits)
         {
@@ -251,5 +325,62 @@ namespace Desk42.Tests.PlayMode
                 .GetField(fieldName,
                     BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(target, value);
+
+        private static void AdvanceProofToShift5(
+            GameManager manager)
+        {
+            EliasProofSessionController proof =
+                manager.EliasProof;
+            proof.BeginProofSession("aftermath-playmode");
+            proof.RecordAppearance(
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift1AppearanceKey);
+            proof.RecordDisposition(
+                EliasProofContent.Shift1AppearanceKey,
+                BuildDisposition(ClaimResolutionKind.Approve));
+            proof.RecordAppearance(
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift2AppearanceKey);
+            Assert.IsTrue(proof.TryApplyProcedure(
+                manager.Run,
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift2AppearanceKey,
+                EliasProcedureActionId.AmendRecord,
+                out _,
+                out _));
+            proof.RecordDisposition(
+                EliasProofContent.Shift2AppearanceKey,
+                BuildDisposition(ClaimResolutionKind.Approve));
+            proof.RecordAppearance(
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift5AppearanceKey);
+            Assert.IsTrue(proof.TryApplyProcedure(
+                manager.Run,
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift5AppearanceKey,
+                EliasProcedureActionId.RequestClarification,
+                out _,
+                out _));
+            proof.RecordDisposition(
+                EliasProofContent.Shift5AppearanceKey,
+                BuildDisposition(ClaimResolutionKind.Deny));
+        }
+
+        private static AppliedClaimResolution BuildDisposition(
+            ClaimResolutionKind kind)
+            => new(
+                "elias-playmode-claim",
+                EliasProofContent.CanonicalClaimantId,
+                "moth_accountant",
+                kind,
+                0,
+                0f,
+                0f,
+                0,
+                0,
+                1,
+                3,
+                1f,
+                1f);
     }
 }

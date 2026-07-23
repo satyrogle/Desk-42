@@ -38,6 +38,8 @@ namespace Desk42.Tests.EditMode
             Assert.AreEqual(EliasShift2Branch.None, state.Shift2Branch);
             Assert.AreEqual(ClaimResolutionKind.Unspecified,
                 state.Shift2FinalDisposition);
+            Assert.AreEqual(ClaimResolutionKind.Unspecified,
+                state.Shift5FinalDisposition);
             Assert.AreEqual(EliasProcedureActionId.Unspecified,
                 state.Shift2ProcedureAction);
             Assert.IsNull(state.Shift2ProcedureReceiptId);
@@ -142,6 +144,8 @@ namespace Desk42.Tests.EditMode
                 Assert.AreEqual(5, shift5.ShiftNumber);
                 Assert.AreEqual(3, shift5.QueuePosition);
                 Assert.AreEqual(3, shift5.AuthoredClaimIds.Length);
+                Assert.AreEqual(5,
+                    content.AuthoredFollowUpClaimIds.Length);
             }
             finally
             {

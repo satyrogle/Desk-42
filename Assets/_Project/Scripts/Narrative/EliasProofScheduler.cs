@@ -62,6 +62,11 @@ namespace Desk42.Core
                 claimId, appearanceKey, shiftNumber, state.Shift2Branch,
                 content);
             generatedClaims[slotIndex] = scheduledClaim;
+            if (shiftNumber == 5)
+            {
+                ReplaceAftermathClaims(
+                    generatedClaims, content, state.Shift2Branch);
+            }
 
             int eliasCount = 0;
             foreach (ActiveClaimData claim in generatedClaims)
@@ -171,6 +176,58 @@ namespace Desk42.Core
                 ClaimantName = content.DisplayName,
                 ClaimAmount = AuthoredClaimAmount,
             };
+
+        private static void ReplaceAftermathClaims(
+            IList<ActiveClaimData> generatedClaims,
+            EliasProofContent content,
+            EliasShift2Branch branch)
+        {
+            EliasAftermathDefinition definition =
+                EliasAftermathPolicy.ForBranch(content, branch);
+            const int firstAftermathSlotIndex = 3;
+            if (generatedClaims.Count
+                < firstAftermathSlotIndex + definition.ClaimIds.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Shift 5 queue of {generatedClaims.Count} cannot hold " +
+                    $"{definition.ClaimIds.Length} authored aftermath claims.");
+            }
+
+            for (int i = 0; i < definition.ClaimIds.Length; i++)
+            {
+                generatedClaims[firstAftermathSlotIndex + i] =
+                    BuildAftermathClaim(
+                        definition.ClaimIds[i], content);
+            }
+        }
+
+        private static ActiveClaimData BuildAftermathClaim(
+            string claimId, EliasProofContent content)
+        {
+            EliasAftermathPolicy.GetClaimCopy(
+                claimId, out string claimantName,
+                out string incidentText);
+            return new ActiveClaimData
+            {
+                ClaimId = claimId,
+                ClientVariantId = $"authored_{claimId}_claimant",
+                ClientSpeciesId = content.ClientSpeciesId,
+                TemplateId = "authored_elias_aftermath",
+                AuthoredAppearanceKey = null,
+                AnomalyTagIds = Array.Empty<string>(),
+                HiddenTraitId = null,
+                TraitRevealed = false,
+                CorruptionLevel = 0f,
+                CorruptionSeed = StableHash(claimId),
+                NDARequired = false,
+                NDASigned = false,
+                IsResolved = false,
+                ResolutionKind = ClaimResolutionKind.Unspecified,
+                IncidentText = incidentText,
+                ClaimantName = claimantName,
+                ClaimAmount = AuthoredClaimAmount,
+            };
+        }
 
         private static string BuildIncidentText(
             int shiftNumber, EliasShift2Branch branch)

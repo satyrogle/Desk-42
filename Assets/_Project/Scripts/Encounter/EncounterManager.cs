@@ -63,6 +63,7 @@ namespace Desk42.Encounter
 
         /// <summary>The client BSM for the in-progress encounter, if any.</summary>
         public ClientStateMachine ActiveClient => _activeCSM;
+        public ActiveClaimData ActiveClaim => _activeClaim;
 
         // ── Lifecycle ─────────────────────────────────────────
 
@@ -110,6 +111,10 @@ namespace Desk42.Encounter
 
         private void BeginEncounter(ActiveClaimData claim)
         {
+            var proof = GameManager.Instance?.EliasProof;
+            if (proof?.HasActiveSession == true)
+                proof.TryApplyAftermathToClaim(claim.ClaimId, out _);
+
             _encounterActive = true;
 
             // Spawn a fresh ClientStateMachine on a child GameObject.
@@ -133,7 +138,6 @@ namespace Desk42.Encounter
             // Record before BSM initialization so Shift 1/2/5 consume the
             // authoritative prior values 0/1/2. The authored appearance key
             // makes encounter reconstruction idempotent.
-            var proof = GameManager.Instance?.EliasProof;
             bool hasAuthoredEliasKey =
                 EliasProofContent.TryGetExpectedPriorVisits(
                     claim.AuthoredAppearanceKey, out _);
@@ -403,6 +407,14 @@ namespace Desk42.Encounter
             {
                 proof.RecordDisposition(
                     _activeClaim.AuthoredAppearanceKey, applied);
+                if (string.Equals(
+                        _activeClaim.AuthoredAppearanceKey,
+                        EliasProofContent.Shift5AppearanceKey,
+                        System.StringComparison.Ordinal))
+                {
+                    proof.ActivateShift5Aftermath(
+                        GameManager.Instance.EliasContent);
+                }
             }
 
             RumorMill.PublishDeferred(new ClaimResolvedEvent(applied));
