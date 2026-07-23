@@ -56,6 +56,150 @@ namespace Desk42.Core
     }
 
     /// <summary>
+    /// Immutable record of one authored Elias procedure after all resource
+    /// clamps and modifiers were applied. It is nonterminal: the claim still
+    /// requires an ordinary Approve or Deny disposition.
+    /// </summary>
+    public readonly struct AppliedEliasProcedure
+    {
+        public readonly string ProofSessionId;
+        public readonly string AppearanceKey;
+        public readonly string StableClaimantId;
+        public readonly EliasProcedureActionId ActionId;
+        public readonly EliasShift2Branch ResultingBranch;
+        public readonly int PriorVisits;
+        public readonly int CurrentVisitNumber;
+        public readonly int CreditsDelta;
+        public readonly float SanityDelta;
+        public readonly float SoulIntegrityDelta;
+        public readonly float ComplianceStreakDelta;
+        public readonly string AddressBefore;
+        public readonly string AddressAfter;
+        public readonly string MiriamRegistrationReference;
+        public readonly string ReceiptId;
+
+        public bool IsTerminal => false;
+
+        public AppliedEliasProcedure(
+            string proofSessionId,
+            string appearanceKey,
+            string stableClaimantId,
+            EliasProcedureActionId actionId,
+            EliasShift2Branch resultingBranch,
+            int priorVisits,
+            int currentVisitNumber,
+            int creditsDelta,
+            float sanityDelta,
+            float soulIntegrityDelta,
+            float complianceStreakDelta,
+            string addressBefore,
+            string addressAfter,
+            string miriamRegistrationReference,
+            string receiptId)
+        {
+            ProofSessionId = proofSessionId;
+            AppearanceKey = appearanceKey;
+            StableClaimantId = stableClaimantId;
+            ActionId = actionId;
+            ResultingBranch = resultingBranch;
+            PriorVisits = priorVisits;
+            CurrentVisitNumber = currentVisitNumber;
+            CreditsDelta = creditsDelta;
+            SanityDelta = sanityDelta;
+            SoulIntegrityDelta = soulIntegrityDelta;
+            ComplianceStreakDelta = complianceStreakDelta;
+            AddressBefore = addressBefore;
+            AddressAfter = addressAfter;
+            MiriamRegistrationReference = miriamRegistrationReference;
+            ReceiptId = receiptId;
+        }
+    }
+
+    /// <summary>
+    /// Side-effect-free Elias procedure projection. Public deltas describe the
+    /// currently expected applied result; internal requested deltas remain
+    /// available to the one canonical transaction so modifiers are not applied
+    /// twice.
+    /// </summary>
+    public readonly struct ProjectedEliasProcedure
+    {
+        public readonly bool IsAvailable;
+        public readonly EliasProcedureFailureReason FailureReason;
+        public readonly string ProofSessionId;
+        public readonly string AppearanceKey;
+        public readonly string StableClaimantId;
+        public readonly EliasProcedureActionId ActionId;
+        public readonly EliasShift2Branch BranchToWrite;
+        public readonly EliasShift2Branch ResultingBranch;
+        public readonly int PriorVisits;
+        public readonly int CurrentVisitNumber;
+        public readonly int CreditsDelta;
+        public readonly float SanityDelta;
+        public readonly float SoulIntegrityDelta;
+        public readonly float ComplianceStreakDelta;
+        public readonly string AddressBefore;
+        public readonly string AddressAfter;
+        public readonly string MiriamRegistrationReference;
+        public readonly string ReceiptId;
+
+        internal readonly int RequestedCreditsDelta;
+        internal readonly float RequestedSanityDelta;
+        internal readonly float RequestedSoulIntegrityDelta;
+        internal readonly float RequestedComplianceStreakDelta;
+
+        public bool IsTerminal => false;
+
+        internal ProjectedEliasProcedure(
+            bool isAvailable,
+            EliasProcedureFailureReason failureReason,
+            string proofSessionId,
+            string appearanceKey,
+            string stableClaimantId,
+            EliasProcedureActionId actionId,
+            EliasShift2Branch branchToWrite,
+            EliasShift2Branch resultingBranch,
+            int priorVisits,
+            int currentVisitNumber,
+            int creditsDelta,
+            float sanityDelta,
+            float soulIntegrityDelta,
+            float complianceStreakDelta,
+            string addressBefore,
+            string addressAfter,
+            string miriamRegistrationReference,
+            string receiptId,
+            int requestedCreditsDelta,
+            float requestedSanityDelta,
+            float requestedSoulIntegrityDelta,
+            float requestedComplianceStreakDelta)
+        {
+            IsAvailable = isAvailable;
+            FailureReason = failureReason;
+            ProofSessionId = proofSessionId;
+            AppearanceKey = appearanceKey;
+            StableClaimantId = stableClaimantId;
+            ActionId = actionId;
+            BranchToWrite = branchToWrite;
+            ResultingBranch = resultingBranch;
+            PriorVisits = priorVisits;
+            CurrentVisitNumber = currentVisitNumber;
+            CreditsDelta = creditsDelta;
+            SanityDelta = sanityDelta;
+            SoulIntegrityDelta = soulIntegrityDelta;
+            ComplianceStreakDelta = complianceStreakDelta;
+            AddressBefore = addressBefore;
+            AddressAfter = addressAfter;
+            MiriamRegistrationReference = miriamRegistrationReference;
+            ReceiptId = receiptId;
+            RequestedCreditsDelta = requestedCreditsDelta;
+            RequestedSanityDelta = requestedSanityDelta;
+            RequestedSoulIntegrityDelta = requestedSoulIntegrityDelta;
+            RequestedComplianceStreakDelta =
+                requestedComplianceStreakDelta;
+        }
+    }
+
+    /// <summary>
     /// Immutable record of what one card attempt actually changed. Failed
     /// attempts use the same schema so their reason cannot be lost or inferred.
     /// </summary>

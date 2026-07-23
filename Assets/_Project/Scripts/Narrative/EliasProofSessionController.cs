@@ -11,6 +11,11 @@ namespace Desk42.Core
     [DisallowMultipleComponent]
     public sealed class EliasProofSessionController : MonoBehaviour
     {
+        public const string ContinuityHoldFailureReason =
+            "RecurringClaimantContinuityHold";
+        public const string ProcedureRequiredFailureReason =
+            "EliasProcedureRequired";
+
         [SerializeField]
         private EliasProofSessionState _state = new();
 
@@ -71,6 +76,205 @@ namespace Desk42.Core
         }
 
         /// <summary>
+        /// Uses the same proof-specific validator as execution and never
+        /// changes resources, branch state, quota, or claim statistics.
+        /// </summary>
+        public ProjectedEliasProcedure PreviewProcedure(
+            RunStateController run,
+            string stableClaimantId,
+            string appearanceKey,
+            EliasProcedureActionId actionId)
+            => EliasProcedurePolicy.Preview(
+                State, run, stableClaimantId, appearanceKey, actionId);
+
+        /// <summary>
+        /// Applies one nonterminal authored procedure. Resource mutation,
+        /// branch write, decision record, and the factual event occur in one
+        /// synchronous transaction before the claim can be disposed.
+        /// </summary>
+        public bool TryApplyProcedure(
+            RunStateController run,
+            string stableClaimantId,
+            string appearanceKey,
+            EliasProcedureActionId actionId,
+            out AppliedEliasProcedure applied,
+            out EliasProcedureFailureReason failureReason)
+        {
+            ProjectedEliasProcedure projection = PreviewProcedure(
+                run, stableClaimantId, appearanceKey, actionId);
+            if (!projection.IsAvailable)
+            {
+                applied = default;
+                failureReason = projection.FailureReason;
+                return false;
+            }
+
+            int creditsBefore = run.Credits;
+            float sanityBefore = run.Sanity;
+            float soulBefore = run.SoulIntegrity;
+            float streakBefore = run.ComboMultiplier;
+
+            if (projection.RequestedCreditsDelta != 0)
+                run.ModifyCredits(projection.RequestedCreditsDelta);
+            if (!Mathf.Approximately(
+                    projection.RequestedSanityDelta, 0f))
+            {
+                run.ModifySanity(projection.RequestedSanityDelta);
+            }
+            if (!Mathf.Approximately(
+                    projection.RequestedSoulIntegrityDelta, 0f))
+            {
+                run.ModifySoulIntegrity(
+                    projection.RequestedSoulIntegrityDelta);
+            }
+            if (!Mathf.Approximately(
+                    projection.RequestedComplianceStreakDelta, 0f))
+            {
+                run.ApplyComplianceStreakDelta(
+                    projection.RequestedComplianceStreakDelta);
+            }
+
+            if (projection.BranchToWrite != EliasShift2Branch.None)
+                State.Shift2Branch = projection.BranchToWrite;
+
+            State.AppliedProcedureAppearanceKeys.Add(appearanceKey);
+            RecordProcedureDecision(projection);
+
+            applied = new AppliedEliasProcedure(
+                State.ProofSessionId,
+                appearanceKey,
+                stableClaimantId,
+                actionId,
+                State.Shift2Branch,
+                projection.PriorVisits,
+                projection.CurrentVisitNumber,
+                run.Credits - creditsBefore,
+                run.Sanity - sanityBefore,
+                run.SoulIntegrity - soulBefore,
+                run.ComboMultiplier - streakBefore,
+                projection.AddressBefore,
+                projection.AddressAfter,
+                projection.MiriamRegistrationReference,
+                projection.ReceiptId);
+
+            failureReason = EliasProcedureFailureReason.None;
+            RumorMill.Publish(new EliasProcedureAppliedEvent(applied));
+            Debug.Log(
+                $"[EliasProof] procedure={actionId} " +
+                $"appearance={appearanceKey} branch={State.Shift2Branch} " +
+                $"receipt={projection.ReceiptId} " +
+                $"streakDelta={applied.ComplianceStreakDelta:+0.##;-0.##;0}.");
+            return true;
+        }
+
+        /// <summary>
+        /// Validates the terminal claim disposition before normal resources or
+        /// quota are applied. Liquify remains visible but cannot execute.
+        /// </summary>
+        public bool TryValidateDisposition(
+            string stableClaimantId,
+            string appearanceKey,
+            ClaimResolutionKind kind,
+            out string failureReason)
+        {
+            failureReason = null;
+            if (!HasActiveSession)
+            {
+                failureReason = "NoActiveProofSession";
+                return false;
+            }
+            if (!string.Equals(stableClaimantId,
+                    EliasProofContent.CanonicalClaimantId,
+                    StringComparison.Ordinal))
+            {
+                failureReason = "InvalidClaimantIdentity";
+                return false;
+            }
+            if (!EliasProofContent.TryGetExpectedPriorVisits(
+                    appearanceKey, out _)
+                || !State.RecordedAppearanceKeys.Contains(appearanceKey))
+            {
+                failureReason = "AppearanceNotRecorded";
+                return false;
+            }
+            if (kind == ClaimResolutionKind.Liquify)
+            {
+                failureReason = ContinuityHoldFailureReason;
+                return false;
+            }
+            if (kind != ClaimResolutionKind.Approve
+                && kind != ClaimResolutionKind.Deny)
+            {
+                failureReason = "UnsupportedDisposition";
+                return false;
+            }
+            bool requiresProcedure =
+                string.Equals(appearanceKey,
+                    EliasProofContent.Shift2AppearanceKey,
+                    StringComparison.Ordinal)
+                || string.Equals(appearanceKey,
+                    EliasProofContent.Shift5AppearanceKey,
+                    StringComparison.Ordinal);
+            if (requiresProcedure
+                && !State.AppliedProcedureAppearanceKeys.Contains(
+                    appearanceKey))
+            {
+                failureReason = ProcedureRequiredFailureReason;
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Records the later ordinary disposition without changing the branch
+        /// selected by the preceding procedure.
+        /// </summary>
+        public void RecordDisposition(
+            string appearanceKey,
+            AppliedClaimResolution resolution)
+        {
+            if (!TryValidateDisposition(
+                    resolution.ClientVariantId,
+                    appearanceKey,
+                    resolution.Kind,
+                    out string failureReason))
+            {
+                throw new InvalidOperationException(
+                    $"Cannot record Elias disposition: {failureReason}.");
+            }
+
+            if (string.Equals(appearanceKey,
+                    EliasProofContent.Shift1AppearanceKey,
+                    StringComparison.Ordinal))
+            {
+                EliasShift1Disposition next =
+                    resolution.Kind == ClaimResolutionKind.Approve
+                        ? EliasShift1Disposition.Approved
+                        : EliasShift1Disposition.Denied;
+                if (State.Shift1Disposition != EliasShift1Disposition.None
+                    && State.Shift1Disposition != next)
+                {
+                    throw new InvalidOperationException(
+                        "Elias Shift 1 disposition cannot be overwritten.");
+                }
+                State.Shift1Disposition = next;
+            }
+            else if (string.Equals(appearanceKey,
+                         EliasProofContent.Shift2AppearanceKey,
+                         StringComparison.Ordinal))
+            {
+                if (State.Shift2FinalDisposition
+                        != ClaimResolutionKind.Unspecified
+                    && State.Shift2FinalDisposition != resolution.Kind)
+                {
+                    throw new InvalidOperationException(
+                        "Elias Shift 2 final disposition cannot be overwritten.");
+                }
+                State.Shift2FinalDisposition = resolution.Kind;
+            }
+        }
+
+        /// <summary>
         /// Starts from a clean record even if a previous proof was active.
         /// Supplying an ID keeps automated routes deterministic; runtime proof
         /// sessions receive a new opaque ID.
@@ -121,6 +325,25 @@ namespace Desk42.Core
                     $"Elias appearance order is invalid for priorVisits=" +
                     $"{expectedPriorVisits}. Recorded keys: " +
                     $"{string.Join(", ", State.RecordedAppearanceKeys)}.");
+            }
+        }
+
+        private void RecordProcedureDecision(
+            ProjectedEliasProcedure projection)
+        {
+            if (string.Equals(projection.AppearanceKey,
+                    EliasProofContent.Shift2AppearanceKey,
+                    StringComparison.Ordinal))
+            {
+                State.Shift2ProcedureAction = projection.ActionId;
+                State.Shift2ProcedureReceiptId = projection.ReceiptId;
+            }
+            else if (string.Equals(projection.AppearanceKey,
+                         EliasProofContent.Shift5AppearanceKey,
+                         StringComparison.Ordinal))
+            {
+                State.Shift5ProcedureAction = projection.ActionId;
+                State.Shift5ProcedureReceiptId = projection.ReceiptId;
             }
         }
     }

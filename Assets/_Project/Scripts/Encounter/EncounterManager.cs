@@ -175,6 +175,79 @@ namespace Desk42.Encounter
         public void Deny() => ResolveEncounter(ClaimResolutionKind.Deny);
 
         /// <summary>
+        /// Side-effect-free authored procedure preview. Execution calls the
+        /// same validator, so disabled presentation and backend rejection
+        /// cannot disagree.
+        /// </summary>
+        public bool TryPreviewEliasProcedure(
+            EliasProcedureActionId actionId,
+            out ProjectedEliasProcedure projection,
+            out string unavailableReason)
+        {
+            projection = default;
+            unavailableReason = null;
+
+            if (!_encounterActive || _activeClaim == null)
+            {
+                unavailableReason = "No active claim.";
+                return false;
+            }
+            if (_punchCardMachine != null
+                && _punchCardMachine.IsProcessing)
+            {
+                unavailableReason =
+                    "Finish processing the punch card first.";
+                return false;
+            }
+            if (!TryGetActiveEliasProof(out var proof))
+            {
+                unavailableReason = "Not an authored Elias claim.";
+                return false;
+            }
+
+            projection = proof.PreviewProcedure(
+                GameManager.Instance?.Run,
+                _activeClaim.ClientVariantId,
+                _activeClaim.AuthoredAppearanceKey,
+                actionId);
+            if (!projection.IsAvailable)
+            {
+                unavailableReason = projection.FailureReason.ToString();
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Applies one Elias procedure without terminating the encounter.
+        /// Approve or Deny remains a separate required disposition.
+        /// </summary>
+        public bool TryApplyEliasProcedure(
+            EliasProcedureActionId actionId,
+            out AppliedEliasProcedure applied,
+            out string unavailableReason)
+        {
+            applied = default;
+            if (!TryPreviewEliasProcedure(
+                    actionId, out _, out unavailableReason))
+            {
+                return false;
+            }
+
+            EliasProofSessionController proof =
+                GameManager.Instance.EliasProof;
+            bool succeeded = proof.TryApplyProcedure(
+                GameManager.Instance.Run,
+                _activeClaim.ClientVariantId,
+                _activeClaim.AuthoredAppearanceKey,
+                actionId,
+                out applied,
+                out EliasProcedureFailureReason failure);
+            unavailableReason = succeeded ? null : failure.ToString();
+            return succeeded;
+        }
+
+        /// <summary>
         /// Side-effect-free consequence projection for decision UI. The caller
         /// must present it as expected, never as a guaranteed applied result.
         /// </summary>
@@ -198,6 +271,12 @@ namespace Desk42.Encounter
                 return false;
             }
 
+            if (!TryValidateEliasDisposition(
+                    kind, out unavailableReason))
+            {
+                return false;
+            }
+
             var run = GameManager.Instance?.Run;
             if (run == null)
             {
@@ -218,6 +297,16 @@ namespace Desk42.Encounter
         public void Liquify()
         {
             if (!_encounterActive || _activeClaim == null) return;
+
+            if (!TryValidateEliasDisposition(
+                    ClaimResolutionKind.Liquify,
+                    out string unavailableReason))
+            {
+                Debug.LogWarning(
+                    $"[EncounterManager] Liquify unavailable: " +
+                    $"{unavailableReason}.");
+                return;
+            }
 
             var run = GameManager.Instance?.Run;
             if (run == null)
@@ -263,6 +352,15 @@ namespace Desk42.Encounter
                 return;
             }
 
+            if (!TryValidateEliasDisposition(
+                    kind, out string unavailableReason))
+            {
+                Debug.LogWarning(
+                    $"[EncounterManager] Disposition unavailable: " +
+                    $"{unavailableReason}.");
+                return;
+            }
+
             var run = GameManager.Instance?.Run;
             if (run == null)
             {
@@ -281,6 +379,12 @@ namespace Desk42.Encounter
                 _activeClaim.ClaimId,
                 _activeClaim.ClientVariantId,
                 _activeClaim.ClientSpeciesId);
+
+            if (TryGetActiveEliasProof(out var proof))
+            {
+                proof.RecordDisposition(
+                    _activeClaim.AuthoredAppearanceKey, applied);
+            }
 
             RumorMill.PublishDeferred(new ClaimResolvedEvent(applied));
 
@@ -310,6 +414,35 @@ namespace Desk42.Encounter
                 run?.ShiftNumber ?? 1,
                 _baseCreditsApprove,
                 ComplianceVowSystem.GetBasePayoutMultiplier());
+        }
+
+        private bool TryValidateEliasDisposition(
+            ClaimResolutionKind kind,
+            out string unavailableReason)
+        {
+            unavailableReason = null;
+            if (!TryGetActiveEliasProof(out var proof))
+                return true;
+
+            return proof.TryValidateDisposition(
+                _activeClaim.ClientVariantId,
+                _activeClaim.AuthoredAppearanceKey,
+                kind,
+                out unavailableReason);
+        }
+
+        private bool TryGetActiveEliasProof(
+            out EliasProofSessionController proof)
+        {
+            proof = GameManager.Instance?.EliasProof;
+            return proof?.HasActiveSession == true
+                && _activeClaim != null
+                && string.Equals(
+                    _activeClaim.ClientVariantId,
+                    EliasProofContent.CanonicalClaimantId,
+                    System.StringComparison.Ordinal)
+                && EliasProofContent.TryGetExpectedPriorVisits(
+                    _activeClaim.AuthoredAppearanceKey, out _);
         }
 
         private static System.Collections.IEnumerator DestroyClientAfter(

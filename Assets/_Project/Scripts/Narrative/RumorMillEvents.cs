@@ -153,6 +153,20 @@ namespace Desk42.Core
     }
 
     /// <summary>
+    /// A nonterminal authored Elias procedure was applied. The immutable
+    /// result is the only source for receipts and instrumentation.
+    /// </summary>
+    public readonly struct EliasProcedureAppliedEvent
+    {
+        public readonly AppliedEliasProcedure Result;
+
+        public EliasProcedureAppliedEvent(AppliedEliasProcedure result)
+        {
+            Result = result;
+        }
+    }
+
+    /// <summary>
     /// Ephemeral card intent preview. IsVisible=false restores the latest
     /// applied receipt; it never represents or triggers an applied action.
     /// </summary>

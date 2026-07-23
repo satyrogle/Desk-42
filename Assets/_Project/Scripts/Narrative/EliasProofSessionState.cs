@@ -88,7 +88,27 @@ namespace Desk42.Core
             { get; internal set; } = ClaimResolutionKind.Unspecified;
 
         [JsonProperty]
+        public EliasProcedureActionId Shift2ProcedureAction
+            { get; internal set; } = EliasProcedureActionId.Unspecified;
+
+        [JsonProperty]
+        public string Shift2ProcedureReceiptId
+            { get; internal set; }
+
+        [JsonProperty]
+        public EliasProcedureActionId Shift5ProcedureAction
+            { get; internal set; } = EliasProcedureActionId.Unspecified;
+
+        [JsonProperty]
+        public string Shift5ProcedureReceiptId
+            { get; internal set; }
+
+        [JsonProperty]
         public HashSet<string> RecordedAppearanceKeys
+            { get; private set; } = new();
+
+        [JsonProperty]
+        public HashSet<string> AppliedProcedureAppearanceKeys
             { get; private set; } = new();
 
         [JsonProperty]

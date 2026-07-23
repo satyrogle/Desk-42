@@ -38,7 +38,14 @@ namespace Desk42.Tests.EditMode
             Assert.AreEqual(EliasShift2Branch.None, state.Shift2Branch);
             Assert.AreEqual(ClaimResolutionKind.Unspecified,
                 state.Shift2FinalDisposition);
+            Assert.AreEqual(EliasProcedureActionId.Unspecified,
+                state.Shift2ProcedureAction);
+            Assert.IsNull(state.Shift2ProcedureReceiptId);
+            Assert.AreEqual(EliasProcedureActionId.Unspecified,
+                state.Shift5ProcedureAction);
+            Assert.IsNull(state.Shift5ProcedureReceiptId);
             Assert.IsEmpty(state.RecordedAppearanceKeys);
+            Assert.IsEmpty(state.AppliedProcedureAppearanceKeys);
             Assert.IsNotNull(state.ActiveAftermathModifier);
             Assert.IsFalse(state.ActiveAftermathModifier.IsActive);
         }
@@ -61,6 +68,8 @@ namespace Desk42.Tests.EditMode
             Assert.IsFalse(_controller.State.IsActive);
             Assert.IsNull(_controller.State.ProofSessionId);
             Assert.IsEmpty(_controller.State.RecordedAppearanceKeys);
+            Assert.IsEmpty(
+                _controller.State.AppliedProcedureAppearanceKeys);
         }
 
         [Test]

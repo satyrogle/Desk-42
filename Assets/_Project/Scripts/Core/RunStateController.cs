@@ -265,6 +265,38 @@ namespace Desk42.Core
             _data.Stats.CreditsSpent += spent;
         }
 
+        /// <summary>Side-effect-free signed credit delta after the zero clamp.</summary>
+        public int ProjectCreditsDelta(int requestedDelta)
+        {
+            if (requestedDelta >= 0)
+                return requestedDelta;
+            return -Mathf.Min(_data.CorporateCredits, -requestedDelta);
+        }
+
+        /// <summary>
+        /// Side-effect-free Compliance Streak delta after its minimum clamp.
+        /// The streak is a corporate preference metric, not a correctness score.
+        /// </summary>
+        public float ProjectComplianceStreakDelta(float requestedDelta)
+        {
+            const float minimumComplianceStreak = 1f;
+            return Mathf.Max(minimumComplianceStreak,
+                    _data.ComboMultiplier + requestedDelta)
+                - _data.ComboMultiplier;
+        }
+
+        /// <summary>
+        /// Applies a requested Compliance Streak change and returns the actual
+        /// post-clamp delta used by factual result payloads.
+        /// </summary>
+        public float ApplyComplianceStreakDelta(float requestedDelta)
+        {
+            float appliedDelta =
+                ProjectComplianceStreakDelta(requestedDelta);
+            _data.ComboMultiplier += appliedDelta;
+            return appliedDelta;
+        }
+
         // ── Shift Phase ───────────────────────────────────────
 
         public void AdvancePhase(ShiftPhase newPhase)
