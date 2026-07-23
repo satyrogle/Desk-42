@@ -83,6 +83,7 @@ namespace Desk42.UI
 
         private void Awake()
         {
+            EliasProcedureReceiptPresenter.Ensure(gameObject);
             EnsureCanvas();
             BuildToastContainer();
             BuildReceiptPanel();

@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -162,6 +164,65 @@ namespace Desk42.Tests.PlayMode
                 "Shift 1 has no procedure stage, so the panel stays hidden.");
         }
 
+        [UnityTest]
+        public IEnumerator ProcedureReceipt_PresentsAnchorBeforeReward_AndProtectsInput()
+        {
+            var host = new GameObject("EliasProcedureReceiptTest");
+            var presenter =
+                host.AddComponent<EliasProcedureReceiptPresenter>();
+            SetPrivateFloat(presenter, "_standardBeatSeconds", 0.01f);
+            SetPrivateFloat(presenter, "_memoryAnchorSeconds", 0.01f);
+            SetPrivateFloat(presenter, "_rewardBeatSeconds", 0.01f);
+            SetPrivateFloat(presenter, "_finalHoldSeconds", 0f);
+
+            var presented = new List<EliasProcedureReceiptBeatKind>();
+            presenter.BeatPresented += (_, beat) =>
+                presented.Add(beat.Kind);
+            presenter.Present(new AppliedEliasProcedure(
+                "receipt-playmode",
+                EliasProofContent.Shift2AppearanceKey,
+                EliasProofContent.CanonicalClaimantId,
+                EliasProcedureActionId.AmendRecord,
+                EliasShift2Branch.NormalisedAddress,
+                1,
+                2,
+                0,
+                0f,
+                0f,
+                1f,
+                EliasProcedurePolicy.OriginalAddress,
+                EliasProcedurePolicy.AmendedAddress,
+                EliasProcedurePolicy.MiriamRegisteredAt18A,
+                "elias_shift2_amend_record"));
+
+            Assert.IsTrue(presenter.IsPresenting);
+            CanvasGroup inputShield =
+                host.GetComponentInChildren<CanvasGroup>();
+            Assert.IsNotNull(inputShield);
+            Assert.IsTrue(inputShield.blocksRaycasts);
+
+            float deadline = Time.realtimeSinceStartup + 2f;
+            while (presenter.IsPresenting
+                && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            Assert.IsFalse(presenter.IsPresenting);
+            Assert.IsFalse(inputShield.blocksRaycasts);
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    EliasProcedureReceiptBeatKind.Action,
+                    EliasProcedureReceiptBeatKind.RecordChange,
+                    EliasProcedureReceiptBeatKind.MemoryAnchor,
+                    EliasProcedureReceiptBeatKind.Processing,
+                    EliasProcedureReceiptBeatKind.AppliedDelta,
+                },
+                presented);
+            UnityEngine.Object.Destroy(host);
+        }
+
         private static void AssertBsmConsumesPriorVisits(
             EliasVisitTransaction transaction, int expectedPriorVisits)
         {
@@ -183,5 +244,12 @@ namespace Desk42.Tests.PlayMode
                 UnityEngine.Object.DestroyImmediate(clientObject);
             }
         }
+
+        private static void SetPrivateFloat(
+            object target, string fieldName, float value)
+            => target.GetType()
+                .GetField(fieldName,
+                    BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(target, value);
     }
 }
