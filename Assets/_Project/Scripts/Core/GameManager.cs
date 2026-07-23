@@ -57,6 +57,7 @@ namespace Desk42.Core
         public OfficeSupplyManager Supplies  { get; private set; }
         public MilestoneTracker    Milestones { get; private set; }
         public ComplianceVowSystem Vows       { get; private set; }
+        public EliasProofSessionController EliasProof { get; private set; }
 
         // Card library — assign in Inspector (Boot scene GameManager prefab)
         [SerializeField] private CardLibrary _cardLibrary;
@@ -147,6 +148,17 @@ namespace Desk42.Core
                 var go = new GameObject("RunStateController");
                 go.transform.SetParent(transform);
                 Run = go.AddComponent<RunStateController>();
+            }
+
+            // Five-shift validation proof state is session-scoped. Keeping it
+            // on its own persistent child prevents fresh RunData instances and
+            // scene reconstruction from erasing the authored Elias branch.
+            EliasProof = GetComponentInChildren<EliasProofSessionController>();
+            if (EliasProof == null)
+            {
+                var go = new GameObject("EliasProofSessionController");
+                go.transform.SetParent(transform);
+                EliasProof = go.AddComponent<EliasProofSessionController>();
             }
 
             // OfficeSupplyManager — manages active desk supplies
