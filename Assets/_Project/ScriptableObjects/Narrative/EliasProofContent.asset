@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a77128867b6e4f4b923334684930d2f, type: 3}
+  m_Name: EliasProofContent
+  m_EditorClassIdentifier: 
+  _displayName: Elias Venn
+  _clientSpeciesId: moth_accountant
+  _visualProfileId: moth_accountant
+  _proofSpineRole: Five-shift causal attribution proof
+  _appearances:
+  - _appearanceKey: elias_shift_1
+    _shiftNumber: 1
+    _queuePosition: 2
+    _authoredClaimIds:
+    - elias_shift_1_claim
+  - _appearanceKey: elias_shift_2
+    _shiftNumber: 2
+    _queuePosition: 2
+    _authoredClaimIds:
+    - elias_shift_2_claim
+  - _appearanceKey: elias_shift_5
+    _shiftNumber: 5
+    _queuePosition: 3
+    _authoredClaimIds:
+    - elias_shift_5a_claim
+    - elias_shift_5b_claim
+    - elias_shift_5c_claim
+  _authoredFollowUpClaimIds:
+  - elias_aftermath_5a_1
+  - elias_aftermath_5a_2
+  - elias_aftermath_5b_1
+  - elias_aftermath_5c_1
+  - elias_aftermath_5c_2

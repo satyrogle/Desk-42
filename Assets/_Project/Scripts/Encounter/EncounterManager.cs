@@ -121,6 +121,27 @@ namespace Desk42.Encounter
                 counterTraits = profile.CounterTraitIds;
             }
 
+            // The validation proof owns its visit history for this session.
+            // Record before BSM initialization so Shift 1/2/5 consume the
+            // authoritative prior values 0/1/2. The authored appearance key
+            // makes encounter reconstruction idempotent.
+            var proof = GameManager.Instance?.EliasProof;
+            bool hasAuthoredEliasKey =
+                EliasProofContent.TryGetExpectedPriorVisits(
+                    claim.AuthoredAppearanceKey, out _);
+            bool usesEliasIdentity = string.Equals(
+                claim.ClientVariantId,
+                EliasProofContent.CanonicalClaimantId,
+                System.StringComparison.Ordinal);
+            if (proof?.HasActiveSession == true
+                && (hasAuthoredEliasKey || usesEliasIdentity))
+            {
+                var visit = proof.RecordAppearance(
+                    claim.ClientVariantId,
+                    claim.AuthoredAppearanceKey);
+                visitCount = visit.PriorVisits;
+            }
+
             _activeCSM.Initialize(
                 claim.ClientVariantId,
                 claim.ClientSpeciesId,

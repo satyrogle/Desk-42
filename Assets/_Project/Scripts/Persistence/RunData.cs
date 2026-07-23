@@ -63,6 +63,11 @@ namespace Desk42.Core
         [JsonProperty] public string  TemplateId;
         [JsonProperty] public string[] AnomalyTagIds;    // SO GUIDs
 
+        // Authored validation appearance. Null for every procedural claim.
+        // The proof controller uses this exact key to make visit recording
+        // idempotent across encounter reconstruction.
+        [JsonProperty] public string AuthoredAppearanceKey;
+
         // Hidden trait state
         [JsonProperty] public string  HiddenTraitId;    // null until ANALYSEd
         [JsonProperty] public bool    TraitRevealed;

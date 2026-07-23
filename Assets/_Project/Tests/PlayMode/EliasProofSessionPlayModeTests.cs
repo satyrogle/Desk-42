@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Desk42.Core;
+using Desk42.BSM;
 
 namespace Desk42.Tests.PlayMode
 {
@@ -66,6 +67,10 @@ namespace Desk42.Tests.PlayMode
                 proof.BeginProofSession("scene-continuity");
 
             manager.Run.BeginNewRun(101, "auditor", 1, fixtureMeta);
+            EliasVisitTransaction shift1 = proof.RecordAppearance(
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift1AppearanceKey);
+            AssertBsmConsumesPriorVisits(shift1, expectedPriorVisits: 0);
             Assert.AreSame(state, proof.State);
 
             SceneManager.LoadScene("InternalAudit");
@@ -78,12 +83,38 @@ namespace Desk42.Tests.PlayMode
                 manager.EliasProof.State.ProofSessionId);
 
             manager.Run.BeginNewRun(202, "auditor", 2, fixtureMeta);
+            EliasVisitTransaction shift2 = proof.RecordAppearance(
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift2AppearanceKey);
+            AssertBsmConsumesPriorVisits(shift2, expectedPriorVisits: 1);
             Assert.AreSame(state, manager.EliasProof.State);
             Assert.AreEqual("scene-continuity",
                 manager.EliasProof.State.ProofSessionId);
 
             manager.EliasProof.EndProofSession();
             Assert.IsFalse(manager.EliasProof.HasActiveSession);
+        }
+
+        private static void AssertBsmConsumesPriorVisits(
+            EliasVisitTransaction transaction, int expectedPriorVisits)
+        {
+            var clientObject = new GameObject("EliasVisitBSM");
+            try
+            {
+                var stateMachine =
+                    clientObject.AddComponent<ClientStateMachine>();
+                stateMachine.Initialize(
+                    transaction.StableClaimantId,
+                    "moth_accountant",
+                    transaction.PriorVisits,
+                    counterTraits: null);
+                Assert.AreEqual(expectedPriorVisits,
+                    stateMachine.VisitCount);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(clientObject);
+            }
         }
     }
 }

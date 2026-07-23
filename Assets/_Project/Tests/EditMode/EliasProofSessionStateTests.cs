@@ -73,6 +73,81 @@ namespace Desk42.Tests.EditMode
             AssertSchemaDoesNotOwnProofState(typeof(MetaProgressData));
         }
 
+        [Test]
+        public void Appearances_RecordExactOnceWithPriorAndCurrentVisits()
+        {
+            _controller.BeginProofSession("visit-sequence");
+
+            EliasVisitTransaction shift1 = _controller.RecordAppearance(
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift1AppearanceKey);
+            EliasVisitTransaction shift1Replay = _controller.RecordAppearance(
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift1AppearanceKey);
+            EliasVisitTransaction shift2 = _controller.RecordAppearance(
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift2AppearanceKey);
+            EliasVisitTransaction shift5 = _controller.RecordAppearance(
+                EliasProofContent.CanonicalClaimantId,
+                EliasProofContent.Shift5AppearanceKey);
+
+            AssertVisit(shift1, 0, 1, wasNew: true);
+            AssertVisit(shift1Replay, 0, 1, wasNew: false);
+            AssertVisit(shift2, 1, 2, wasNew: true);
+            AssertVisit(shift5, 2, 3, wasNew: true);
+            Assert.AreEqual(3,
+                _controller.State.RecordedAppearanceKeys.Count);
+        }
+
+        [Test]
+        public void Appearance_RejectsUnstableIdentityAndOutOfOrderVisit()
+        {
+            _controller.BeginProofSession("visit-guards");
+
+            Assert.Throws<InvalidOperationException>(() =>
+                _controller.RecordAppearance(
+                    "Elias-4821",
+                    EliasProofContent.Shift1AppearanceKey));
+            Assert.Throws<InvalidOperationException>(() =>
+                _controller.RecordAppearance(
+                    EliasProofContent.CanonicalClaimantId,
+                    EliasProofContent.Shift2AppearanceKey));
+            Assert.IsEmpty(_controller.State.RecordedAppearanceKeys);
+        }
+
+        [Test]
+        public void ProofContent_OwnsCanonicalIdentityAndSchedule()
+        {
+            var content =
+                ScriptableObject.CreateInstance<EliasProofContent>();
+            try
+            {
+                Assert.AreEqual("elias_venn", content.StableClaimantId);
+                Assert.AreEqual("Elias Venn", content.DisplayName);
+                Assert.AreEqual("moth_accountant",
+                    content.VisualProfileId);
+                Assert.AreEqual(3, content.Appearances.Length);
+                Assert.IsTrue(content.TryGetAppearance(
+                    EliasProofContent.Shift5AppearanceKey,
+                    out EliasAuthoredAppearance shift5));
+                Assert.AreEqual(5, shift5.ShiftNumber);
+                Assert.AreEqual(3, shift5.QueuePosition);
+                Assert.AreEqual(3, shift5.AuthoredClaimIds.Length);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(content);
+            }
+        }
+
+        private static void AssertVisit(EliasVisitTransaction transaction,
+            int priorVisits, int currentVisit, bool wasNew)
+        {
+            Assert.AreEqual(priorVisits, transaction.PriorVisits);
+            Assert.AreEqual(currentVisit, transaction.CurrentVisitNumber);
+            Assert.AreEqual(wasNew, transaction.WasNewlyRecorded);
+        }
+
         private static void AssertSchemaDoesNotOwnProofState(Type schema)
         {
             const BindingFlags flags = BindingFlags.Instance

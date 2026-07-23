@@ -19,6 +19,28 @@ namespace Desk42.Core
         PhysicalVerification = 3,
     }
 
+    public readonly struct EliasVisitTransaction
+    {
+        public readonly string ProofSessionId;
+        public readonly string AppearanceKey;
+        public readonly string StableClaimantId;
+        public readonly int PriorVisits;
+        public readonly int CurrentVisitNumber;
+        public readonly bool WasNewlyRecorded;
+
+        public EliasVisitTransaction(string proofSessionId,
+            string appearanceKey, string stableClaimantId,
+            int priorVisits, bool wasNewlyRecorded)
+        {
+            ProofSessionId = proofSessionId;
+            AppearanceKey = appearanceKey;
+            StableClaimantId = stableClaimantId;
+            PriorVisits = priorVisits;
+            CurrentVisitNumber = priorVisits + 1;
+            WasNewlyRecorded = wasNewlyRecorded;
+        }
+    }
+
     /// <summary>
     /// Exact-once aftermath routing for authored proof claims. This is session
     /// data, not a generic condition or recurring-character system.
