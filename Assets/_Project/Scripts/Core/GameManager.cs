@@ -67,6 +67,10 @@ namespace Desk42.Core
         [SerializeField] private MoralDilemmaCatalog _moralDilemmaCatalog;
         public MoralDilemmaCatalog MoralDilemmas => _moralDilemmaCatalog;
 
+        [Tooltip("Stable identity, schedule, and authored IDs for the Elias proof.")]
+        [SerializeField] private EliasProofContent _eliasProofContent;
+        public EliasProofContent EliasContent => _eliasProofContent;
+
         // Loaded from disk in Boot and held for the session
         public MetaProgressData Meta { get; private set; }
 

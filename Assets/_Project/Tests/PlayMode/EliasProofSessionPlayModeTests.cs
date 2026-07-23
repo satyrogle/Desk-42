@@ -1,12 +1,14 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Desk42.Core;
 using Desk42.BSM;
+using Desk42.UI;
 
 namespace Desk42.Tests.PlayMode
 {
@@ -93,6 +95,71 @@ namespace Desk42.Tests.PlayMode
 
             manager.EliasProof.EndProofSession();
             Assert.IsFalse(manager.EliasProof.HasActiveSession);
+        }
+
+        [UnityTest]
+        public IEnumerator Shift1Scene_WiresContentAndSchedulesOneEliasAtClaimTwo()
+        {
+            SceneManager.LoadScene("Boot");
+            float deadline = Time.realtimeSinceStartup + 20f;
+            while ((GameManager.Instance == null
+                    || SceneManager.GetActiveScene().name != "MainMenu")
+                && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            GameManager manager = GameManager.Instance;
+            Assert.IsNotNull(manager);
+            Assert.IsNotNull(manager.EliasContent,
+                "Boot must wire the authored Elias content asset.");
+
+            var fixtureMeta = new MetaProgressData
+            {
+                TutorialCompleted = true,
+                HighestPhaseReached = 4,
+            };
+            manager.SetMetaForTesting(fixtureMeta);
+            manager.Run.BeginNewRun(421001, "auditor", 1, fixtureMeta);
+
+            SceneManager.LoadScene("Shift");
+            deadline = Time.realtimeSinceStartup + 20f;
+            while ((SceneManager.GetActiveScene().name != "Shift"
+                    || manager.Run.RawData.ActiveClaim == null)
+                && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            Assert.AreEqual("Shift",
+                SceneManager.GetActiveScene().name);
+            Assert.IsNotNull(manager.Run.RawData.ActiveClaim);
+            Assert.IsTrue(manager.EliasProof.HasActiveSession);
+
+            ActiveClaimData[] orderedClaims =
+                new[] { manager.Run.RawData.ActiveClaim }
+                    .Concat(manager.Run.RawData.PendingClaims)
+                    .ToArray();
+            Assert.GreaterOrEqual(orderedClaims.Length, 2);
+            Assert.AreEqual(
+                EliasProofContent.CanonicalClaimantId,
+                orderedClaims[1].ClientVariantId);
+            Assert.AreEqual(
+                EliasProofContent.Shift1AppearanceKey,
+                orderedClaims[1].AuthoredAppearanceKey);
+            Assert.AreEqual(1, orderedClaims.Count(claim =>
+                claim.ClientVariantId
+                    == EliasProofContent.CanonicalClaimantId));
+
+            EliasProcedurePanel panel =
+                Resources.FindObjectsOfTypeAll<EliasProcedurePanel>()
+                    .FirstOrDefault(candidate =>
+                        candidate.gameObject.scene
+                            == SceneManager.GetActiveScene());
+            Assert.IsNotNull(panel,
+                "Shift UI must construct the authored procedure panel.");
+            Assert.IsFalse(panel.gameObject.activeSelf,
+                "Shift 1 has no procedure stage, so the panel stays hidden.");
         }
 
         private static void AssertBsmConsumesPriorVisits(

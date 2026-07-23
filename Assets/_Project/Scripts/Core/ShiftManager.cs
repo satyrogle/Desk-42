@@ -136,6 +136,20 @@ namespace Desk42.Core
 
             var runData = run.RawData;
 
+            // Validation builds start a fresh proof at Shift 1. Later shifts
+            // reuse the same DontDestroyOnLoad proof state while each receives
+            // a fresh RunData instance.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (run.ShiftNumber == 1
+                && runData.PendingClaims.Count == 0
+                && runData.ActiveClaim == null
+                && GameManager.Instance?.EliasContent != null)
+            {
+                GameManager.Instance.EliasProof.BeginProofSession(
+                    $"proof-{run.SeedCode}");
+            }
+#endif
+
             // Generate or restore claim queue
             if (runData.PendingClaims.Count == 0 && runData.ActiveClaim == null)
                 GenerateInitialQueue(run.ShiftNumber, runData);
@@ -307,6 +321,17 @@ namespace Desk42.Core
                 total, shiftNumber,
                 _claimTemplates, _anomalyTags,
                 GameManager.Instance?.Meta);
+
+            var gameManager = GameManager.Instance;
+            if (gameManager?.EliasProof?.HasActiveSession == true)
+            {
+                EliasProofScheduler.TryReplaceScheduledClaim(
+                    claims,
+                    shiftNumber,
+                    gameManager.EliasContent,
+                    gameManager.EliasProof.State,
+                    out _);
+            }
 
             runData.PendingClaims.AddRange(claims);
 

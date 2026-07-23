@@ -48,6 +48,9 @@ namespace Desk42.Encounter
         [Tooltip("Parent transform where the client child GO will be spawned.")]
         [SerializeField] private Transform                _clientAnchor;
 
+        [Tooltip("Authored procedure controls. Created at runtime if unassigned.")]
+        [SerializeField] private UI.EliasProcedurePanel   _eliasProcedurePanel;
+
         [Header("Config")]
         [Tooltip("Credits earned for an approved claim (before shift scaling).")]
         [SerializeField] private int _baseCreditsApprove = 10;
@@ -82,6 +85,11 @@ namespace Desk42.Encounter
         private void Awake()
         {
             Desk42Services.Register(this);
+            if (_eliasProcedurePanel == null && _claimPanel != null)
+            {
+                _eliasProcedurePanel = UI.EliasProcedurePanel.Ensure(
+                    this, _claimPanel.transform.parent);
+            }
         }
 
         private void OnDestroy()
@@ -158,6 +166,7 @@ namespace Desk42.Encounter
 
             // Notify views
             _claimPanel?.SetClaim(claim);
+            _eliasProcedurePanel?.SetClaim(claim);
             _clientView?.SetClient(_activeCSM, claim.ClientSpeciesId, claim.ClientVariantId);
             _cardHandView?.Refresh();
 
@@ -294,25 +303,33 @@ namespace Desk42.Encounter
         /// dilemma. Grants Dark Intelligence. ~30% chance of an OSHA
         /// maintenance fee popup (handled by PneumaticTube itself).
         /// </summary>
-        public void Liquify()
+        public void Liquify() => TryLiquify(out _);
+
+        public bool TryLiquify(out string unavailableReason)
         {
-            if (!_encounterActive || _activeClaim == null) return;
+            unavailableReason = null;
+            if (!_encounterActive || _activeClaim == null)
+            {
+                unavailableReason = "NoActiveClaim";
+                return false;
+            }
 
             if (!TryValidateEliasDisposition(
                     ClaimResolutionKind.Liquify,
-                    out string unavailableReason))
+                    out unavailableReason))
             {
                 Debug.LogWarning(
                     $"[EncounterManager] Liquify unavailable: " +
                     $"{unavailableReason}.");
-                return;
+                return false;
             }
 
             var run = GameManager.Instance?.Run;
             if (run == null)
             {
                 Debug.LogError("[EncounterManager] Cannot liquify without an active run.");
-                return;
+                unavailableReason = "NoActiveRun";
+                return false;
             }
 
             _encounterActive = false;
@@ -335,8 +352,10 @@ namespace Desk42.Encounter
             var resolvedCSM = _activeCSM;
             _activeCSM   = null;
             _activeClaim = null;
+            _eliasProcedurePanel?.Clear();
             _punchCardMachine?.ClearActiveClient();
             StartCoroutine(DestroyClientAfter(resolvedCSM, 0.8f));
+            return true;
         }
 
         private void ResolveEncounter(ClaimResolutionKind kind)
@@ -398,6 +417,7 @@ namespace Desk42.Encounter
             var resolvedCSM = _activeCSM;
             _activeCSM   = null;
             _activeClaim = null;
+            _eliasProcedurePanel?.Clear();
             _punchCardMachine?.ClearActiveClient();
             StartCoroutine(DestroyClientAfter(resolvedCSM, 0.8f));
         }

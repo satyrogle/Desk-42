@@ -2,14 +2,17 @@
 using System.IO;
 using Desk42.Core;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Desk42.EditorTools
 {
     public static class EliasProofContentBuilder
     {
-        private const string AssetPath =
+        public const string AssetPath =
             "Assets/_Project/ScriptableObjects/Narrative/EliasProofContent.asset";
+        private const string BootScenePath =
+            "Assets/_Project/Scenes/Boot.unity";
 
         [MenuItem("Tools/Desk 42/Rebuild Elias Proof Content")]
         public static void Rebuild()
@@ -40,6 +43,51 @@ namespace Desk42.EditorTools
             }
             AssetDatabase.SaveAssets();
             Debug.Log($"[EliasProofContent] Rebuilt {AssetPath}.");
+        }
+
+        [MenuItem("Tools/Desk 42/Wire Elias Proof Content")]
+        public static void WireBootReference()
+        {
+            EliasProofContent content =
+                AssetDatabase.LoadAssetAtPath<EliasProofContent>(
+                    AssetPath);
+            if (content == null)
+            {
+                Rebuild();
+                content =
+                    AssetDatabase.LoadAssetAtPath<EliasProofContent>(
+                        AssetPath);
+            }
+
+            string previousScenePath =
+                EditorSceneManager.GetActiveScene().path;
+            var bootScene =
+                EditorSceneManager.OpenScene(
+                    BootScenePath, OpenSceneMode.Single);
+            GameManager manager =
+                Object.FindObjectOfType<GameManager>();
+            if (manager == null)
+            {
+                throw new System.InvalidOperationException(
+                    "Boot scene contains no GameManager.");
+            }
+
+            var serializedManager = new SerializedObject(manager);
+            serializedManager.FindProperty("_eliasProofContent")
+                .objectReferenceValue = content;
+            serializedManager.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(manager);
+            EditorSceneManager.SaveScene(bootScene);
+
+            if (!string.IsNullOrWhiteSpace(previousScenePath)
+                && previousScenePath != BootScenePath)
+            {
+                EditorSceneManager.OpenScene(
+                    previousScenePath, OpenSceneMode.Single);
+            }
+
+            Debug.Log(
+                $"[EliasProofContent] Wired {AssetPath} into Boot GameManager.");
         }
     }
 }

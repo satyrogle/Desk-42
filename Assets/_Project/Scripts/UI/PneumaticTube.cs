@@ -42,6 +42,7 @@ namespace Desk42.UI
 
         private GameObject _root;
         private TMP_Text _feeLabel;
+        private Coroutine _unavailableRoutine;
 
         private void Start()
         {
@@ -66,7 +67,12 @@ namespace Desk42.UI
             var encounter = Desk42Services.Get<EncounterManager>();
             if (encounter == null) return;
 
-            encounter.Liquify();
+            if (!encounter.TryLiquify(out string unavailableReason))
+            {
+                ShowUnavailable(unavailableReason);
+                return;
+            }
+
             PlayWhirAndDing();
             MaybeChargeOshaFee();
         }
@@ -114,6 +120,30 @@ namespace Desk42.UI
                 yield return null;
             }
             _feeLabel.text = "";
+        }
+
+        private void ShowUnavailable(string failureReason)
+        {
+            if (_feeLabel == null) return;
+            if (_unavailableRoutine != null)
+                StopCoroutine(_unavailableRoutine);
+            _unavailableRoutine =
+                StartCoroutine(FlashUnavailable(failureReason));
+        }
+
+        private System.Collections.IEnumerator FlashUnavailable(
+            string failureReason)
+        {
+            _feeLabel.color = UIPalette.AccentWarn;
+            _feeLabel.text = string.Equals(
+                    failureReason,
+                    EliasProofSessionController.ContinuityHoldFailureReason,
+                    System.StringComparison.Ordinal)
+                ? "LIQUIFY UNAVAILABLE - CONTINUITY REVIEW HOLD"
+                : $"LIQUIFY UNAVAILABLE - {failureReason}";
+            yield return new WaitForSeconds(2.5f);
+            _feeLabel.text = "";
+            _unavailableRoutine = null;
         }
 
         private System.Collections.IEnumerator PulseRoot()
