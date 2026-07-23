@@ -169,6 +169,7 @@ namespace Desk42.Tests.PlayMode
             };
             gm.SetMetaForTesting(fixtureMeta);
             gm.Run.BeginNewRun(seed, "auditor", shiftNumber, fixtureMeta);
+            ApplyRequestedCaptureResolution();
             gm.LoadScene(SceneID.Shift);
 
             t0 = Time.realtimeSinceStartup;
@@ -280,6 +281,25 @@ namespace Desk42.Tests.PlayMode
                         renderedCard.RenderedCertaintyText),
                     "Every card face must state certainty or availability without hover.");
             }
+            Assert.IsTrue(cardButtons.Any(card =>
+                    card.RenderedEffectText.Contains("\u2192")),
+                "The acceptance hand must include an at-rest state-transition card.");
+            Assert.IsTrue(cardButtons.Any(card =>
+                    System.Text.RegularExpressions.Regex.IsMatch(
+                        card.RenderedEffectText, @"\d+(\.\d+)?s")),
+                "The acceptance hand must include an at-rest timed-effect card.");
+
+            var hierarchyCard = cardButtons[0];
+            Assert.Greater(hierarchyCard.RenderedEffectFontSize,
+                hierarchyCard.RenderedNameFontSize,
+                "The projected effect must dominate the card name at rest.");
+            Assert.Greater(hierarchyCard.RenderedEffectFontSize,
+                hierarchyCard.RenderedCertaintyFontSize,
+                "The projected effect must dominate certainty metadata at rest.");
+            Assert.Greater(hierarchyCard.RenderedEffectFontSize,
+                hierarchyCard.RenderedFactsFontSize,
+                "The projected effect must dominate cost metadata at rest.");
+
             var modifierOverlay = UnityEngine.Object
                 .FindObjectOfType<UI.ShiftFeedbackOverlay>();
             Assert.IsNotNull(modifierOverlay,
@@ -554,6 +574,27 @@ namespace Desk42.Tests.PlayMode
         {
             float end = Time.time + seconds;
             while (Time.time < end) yield return null;
+        }
+
+        private void ApplyRequestedCaptureResolution()
+        {
+            const string variable = "DESK42_TEST_CAPTURE_RESOLUTION";
+            string requested = Environment.GetEnvironmentVariable(variable);
+            if (string.IsNullOrWhiteSpace(requested))
+                return;
+
+            string[] dimensions = requested.ToLowerInvariant().Split('x');
+            if (dimensions.Length != 2
+                || !int.TryParse(dimensions[0], out int width)
+                || !int.TryParse(dimensions[1], out int height)
+                || width <= 0 || height <= 0)
+            {
+                Fail($"{variable} must use WIDTHxHEIGHT, received '{requested}'.");
+                return;
+            }
+
+            Screen.SetResolution(width, height, false);
+            Line($"[capture] requested resolution {width}x{height}");
         }
 
         private IEnumerator Screenshot(int shiftNumber, int seed, string tag)

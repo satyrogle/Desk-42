@@ -45,6 +45,10 @@ namespace Desk42.UI
         public CardInstance Card => _card;
         public string RenderedEffectText => _typeLabel != null ? _typeLabel.text : "";
         public string RenderedCertaintyText => _fatigueLabel != null ? _fatigueLabel.text : "";
+        public float RenderedEffectFontSize => _typeLabel != null ? _typeLabel.fontSize : 0f;
+        public float RenderedNameFontSize => _nameLabel != null ? _nameLabel.fontSize : 0f;
+        public float RenderedCertaintyFontSize => _fatigueLabel != null ? _fatigueLabel.fontSize : 0f;
+        public float RenderedFactsFontSize => _costLabel != null ? _costLabel.fontSize : 0f;
 
         // ── Init ──────────────────────────────────────────────
 

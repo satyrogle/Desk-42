@@ -45,18 +45,26 @@ namespace Desk42.EditorTools
             var prefab = PrefabUtility.LoadPrefabContents(path);
             try
             {
+                // At the 960x600 minimum target, a 140x200 reference card
+                // occupies roughly 77x110 physical pixels. Give the projected
+                // consequence the only large type on the face; the remaining
+                // labels are supporting metadata.
                 ConfigureLabel(prefab.transform.Find("NameLabel"),
-                    new Vector2(0, -8), new Vector2(-12, 46), 15,
-                    FontStyles.Bold, TextAlignmentOptions.Top);
+                    new Vector2(0, -8), new Vector2(-14, 28), 11,
+                    FontStyles.Bold, TextAlignmentOptions.Top,
+                    new Color(0.14f, 0.19f, 0.18f, 0.82f));
                 ConfigureLabel(prefab.transform.Find("TypeLabel"),
-                    new Vector2(0, -58), new Vector2(-14, 78), 13,
-                    FontStyles.Bold, TextAlignmentOptions.Center);
+                    new Vector2(0, -38), new Vector2(-14, 100), 16,
+                    FontStyles.Bold, TextAlignmentOptions.Center,
+                    new Color(0.07f, 0.23f, 0.19f, 1f));
                 ConfigureLabel(prefab.transform.Find("FatigueLabel"),
-                    new Vector2(0, 45), new Vector2(-12, 28), 11,
-                    FontStyles.Bold, TextAlignmentOptions.Center);
+                    new Vector2(0, 40), new Vector2(-14, 20), 9,
+                    FontStyles.Normal, TextAlignmentOptions.Center,
+                    new Color(0.55f, 0.24f, 0.20f, 0.82f));
                 ConfigureLabel(prefab.transform.Find("CostLabel"),
-                    new Vector2(0, 12), new Vector2(-12, 30), 13,
-                    FontStyles.Bold, TextAlignmentOptions.Center);
+                    new Vector2(0, 12), new Vector2(-14, 20), 10,
+                    FontStyles.Normal, TextAlignmentOptions.Center,
+                    new Color(0.36f, 0.29f, 0.13f, 0.82f));
                 EnsurePunchCardDecoration(prefab);
 
                 PrefabUtility.SaveAsPrefabAsset(prefab, path);
@@ -71,7 +79,7 @@ namespace Desk42.EditorTools
 
         private static void ConfigureLabel(Transform labelTransform,
             Vector2 anchoredPosition, Vector2 sizeDelta, float fontSize,
-            FontStyles fontStyle, TextAlignmentOptions alignment)
+            FontStyles fontStyle, TextAlignmentOptions alignment, Color color)
         {
             if (labelTransform == null) return;
             var rt = labelTransform.GetComponent<RectTransform>();
@@ -86,6 +94,7 @@ namespace Desk42.EditorTools
                 label.fontSize = fontSize;
                 label.fontStyle = fontStyle;
                 label.alignment = alignment;
+                label.color = color;
                 label.enableWordWrapping = true;
                 label.overflowMode = TextOverflowModes.Truncate;
             }
