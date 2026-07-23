@@ -198,7 +198,18 @@ namespace Desk42.Tests.PlayMode
             Assert.IsTrue(presenter.IsPresenting);
             CanvasGroup inputShield =
                 host.GetComponentInChildren<CanvasGroup>();
+            if (inputShield == null)
+            {
+                inputShield = Resources
+                    .FindObjectsOfTypeAll<CanvasGroup>()
+                    .FirstOrDefault(candidate =>
+                        candidate.gameObject.name
+                            == "EliasProcedureReceiptCanvas");
+            }
             Assert.IsNotNull(inputShield);
+            Assert.IsNull(
+                inputShield.transform.parent,
+                "Protected receipt must be a root screen-space canvas.");
             Assert.IsTrue(inputShield.blocksRaycasts);
 
             float deadline = Time.realtimeSinceStartup + 2f;

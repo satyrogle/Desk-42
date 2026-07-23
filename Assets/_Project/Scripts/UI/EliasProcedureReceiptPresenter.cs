@@ -212,6 +212,16 @@ namespace Desk42.UI
                 _root.SetActive(false);
         }
 
+        private void OnDestroy()
+        {
+            // The screen-space receipt is intentionally a scene-root canvas so
+            // a zero-sized overlay owner cannot clip it. Own its cleanup
+            // explicitly because it is not a transform child.
+            if (_root != null)
+                Destroy(_root);
+            _root = null;
+        }
+
         public void Present(AppliedEliasProcedure result)
         {
             EliasProcedureReceiptBeat[] beats =
@@ -303,7 +313,10 @@ namespace Desk42.UI
                 typeof(GraphicRaycaster),
                 typeof(CanvasGroup),
                 typeof(Image));
-            _root.transform.SetParent(transform, false);
+            // A ScreenSpaceOverlay canvas must not inherit the dimensions of
+            // ShiftFeedbackOverlay's marker transform. Keeping it as a scene
+            // root makes the semantic receipt occupy the actual screen.
+            _root.transform.SetParent(null, false);
             var rootRect = _root.GetComponent<RectTransform>();
             rootRect.anchorMin = Vector2.zero;
             rootRect.anchorMax = Vector2.one;

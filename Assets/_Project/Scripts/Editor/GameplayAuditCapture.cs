@@ -109,7 +109,7 @@ namespace Desk42.Editor
                     scenes = scenePaths,
                     locationPathName = outputPath,
                     target = BuildTarget.StandaloneWindows64,
-                    options = BuildOptions.None
+                    options = BuildOptions.Development
                 });
             }
             finally

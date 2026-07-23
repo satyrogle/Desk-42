@@ -43,6 +43,17 @@ namespace Desk42.UI
         private RectTransform _buttonRow;
         private bool _built;
 
+        public string RenderedStatus
+            => _statusLabel != null ? _statusLabel.text : string.Empty;
+
+        private void OnEnable()
+            => RumorMill.OnEliasProcedureApplied +=
+                HandleProcedureApplied;
+
+        private void OnDisable()
+            => RumorMill.OnEliasProcedureApplied -=
+                HandleProcedureApplied;
+
         public static EliasProcedurePanel Ensure(
             EncounterManager encounter, Transform parent)
         {
@@ -312,6 +323,24 @@ namespace Desk42.UI
             Refresh();
             _statusLabel.text =
                 $"PROCEDURE NOT APPLIED - {FormatFailure(failureReason)}";
+        }
+
+        private void HandleProcedureApplied(
+            EliasProcedureAppliedEvent e)
+        {
+            if (_claim == null
+                || !string.Equals(
+                    _claim.AuthoredAppearanceKey,
+                    e.Result.AppearanceKey,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    _claim.ClientVariantId,
+                    e.Result.StableClaimantId,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+            Refresh();
         }
 
         private static string BuildPreviewCopy(

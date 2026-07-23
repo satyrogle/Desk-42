@@ -74,8 +74,11 @@ namespace Desk42.Core
         // Loaded from disk in Boot and held for the session
         public MetaProgressData Meta { get; private set; }
 
-#if UNITY_EDITOR
-        /// <summary>Replaces session meta for isolated editor tests.</summary>
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Replaces session meta for isolated editor tests and opt-in
+        /// development-build evidence capture.
+        /// </summary>
         public void SetMetaForTesting(MetaProgressData meta)
             => Meta = meta ?? new MetaProgressData();
 #endif

@@ -91,6 +91,28 @@ namespace Desk42.UI
             cb?.Invoke(inverted);
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Clears unrelated modal noise during opt-in visual automation while
+        /// still executing the real dilemma callback. Normal player input does
+        /// not use this path.
+        /// </summary>
+        public bool TryResolvePendingForAutomation(bool choseEthical)
+        {
+            if (_pendingEthical == null
+                && _pendingBureaucratic == null)
+            {
+                return false;
+            }
+
+            if (choseEthical)
+                OnEthicalClicked();
+            else
+                OnBureaucraticClicked();
+            return true;
+        }
+#endif
+
         // ── UI Construction ───────────────────────────────────
 
         private void BuildUI()
