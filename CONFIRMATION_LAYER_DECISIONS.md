@@ -31,6 +31,20 @@ This document is the required consumer decision table for the confirmation-layer
 
 Authored moral dilemmas remain a separate system. This pass removes inferred morality from claim dispositions; it does not silently remap dilemma choices.
 
+## Authored-claim copy contract
+
+Authored procedures remain separate from `ClaimResolutionKind`. They may alter
+records or evidence before the player chooses Approve, Deny, or Liquify, but
+they do not introduce a fourth disposition.
+
+Player-facing authored-claim feedback reports the action and its applied
+consequence. It does not use `correct`, `corrected`, `valid choice`, `better
+choice`, `optimal`, `mistake`, `wasted`, `penalty`, or `should have` to grade
+the player.
+
+The Five-Shift Proof Spine's authoritative lifecycle, copy, and test protocol
+is defined in `FIVE_SHIFT_PROOF_SPINE_TECHNICAL_ADDENDUM.md`.
+
 ## Applied-result schemas
 
 `AppliedCardResolution` owns one completed card attempt: card/client identity, outcome and reason code, state before/after, actual signed resource deltas, fatigue before/after, and the already-resolved cascade packet.
