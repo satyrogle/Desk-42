@@ -68,6 +68,10 @@ namespace Desk42.Core
         [Tooltip("Flat credit bonus awarded when two consecutive resolved claims share a tag category.")]
         [SerializeField] private int _sequentialSynergyBonus = 3;
 
+        [Header("Cross-Claim Deduction")]
+        [Tooltip("Flat credit bonus awarded when two consecutive resolved claims share a client species.")]
+        [SerializeField] private int _crossClaimBonus = 5;
+
         [Header("UI")]
         [Tooltip("The passive-aggressive UI controller in this scene.")]
         [SerializeField] private PassiveAggressiveUIController _uiController;
@@ -599,8 +603,11 @@ namespace Desk42.Core
 
         // ── Cross-Claim Deduction ────────────────────────────
 
-        private const int CROSS_CLAIM_BONUS = 5;
-
+        /// <summary>
+        /// Awards a flat credit bonus when the claim being resolved shares a
+        /// client species with the previously resolved claim (claim N-1).
+        /// Called before the claim is moved into ResolvedClaims so [^1] is N-1.
+        /// </summary>
         private void AwardCrossClaimBonus(
             ActiveClaimData justResolved,
             RunStateController run,
@@ -611,8 +618,8 @@ namespace Desk42.Core
             var lastClaim = runData.ResolvedClaims[^1];
             if (lastClaim.ClientSpeciesId != justResolved.ClientSpeciesId) return;
 
-            run.AddCredits(CROSS_CLAIM_BONUS);
-            Debug.Log($"[ShiftManager] Cross-claim deduction: +{CROSS_CLAIM_BONUS} credits " +
+            run.AddCredits(_crossClaimBonus);
+            Debug.Log($"[ShiftManager] Cross-claim deduction: +{_crossClaimBonus} credits " +
                       $"(same species: {justResolved.ClientSpeciesId}).");
         }
 

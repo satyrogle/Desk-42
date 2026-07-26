@@ -9,6 +9,9 @@ namespace Desk42.Core
         private const float NOISE_DEFAULT   = 20f;
         private const float NOISE_DRIFT_RATE = 1.0f;
 
+        // Fire drill evacuates the floor: temperature normalises, alarm dominates.
+        private const float FIRE_DRILL_NOISE = 80f;
+
         private static float _temperature = TEMP_DEFAULT;
         private static float _noiseLevel  = NOISE_DEFAULT;
 
@@ -33,7 +36,7 @@ namespace Desk42.Core
                     break;
                 case OfficeHazardType.FireDrill:
                     _temperature = TEMP_DEFAULT;
-                    _noiseLevel  = Mathf.Min(80f, 100f);
+                    _noiseLevel  = FIRE_DRILL_NOISE;
                     break;
                 case OfficeHazardType.MandatoryMeeting:
                     ModifyNoise(15f);

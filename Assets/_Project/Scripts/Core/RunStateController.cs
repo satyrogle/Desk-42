@@ -56,6 +56,11 @@ namespace Desk42.Core
         {
             SeedEngine.Init(masterSeed);
 
+            // Office temperature/noise are static and not persisted in RunData,
+            // so they must be reset explicitly or the previous run's environment
+            // leaks into this one for as long as the process lives.
+            OfficeEnvironmentState.Reset();
+
             _data = new RunData
             {
                 MasterSeed       = masterSeed,
@@ -99,6 +104,10 @@ namespace Desk42.Core
         {
             _data = savedData ?? throw new ArgumentNullException(nameof(savedData));
             SeedEngine.Init(_data.MasterSeed);
+
+            // Not persisted in RunData — a resumed run starts from a neutral
+            // office rather than inheriting whatever was in memory.
+            OfficeEnvironmentState.Reset();
 
             BuildArchetypeAndDeck(_data.ArchetypeId, meta, restoreFromSave: true);
             BuildMoralInjurySystem(meta);
