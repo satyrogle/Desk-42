@@ -291,13 +291,13 @@ namespace Desk42.Tests.EditMode
             var shift = ShiftManagerWithTags(
                 Tag("tag-current", "CurrentCategory"));
 
+            // RETARGETED: bonus authority moved out of ShiftManager and into
+            // the commit transaction (ClaimConsequencePolicy). The behavioural
+            // contract is unchanged; only its owner is.
             Assert.DoesNotThrow(() =>
-            {
-                InvokeBonus(
-                    AwardCrossClaimBonus, shift, current, run, data);
-                InvokeBonus(
-                    AwardSequentialSynergyBonus, shift, current, run, data);
-            });
+                Encounter.ClaimConsequencePolicy.Apply(
+                    current, run, data, Meta,
+                    new Encounter.ClaimBonusRates(5, 3, _ => "CurrentCategory")));
             Assert.AreEqual(0, data.CorporateCredits,
                 "A sole current claim must not be compared with itself.");
         }
@@ -316,19 +316,34 @@ namespace Desk42.Tests.EditMode
             data.ResolvedClaims.Add(previous);
             data.ResolvedClaims.Add(current);
             var run = Controller(data);
-            var shift = ShiftManagerWithTags(previousTag, currentTag);
+            // RETARGETED to ClaimConsequencePolicy — see the note above.
+            var mismatchedRates = new Encounter.ClaimBonusRates(5, 3,
+                id => id == "tag-previous" ? previousTag.TagCategory : currentTag.TagCategory);
 
-            InvokeBonus(AwardCrossClaimBonus, shift, current, run, data);
-            InvokeBonus(AwardSequentialSynergyBonus, shift, current, run, data);
+            Encounter.ClaimConsequencePolicy.Apply(
+                current, run, data, Meta, mismatchedRates);
             Assert.AreEqual(0, data.CorporateCredits,
                 "Different previous/current claims must not earn a self-match bonus.");
 
-            previous.ClientSpeciesId = current.ClientSpeciesId;
-            previousTag.TagCategory = currentTag.TagCategory;
-            InvokeBonus(AwardCrossClaimBonus, shift, current, run, data);
-            InvokeBonus(AwardSequentialSynergyBonus, shift, current, run, data);
+            // The matching case needs a FRESH pair: the exact-once repair makes
+            // ConsequencesApplied durable, so re-evaluating the same committed
+            // claim is impossible by design. That is the fix working, not a
+            // weakened assertion.
+            var matchPrevious = Claim("CLM-PREVIOUS-2", species: "species-z");
+            matchPrevious.AnomalyTagIds = new[] { "tag-z1" };
+            var matchCurrent = Claim("CLM-CURRENT-2", species: "species-z");
+            matchCurrent.AnomalyTagIds = new[] { "tag-z2" };
 
-            Assert.AreEqual(8, data.CorporateCredits,
+            var matchData = RunData();
+            matchData.ResolvedClaims.Add(matchPrevious);
+            matchData.ResolvedClaims.Add(matchCurrent);
+            var matchRun = Controller(matchData);
+
+            Encounter.ClaimConsequencePolicy.Apply(
+                matchCurrent, matchRun, matchData, Meta,
+                new Encounter.ClaimBonusRates(5, 3, _ => "SharedCategory"));
+
+            Assert.AreEqual(8, matchData.CorporateCredits,
                 "The actual previous claim should award +5 species and +3 category.");
         }
 
