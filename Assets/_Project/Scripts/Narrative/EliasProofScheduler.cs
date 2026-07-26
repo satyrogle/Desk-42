@@ -244,17 +244,40 @@ namespace Desk42.Core
                     "renumbered to 18A. Choose a record procedure, then " +
                     "disposition the claim.";
             }
+            // Shift 5 copy states the record facts and lets them carry the
+            // attribution. It must never tell the player that their Shift 2
+            // choice caused this — the record evidence is the attribution
+            // channel. Facts derive from the persisted branch, never the name.
+            EliasShift5State shift5 = EliasShift5Policy.ForBranch(branch);
+
             return branch switch
             {
                 EliasShift2Branch.NormalisedAddress =>
-                    "The 18A amendment now conflicts with M. Venn's " +
-                    "independent household registration.",
+                    "REGISTERED CLASS: 18A\n" +
+                    $"SOURCE RECORD: {shift5.SourceRecord}\n" +
+                    "STATUS: VALID\n" +
+                    "DEPENDENT ACTION: ACTIVE\n" +
+                    "REVERSAL AUTHORITY: NOT AVAILABLE AT THIS DESK\n\n" +
+                    "The registration is internally consistent and has been " +
+                    "actioned. Elias Venn is present regarding the dependent " +
+                    "action. He says someone made an exception.",
+
                 EliasShift2Branch.LegacyException =>
-                    "The retained 18B exception has returned Elias's " +
-                    "household file without clarification.",
+                    "LEGACY STATUS: 18B\n" +
+                    "EXCEPTION RETAINED\n" +
+                    "AUTOMATED ACTION: NOT AUTHORISED\n\n" +
+                    "The retained exception blocks automated processing. " +
+                    "Elias's household file returns to this desk for manual " +
+                    "handling, again, without clarification.",
+
                 EliasShift2Branch.PhysicalVerification =>
-                    "Physical verification remains open for Calder House. " +
-                    "Elias's claim is held in the resulting backlog.",
+                    "VERIFICATION STATUS: OPEN\n" +
+                    "RECORD CLASSIFICATION: NOT FINAL\n" +
+                    "DEPENDENT ACTION: HELD\n\n" +
+                    "Physical verification for Calder House is unresolved, so " +
+                    "the classification cannot be relied upon. Elias's claim " +
+                    "remains held in the resulting backlog.",
+
                 _ => throw new InvalidOperationException(
                     "Shift 5 copy requires an Elias branch."),
             };
