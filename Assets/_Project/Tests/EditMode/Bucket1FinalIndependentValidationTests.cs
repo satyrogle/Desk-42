@@ -32,14 +32,6 @@ namespace Desk42.Tests.EditMode
             typeof(GameManager).GetField(
                 "<Run>k__BackingField", InstancePrivate);
 
-        private static readonly MethodInfo AwardCrossClaimBonus =
-            typeof(ShiftManager).GetMethod(
-                "AwardCrossClaimBonus", InstancePrivate);
-
-        private static readonly MethodInfo AwardSequentialSynergyBonus =
-            typeof(ShiftManager).GetMethod(
-                "AwardSequentialSynergyBonus", InstancePrivate);
-
         private static readonly MethodInfo HandleClaimResolved =
             typeof(ShiftManager).GetMethod(
                 "HandleClaimResolved", InstancePrivate);
@@ -285,66 +277,79 @@ namespace Desk42.Tests.EditMode
         {
             var current = Claim("CLM-FIRST", species: "same_species");
             current.AnomalyTagIds = new[] { "tag-current" };
-            var data = RunData();
-            data.ResolvedClaims.Add(current);
+            var data = RunData(activeClaim: current);
             var run = Controller(data);
             var shift = ShiftManagerWithTags(
                 Tag("tag-current", "CurrentCategory"));
+            Present(current, data, Meta);
 
-            // RETARGETED: bonus authority moved out of ShiftManager and into
-            // the commit transaction (ClaimConsequencePolicy). The behavioural
-            // contract is unchanged; only its owner is.
+            CommitResult result = default;
             Assert.DoesNotThrow(() =>
-                Encounter.ClaimConsequencePolicy.Apply(
-                    current, run, data, Meta,
-                    new Encounter.ClaimBonusRates(5, 3, _ => "CurrentCategory")));
-            Assert.AreEqual(0, data.CorporateCredits,
-                "A sole current claim must not be compared with itself.");
+                result = CommitWithBonusRates(
+                    current, ClaimResolutionKind.Approve,
+                    run, Meta, shift.BonusRates));
+
+            Assert.IsTrue(result.Committed,
+                "The first claim must commit successfully.");
+            Assert.AreEqual(12, data.CorporateCredits,
+                "A sole current claim must receive only its base outcome, " +
+                "not a previous-claim bonus from comparing itself.");
+            Assert.AreEqual(1, data.ResolvedClaims.Count);
+            Assert.AreSame(current, data.ResolvedClaims[0]);
+            Assert.IsTrue(current.ConsequencesApplied);
         }
 
         [Test]
         public void BonusIndex_ComparesActualPreviousClaimRatherThanCurrentClaim()
         {
-            var previous = Claim("CLM-PREVIOUS", species: "species-a");
-            previous.AnomalyTagIds = new[] { "tag-previous" };
-            var current = Claim("CLM-CURRENT", species: "species-b");
-            current.AnomalyTagIds = new[] { "tag-current" };
+            var nonMatchingPrevious =
+                ResolvedClaim("CLM-NONMATCH-PREVIOUS", "species-a",
+                    "tag-previous-nonmatch");
+            var nonMatchingCurrent =
+                Claim("CLM-NONMATCH-CURRENT", species: "species-b");
+            nonMatchingCurrent.AnomalyTagIds =
+                new[] { "tag-current-nonmatch" };
+            var nonMatchingData = RunData(activeClaim: nonMatchingCurrent);
+            nonMatchingData.ResolvedClaims.Add(nonMatchingPrevious);
+            var nonMatchingRun = Controller(nonMatchingData);
+            var nonMatchingShift = ShiftManagerWithTags(
+                Tag("tag-previous-nonmatch", "Category-A"),
+                Tag("tag-current-nonmatch", "Category-B"));
+            Present(nonMatchingCurrent, nonMatchingData, Meta);
 
-            var previousTag = Tag("tag-previous", "Category-A");
-            var currentTag = Tag("tag-current", "Category-B");
-            var data = RunData();
-            data.ResolvedClaims.Add(previous);
-            data.ResolvedClaims.Add(current);
-            var run = Controller(data);
-            // RETARGETED to ClaimConsequencePolicy — see the note above.
-            var mismatchedRates = new Encounter.ClaimBonusRates(5, 3,
-                id => id == "tag-previous" ? previousTag.TagCategory : currentTag.TagCategory);
+            var nonMatchingCommit = CommitWithBonusRates(
+                nonMatchingCurrent, ClaimResolutionKind.Approve,
+                nonMatchingRun, Meta, nonMatchingShift.BonusRates);
 
-            Encounter.ClaimConsequencePolicy.Apply(
-                current, run, data, Meta, mismatchedRates);
-            Assert.AreEqual(0, data.CorporateCredits,
-                "Different previous/current claims must not earn a self-match bonus.");
+            Assert.IsTrue(nonMatchingCommit.Committed);
+            Assert.AreEqual(12, nonMatchingData.CorporateCredits,
+                "Different previous/current claims must not earn the +5/+3 " +
+                "that a current-vs-itself comparison would fabricate.");
 
-            // The matching case needs a FRESH pair: the exact-once repair makes
-            // ConsequencesApplied durable, so re-evaluating the same committed
-            // claim is impossible by design. That is the fix working, not a
-            // weakened assertion.
-            var matchPrevious = Claim("CLM-PREVIOUS-2", species: "species-z");
-            matchPrevious.AnomalyTagIds = new[] { "tag-z1" };
-            var matchCurrent = Claim("CLM-CURRENT-2", species: "species-z");
-            matchCurrent.AnomalyTagIds = new[] { "tag-z2" };
+            var matchingMeta = new MetaProgressData();
+            var matchingPrevious =
+                ResolvedClaim("CLM-MATCH-PREVIOUS", "same-species",
+                    "tag-previous-match");
+            var matchingCurrent =
+                Claim("CLM-MATCH-CURRENT", species: "same-species");
+            matchingCurrent.AnomalyTagIds =
+                new[] { "tag-current-match" };
+            var matchingData = RunData(activeClaim: matchingCurrent);
+            matchingData.ResolvedClaims.Add(matchingPrevious);
+            var matchingRun = Controller(matchingData);
+            var matchingShift = ShiftManagerWithTags(
+                Tag("tag-previous-match", "SharedCategory"),
+                Tag("tag-current-match", "SharedCategory"));
+            Present(matchingCurrent, matchingData, matchingMeta);
 
-            var matchData = RunData();
-            matchData.ResolvedClaims.Add(matchPrevious);
-            matchData.ResolvedClaims.Add(matchCurrent);
-            var matchRun = Controller(matchData);
+            var matchingCommit = CommitWithBonusRates(
+                matchingCurrent, ClaimResolutionKind.Approve,
+                matchingRun, matchingMeta, matchingShift.BonusRates);
 
-            Encounter.ClaimConsequencePolicy.Apply(
-                matchCurrent, matchRun, matchData, Meta,
-                new Encounter.ClaimBonusRates(5, 3, _ => "SharedCategory"));
-
-            Assert.AreEqual(8, matchData.CorporateCredits,
-                "The actual previous claim should award +5 species and +3 category.");
+            Assert.IsTrue(matchingCommit.Committed);
+            Assert.AreEqual(20, matchingData.CorporateCredits,
+                "The actual previous/current pair should award the base 12, " +
+                "+5 matching-species bonus and +3 matching-category bonus exactly once.");
         }
 
         [Test]
@@ -370,6 +375,12 @@ namespace Desk42.Tests.EditMode
             InvokeHandleClaimResolved(shift, new ClaimResolvedEvent(result.Applied));
             int creditsAfterCurrent = data.CorporateCredits;
             int memosAfterCurrent = data.GeneratedMemoIds.Count;
+
+            InvokeHandleClaimResolved(shift, new ClaimResolvedEvent(result.Applied));
+            Assert.AreEqual(creditsAfterCurrent, data.CorporateCredits,
+                "A duplicate callback for the committed ClaimId has no " +
+                "persistent consequence authority.");
+            Assert.AreEqual(memosAfterCurrent, data.GeneratedMemoIds.Count);
 
             var stalePreviousResult = new AppliedClaimResolution(
                 previous.ClaimId,
@@ -435,6 +446,171 @@ namespace Desk42.Tests.EditMode
                 Meta.GetTotalVisits(current.ClientVariantId));
         }
 
+        [Test]
+        public void ConsequencesApplied_PersistsAcrossReloadAndIsScopedPerEncounter()
+        {
+            SeedEngine.Init(7101);
+            var previous = ResolvedClaim(
+                "CLM-CONSEQUENCE-PREVIOUS", "same-species", "shared-tag");
+            var current = Claim(
+                "CLM-CONSEQUENCE-CURRENT",
+                "consequence-current",
+                "same-species");
+            current.AnomalyTagIds = new[] { "shared-tag" };
+            var data = RunData(activeClaim: current);
+            data.ResolvedClaims.Add(previous);
+            var run = Controller(data);
+            Present(current, data, Meta);
+
+            var committed = Commit(
+                current, ClaimResolutionKind.Approve, run, Meta);
+            int creditsAfterCommit = data.CorporateCredits;
+            int memosAfterCommit = data.GeneratedMemoIds.Count;
+
+            Assert.IsTrue(committed.Committed);
+            Assert.AreEqual(20, creditsAfterCommit,
+                "The committed encounter should receive base 12 plus +5/+3 once.");
+            Assert.IsTrue(current.ConsequencesApplied);
+
+            var loaded = SaveSystem.LoadRun();
+            var loadedMeta = SaveSystem.LoadMeta();
+            Assert.IsTrue(loaded.ActiveClaim.ConsequencesApplied,
+                "The resolved ActiveClaim copy must persist the exact-once marker.");
+            Assert.IsTrue(loaded.ResolvedClaims[^1].ConsequencesApplied,
+                "The resolved-history copy must persist the exact-once marker.");
+
+            var resumed = Controller(loaded);
+            var duplicate = Commit(
+                loaded.ActiveClaim, ClaimResolutionKind.Approve,
+                resumed, loadedMeta);
+
+            Assert.IsFalse(duplicate.Committed);
+            Assert.AreEqual(CommitRejection.AlreadyCommitted, duplicate.Rejection);
+            Assert.AreEqual(creditsAfterCommit, loaded.CorporateCredits);
+            Assert.AreEqual(memosAfterCommit, loaded.GeneratedMemoIds.Count);
+
+            loaded.ActiveClaim = null;
+            var next = Claim(
+                "CLM-CONSEQUENCE-NEXT",
+                "consequence-next",
+                "same-species");
+            next.AnomalyTagIds = new[] { "shared-tag" };
+            loaded.ActiveClaim = next;
+            Present(next, loaded, loadedMeta);
+
+            Assert.IsFalse(next.ConsequencesApplied,
+                "A new encounter must not inherit the previous claim's marker.");
+
+            int beforeNext = loaded.CorporateCredits;
+            var nextCommit = Commit(
+                next, ClaimResolutionKind.Deny, resumed, loadedMeta);
+
+            Assert.IsTrue(nextCommit.Committed);
+            Assert.IsTrue(next.ConsequencesApplied);
+            Assert.AreEqual(beforeNext + 8, loaded.CorporateCredits,
+                "The legitimate next encounter must apply its own +5/+3 consequences.");
+        }
+
+        [Test]
+        public void ConsequencesApplied_LegacyFalseDoesNotReplayHistoricalConsequences()
+        {
+            SeedEngine.Init(7102);
+            var legacyResolved = Claim(
+                "CLM-LEGACY-RESOLVED",
+                "legacy-resolved",
+                "legacy-species");
+            legacyResolved.AnomalyTagIds = new[] { "legacy-tag" };
+            legacyResolved.IsResolved = true;
+            legacyResolved.ResolutionKind = ClaimResolutionKind.Approve;
+            Assert.IsFalse(legacyResolved.ConsequencesApplied,
+                "This models the additive default in an older save.");
+
+            var current = Claim(
+                "CLM-POST-LEGACY",
+                "post-legacy",
+                "different-species");
+            current.AnomalyTagIds = new[] { "different-tag" };
+            var data = RunData(activeClaim: current);
+            data.ResolvedClaims.Add(legacyResolved);
+            var run = Controller(data);
+            Present(current, data, Meta);
+
+            var committed = Commit(
+                current, ClaimResolutionKind.Deny, run, Meta);
+
+            Assert.IsTrue(committed.Committed);
+            Assert.AreEqual(0, data.CorporateCredits,
+                "Loading an old false marker must not replay an old claim's bonus.");
+            Assert.IsFalse(legacyResolved.ConsequencesApplied,
+                "The historical claim must not be retroactively reprocessed.");
+            Assert.IsTrue(current.ConsequencesApplied,
+                "Only the newly committed encounter owns this transaction.");
+
+            var loaded = SaveSystem.LoadRun();
+            Assert.IsFalse(loaded.ResolvedClaims[0].ConsequencesApplied);
+            Assert.IsTrue(loaded.ResolvedClaims[1].ConsequencesApplied);
+        }
+
+        [Test]
+        public void MemoState_IsDurableBeforePresentationAndDuplicateSafe()
+        {
+            SeedEngine.Init(7103);
+            var claim = Claim(
+                "CLM-MEMO-EXACT-ONCE",
+                "memo-claimant",
+                "anomalous_adjacent");
+            claim.AnomalyTagIds = new[]
+            {
+                "memo-tag-1", "memo-tag-2", "memo-tag-3", "memo-tag-4"
+            };
+            var data = RunData(activeClaim: claim);
+            var run = Controller(data);
+            Present(claim, data, Meta);
+
+            Action<MemoGeneratedEvent> losePresentation =
+                _ => throw new InvalidOperationException(
+                    "Simulated process loss after durable save.");
+            RumorMill.OnMemoGenerated += losePresentation;
+
+            Assert.Throws<InvalidOperationException>(() =>
+                Commit(claim, ClaimResolutionKind.Approve, run, Meta));
+
+            RumorMill.OnMemoGenerated -= losePresentation;
+            int creditsAfterCommit = data.CorporateCredits;
+            var immediateDuplicate = Commit(
+                claim, ClaimResolutionKind.Approve, run, Meta);
+            Assert.IsFalse(immediateDuplicate.Committed);
+            Assert.AreEqual(
+                CommitRejection.AlreadyCommitted,
+                immediateDuplicate.Rejection);
+            Assert.AreEqual(creditsAfterCommit, data.CorporateCredits);
+            Assert.AreEqual(1, data.GeneratedMemoIds.Count);
+            Assert.AreEqual(1, Meta.ConspiracyBoard.Fragments.Count);
+
+            // The event is after PersistQuietly. Even though presentation was
+            // interrupted, both halves of persistent memo state must reload.
+            var loaded = SaveSystem.LoadRun();
+            var loadedMeta = SaveSystem.LoadMeta();
+            Assert.AreEqual(1, loaded.GeneratedMemoIds.Count);
+            Assert.AreEqual(1, loadedMeta.ConspiracyBoard.Fragments.Count);
+            Assert.AreEqual(
+                loaded.GeneratedMemoIds[0],
+                loadedMeta.ConspiracyBoard.Fragments[0].FragmentId);
+            Assert.IsTrue(loaded.ActiveClaim.ConsequencesApplied);
+
+            var resumed = Controller(loaded);
+            int creditsBeforeDuplicate = loaded.CorporateCredits;
+            var duplicate = Commit(
+                loaded.ActiveClaim, ClaimResolutionKind.Approve,
+                resumed, loadedMeta);
+
+            Assert.IsFalse(duplicate.Committed);
+            Assert.AreEqual(CommitRejection.AlreadyCommitted, duplicate.Rejection);
+            Assert.AreEqual(creditsBeforeDuplicate, loaded.CorporateCredits);
+            Assert.AreEqual(1, loaded.GeneratedMemoIds.Count);
+            Assert.AreEqual(1, loadedMeta.ConspiracyBoard.Fragments.Count);
+        }
+
         private GameManager GameManagerWithRun(RunData data)
         {
             if (GameManager.Instance != null)
@@ -492,15 +668,31 @@ namespace Desk42.Tests.EditMode
             return host.AddComponent<T>();
         }
 
-        private static void InvokeBonus(
-            MethodInfo method,
-            ShiftManager shift,
-            ActiveClaimData current,
-            RunStateController run,
-            RunData data)
+        private static ActiveClaimData ResolvedClaim(
+            string claimId,
+            string species,
+            string anomalyTagId)
         {
-            Assert.IsNotNull(method);
-            method.Invoke(shift, new object[] { current, run, data });
+            var claim = Claim(claimId, species: species);
+            claim.AnomalyTagIds = new[] { anomalyTagId };
+            claim.IsResolved = true;
+            claim.ResolutionKind = ClaimResolutionKind.Approve;
+            claim.ConsequencesApplied = true;
+            return claim;
+        }
+
+        private static CommitResult CommitWithBonusRates(
+            ActiveClaimData claim,
+            ClaimResolutionKind kind,
+            RunStateController run,
+            MetaProgressData meta,
+            ClaimBonusRates bonusRates)
+        {
+            var outcome = new ClaimResolutionOutcome(
+                kind, creditsEarned: 12, sanityCost: 3f, soulCost: 1f);
+            return EncounterCommitService.CommitEncounterResult(
+                claim, outcome, run, meta,
+                proof: null, eliasContent: null, bonusRates);
         }
 
         private static void InvokeHandleClaimResolved(

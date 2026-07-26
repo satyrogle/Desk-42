@@ -91,7 +91,7 @@ namespace Desk42.Core
         /// owns applying them.
         /// </summary>
         public Encounter.ClaimBonusRates BonusRates
-            => new(_crossClaimBonus, _sequentialSynergyBonus);
+            => new(_crossClaimBonus, _sequentialSynergyBonus, GetTagCategory);
 
         // ── State ─────────────────────────────────────────────
 

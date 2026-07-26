@@ -34,6 +34,7 @@ namespace Desk42.Tests.EditMode
             _saveDirectory = Path.Combine(
                 Path.GetTempPath(), $"Desk42_Bucket1_{Guid.NewGuid():N}");
             SaveSystem.SetSaveDirectoryOverrideForTests(_saveDirectory);
+            SeedEngine.Init(4242);
             Meta = new MetaProgressData();
         }
 

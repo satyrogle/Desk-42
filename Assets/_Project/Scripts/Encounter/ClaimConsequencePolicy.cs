@@ -37,10 +37,20 @@ namespace Desk42.Encounter
         public readonly int CrossClaim;
         public readonly int SequentialSynergy;
 
-        public ClaimBonusRates(int crossClaim, int sequentialSynergy)
+        /// <summary>
+        /// Maps an anomaly tag id to its category. Sequential synergy matches on
+        /// CATEGORY, not tag id — two different tags in the same category must
+        /// still earn the bonus. Supplied by ShiftManager, which owns the
+        /// AnomalyTagData assets. Null falls back to raw id comparison.
+        /// </summary>
+        public readonly System.Func<string, string> TagCategoryResolver;
+
+        public ClaimBonusRates(int crossClaim, int sequentialSynergy,
+            System.Func<string, string> tagCategoryResolver = null)
         {
-            CrossClaim        = crossClaim;
-            SequentialSynergy = sequentialSynergy;
+            CrossClaim          = crossClaim;
+            SequentialSynergy   = sequentialSynergy;
+            TagCategoryResolver = tagCategoryResolver;
         }
 
         /// <summary>Values matching the ShiftManager inspector defaults.</summary>
@@ -110,7 +120,7 @@ namespace Desk42.Encounter
                               $"for '{committedClaim.ClaimId}'.");
                 }
 
-                if (SharesTagCategory(committedClaim, previous))
+                if (SharesTagCategory(committedClaim, previous, rates.TagCategoryResolver))
                 {
                     synergy = rates.SequentialSynergy;
                     run.AddCredits(synergy);
@@ -169,21 +179,63 @@ namespace Desk42.Encounter
             return fragment.FragmentId;
         }
 
-        private static bool SharesTagCategory(ActiveClaimData a, ActiveClaimData b)
+        /// <summary>
+        /// Matches on tag CATEGORY, mirroring the original ShiftManager rule.
+        /// Comparing raw tag ids would silently narrow the bonus to identical
+        /// tags and drop legitimate same-category pairs.
+        /// </summary>
+        private static bool SharesTagCategory(
+            ActiveClaimData a, ActiveClaimData b,
+            System.Func<string, string> categoryOf)
         {
             if (a?.AnomalyTagIds == null || a.AnomalyTagIds.Length == 0) return false;
             if (b?.AnomalyTagIds == null || b.AnomalyTagIds.Length == 0) return false;
 
             foreach (string tag in a.AnomalyTagIds)
             {
-                if (string.IsNullOrEmpty(tag)) continue;
+                if (string.IsNullOrWhiteSpace(tag)) continue;
+
+                string catA = SafeCategory(categoryOf, tag);
+
                 foreach (string other in b.AnomalyTagIds)
                 {
+                    if (string.IsNullOrWhiteSpace(other)) continue;
+
+                    // The SAME tag necessarily has the same category: category
+                    // is a function of tag, so identity implies category
+                    // equality without needing to resolve it. This is not "raw
+                    // id comparison as the rule" — DIFFERENT tags below still
+                    // require authoritative resolution.
                     if (string.Equals(tag, other, System.StringComparison.Ordinal))
+                        return true;
+
+                    // Different tags: both must resolve, and to the same
+                    // authored category. An unresolved tag contributes nothing,
+                    // so two distinct unknown tags never match each other.
+                    if (string.IsNullOrWhiteSpace(catA)) continue;
+
+                    string catB = SafeCategory(categoryOf, other);
+                    if (string.IsNullOrWhiteSpace(catB)) continue;
+
+                    // Existential: one qualifying pair is enough, and the caller
+                    // awards the synergy once regardless of how many pairs match.
+                    if (string.Equals(catA, catB, System.StringComparison.Ordinal))
                         return true;
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// Resolves a tag's authored category. A resolver that throws on a
+        /// malformed id must not take down an encounter commit, so failure is
+        /// treated as "unresolved", which contributes no match.
+        /// </summary>
+        private static string SafeCategory(
+            System.Func<string, string> categoryOf, string tagId)
+        {
+            try { return categoryOf(tagId); }
+            catch { return null; }
         }
     }
 }
