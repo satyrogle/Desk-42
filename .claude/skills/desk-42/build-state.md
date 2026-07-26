@@ -1,36 +1,51 @@
 # Build state — Desk 42  (keep this current)
 
-Single source of truth for "what actually exists right now." Update it as things land — this is what lets an agent skip re-discovering the project every session. **Reconciled against the live repo 2026-07-21 (playtest session 001, branch `playtest/session-001` @ consolidation merge `a758359`).**
+Single source of truth for "what actually exists right now." Update it as things land — this is what lets an agent skip re-discovering the project every session. **Reconciled against the live repo 2026-07-26 (branch `main` @ `da3f76b` + the environment-reset fix, tag `five-shift-proof-v0.3-validated`).**
 
-## Stack (verified 2026-07-21)
+## Branch topology (2026-07-26)
+- **One shippable line: `main`.** `main`, `origin/main`, and annotated tag `five-shift-proof-v0.3-validated` all point at the validated five-shift proof spine.
+- The old parallel branches (`feat/cli-tooling`, `feat/cocktail-greenfield`, `feat/ff-resolution`, `codex/MCP`, `codex/recover-visual-identity`, `playtest/session-001`) were consolidated into `main` and deleted. Their pre-consolidation tips are preserved as `backup/*` tags — **deleted work is recoverable**.
+- `visa/gate3-desk42-validation-DO-NOT-MERGE` is a deliberately divergent evidence branch (screenshots, build logs, activity CSVs). Not for merging.
+- Two historical worktree folders under `Desk42-worktrees/` remain on disk in detached HEAD (Windows denied deletion). They are inert and represent no active branch.
+
+## Stack (verified 2026-07-26)
 - Unity **2022.3.62f3** LTS, **URP 14.0.12**, **Input System 1.14.2**, Newtonsoft JSON, Addressables, Cinemachine, TextMeshPro, Steamworks (openupm).
-- **174 C# scripts under `Assets/_Project/Scripts/` + 9 test scripts** (~31.5k LOC runtime). Top-level script folders: 26 (the 24 `Desk42.*` namespaces plus `Debug/` dev-CLI and `Modes/`, both from the cascade/cli merges). Runtime = single asmdef `Assets/_Project/Scripts/Desk42.Core.asmdef`; tests `Desk42.Tests.EditMode` / `.PlayMode`.
+- **197 C# scripts under `Assets/_Project/Scripts/`** (~40.5k LOC runtime) **+ 26 test scripts** (22 EditMode, 4 PlayMode). Top-level script folders: 24. Runtime = single asmdef `Assets/_Project/Scripts/Desk42.Core.asmdef`; tests `Desk42.Tests.EditMode` / `.PlayMode`.
 - Project under `Assets/_Project/` (`Scripts/`, `ScriptableObjects/`, `Prefabs/`, `Art/`, `Audio/`, `Scenes/`, `Tests/`).
 
-## Compile status (verified 2026-07-21, editor boot on `a758359`)
-- **0 errors, 0 CS warnings** in Editor.log for the full script compilation.
-- One editor notice: "assemblies without any scripts" — `Desk42.Tests.PlayMode.asmdef` exists but its folder contains **zero test files**.
-- `Assets/_Project/Tests/ATBEdgeCaseTests.cs` + `CascadePresenterTests.cs` sit at Tests **root**, outside both test asmdefs → they compile into Assembly-CSharp. All their cases are empty `[Test, Explicit]` stubs (spec-as-tests from the cascade branch). They compile today but are invisible to the normal test assemblies — relocate or implement.
+## Compile status (verified 2026-07-26, batchmode on `main`)
+- **0 errors.** 2 known assembly warnings (reported from the editor build; not reproduced in the headless test log).
+- ~~`Desk42.Tests.PlayMode.asmdef` has zero test files~~ → **resolved.** PlayMode now holds 4 fixtures / 13 tests.
+- ~~`ATBEdgeCaseTests.cs` + `CascadePresenterTests.cs` stranded at Tests root~~ → **resolved.** Both relocated into `Tests/EditMode/`, inside the test asmdef.
 
 ## Scene inventory (verified from scene YAML, 2026-07-21)
 - 4 scenes, all enabled in Build Settings, order: **Boot → MainMenu → Shift → InternalAudit**.
 - **`Shift.unity` is the playable shift scene**: 79 GameObjects, ~40 project MonoBehaviours wired, incl. `ShiftManager`, `EncounterManager`, `ProceduralClientGenerator`, `ClaimPanelView`, `CardHandView`, `CardSlamFeedback`, `PunchCardMachine`, `PassiveAggressiveUIController`, `TutorialController`, `MoralDilemmaPanel`, `EnvironmentalDistortion`, `DeskEntropyRenderer`, `TellVisualIndicator`, and all four audio drivers (`BinauralStressEngine`, `StressCrescendo`, `ProceduralJazzGenerator`, `SpatialAudioThreatSystem`).
 - **ShiftManager serialized wiring (evidence, scene YAML):** `_claimTemplates` = 8 assets (matches 8 in `ScriptableObjects/ClaimTemplates/`), `_anomalyTags` = 12 assets (matches 12 in `ScriptableObjects/AnomalyTags/`), `_morningBlockQuota: 3`, `_afternoonBlockQuota: 4`, `_lunchBreakDuration: 60`, `_overtimeDuration: 300`, `_overtimeTimerReduction: 30`, `_overtimeTimerFloor: 60`, `_maxOvertimeIterations: 3`, `_uiController` → PassiveAggressiveUIController instance.
-- **`ClientVisualCatalog` does not exist anywhere in the repo** (stale doc/handoff reference). Client visuals come from `Encounter/ProceduralClientGenerator` + `Clients/Species/` + `Clients/Traits/`.
+- **`ClientVisualCatalog` now exists** — `UI/ClientVisualCatalog.cs`, covered by `Tests/EditMode/ClientVisualCatalogTests.cs`. (This entry previously said it did not exist; that was true at `a758359` and is no longer.) Client visuals still also flow through `Encounter/ProceduralClientGenerator` + `Clients/Species/` + `Clients/Traits/`.
 
 ## Determinism / seeds (verified)
 - `Core/SeedEngine/SeedEngine.cs`: static, stream-partitioned (`SeedStream` enum: CardDraft, RumorMillEvents, ClientBehaviourTree, MoralDilemma, FormCorruption, AudioVariation, …), FNV-1a derived per-stream seeds, 6-char share codes. `RunStateController.BeginNewRun(masterSeed, …)` inits it → **fixed-seed reproducible runs are supported end-to-end.**
 - Dev CLI (editor/dev builds only, `#if UNITY_EDITOR || DEVELOPMENT_BUILD`): `Debug/Desk42CLI.cs` command router + `BsmCliTool`, `EntropyCliTool` (from cascade merge). Drivable via MCP `execute_code`.
 
-## Tests (state 2026-07-21)
-- **EditMode (7 files):** BehaviourTreeTests, BSMTests, DeskEntropyTierTests, ExpenseUnmetEventTests, SaveSystemTests, SeedEngineTests, SynergyResolverTests. Pass rate not yet measured this session (blocked on bridge / editor test run — see below).
-- **PlayMode: zero tests** (asmdef only).
+## Tests (measured 2026-07-26, headless batchmode)
+- **EditMode: 194 total — 188 passed, 0 failed, 6 skipped** (22 files).
+- **PlayMode: 13 total — 13 passed, 0 failed** (4 files: `ShiftPlaythrough`, `EliasFiveShiftRoutePlayModeTests`, `EliasProofSessionPlayModeTests`, `PunchCardMachinePlayModeTests`).
+- Run either headlessly (Unity Editor must be closed — batchmode needs the project lock):
+  ```
+  powershell -NoProfile -ExecutionPolicy Bypass -File "tools\Run-EditModeAll.ps1" -TestPlatform EditMode
+  powershell -NoProfile -ExecutionPolicy Bypass -File "tools\Run-EditModeAll.ps1" -TestPlatform PlayMode
+  ```
+  Results land in `TestResults/<platform>-full.{xml,log}`. `tools/Run-StateMachineSynergyTests.ps1` remains the fast BSM+Synergy-only loop.
+- **Batchmode side effect:** a headless run dirties `ProjectSettings/ProjectSettings.asset` (line endings only) and regenerates the TMP `LiberationSans SDF - Fallback.asset` glyph atlas (~650 lines). Both are incidental — check them before committing.
 
 ## Known code-level nits (log, don't fix mid-playtest)
 - Typo `OfficeSuppplies` (3 p's) in **both** the SO folder name and `RunData.OfficeSuppplies` field.
 - Typo `ImpatenceTimerRemaining` in `RunData`.
-- `Synergy/` script folder is empty (SynergyResolver actually lives in `OfficeSupplies/`).
+- `Synergy/` script folder is still empty (SynergyResolver actually lives in `OfficeSupplies/`).
 - 16 `// TODO` markers, concentrated in **player-facing feedback**: PunchCardMachine card animations/shake/glow, GameManager scene-fade, MutationEngine passive registration, DistortionAudioDirector Tide hooks.
+- **Open design debt — the Compliance Streak pays nothing.** `RunData.ComboMultiplier` builds on approvals and is displayed mid-shift by `ClientView` / `CascadePresenter`, but no credit path multiplies by it; its only consumer is the end-of-run score (`RunStateController.ComputeFinalScore`). Pre-`a758359` it multiplied claim payout. Deferred deliberately on 2026-07-26 — decide whether to reconnect it to credits or relabel/move the mid-shift UI. The cross-claim and sequential-synergy bonuses are flat pending that call.
+- `OfficeSupplyEffectBase` defaults `Preview* => Modify*` — a **fail-open** default. Correct today (the only stateful effects, `StaplerEffect` and `RubberStampEffect`, both override `PreviewCreditCost`), but the next stateful effect will silently mutate supply state during card preview unless its author remembers to override.
 
 ## Implemented (exists in code now)
 - **Core/run state:** `Core/RunStateController.cs` (owns Sanity, Fugue), `Core/GameManager.cs`, `Core/ShiftManager.cs`, `Core/TideSystem.cs`, `Core/RunStateController` + `Persistence/RunData.cs`, `Persistence/MetaProgressData.cs`. Compliance Vows system under `Core/ComplianceVows/`.
@@ -52,7 +67,8 @@ Single source of truth for "what actually exists right now." Update it as things
 - ~~How much desk scene/prefab wiring is complete vs. stubbed~~ → **Shift.unity wiring confirmed** (see Scene inventory). Prefab-level pass still shallow.
 - ~~Exact persistence serializer/format~~ → **confirmed 2026-07-21:** Newtonsoft `JsonConvert` with custom settings, UTF-8, atomic write via temp file then move (`Persistence/SaveSystem.cs:156-164`).
 - Which terms are dials vs. global meters (Sanity / Moral Injury / Cognitive Budget) — `RunData` carries `Sanity` **and** `SoulIntegrity` (both 0–100); MoralInjury is its own system. Full reconciliation still open.
-- Live test pass rate (EditMode) — pending an editor test run this session.
+- ~~Live test pass rate~~ → **measured 2026-07-26** (see Tests above).
+- **~4,000 lines of presentation code have never been reviewed:** `ShiftFeedbackOverlay`, `CardSlamFeedback`, `PixelRoomStageOverlay`, `EliasProcedurePanel`, `EliasProcedureReceiptPresenter`, `CascadePresenter`. Largest remaining blind spot in the codebase.
 
 ## Next up (the remaining integration work — checklists live in the linked docs)
 1. **FMOD:** import plugin -> add `FMODUnity` ref to `Desk42.Core.asmdef` -> define `DESK42_FMOD` -> author Studio project to the code's event/bus/param names -> banks load-at-init -> Play-mode Sanity smoke test. (`fmod-integration.md`)
