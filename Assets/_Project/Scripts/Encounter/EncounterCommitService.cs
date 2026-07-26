@@ -197,8 +197,12 @@ namespace Desk42.Encounter
             RunStateController run,
             MetaProgressData meta,
             EliasProofSessionController proof,
-            EliasProofContent eliasContent)
+            EliasProofContent eliasContent,
+            ClaimBonusRates bonusRates = default)
         {
+            if (bonusRates.CrossClaim == 0 && bonusRates.SequentialSynergy == 0)
+                bonusRates = ClaimBonusRates.Default;
+
             // ── 1. Validate EncounterId / idempotency ────────
             if (run == null)
                 return Reject(CommitRejection.NoRun, null);
@@ -272,14 +276,40 @@ namespace Desk42.Encounter
             // to a deferred UI/flow listener that runs after the save.
             ResolveActiveClaim(runData, claim, applied.Kind);
 
+            // ── 8c. Deterministic persistent consequences ────
+            // Cross-claim bonus, sequential synergy and persistent memo state
+            // are consequences OF this encounter, so they must be inside the
+            // transaction. Previously they ran in ShiftManager's deferred
+            // handler after the save, which meant a crash lost an earned bonus
+            // and a stale callback could reapply one to the wrong claim.
+            // Bound to `claim` by reference, and durably exact-once via
+            // ActiveClaimData.ConsequencesApplied.
+            var consequences = ClaimConsequencePolicy.Apply(
+                claim, run, runData, meta, bonusRates);
+
+
             // ── 9. Save ──────────────────────────────────────
             // Previously absent entirely: resolution mutated run + meta and
             // never persisted, so a crash or quit lost the whole encounter.
             PersistQuietly(runData, meta);
 
+            // Presentation for the persistent memo written above. The state is
+            // already durable; this notification is deferred UI only, so losing
+            // it costs nothing.
+            if (consequences.GeneratedMemo)
+            {
+                RumorMill.Publish(new MemoGeneratedEvent(
+                    consequences.MemoFragmentId,
+                    claim?.ClaimId,
+                    $"Memo: {claim?.ClientVariantId ?? "client"}",
+                    string.Empty));
+            }
+
             Debug.Log($"[EncounterCommit] Committed '{encounterId}' " +
                       $"({applied.Kind}) claim='{claim?.ClaimId}' " +
-                      $"visitsNow={history.TotalVisits(claim?.ClientVariantId)}.");
+                      $"visitsNow={history.TotalVisits(claim?.ClientVariantId)} " +
+                      $"bonus={consequences.TotalCredits} " +
+                      $"memo={(consequences.GeneratedMemo ? consequences.MemoFragmentId : "none")}.");
 
             // ── 10. Cleanup / transition — caller ────────────
             return new CommitResult(true, CommitRejection.None, encounterId, applied);

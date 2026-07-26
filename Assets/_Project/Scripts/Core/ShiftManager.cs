@@ -1,4 +1,3 @@
-#pragma warning disable 0414
 // ============================================================
 // DESK 42 — Shift Manager (MonoBehaviour)
 //
@@ -86,16 +85,20 @@ namespace Desk42.Core
         [Tooltip("Hard cap on overtime iterations before forcing run end.")]
         [SerializeField] private int   _maxOvertimeIterations        = 3;
 
+        /// <summary>
+        /// Designer-owned bonus values consumed by the authoritative commit
+        /// transaction. ShiftManager still OWNS the tunables; it no longer
+        /// owns applying them.
+        /// </summary>
+        public Encounter.ClaimBonusRates BonusRates
+            => new(_crossClaimBonus, _sequentialSynergyBonus);
+
         // ── State ─────────────────────────────────────────────
 
         private TideSystem _tide;
         private float      _lunchBreakTimer;
         private float      _encounterStartTime;   // Time.time when current encounter began
 
-        // Last claim whose memo/bonuses were applied. Runtime-only guard so a
-        // re-observed ClaimResolvedEvent cannot award consequences twice; the
-        // authoritative transaction is already idempotent on its own.
-        private string     _lastBonusedClaimId;
         private bool       _shiftEnding;          // guard against double EndShift calls
         private int        _overtimeIteration;     // how many overtime loops we've done this shift
         private int        _totalClaimsThisShift;  // hard safety cap
@@ -285,22 +288,18 @@ namespace Desk42.Core
             // meant a crash or reload in between resurrected a completed
             // encounter as an unresolved active claim.
             //
-            // What remains here is presentation and economy: memo, bonuses,
-            // ante flow, dequeue. Guarded by ClaimId so the consequences
-            // cannot be applied twice if this event is observed again.
-            if (runData.ResolvedClaims.Count > 0
-                && !string.Equals(_lastBonusedClaimId, e.ClaimId,
-                       System.StringComparison.Ordinal))
-            {
-                _lastBonusedClaimId = e.ClaimId;
-
-                var justResolved = runData.ResolvedClaims[^1];
-                TryGenerateMemo(justResolved, run, runData);
-
-                // The commit already appended claim N, so claim N-1 is [^2].
-                AwardSequentialSynergyBonus(justResolved, run, runData);
-                AwardCrossClaimBonus(justResolved, run, runData);
-            }
+            // This handler has NO persistent authority.
+            //
+            // Cross-claim bonus, sequential synergy and persistent memo state
+            // are applied by ClaimConsequencePolicy inside the commit
+            // transaction, before the save, bound to the committed claim.
+            // Owning them here caused two defects: selecting ResolvedClaims[^1]
+            // instead of the event's own claim let a stale event reapply the
+            // latest claim's bonuses, and running after the save let a crash
+            // lose an earned bonus. Both are closed by moving the authority,
+            // not by guarding this callback harder.
+            //
+            // It is now safe for this handler to fire late, twice, or never.
 
             // Flow cleanup only. The claim is already persisted as resolved by
             // the commit transaction; clearing the desk slot here just frees it
@@ -644,79 +643,6 @@ namespace Desk42.Core
             GameManager.Instance?.EndShift();
         }
 
-        // ── Cross-Claim Deduction ────────────────────────────
-
-        /// <summary>
-        /// Awards a flat credit bonus when the claim being resolved shares a
-        /// client species with the previously resolved claim (claim N-1).
-        ///
-        /// EncounterCommitService appends claim N inside the transaction, so
-        /// the just-resolved claim is [^1] and claim N-1 is [^2]. Comparing
-        /// against [^1] would compare the claim with itself.
-        /// </summary>
-        private void AwardCrossClaimBonus(
-            ActiveClaimData justResolved,
-            RunStateController run,
-            RunData runData)
-        {
-            if (runData.ResolvedClaims.Count < 2) return;
-
-            var lastClaim = runData.ResolvedClaims[^2];
-            if (lastClaim.ClientSpeciesId != justResolved.ClientSpeciesId) return;
-
-            run.AddCredits(_crossClaimBonus);
-            Debug.Log($"[ShiftManager] Cross-claim deduction: +{_crossClaimBonus} credits " +
-                      $"(same species: {justResolved.ClientSpeciesId}).");
-        }
-
-        // ── Sequential Synergy ───────────────────────────────
-
-        /// <summary>
-        /// Awards a flat credit bonus when the claim being resolved shares a
-        /// tag category with the previously resolved claim (claim N-1).
-        ///
-        /// Claim N is appended by the commit transaction, so N-1 is [^2].
-        /// </summary>
-        private void AwardSequentialSynergyBonus(
-            ActiveClaimData justResolved,
-            RunStateController run,
-            RunData runData)
-        {
-            if (runData.ResolvedClaims.Count < 2) return;
-
-            var previous = runData.ResolvedClaims[^2];
-            if (!SharesTagCategory(justResolved, previous)) return;
-
-            run.AddCredits(_sequentialSynergyBonus);
-            Debug.Log($"[ShiftManager] Sequential synergy: +{_sequentialSynergyBonus} credits " +
-                      $"({previous.ClaimId} → {justResolved.ClaimId}, shared tag category).");
-        }
-
-        private bool SharesTagCategory(ActiveClaimData a, ActiveClaimData b)
-        {
-            if (a.AnomalyTagIds == null || a.AnomalyTagIds.Length == 0) return false;
-            if (b.AnomalyTagIds == null || b.AnomalyTagIds.Length == 0) return false;
-
-            var categoriesA = new HashSet<string>();
-            foreach (string id in a.AnomalyTagIds)
-            {
-                string cat = GetTagCategory(id);
-                if (!string.IsNullOrEmpty(cat))
-                    categoriesA.Add(cat);
-            }
-
-            if (categoriesA.Count == 0) return false;
-
-            foreach (string id in b.AnomalyTagIds)
-            {
-                string cat = GetTagCategory(id);
-                if (!string.IsNullOrEmpty(cat) && categoriesA.Contains(cat))
-                    return true;
-            }
-
-            return false;
-        }
-
         private string GetTagCategory(string tagId)
         {
             if (_anomalyTags == null) return null;
@@ -726,33 +652,5 @@ namespace Desk42.Core
             return null;
         }
 
-        // ── Memo Generation ───────────────────────────────────
-
-        private void TryGenerateMemo(ActiveClaimData claim,
-            RunStateController run, RunData runData)
-        {
-            var meta = GameManager.Instance?.Meta;
-            if (meta == null) return;
-
-            var fragment = MemoGenerator.TryGenerate(
-                claim,
-                run.ShiftNumber,
-                runData,
-                run.NarratorTone,
-                run.MoralInjury);
-
-            if (fragment == null) return;
-
-            meta.ConspiracyBoard.Fragments.Add(fragment);
-            runData.GeneratedMemoIds.Add(fragment.FragmentId);
-
-            // Notify UI listeners
-            string headline = $"Memo: {claim.ClientVariantId ?? "client"}";
-            RumorMill.Publish(new MemoGeneratedEvent(
-                fragment.FragmentId, claim.ClaimId, headline, fragment.Content ?? ""));
-
-            Debug.Log($"[ShiftManager] Memo generated: {fragment.FragmentId} " +
-                      $"for claim {claim.ClaimId}.");
-        }
     }
 }

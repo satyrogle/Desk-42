@@ -370,7 +370,8 @@ namespace Desk42.Encounter
                 run,
                 GameManager.Instance?.Meta,
                 liquifyProof,
-                GameManager.Instance?.EliasContent);
+                GameManager.Instance?.EliasContent,
+                ResolveBonusRates());
 
             if (!commit.ShouldTransition)
             {
@@ -452,7 +453,8 @@ namespace Desk42.Encounter
                 run,
                 GameManager.Instance?.Meta,
                 eliasProof,
-                GameManager.Instance?.EliasContent);
+                GameManager.Instance?.EliasContent,
+                ResolveBonusRates());
 
             if (!commit.ShouldTransition)
             {
@@ -529,6 +531,17 @@ namespace Desk42.Encounter
                     System.StringComparison.Ordinal)
                 && EliasProofContent.TryGetExpectedPriorVisits(
                     _activeClaim.AuthoredAppearanceKey, out _);
+        }
+
+        /// <summary>
+        /// Designer bonus values still live on ShiftManager; the commit
+        /// transaction applies them. Falls back to the documented defaults when
+        /// no ShiftManager is present (headless fixtures).
+        /// </summary>
+        private static ClaimBonusRates ResolveBonusRates()
+        {
+            var shift = Desk42Services.Get<Core.ShiftManager>();
+            return shift != null ? shift.BonusRates : ClaimBonusRates.Default;
         }
 
         private static System.Collections.IEnumerator DestroyClientAfter(

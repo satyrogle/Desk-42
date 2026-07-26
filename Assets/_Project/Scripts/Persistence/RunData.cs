@@ -88,6 +88,18 @@ namespace Desk42.Core
         [JsonProperty] public bool    NDARequired;
         [JsonProperty] public bool    NDASigned;
 
+        // Durable exact-once marker for the deterministic persistent
+        // consequences of this claim (cross-claim bonus, sequential synergy,
+        // persistent memo state). Set inside the commit transaction BEFORE the
+        // save, so a crash cannot lose an earned bonus and a stale or replayed
+        // callback cannot reapply one.
+        //
+        // Additive: false on saves written before this field existed. Old
+        // resolved claims are never re-evaluated, because only the commit path
+        // applies consequences and it runs once per new commit — so no
+        // historical bonus is retroactively awarded.
+        [JsonProperty] public bool    ConsequencesApplied;
+
         // Resolution
         [JsonProperty] public bool    IsResolved;
         [JsonProperty] public ClaimResolutionKind ResolutionKind = ClaimResolutionKind.Unspecified;
