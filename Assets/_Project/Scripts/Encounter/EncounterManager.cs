@@ -61,6 +61,10 @@ namespace Desk42.Encounter
         private ActiveClaimData    _activeClaim;
         private bool               _encounterActive;
 
+        // Immutable snapshot of external state at encounter entry (handoff §3.4).
+        // External reads use this; the encounter's own mutations stay live.
+        private EncounterBaseline  _baseline;
+
         /// <summary>The client BSM for the in-progress encounter, if any.</summary>
         public ClientStateMachine ActiveClient => _activeCSM;
         public ActiveClaimData ActiveClaim => _activeClaim;
@@ -123,21 +127,28 @@ namespace Desk42.Encounter
             clientGO.transform.SetParent(_clientAnchor, worldPositionStays: false);
             _activeCSM = clientGO.AddComponent<ClientStateMachine>();
 
-            // Query RepeatOffenderDB for visit history and counter-traits
+            // Record the PRESENTATION and capture the immutable baseline.
+            // Handoff §3.1: presenting a claimant is explicitly NOT a visit —
+            // nothing here may increment completed visits. The visit is
+            // committed only by EncounterCommitService.CommitEncounterResult.
+            // Idempotent across scene reconstruction and mid-encounter resume,
+            // because EncounterId is persisted on the claim.
             var meta = GameManager.Instance?.Meta;
-            int visitCount = 0;
-            System.Collections.Generic.List<string> counterTraits = null;
-            if (meta != null)
-            {
-                var profile = meta.GetOrCreateProfile(claim.ClientVariantId);
-                visitCount    = profile.TotalVisits;
-                counterTraits = profile.CounterTraitIds;
-            }
+            var run  = GameManager.Instance?.Run;
 
-            // The validation proof owns its visit history for this session.
-            // Record before BSM initialization so Shift 1/2/5 consume the
-            // authoritative prior values 0/1/2. The authored appearance key
-            // makes encounter reconstruction idempotent.
+            _baseline = EncounterCommitService.BeginEncounter(
+                claim, run?.RawData, meta);
+
+            // Prior completed visits, DERIVED from encounter history.
+            int visitCount = _baseline.IsValid ? _baseline.PriorVisits : 0;
+
+            System.Collections.Generic.List<string> counterTraits =
+                meta != null ? meta.GetOrCreateProfile(claim.ClientVariantId).CounterTraitIds : null;
+
+            // The authored proof still owns its own appearance ledger, which
+            // gates branch scheduling. It is idempotent by appearance key and
+            // does not contribute a visit count any more — the BSM value above
+            // comes from encounter history.
             bool hasAuthoredEliasKey =
                 EliasProofContent.TryGetExpectedPriorVisits(
                     claim.AuthoredAppearanceKey, out _);
@@ -151,6 +162,11 @@ namespace Desk42.Encounter
                 var visit = proof.RecordAppearance(
                     claim.ClientVariantId,
                     claim.AuthoredAppearanceKey);
+
+                // Authored prior-visit values are content, not telemetry: the
+                // proof spine asserts 0/1/2 for shifts 1/2/5. Keep them
+                // authoritative for authored claimants so the five-shift
+                // choreography is unaffected by procedural history.
                 visitCount = visit.PriorVisits;
             }
 
@@ -164,7 +180,6 @@ namespace Desk42.Encounter
             _punchCardMachine?.SetActiveClient(_activeCSM);
 
             // Fill hand from deck for this encounter
-            var run = GameManager.Instance?.Run;
             if (run != null)
                 run.Hand.FillFromDeck(run.Deck);
 
@@ -339,23 +354,45 @@ namespace Desk42.Encounter
             _encounterActive = false;
 
             // Liquify is an explicit policy outcome: it advances the shift
-            // while preserving its existing zero-resource-cost behaviour. Its
-            // Dark Intelligence gain is applied and reported through one result.
+            // while preserving its existing zero-resource-cost behaviour. It
+            // routes through the SAME authoritative commit as Approve/Deny —
+            // handoff §3.3 forbids a second independent commit path.
             var outcome = BuildOutcome(ClaimResolutionKind.Liquify, run);
-            var applied = run.ApplyClaimResolution(
-                outcome,
-                _activeClaim.ClaimId,
-                _activeClaim.ClientVariantId,
-                _activeClaim.ClientSpeciesId);
-            RumorMill.PublishDeferred(new ClaimResolvedEvent(applied));
 
-            Debug.Log($"[EncounterManager] LIQUIFIED '{_activeClaim.ClaimId}'. +3 Dark Intel.");
+            // Gated exactly as in ResolveEncounter — see note there.
+            var liquifyProof = TryGetActiveEliasProof(out var liquifyCandidate)
+                ? liquifyCandidate
+                : null;
+
+            var commit = EncounterCommitService.CommitEncounterResult(
+                _activeClaim,
+                outcome,
+                run,
+                GameManager.Instance?.Meta,
+                liquifyProof,
+                GameManager.Instance?.EliasContent);
+
+            if (!commit.ShouldTransition)
+            {
+                _encounterActive = true;
+                unavailableReason = commit.Rejection.ToString();
+                Debug.LogWarning($"[EncounterManager] Liquify commit rejected " +
+                                 $"({commit.Rejection}); encounter remains active.");
+                return false;
+            }
+
+            if (commit.Committed)
+            {
+                RumorMill.PublishDeferred(new ClaimResolvedEvent(commit.Applied));
+                Debug.Log($"[EncounterManager] LIQUIFIED '{_activeClaim.ClaimId}'. +3 Dark Intel.");
+            }
 
             // Same race-free cleanup as ResolveEncounter — detach
             // state now, destroy GameObject after the animation delay.
             var resolvedCSM = _activeCSM;
             _activeCSM   = null;
             _activeClaim = null;
+            _baseline    = EncounterBaseline.None;
             _eliasProcedurePanel?.Clear();
             _punchCardMachine?.ClearActiveClient();
             StartCoroutine(DestroyClientAfter(resolvedCSM, 0.8f));
@@ -395,40 +432,57 @@ namespace Desk42.Encounter
 
             var outcome = BuildOutcome(kind, run);
 
-            // Apply synchronously at the publish site. The deferred event below
-            // is notification-only and cannot re-apply resources during flush.
-            var applied = run.ApplyClaimResolution(
-                outcome,
-                _activeClaim.ClaimId,
-                _activeClaim.ClientVariantId,
-                _activeClaim.ClientSpeciesId);
+            // ── The one authoritative commit (handoff §3.3) ──
+            // Resource mutation, encounter history, completed visit, behaviour
+            // counters, proof reference mutations, aftermath scheduling and the
+            // save all happen inside this call, in the locked order. A duplicate
+            // commit — double-click, or the 11 duplicate onClick listeners bound
+            // on ApproveBtn/DenyBtn in Shift.unity — mutates nothing.
+            // Pass the proof controller ONLY for authored Elias appearances.
+            // TryGetActiveEliasProof assigns the controller regardless and
+            // reports eligibility via its return value; RecordDisposition
+            // throws InvalidClaimantIdentity for any other claimant.
+            var eliasProof = TryGetActiveEliasProof(out var proofCandidate)
+                ? proofCandidate
+                : null;
 
-            if (TryGetActiveEliasProof(out var proof))
+            var commit = EncounterCommitService.CommitEncounterResult(
+                _activeClaim,
+                outcome,
+                run,
+                GameManager.Instance?.Meta,
+                eliasProof,
+                GameManager.Instance?.EliasContent);
+
+            if (!commit.ShouldTransition)
             {
-                proof.RecordDisposition(
-                    _activeClaim.AuthoredAppearanceKey, applied);
-                if (string.Equals(
-                        _activeClaim.AuthoredAppearanceKey,
-                        EliasProofContent.Shift5AppearanceKey,
-                        System.StringComparison.Ordinal))
-                {
-                    proof.ActivateShift5Aftermath(
-                        GameManager.Instance.EliasContent);
-                }
+                // Nothing committed and the encounter is not over: restore the
+                // active flag so the player can act again rather than being
+                // stranded with a live claimant and dead buttons.
+                _encounterActive = true;
+                Debug.LogWarning($"[EncounterManager] Commit rejected " +
+                                 $"({commit.Rejection}); encounter remains active.");
+                return;
             }
 
-            RumorMill.PublishDeferred(new ClaimResolvedEvent(applied));
+            if (commit.Committed)
+            {
+                var applied = commit.Applied;
 
-            Debug.Log($"[EncounterManager] Resolved '{_activeClaim.ClaimId}' — " +
-                      $"{applied.Kind}. Credits: {applied.CreditsDelta}, " +
-                      $"Sanity: {applied.SanityDelta}, Soul: {applied.SoulIntegrityDelta}, " +
-                      $"Dark Intel: {applied.DarkIntelligenceDelta}.");
+                RumorMill.PublishDeferred(new ClaimResolvedEvent(applied));
 
-            TryTriggerDilemma(run);
+                Debug.Log($"[EncounterManager] Resolved '{_activeClaim.ClaimId}' — " +
+                          $"{applied.Kind}. Credits: {applied.CreditsDelta}, " +
+                          $"Sanity: {applied.SanityDelta}, Soul: {applied.SoulIntegrityDelta}, " +
+                          $"Dark Intel: {applied.DarkIntelligenceDelta}.");
+
+                TryTriggerDilemma(run);
+            }
 
             var resolvedCSM = _activeCSM;
             _activeCSM   = null;
             _activeClaim = null;
+            _baseline    = EncounterBaseline.None;
             _eliasProcedurePanel?.Clear();
             _punchCardMachine?.ClearActiveClient();
             StartCoroutine(DestroyClientAfter(resolvedCSM, 0.8f));

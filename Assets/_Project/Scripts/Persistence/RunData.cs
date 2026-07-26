@@ -57,6 +57,14 @@ namespace Desk42.Core
     [Serializable]
     public sealed class ActiveClaimData
     {
+        // Stable per-presentation identity, assigned once by
+        // EncounterCommitService.EnsureEncounterId and persisted with the claim
+        // so a mid-encounter resume reconstructs the SAME encounter instead of
+        // creating a phantom visit. ClaimId cannot serve this role: it is a
+        // seeded 5-digit number with no uniqueness check anywhere.
+        // Null on saves written before this field existed; assigned on first use.
+        [JsonProperty] public string  EncounterId;
+
         [JsonProperty] public string  ClaimId;
         [JsonProperty] public string  ClientVariantId;
         [JsonProperty] public string  ClientSpeciesId;
@@ -225,6 +233,11 @@ namespace Desk42.Core
         [JsonProperty] public List<ActiveClaimData>   PendingClaims  = new();
         [JsonProperty] public ActiveClaimData         ActiveClaim;   // currently at desk
         [JsonProperty] public List<ActiveClaimData>   ResolvedClaims = new();
+
+        // Monotonic per-run counter feeding EncounterId. Persisted so ids stay
+        // unique across a mid-run resume. This is NOT a visit or presentation
+        // count — those derive from MetaProgressData.Encounters (handoff §3.5).
+        [JsonProperty] public int EncounterSequence;
 
         // Desk
         [JsonProperty] public List<ActiveSupplyData>  OfficeSuppplies = new();

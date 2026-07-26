@@ -35,7 +35,15 @@ namespace Desk42.Core
         // Counter-traits generated against this variant (SO asset GUIDs)
         [JsonProperty] public List<string> CounterTraitIds = new();
 
-        // Total visits (first visit vs repeat — affects BSM tells)
+        // LEGACY — do not read, do not write.
+        //
+        // Superseded by MetaProgressData.Encounters, the authoritative encounter
+        // history (handoff §3.5: TotalVisits derives from completed encounter
+        // records; no second serialized count may exist).
+        //
+        // Retained only so pre-existing meta.json deserializes without loss. It
+        // was never incremented in any shipped build — RecordVisit had zero
+        // callers — so no real save carries a non-zero value.
         [JsonProperty] public int TotalVisits;
 
         public void RecordCardUsed(PunchCardType card)
@@ -224,6 +232,26 @@ namespace Desk42.Core
         // pixel doesn't farm fragments infinitely).
         [JsonProperty] public int             RogueSubroutineLastClaimedShift = -1;
 
+        // ── Encounter History (authoritative — handoff §3.5) ──
+
+        /// <summary>
+        /// The single source of truth for presentations and completed visits.
+        /// Lives here rather than in RunData because recurrence must survive a
+        /// run boundary AND an application restart.
+        /// </summary>
+        [JsonProperty] public EncounterHistory Encounters = new();
+
+        /// <summary>
+        /// Completed visits by this claimant, DERIVED from encounter history.
+        /// Replaces the never-incremented ClientTacticProfile.TotalVisits.
+        /// </summary>
+        public int GetTotalVisits(string clientVariantId)
+            => Encounters?.TotalVisits(clientVariantId) ?? 0;
+
+        /// <summary>Presentations of this claimant, derived from history.</summary>
+        public int GetTotalPresentations(string clientVariantId)
+            => Encounters?.TotalPresentations(clientVariantId) ?? 0;
+
         // ── Repeat Offender Helpers ───────────────────────────
 
         public ClientTacticProfile GetOrCreateProfile(string clientVariantId)
@@ -236,8 +264,23 @@ namespace Desk42.Core
             return profile;
         }
 
+        /// <summary>
+        /// REMOVED — visits are derived, not counted (handoff §3.5).
+        ///
+        /// This had zero callers at a432a8b, so ClientTacticProfile.TotalVisits
+        /// was never incremented and every claimant read as a first-time visitor
+        /// forever. It is kept as a compile-time error rather than deleted so any
+        /// attempt to reintroduce an independent visit counter fails loudly.
+        ///
+        /// Use EncounterCommitService.CommitEncounterResult to complete a visit,
+        /// and GetTotalVisits(clientVariantId) to read one.
+        /// </summary>
+        [Obsolete("Visits derive from MetaProgressData.Encounters. Commit via " +
+                  "EncounterCommitService.CommitEncounterResult; read via GetTotalVisits.",
+                  error: true)]
         public void RecordVisit(string clientVariantId)
-            => GetOrCreateProfile(clientVariantId).TotalVisits++;
+            => throw new InvalidOperationException(
+                "RecordVisit is removed. Visits derive from encounter history.");
 
         public void RecordCardUsed(string clientVariantId, PunchCardType card)
             => GetOrCreateProfile(clientVariantId).RecordCardUsed(card);
