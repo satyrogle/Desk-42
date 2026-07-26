@@ -265,6 +265,105 @@ namespace Desk42.Tests.EditMode
                 "Presenting the control must not credit Elias with a visit.");
         }
 
+        // ── Control claimant is LIVE in the Shift 3 queue ────
+
+        private static System.Collections.Generic.List<ActiveClaimData> Queue(int n)
+        {
+            var list = new System.Collections.Generic.List<ActiveClaimData>();
+            for (int i = 0; i < n; i++)
+                list.Add(new ActiveClaimData
+                {
+                    ClaimId = $"CLM-{i:D5}",
+                    ClientVariantId = $"filler_{i}",
+                    ClientSpeciesId = "unregistered_alien",
+                });
+            return list;
+        }
+
+        [Test]
+        public void ControlClaimant_IsScheduledIntoTheShift3Queue()
+        {
+            var queue = Queue(6);
+
+            bool scheduled = ControlClaimantContent.TryScheduleControlClaimant(
+                queue, ControlClaimantContent.AppearanceShiftNumber, out var claim);
+
+            Assert.IsTrue(scheduled, "Mara Kest must actually appear in game.");
+            Assert.IsNotNull(claim);
+            Assert.AreEqual(ControlClaimantContent.StableClaimantId,
+                queue[ControlClaimantContent.QueuePosition - 1].ClientVariantId);
+        }
+
+        [Test]
+        public void ControlClaimant_IsNotScheduledOnCausalShifts()
+        {
+            foreach (int shift in new[] { 1, 2, 4, 5 })
+            {
+                var queue = Queue(6);
+                Assert.IsFalse(
+                    ControlClaimantContent.TryScheduleControlClaimant(
+                        queue, shift, out _),
+                    $"The control must not appear on causal shift {shift}.");
+            }
+        }
+
+        [Test]
+        public void ControlClaimant_AppearsExactlyOnce_NoCallback()
+        {
+            int appearances = 0;
+            for (int shift = 1; shift <= 5; shift++)
+            {
+                var queue = Queue(6);
+                if (ControlClaimantContent.TryScheduleControlClaimant(
+                        queue, shift, out _))
+                    appearances++;
+            }
+
+            Assert.AreEqual(1, appearances,
+                "A reminder or callback would prompt recall and invalidate " +
+                "the attribution measurement.");
+        }
+
+        [Test]
+        public void ControlClaimantScheduling_TakesNoProofState()
+        {
+            // Structural guarantee: the scheduling entry point has no
+            // EliasProofSessionState parameter, so it cannot mutate the branch.
+            var method = typeof(ControlClaimantContent).GetMethod(
+                nameof(ControlClaimantContent.TryScheduleControlClaimant));
+
+            Assert.IsNotNull(method);
+            foreach (var p in method.GetParameters())
+            {
+                Assert.AreNotEqual(typeof(EliasProofSessionState), p.ParameterType,
+                    "Control scheduling must not receive proof state.");
+                Assert.AreNotEqual(typeof(EliasProofContent), p.ParameterType,
+                    "Control scheduling must not receive Elias content.");
+            }
+        }
+
+        // ── Aftermath reachability (audit lock) ──────────────
+
+        [Test]
+        public void EveryScheduledAftermathId_HasAuthoredCopy()
+        {
+            // Aftermath claims ARE queued during the Shift 5 proof path, so a
+            // missing id would surface as blank participant-facing content.
+            foreach (string id in new[]
+                     {
+                         "elias_aftermath_5a_1", "elias_aftermath_5a_2",
+                         "elias_aftermath_5b_1",
+                         "elias_aftermath_5c_1", "elias_aftermath_5c_2",
+                     })
+            {
+                EliasAftermathPolicy.GetClaimCopy(
+                    id, out string name, out string text);
+
+                Assert.IsNotEmpty(name, $"'{id}' has no claimant name.");
+                Assert.IsNotEmpty(text, $"'{id}' has no incident text.");
+            }
+        }
+
         // ── Presentation is not a proof mutation ─────────────
 
         [Test]

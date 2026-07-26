@@ -92,6 +92,38 @@ namespace Desk42.Core
             }
         }
 
+        /// <summary>Queue slot on her appearance shift.</summary>
+        public const int QueuePosition = 2;
+
+        /// <summary>
+        /// Places the control claimant into the generated Shift 3 queue.
+        ///
+        /// Deliberately takes NO proof state and returns no proof handle: this
+        /// method structurally cannot read or write EliasProof, so presenting
+        /// or disposing Mara Kest cannot influence Elias's Shift 5 branch.
+        ///
+        /// A normal one-off presentation — no callback, no reminder, and no
+        /// later appearance before attribution is measured.
+        /// </summary>
+        public static bool TryScheduleControlClaimant(
+            System.Collections.Generic.IList<ActiveClaimData> generatedClaims,
+            int shiftNumber,
+            out ActiveClaimData scheduledClaim)
+        {
+            scheduledClaim = null;
+
+            if (generatedClaims == null) return false;
+            if (shiftNumber != AppearanceShiftNumber) return false;
+
+            int slotIndex = QueuePosition - 1;
+            if (slotIndex < 0 || slotIndex >= generatedClaims.Count)
+                return false;
+
+            scheduledClaim = BuildClaim();
+            generatedClaims[slotIndex] = scheduledClaim;
+            return true;
+        }
+
         /// <summary>
         /// Materialises the control claim. No appearance key, no anomaly tags,
         /// no classification — she cannot enter the proof machinery.

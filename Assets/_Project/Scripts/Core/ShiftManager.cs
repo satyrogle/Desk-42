@@ -366,6 +366,18 @@ namespace Desk42.Core
                     gameManager.EliasContent,
                     gameManager.EliasProof.State,
                     out _);
+
+                // Causal-confabulation control. Scheduled from the same queue
+                // as any other claimant, on the shift between the Shift 2 cause
+                // and the Shift 5 return. Deliberately given NO proof state:
+                // this call cannot read or write EliasProof, so presenting or
+                // disposing her cannot influence Elias's branch selection.
+                if (ControlClaimantContent.TryScheduleControlClaimant(
+                        claims, shiftNumber, out var control))
+                {
+                    Debug.Log($"[ShiftManager] Control claimant scheduled: " +
+                              $"{control.ClaimantName} ({ControlClaimantContent.Anchor}).");
+                }
             }
 
             runData.PendingClaims.AddRange(claims);
