@@ -57,6 +57,27 @@ namespace Desk42.Core
     }
 
     /// <summary>
+    /// Lifecycle status of an encounter record. DERIVED from the record's
+    /// Completed flag plus the currently active encounter id — deliberately
+    /// not stored, so it cannot drift from the ledger (Bucket 2).
+    /// </summary>
+    public enum EncounterStatus
+    {
+        /// <summary>No record with this id.</summary>
+        Unknown = 0,
+
+        /// <summary>Presented, not committed, and still the encounter at the desk.</summary>
+        Active = 1,
+
+        /// <summary>Presented, not committed, and no longer active — shift ended
+        /// or the player quit. Counts as a presentation, never as a visit.</summary>
+        Interrupted = 2,
+
+        /// <summary>Committed. Counts as exactly one visit.</summary>
+        Completed = 3,
+    }
+
+    /// <summary>
     /// Append-only ledger of encounter records. All visit/presentation
     /// numbers are DERIVED from this list — never stored alongside it.
     /// </summary>
@@ -197,6 +218,44 @@ namespace Desk42.Core
                     n++;
             }
             return n;
+        }
+
+        // ── Derived lifecycle status (Bucket 2) ──────────────
+
+        /// <summary>
+        /// Status of one encounter, derived from the ledger plus the id of the
+        /// encounter currently at the desk (RunData.ActiveClaim.EncounterId).
+        /// Nothing about lifecycle is stored.
+        /// </summary>
+        public EncounterStatus StatusOf(string encounterId, string activeEncounterId)
+        {
+            var record = Find(encounterId);
+            if (record == null) return EncounterStatus.Unknown;
+            if (record.Completed) return EncounterStatus.Completed;
+
+            return string.Equals(encounterId, activeEncounterId, StringComparison.Ordinal)
+                ? EncounterStatus.Active
+                : EncounterStatus.Interrupted;
+        }
+
+        /// <summary>
+        /// Encounters presented but never committed, excluding the one at the
+        /// desk. These are carried-forward/interrupted encounters.
+        /// </summary>
+        public List<EncounterRecord> Interrupted(string activeEncounterId)
+        {
+            var result = new List<EncounterRecord>();
+            if (_records == null) return result;
+
+            for (int i = 0; i < _records.Count; i++)
+            {
+                var r = _records[i];
+                if (r == null || r.Completed) continue;
+                if (string.Equals(r.EncounterId, activeEncounterId, StringComparison.Ordinal))
+                    continue;
+                result.Add(r);
+            }
+            return result;
         }
 
         /// <summary>Completed visits for an authored appearance key.</summary>

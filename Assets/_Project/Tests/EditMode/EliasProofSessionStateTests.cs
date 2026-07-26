@@ -74,14 +74,37 @@ namespace Desk42.Tests.EditMode
                 _controller.State.AppliedProcedureAppearanceKeys);
         }
 
+        /// <summary>
+        /// SUPERSEDED BY BUCKET 2 — kept, inverted, not deleted.
+        ///
+        /// This previously asserted that neither RunData nor MetaProgressData
+        /// owned the proof state, encoding the "validation proof state is
+        /// intentionally session-only" design. That design silently destroyed
+        /// the Shift 2 -> Shift 5 causal chain on application restart, so the
+        /// locked Bucket 2 contract inverts it: MetaProgressData is now the
+        /// authoritative owner and the controller is a runtime façade.
+        ///
+        /// RunData must still NOT own it — a run is one shift, the proof spans
+        /// five, so run ownership would reset the chain at every boundary.
+        /// </summary>
         [Test]
-        public void State_IsSerializableButNotOwnedByRunOrMetaSchemas()
+        public void State_IsOwnedByMetaSchema_ButNotByRunSchema()
         {
             Assert.IsTrue(Attribute.IsDefined(
                 typeof(EliasProofSessionState), typeof(SerializableAttribute)));
 
             AssertSchemaDoesNotOwnProofState(typeof(RunData));
-            AssertSchemaDoesNotOwnProofState(typeof(MetaProgressData));
+
+            var proofField = typeof(MetaProgressData).GetField(
+                nameof(MetaProgressData.EliasProof));
+            Assert.IsNotNull(proofField,
+                "MetaProgressData must own the live proof session so it survives restart.");
+            Assert.AreEqual(typeof(EliasProofSessionState), proofField.FieldType);
+
+            var archiveField = typeof(MetaProgressData).GetField(
+                nameof(MetaProgressData.CompletedProofSessions));
+            Assert.IsNotNull(archiveField,
+                "Ended sessions must be archived as evidence, not erased.");
         }
 
         [Test]

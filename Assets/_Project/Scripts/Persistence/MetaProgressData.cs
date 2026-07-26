@@ -241,6 +241,24 @@ namespace Desk42.Core
         /// </summary>
         [JsonProperty] public EncounterHistory Encounters = new();
 
+        // ── Five-Shift Proof State (persisted — Bucket 2) ─────
+
+        /// <summary>
+        /// The live authored-proof session. Previously owned by
+        /// EliasProofSessionController and session-only, so an application
+        /// restart silently destroyed the Shift 2 -> Shift 5 causal chain.
+        /// EliasProofSessionController is now a runtime façade over this.
+        /// </summary>
+        [JsonProperty] public EliasProofSessionState EliasProof = new();
+
+        /// <summary>
+        /// Proof sessions that reached their terminal disposition, retained as
+        /// evidence. EndProofSession ARCHIVES into this list rather than
+        /// erasing, so attribution and post-test inspection survive the
+        /// session boundary.
+        /// </summary>
+        [JsonProperty] public List<EliasProofSessionState> CompletedProofSessions = new();
+
         /// <summary>
         /// Completed visits by this claimant, DERIVED from encounter history.
         /// Replaces the never-incremented ClientTacticProfile.TotalVisits.

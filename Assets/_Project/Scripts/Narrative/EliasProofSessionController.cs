@@ -1,12 +1,21 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Desk42.Core
 {
     /// <summary>
     /// Owns the validation spine across five fresh RunData instances. The
-    /// controller is a child of the DontDestroyOnLoad GameManager and has no
-    /// disk-save hook: validation proof state is intentionally session-only.
+    /// controller is a child of the DontDestroyOnLoad GameManager.
+    ///
+    /// Bucket 2: this is now a runtime FAÇADE. The authoritative record lives
+    /// on MetaProgressData.EliasProof and is written to meta.json, so the
+    /// Shift 2 -> Shift 5 causal chain survives scene changes, run boundaries
+    /// and an application restart. It was previously session-only, which meant
+    /// a restart silently destroyed the chain.
+    ///
+    /// Ending a session archives into MetaProgressData.CompletedProofSessions
+    /// rather than erasing, so causal evidence outlives the session.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class EliasProofSessionController : MonoBehaviour
@@ -16,11 +25,40 @@ namespace Desk42.Core
         public const string ProcedureRequiredFailureReason =
             "EliasProcedureRequired";
 
+        // Fallback state used only when no MetaProgressData is reachable
+        // (EditMode fixtures that construct this controller standalone).
+        // In production the authoritative record lives on MetaProgressData
+        // so it survives scene changes, run boundaries AND app restart.
         [SerializeField]
-        private EliasProofSessionState _state = new();
+        private EliasProofSessionState _detachedState = new();
 
+        private static MetaProgressData Meta => GameManager.Instance?.Meta;
+
+        /// <summary>
+        /// Runtime façade over the persisted proof record. Reads
+        /// MetaProgressData.EliasProof when a meta profile exists, otherwise a
+        /// detached instance so headless fixtures still work.
+        /// </summary>
         public EliasProofSessionState State
-            => _state ??= new EliasProofSessionState();
+        {
+            get
+            {
+                var meta = Meta;
+                if (meta != null)
+                    return meta.EliasProof ??= new EliasProofSessionState();
+                return _detachedState ??= new EliasProofSessionState();
+            }
+        }
+
+        /// <summary>True when the authoritative record is the persisted one.</summary>
+        public bool IsPersisted => Meta != null;
+
+        private void SetState(EliasProofSessionState next)
+        {
+            var meta = Meta;
+            if (meta != null) meta.EliasProof = next;
+            else              _detachedState  = next;
+        }
 
         public bool HasActiveSession => State.IsActive;
 
@@ -397,25 +435,85 @@ namespace Desk42.Core
             string id = string.IsNullOrWhiteSpace(proofSessionId)
                 ? Guid.NewGuid().ToString("N")
                 : proofSessionId.Trim();
-            _state = EliasProofSessionState.Create(id);
-            Debug.Log($"[EliasProof] Session started: {id}.");
-            return _state;
+
+            var next = EliasProofSessionState.Create(id);
+            SetState(next);
+            Debug.Log($"[EliasProof] Session started: {id} " +
+                      $"(persisted={IsPersisted}).");
+            return next;
         }
 
         /// <summary>
-        /// Explicitly removes all proof state. No aftermath or appearance key
-        /// is allowed to survive this boundary.
+        /// Closes the live proof session and ARCHIVES it.
+        ///
+        /// Bucket 2: this must not destroy causal evidence. The record is moved
+        /// into MetaProgressData.CompletedProofSessions so branch, receipts and
+        /// dispositions remain available for attribution and post-test
+        /// inspection; only the LIVE slot is cleared, which is what stops
+        /// aftermath and appearance keys leaking into the next session.
+        ///
+        /// EncounterHistory is untouched by this boundary — committed visits
+        /// are independent evidence and are never archived away.
         /// </summary>
         public void EndProofSession()
         {
-            if (HasActiveSession)
-                Debug.Log($"[EliasProof] Session ended: {State.ProofSessionId}.");
-            _state = new EliasProofSessionState();
+            var current = State;
+            if (!current.IsActive)
+            {
+                SetState(new EliasProofSessionState());
+                return;
+            }
+
+            var meta = Meta;
+            if (meta != null)
+            {
+                meta.CompletedProofSessions ??= new List<EliasProofSessionState>();
+
+                bool alreadyArchived = false;
+                for (int i = 0; i < meta.CompletedProofSessions.Count; i++)
+                {
+                    if (string.Equals(meta.CompletedProofSessions[i]?.ProofSessionId,
+                            current.ProofSessionId, StringComparison.Ordinal))
+                    {
+                        alreadyArchived = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyArchived)
+                    meta.CompletedProofSessions.Add(current);
+            }
+
+            Debug.Log($"[EliasProof] Session ended and archived: " +
+                      $"{current.ProofSessionId}.");
+
+            SetState(new EliasProofSessionState());
         }
+
+        /// <summary>
+        /// Production boundary for ending the proof: the authored spine is over
+        /// once Shift 5 has a terminal disposition. Safe to call repeatedly and
+        /// safe to call when no proof is running.
+        /// </summary>
+        public bool TryEndCompletedSession()
+        {
+            var current = State;
+            if (!current.IsActive) return false;
+            if (current.Shift5FinalDisposition == ClaimResolutionKind.Unspecified)
+                return false;
+
+            EndProofSession();
+            return true;
+        }
+
+        /// <summary>Archived proof sessions, newest last. Evidence, not live state.</summary>
+        public IReadOnlyList<EliasProofSessionState> ArchivedSessions
+            => (IReadOnlyList<EliasProofSessionState>)Meta?.CompletedProofSessions
+               ?? Array.Empty<EliasProofSessionState>();
 
         private void Awake()
         {
-            _state ??= new EliasProofSessionState();
+            _detachedState ??= new EliasProofSessionState();
         }
 
         private void AssertPrecedingAppearances(int expectedPriorVisits)

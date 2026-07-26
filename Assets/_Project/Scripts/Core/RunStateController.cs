@@ -598,6 +598,14 @@ namespace Desk42.Core
                     });
             }
 
+            // ── Proof session boundary (Bucket 2) ────────────
+            // The authored spine ends when Shift 5 carries a terminal
+            // disposition. Ending here rather than at commit time leaves the
+            // Shift 5 aftermath its full window to apply to later claims in
+            // that shift. Archives rather than erases, so committed causal
+            // evidence outlives the session.
+            GameManager.Instance?.EliasProof?.TryEndCompletedSession();
+
             // ── Endings — delegated to MilestoneTracker ──────
             GameManager.Instance?.Milestones?.EvaluateRunEndConditions(
                 _data, meta);
