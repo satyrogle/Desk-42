@@ -234,6 +234,16 @@ namespace Desk42.Core
         [JsonProperty] public ActiveClaimData         ActiveClaim;   // currently at desk
         [JsonProperty] public List<ActiveClaimData>   ResolvedClaims = new();
 
+        // Durable identity for THIS run instance. Distinct from the gameplay
+        // seed: two runs may deliberately share SeedCode (replays, seeded runs,
+        // daily brief) yet are different runs whose encounters must never alias
+        // in the cross-run encounter history.
+        //
+        // Allocated once when a genuinely new run begins, persisted, and never
+        // regenerated on resume. Null on saves written before this field
+        // existed; assigned on first use.
+        [JsonProperty] public string RunInstanceId;
+
         // Monotonic per-run counter feeding EncounterId. Persisted so ids stay
         // unique across a mid-run resume. This is NOT a visit or presentation
         // count — those derive from MetaProgressData.Encounters (handoff §3.5).

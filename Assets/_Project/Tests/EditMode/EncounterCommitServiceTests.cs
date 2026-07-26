@@ -76,11 +76,59 @@ namespace Desk42.Tests.EditMode
         [Test]
         public void EnsureEncounterId_SurvivesNullRunData()
         {
-            var claim = Claim();
-            string id = EncounterCommitService.EnsureEncounterId(claim, null);
+            // The "NOSEED" fallback is gone: ids are namespaced by RunInstanceId,
+            // not by the gameplay seed. With no RunData to carry identity, a
+            // one-shot namespace is allocated so ids stay unique rather than
+            // silently colliding.
+            var a = Claim("CLM-1");
+            var b = Claim("CLM-1");
 
-            Assert.IsNotNull(id);
-            Assert.IsTrue(id.Contains("NOSEED"));
+            string idA = EncounterCommitService.EnsureEncounterId(a, null);
+            string idB = EncounterCommitService.EnsureEncounterId(b, null);
+
+            Assert.IsNotNull(idA);
+            Assert.IsNotNull(idB);
+            Assert.AreNotEqual(idA, idB);
+        }
+
+        [Test]
+        public void EnsureEncounterId_IsNamespacedByRunInstance_NotBySeed()
+        {
+            // Two independent runs deliberately sharing a deterministic seed,
+            // shift and sequence position must not alias in the cross-run
+            // encounter history.
+            var runA = new RunData { SeedCode = "REPLAYED-SEED", ShiftNumber = 1 };
+            var runB = new RunData { SeedCode = "REPLAYED-SEED", ShiftNumber = 1 };
+
+            string idA = EncounterCommitService.EnsureEncounterId(Claim("CLM-X"), runA);
+            string idB = EncounterCommitService.EnsureEncounterId(Claim("CLM-X"), runB);
+
+            Assert.AreNotEqual(idA, idB);
+            Assert.AreNotEqual(runA.RunInstanceId, runB.RunInstanceId);
+        }
+
+        [Test]
+        public void RunInstanceId_IsAllocatedOnce_AndNeverRegenerated()
+        {
+            var run = new RunData { SeedCode = "SEED01", ShiftNumber = 1 };
+
+            string first = EncounterCommitService.EnsureRunInstanceId(run);
+            EncounterCommitService.EnsureEncounterId(Claim("CLM-1"), run);
+            EncounterCommitService.EnsureEncounterId(Claim("CLM-2"), run);
+            string later = EncounterCommitService.EnsureRunInstanceId(run);
+
+            Assert.AreEqual(first, later,
+                "Resume and reconstruction must not mint a new run identity.");
+        }
+
+        [Test]
+        public void RunInstanceId_IsIndependentOfTheGameplaySeed()
+        {
+            var run = new RunData { SeedCode = "SEED01", ShiftNumber = 1 };
+            string id = EncounterCommitService.EnsureRunInstanceId(run);
+
+            Assert.IsFalse(id.Contains("SEED01"),
+                "Determinism seed and run identity are separate concepts.");
         }
 
         [Test]

@@ -80,14 +80,43 @@ namespace Desk42.Encounter
         // ── Encounter identity ───────────────────────────────
 
         /// <summary>
+        /// Returns this run instance's durable id, allocating one on first use.
+        ///
+        /// Deliberately NOT derived from SeedCode: the gameplay seed is a
+        /// determinism input and two different runs may legitimately share it
+        /// (replays, seeded runs, daily brief). Encounter history is cross-run
+        /// and persistent, so an id namespace built from seed + shift +
+        /// per-run sequence aliases independent runs onto the same historical
+        /// encounter, and the second legitimate encounter is then rejected as
+        /// AlreadyCommitted.
+        ///
+        /// Allocated once and persisted, so it survives save/load and is never
+        /// regenerated on resume or on encounter reconstruction.
+        /// </summary>
+        public static string EnsureRunInstanceId(RunData runData)
+        {
+            if (runData == null) return null;
+
+            if (string.IsNullOrWhiteSpace(runData.RunInstanceId))
+                runData.RunInstanceId = NewRunInstanceId();
+
+            return runData.RunInstanceId;
+        }
+
+        /// <summary>Opaque, collision-resistant run identity. Not a seed.</summary>
+        internal static string NewRunInstanceId()
+            => Guid.NewGuid().ToString("N").Substring(0, 12);
+
+        /// <summary>
         /// Returns the claim's stable EncounterId, assigning one on first use.
         /// The id is stored on ActiveClaimData, which IS serialized, so a
         /// mid-encounter quit/resume reconstructs the SAME id and cannot
         /// produce a phantom visit.
         ///
-        /// ClaimId alone is unusable as identity: it is a seeded 5-digit
-        /// "CLM-#####" with no uniqueness check, so collisions are possible
-        /// within and across runs.
+        /// Namespaced by RunInstanceId so two runs sharing a seed, shift and
+        /// sequence position cannot collide. ClaimId is not usable as identity
+        /// either: it is a seeded 5-digit "CLM-#####" with no uniqueness check,
+        /// and different runs may legitimately meet the same claim identity.
         /// </summary>
         public static string EnsureEncounterId(ActiveClaimData claim, RunData runData)
         {
@@ -96,13 +125,16 @@ namespace Desk42.Encounter
             if (!string.IsNullOrWhiteSpace(claim.EncounterId))
                 return claim.EncounterId;
 
-            string seed  = runData?.SeedCode;
-            int    shift = runData?.ShiftNumber ?? 0;
-            int    seq   = runData != null ? ++runData.EncounterSequence : 0;
+            int shift = runData?.ShiftNumber ?? 0;
+            int seq   = runData != null ? ++runData.EncounterSequence : 0;
 
-            if (string.IsNullOrWhiteSpace(seed)) seed = "NOSEED";
+            // A null RunData cannot carry identity; fall back to a one-shot
+            // namespace so the id is still unique rather than silently shared.
+            string runId = runData != null
+                ? EnsureRunInstanceId(runData)
+                : NewRunInstanceId();
 
-            claim.EncounterId = $"ENC-{seed}-S{shift}-{seq:D3}";
+            claim.EncounterId = $"ENC-{runId}-S{shift}-{seq:D3}";
             return claim.EncounterId;
         }
 
@@ -231,6 +263,15 @@ namespace Desk42.Encounter
                 }
             }
 
+            // ── 8b. Resolve the persistent active claim ──────
+            // MUST happen before the save. Encounter history is about to be
+            // written as Completed; if RunData still carried this claim as an
+            // unresolved ActiveClaim, the same disk snapshot would contradict
+            // itself and a reload would resurrect a completed encounter as
+            // active. Persistence authority belongs to this transaction, not
+            // to a deferred UI/flow listener that runs after the save.
+            ResolveActiveClaim(runData, claim, applied.Kind);
+
             // ── 9. Save ──────────────────────────────────────
             // Previously absent entirely: resolution mutated run + meta and
             // never persisted, so a crash or quit lost the whole encounter.
@@ -248,6 +289,43 @@ namespace Desk42.Encounter
 
         private static CommitResult Reject(CommitRejection reason, string encounterId)
             => new CommitResult(false, reason, encounterId, default);
+
+        /// <summary>
+        /// Marks the committed claim resolved and appends it to ResolvedClaims
+        /// so the persisted run agrees with the persisted history.
+        ///
+        /// The claim is deliberately left in RunData.ActiveClaim, now flagged
+        /// IsResolved. The invariant is "no persisted representation of this
+        /// encounter as UNRESOLVED", not "no representation at all" — and
+        /// keeping the reference means a duplicate commit arriving after a
+        /// reload can still be matched to its EncounterId and rejected as
+        /// AlreadyCommitted rather than silently failing to resolve.
+        ///
+        /// Clearing the slot is flow, not persistence: ShiftManager does it on
+        /// the deferred event, and ShiftManager.Start refuses to re-present a
+        /// claim that is already resolved.
+        ///
+        /// Idempotent, and a no-op when this claim is not the one at the desk.
+        /// </summary>
+        private static void ResolveActiveClaim(
+            RunData runData, ActiveClaimData claim, ClaimResolutionKind kind)
+        {
+            if (runData == null || claim == null) return;
+
+            claim.IsResolved     = true;
+            claim.ResolutionKind = kind;
+
+            if (!ReferenceEquals(runData.ActiveClaim, claim)) return;
+
+            runData.ResolvedClaims ??= new System.Collections.Generic.List<ActiveClaimData>();
+
+            // Guard against a double append if this ever runs twice.
+            bool alreadyRecorded = runData.ResolvedClaims.Count > 0
+                && ReferenceEquals(runData.ResolvedClaims[^1], claim);
+
+            if (!alreadyRecorded)
+                runData.ResolvedClaims.Add(claim);
+        }
 
         /// <summary>
         /// Persists run + meta. Save failures are logged, never thrown: losing

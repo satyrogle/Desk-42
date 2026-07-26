@@ -91,6 +91,11 @@ namespace Desk42.Core
         private TideSystem _tide;
         private float      _lunchBreakTimer;
         private float      _encounterStartTime;   // Time.time when current encounter began
+
+        // Last claim whose memo/bonuses were applied. Runtime-only guard so a
+        // re-observed ClaimResolvedEvent cannot award consequences twice; the
+        // authoritative transaction is already idempotent on its own.
+        private string     _lastBonusedClaimId;
         private bool       _shiftEnding;          // guard against double EndShift calls
         private int        _overtimeIteration;     // how many overtime loops we've done this shift
         private int        _totalClaimsThisShift;  // hard safety cap
@@ -173,7 +178,18 @@ namespace Desk42.Core
                         + (runData.ActiveClaim != null ? 1 : 0);
             _uiController?.SetClientTotal(total);
 
-            // Fire the queued event to kick off the first encounter
+            // Fire the queued event to kick off the first encounter.
+            // A resolved ActiveClaim means the process ended between the
+            // commit's save and the flow cleanup — the encounter is already
+            // committed, so re-presenting it would resurrect a completed
+            // encounter. Drop the slot and move on instead.
+            if (runData.ActiveClaim != null && runData.ActiveClaim.IsResolved)
+            {
+                Debug.Log($"[ShiftManager] Discarding already-resolved active claim " +
+                          $"'{runData.ActiveClaim.ClaimId}' on resume.");
+                runData.ActiveClaim = null;
+            }
+
             if (runData.ActiveClaim != null)
             {
                 // Resume mid-encounter — re-signal to the encounter system
@@ -262,20 +278,35 @@ namespace Desk42.Core
             float duration = Time.time - _encounterStartTime;
             _tide.NotifyClaimResolved(duration, triggeredFugue: false);
 
-            // Move the active claim to resolved
-            if (runData.ActiveClaim != null)
+            // Persistent encounter state is no longer owned here.
+            // EncounterCommitService marks the claim resolved, appends it to
+            // ResolvedClaims and clears ActiveClaim INSIDE the transaction,
+            // before the save. Doing it here — after the authoritative save —
+            // meant a crash or reload in between resurrected a completed
+            // encounter as an unresolved active claim.
+            //
+            // What remains here is presentation and economy: memo, bonuses,
+            // ante flow, dequeue. Guarded by ClaimId so the consequences
+            // cannot be applied twice if this event is observed again.
+            if (runData.ResolvedClaims.Count > 0
+                && !string.Equals(_lastBonusedClaimId, e.ClaimId,
+                       System.StringComparison.Ordinal))
             {
-                TryGenerateMemo(runData.ActiveClaim, run, runData);
+                _lastBonusedClaimId = e.ClaimId;
 
-                // Bonuses check BEFORE adding to ResolvedClaims so [^1] is claim N-1
-                AwardSequentialSynergyBonus(runData.ActiveClaim, run, runData);
-                AwardCrossClaimBonus(runData.ActiveClaim, run, runData);
+                var justResolved = runData.ResolvedClaims[^1];
+                TryGenerateMemo(justResolved, run, runData);
 
-                runData.ActiveClaim.IsResolved = true;
-                runData.ActiveClaim.ResolutionKind = e.Kind;
-                runData.ResolvedClaims.Add(runData.ActiveClaim);
-                runData.ActiveClaim = null;
+                // The commit already appended claim N, so claim N-1 is [^2].
+                AwardSequentialSynergyBonus(justResolved, run, runData);
+                AwardCrossClaimBonus(justResolved, run, runData);
             }
+
+            // Flow cleanup only. The claim is already persisted as resolved by
+            // the commit transaction; clearing the desk slot here just frees it
+            // for the next encounter.
+            if (runData.ActiveClaim != null && runData.ActiveClaim.IsResolved)
+                runData.ActiveClaim = null;
 
             // Check whether the current ante is now complete
             if (IsAnteComplete(runData))
@@ -606,16 +637,19 @@ namespace Desk42.Core
         /// <summary>
         /// Awards a flat credit bonus when the claim being resolved shares a
         /// client species with the previously resolved claim (claim N-1).
-        /// Called before the claim is moved into ResolvedClaims so [^1] is N-1.
+        ///
+        /// EncounterCommitService appends claim N inside the transaction, so
+        /// the just-resolved claim is [^1] and claim N-1 is [^2]. Comparing
+        /// against [^1] would compare the claim with itself.
         /// </summary>
         private void AwardCrossClaimBonus(
             ActiveClaimData justResolved,
             RunStateController run,
             RunData runData)
         {
-            if (runData.ResolvedClaims.Count == 0) return;
+            if (runData.ResolvedClaims.Count < 2) return;
 
-            var lastClaim = runData.ResolvedClaims[^1];
+            var lastClaim = runData.ResolvedClaims[^2];
             if (lastClaim.ClientSpeciesId != justResolved.ClientSpeciesId) return;
 
             run.AddCredits(_crossClaimBonus);
@@ -628,16 +662,17 @@ namespace Desk42.Core
         /// <summary>
         /// Awards a flat credit bonus when the claim being resolved shares a
         /// tag category with the previously resolved claim (claim N-1).
-        /// Called before the claim is moved into ResolvedClaims so [^1] is N-1.
+        ///
+        /// Claim N is appended by the commit transaction, so N-1 is [^2].
         /// </summary>
         private void AwardSequentialSynergyBonus(
             ActiveClaimData justResolved,
             RunStateController run,
             RunData runData)
         {
-            if (runData.ResolvedClaims.Count == 0) return;
+            if (runData.ResolvedClaims.Count < 2) return;
 
-            var previous = runData.ResolvedClaims[^1];
+            var previous = runData.ResolvedClaims[^2];
             if (!SharesTagCategory(justResolved, previous)) return;
 
             run.AddCredits(_sequentialSynergyBonus);

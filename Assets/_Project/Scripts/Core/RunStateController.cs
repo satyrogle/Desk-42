@@ -63,6 +63,10 @@ namespace Desk42.Core
 
             _data = new RunData
             {
+                // Durable identity for this run instance, distinct from the
+                // gameplay seed. Two runs may share a seed; they must never
+                // share encounter identity in the cross-run history.
+                RunInstanceId    = Encounter.EncounterCommitService.NewRunInstanceId(),
                 MasterSeed       = masterSeed,
                 SeedCode         = SeedEngine.CurrentSeedCode,
                 ShiftNumber      = shiftNumber,
