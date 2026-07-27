@@ -158,25 +158,6 @@ namespace Desk42.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Install()
         {
-            // FMOD's Editor setup has not run until FMODStudioSettings exists.
-            // Without it the integration defaults to the LOGGING native build
-            // (fmodstudioL), which this package ships for UWP only — so
-            // touching RuntimeManager throws DllNotFoundException on Windows
-            // desktop before any of our own error handling can see it.
-            //
-            // Installing the backend anyway would trade honest silence for a
-            // hard native fault, so we stay on NullAudioBackend and say why.
-            // AudioService then reports Unavailable, which is the truthful
-            // answer: FMOD is imported but not yet configured.
-            if (Resources.Load("FMODStudioSettings") == null)
-            {
-                Debug.LogWarning(
-                    "[FmodAudioBootstrap] FMOD is imported but not configured " +
-                    "(no FMODStudioSettings). Staying on NullAudioBackend. " +
-                    "Run the FMOD setup wizard and build banks to enable audio.");
-                return;
-            }
-
             AudioService.SetBackend(new FmodAudioBackend());
 
             var host = new GameObject("[FmodAudioBootstrap]");
