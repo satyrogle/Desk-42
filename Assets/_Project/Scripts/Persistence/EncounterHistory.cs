@@ -220,6 +220,58 @@ namespace Desk42.Core
             return n;
         }
 
+        // ── Historical disposition query (CΔ1) ───────────────
+
+        /// <summary>
+        /// Committed outcomes for one claimant, in history (encounter) order.
+        ///
+        /// This is a VIEW over the authoritative ledger, not a second
+        /// disposition store: there is deliberately no
+        /// Dictionary&lt;ClaimantId, LastDisposition&gt; that could diverge from
+        /// history. Every prior encounter is preserved rather than collapsed to
+        /// the claimant's most recent outcome.
+        ///
+        /// Only COMPLETED records appear. An interrupted or in-progress
+        /// encounter is a presentation, never a final disposition, so it can
+        /// never masquerade as one merely because the claimant identity exists.
+        ///
+        /// An unknown claimant returns an empty list rather than throwing.
+        /// </summary>
+        public IReadOnlyList<EncounterRecord> CommittedDispositionsFor(string clientVariantId)
+        {
+            var result = new List<EncounterRecord>();
+            if (string.IsNullOrWhiteSpace(clientVariantId) || _records == null)
+                return result;
+
+            for (int i = 0; i < _records.Count; i++)
+            {
+                var r = _records[i];
+                if (r == null || !r.Completed) continue;
+                if (!string.Equals(r.ClientVariantId, clientVariantId,
+                        StringComparison.Ordinal))
+                    continue;
+                result.Add(r);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// The claimant's most recent committed outcome, or Unspecified when
+        /// they have none. Convenience over the full list — never a substitute
+        /// for it, and never separately stored.
+        /// </summary>
+        public ClaimResolutionKind LatestDispositionFor(string clientVariantId)
+        {
+            var all = CommittedDispositionsFor(clientVariantId);
+            return all.Count == 0
+                ? ClaimResolutionKind.Unspecified
+                : all[all.Count - 1].Outcome;
+        }
+
+        /// <summary>True when this claimant has any committed history.</summary>
+        public bool HasCommittedHistory(string clientVariantId)
+            => CommittedDispositionsFor(clientVariantId).Count > 0;
+
         // ── Derived lifecycle status (Bucket 2) ──────────────
 
         /// <summary>

@@ -366,17 +366,23 @@ namespace Desk42.Core
                     gameManager.EliasProof.State,
                     out _);
 
-                // Causal-confabulation control. Scheduled from the same queue
-                // as any other claimant, on the shift between the Shift 2 cause
-                // and the Shift 5 return. Deliberately given NO proof state:
-                // this call cannot read or write EliasProof, so presenting or
-                // disposing her cannot influence Elias's branch selection.
-                if (ControlClaimantContent.TryScheduleControlClaimant(
-                        claims, shiftNumber, out var control))
-                {
-                    Debug.Log($"[ShiftManager] Control claimant scheduled: " +
-                              $"{control.ClaimantName} ({ControlClaimantContent.Anchor}).");
-                }
+            }
+
+            // Causal-confabulation control. Scheduled from the same queue as any
+            // other claimant, on the shift between the Shift 2 cause and the
+            // Shift 5 return.
+            //
+            // DELIBERATELY OUTSIDE the Elias-proof block. This call previously
+            // sat inside it, so Mara only appeared when an Elias proof session
+            // happened to be active — which made the control claimant depend on
+            // the very thing she exists to be independent of. Her eligibility
+            // must not consult EliasProofSessionState at all, and the fix is at
+            // the call site: the scheduler itself was already proof-free.
+            if (ControlClaimantContent.TryScheduleControlClaimant(
+                    claims, shiftNumber, out var control))
+            {
+                Debug.Log($"[ShiftManager] Control claimant scheduled: " +
+                          $"{control.ClaimantName} ({ControlClaimantContent.Anchor}).");
             }
 
             runData.PendingClaims.AddRange(claims);
