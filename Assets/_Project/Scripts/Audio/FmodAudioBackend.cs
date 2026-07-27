@@ -51,6 +51,25 @@ namespace Desk42.Audio
             }
         }
 
+        /// <summary>
+        /// Number of banks currently loaded, or 0 if that cannot be
+        /// determined. Never throws: it is called from the initialisation
+        /// path whose whole job is to absorb native faults.
+        /// </summary>
+        private static int LoadedBankCount()
+        {
+            try
+            {
+                var result = FMODUnity.RuntimeManager.StudioSystem
+                    .getBankCount(out int count);
+                return result == FMOD.RESULT.OK ? count : 0;
+            }
+            catch (System.Exception)
+            {
+                return 0;
+            }
+        }
+
         public void Initialize(int shiftNumber)
         {
             if (_initialised) return;
@@ -61,20 +80,29 @@ namespace Desk42.Audio
                 // DllNotFoundException here rather than mid-encounter.
                 _ = FMODUnity.RuntimeManager.StudioSystem;
 
-                _banksLoaded = FMODUnity.RuntimeManager.HaveAllBanksLoaded;
+                // HaveAllBanksLoaded is VACUOUSLY TRUE when no banks are
+                // configured at all — every one of zero banks is loaded. On
+                // its own it made the backend log "FMOD ready" against an
+                // empty project, which is exactly the fabricated-readiness
+                // signal this class exists to avoid. Require at least one
+                // actual bank.
+                _banksLoaded = FMODUnity.RuntimeManager.HaveAllBanksLoaded
+                               && LoadedBankCount() > 0;
                 _initialised = true;
 
                 if (!_banksLoaded)
                 {
                     Debug.LogWarning(
-                        "[FmodAudioBackend] FMOD initialised but banks are NOT loaded. " +
-                        "Check the Studio project's build output and the bank load " +
-                        "settings in the FMOD Unity integration. Audio will report " +
-                        "Unavailable rather than failing silently.");
+                        $"[FmodAudioBackend] FMOD initialised but banks are NOT " +
+                        $"usable (loaded bank count = {LoadedBankCount()}). Check " +
+                        $"the Studio project's build output and the bank load " +
+                        $"settings in the FMOD Unity integration. Audio will report " +
+                        $"Unavailable rather than failing silently.");
                 }
                 else
                 {
-                    Debug.Log($"[FmodAudioBackend] FMOD ready for shift {shiftNumber}.");
+                    Debug.Log($"[FmodAudioBackend] FMOD ready for shift " +
+                              $"{shiftNumber} ({LoadedBankCount()} bank(s) loaded).");
                 }
             }
             catch (System.Exception ex)
@@ -117,6 +145,19 @@ namespace Desk42.Audio
                     FMODUnity.RuntimeManager.PlayOneShot(resolvedPath);
 
                 return AudioRequestResult.Requested;
+            }
+            catch (FMODUnity.EventNotFoundException)
+            {
+                // GetEventDescription THROWS for an unauthored path rather than
+                // returning an invalid handle, so the desc.isValid() branch
+                // above never runs. Without this case a missing event reports
+                // Unavailable — conflating "the backend is broken" with "nobody
+                // has authored this yet", which is the exact distinction the
+                // result enum exists to preserve.
+                Debug.LogWarning(
+                    $"[FmodAudioBackend] Event not found in loaded banks: " +
+                    $"'{resolvedPath}' (identity {id}).");
+                return AudioRequestResult.UnknownEvent;
             }
             catch (System.Exception ex)
             {

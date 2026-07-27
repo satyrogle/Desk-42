@@ -9,6 +9,11 @@ $Project = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $FmodDir  = Join-Path $Project "Assets\Plugins\FMOD"
 $FmodSrc  = Join-Path $FmodDir "src\fmod.cs"
 $WinLib   = Join-Path $FmodDir "platforms\win\lib\x86_64\fmodstudio.dll"
+# The Editor and development players load the LOGGING build, not the release
+# one. A tree carrying only fmodstudio.dll passes a naive check and then dies
+# with "DllNotFoundException: fmodstudioL" the moment FMOD initialises — which
+# is exactly how an incomplete import slipped through here once already.
+$WinLibL  = Join-Path $FmodDir "platforms\win\lib\x86_64\fmodstudioL.dll"
 $Asmdef   = Join-Path $Project "Assets\_Project\Scripts\Desk42.Core.asmdef"
 $Settings = Join-Path $Project "ProjectSettings\ProjectSettings.asset"
 $Scene    = Join-Path $Project "Assets\_Project\Scenes\Shift.unity"
@@ -27,7 +32,8 @@ if (Test-Path $FmodSrc) {
     $isVersion = (Get-Content $FmodSrc -Raw) -match "0x00020314"
     Check "version is the locked 2.03.14 (0x00020314)" $isVersion
 }
-Check "windows x64 native library present" (Test-Path $WinLib)
+Check "windows x64 native library present (release: fmodstudio.dll)" (Test-Path $WinLib)
+Check "windows x64 LOGGING library present (editor/dev: fmodstudioL.dll)" (Test-Path $WinLibL)
 
 # Activation state — both halves must agree or the project cannot compile.
 $hasRef    = (Get-Content $Asmdef  -Raw) -match "FMODUnity"

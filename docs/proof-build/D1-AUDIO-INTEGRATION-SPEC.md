@@ -137,45 +137,71 @@ Sanity and Tide are not redesigned. The procedural music system is not activated
 
 ---
 
-## 5. Verification checklists — all **PENDING INSTALL**
+## 5. Verification checklists — executed 2026-07-27 (see §10)
 
 **Editor**
-- [ ] Project compiles after import
-- [ ] Native FMOD libraries load; no `DllNotFoundException` after normal init
-- [ ] Play Mode initialises reliably
-- [ ] Bank-load failure produces a useful diagnostic, not silent failure
-- [ ] Four scene directors confirmed disabled before define is enabled
+- [x] Project compiles after import — State B, 0 errors
+- [x] Native FMOD libraries load; no `DllNotFoundException` after normal init
+      — *only after repairing an incomplete vendor tree; see §10.2*
+- [x] Play Mode initialises reliably — 17/17 PlayMode, both states
+- [x] Bank-load failure produces a useful diagnostic, not silent failure
+- [x] Four scene directors confirmed disabled before define is enabled
 
 **Windows standalone**
-- [ ] Development build produces no FMOD exceptions
-- [ ] FMOD initialises on cold launch (no prior Editor session)
-- [ ] Required banks load
-- [ ] One known technical event plays
-- [ ] Shift scene loads clean
-- [ ] Quit and relaunch works
+- [x] Development build produces no FMOD exceptions — 0 across two cold runs
+- [x] FMOD initialises on cold launch (no prior Editor session)
+- [ ] Required banks load — **BLOCKED**: no banks exist (§10.1)
+- [ ] One known technical event plays — **BLOCKED**: event not authored (§10.1)
+- [x] Shift scene loads clean
+- [x] Quit and relaunch works
 
 **Cold start**
-- [ ] First launch on a machine with no Unity/Editor state
-- [ ] `ShiftLifecycleEvent` after scene activation still initialises audio
+- [x] First launch with no Unity Editor process running
+- [x] `ShiftLifecycleEvent` after scene activation still initialises audio
 
 ---
 
 ## 6. Provenance fields (AudioLab / Innovator Founder)
 
 ```text
-fmod_studio_version:        2.03.14                    PENDING INSTALL
-fmod_unity_version:         2.03.14                    PENDING INSTALL
+fmod_studio_version:        2.03.14  INSTALLED (C:\Program Files\FMOD SoundSystem\
+                                     FMOD Studio 2.03.14\fmodstudiocl.exe)
+fmod_unity_version:         2.03.14  IMPORTED (native 0x00020314)
 source:                     official Firelight distribution
 fork:                       none
 unity_version:              2022.3.62f3
-plugin_location:            Assets/Plugins/FMOD        PENDING INSTALL
-bank_location:              Assets/StreamingAssets/FMOD/Banks   PENDING INSTALL
+plugin_location:            Assets/Plugins/FMOD        present, untracked
+bank_location:              Assets/StreamingAssets/FMOD/Banks   NOT CREATED — no banks
 event_contract:             docs/proof-build/D1-AUDIO-INTEGRATION-SPEC.md §2
-plugin_files_in_vcs:        NONE YET                   PENDING INSTALL
-project_settings_changed:   NONE YET (DESK42_FMOD still undefined)
+plugin_files_in_vcs:        NONE — verified untracked and gitignored
+project_settings_changed:   NONE committed; DESK42_FMOD is a local activation only,
+                            restored byte-identical after every State B run
+                            (blob 58a96281…, asmdef blob afe793a2…)
 authored_proof_audio:       ABSENT — no Venn motif, no narrative identities
-editor_result:              PENDING INSTALL
-standalone_cold_start:      PENDING INSTALL
+fmod_studio_project:        FMODAssets/Desk42/Desk42.fspro
+                            repository top level, deliberately OUTSIDE Assets/
+                            **DOES NOT EXIST** — hard blocker, see §10.1
+technical_asset:            TECH_PIPELINE_TEST_NONPRODUCTION.wav
+                            generator tools/fmod/New-TechnicalTestAsset.ps1 (tracked)
+                            48000 Hz / 16-bit / mono PCM, 1000 Hz sine, 0.40 s,
+                            -12 dBFS, 5 ms linear fades, 38,444 bytes
+                            sha256 49E8F406DCD5BED2AA8575045AD1CC299B8467B78EFF
+                                   B447B90077268AD97D15
+                            deterministic: two runs produced identical bytes
+technical_event:            event:/Desk/Interaction    NOT AUTHORED (blocked)
+elias_causal_event:         event:/Proof/EliasRegistration18A
+                            INTENTIONALLY ABSENT — unfilled production slot
+bank_structure:             Desk42_Technical + Master Bank   NOT CREATED (blocked)
+scripting_build_method:     tools/fmod/studio-scripts/desk42-technical-pipeline.js
+                            (tracked) via `fmodstudiocl -script`, driven by
+                            tools/fmod/Build-FmodBanks.ps1 (tracked).
+                            Documented FMOD Studio 2.03 scripting API only; no
+                            .fspro or Metadata file is hand-written.
+                            STATUS: UNVALIDATED — cannot execute without a project.
+editor_result:              PASS with blockers — see §10.3
+standalone_cold_start:      PASS with blockers — see §10.4
+audible_output:             NOT HUMAN-CONFIRMED. No audio was heard, and none
+                            could be: no banks and no authored event exist.
 ```
 
 **Authored proof audio is missing.** Nothing in D1 constitutes evidence that final narrative
@@ -242,7 +268,7 @@ size                95,621,972 bytes
 sha256              613A8371C2F021BC1803DD573B6A82AD1905E9A537133F801D1C29F58B266B82
 imported size       297 MB at Assets/Plugins/FMOD
 repository handling PINNED EXTERNAL IMPORT — untracked, reproduced locally
-reproduce           powershell -File tools/Import-FmodPackage.ps1 -PackagePath <pkg>
+reproduce           powershell -File tools/fmod/Import-FmodPackage.ps1 -PackagePath <pkg>
 already in history  NO — verified, nothing to purge
 ```
 
@@ -253,9 +279,20 @@ already in history  NO — verified, nothing to purge
 | `Assets/Plugins/FMOD/**` | **untracked** (gitignored) — vendor licensed |
 | `Assets/StreamingAssets/FMOD/**` | untracked — generated bank copies are not authoritative source |
 | `FMODStudioCache.asset`, `*.fmod_logs`, `fmod_editor.log` | untracked — cache/log |
-| `tools/Import-FmodPackage.ps1` | tracked — the reproducible import |
+| `tools/fmod/Import-FmodPackage.ps1` | tracked — **the single** reproducible import entry point |
+| `FMODAssets/Desk42/Desk42.fspro`, `FMODAssets/Desk42/Metadata/**` | tracked — authoritative Studio source |
+| `FMODAssets/Desk42/Build/**`, `**/*.bank` | untracked — build product |
+| `tools/fmod/New-TechnicalTestAsset.ps1` | tracked — deterministic generator |
+| `tools/fmod/assets/**` | untracked — regenerable, hash recorded in §6 |
+| `tools/fmod/studio-scripts/**` | tracked — Studio authoring automation |
 | `Assets/_Project/Scripts/Audio/**` | tracked — project-owned source |
 | `AudioEventCatalog` mappings | tracked — project-owned contract |
+
+**One import entry point.** `tools/Import-FmodPackage.ps1` was a duplicate of the `tools/fmod/`
+copy differing only in its project-root resolution — and, having been moved a directory deeper
+without that line being updated, it resolved the root one level too high and would have thrown
+on `ProjectSettings/ProjectVersion.txt`. It has been removed; `tools/fmod/Import-FmodPackage.ps1`
+is canonical.
 
 `FMODStudioSettings.asset` is project configuration and **should** be shareable, but it does
 not exist yet (FMOD's setup wizard has not run). When created it must live outside the
@@ -278,3 +315,180 @@ Distributing the FMOD native integration from a public repository is a licensing
 not an engineering one. **D1 steps 6–9 are blocked on it**, because Studio project, banks,
 Editor verification and standalone cold-start all presuppose a shareable, reproducible FMOD
 setup. Repository visibility was not changed.
+
+**Resolved for local work (2026-07-27).** The external-import model below settles the
+engineering half: vendor binaries stay untracked and are reproduced locally, so steps 6–9
+were executed against a locally activated environment. The licensing question about
+*distribution* is untouched and remains open.
+
+---
+
+## 10. Steps 6–9 execution record — 2026-07-27
+
+Executed in the isolated worktree `feat/proof-build` (`C:\Users\jacob\Desk42-worktrees\
+proof-build`), resumed from `9277314`.
+
+### 10.1 The one hard blocker — no FMOD Studio project exists
+
+`FMODAssets/Desk42/Desk42.fspro` **does not exist**, and no `.fspro` exists anywhere under
+`C:\Users\jacob`. Steps 6–7 (technical event, bank structure) and the two bank-dependent
+standalone checks are blocked on this and nothing else.
+
+**Location note.** The Studio project lives at **repository top level, alongside `Assets/`,
+not inside it.** An earlier draft of this spec placed it at
+`Assets/_Project/Audio/FMODStudio/`; that is superseded. Inside `Assets/`, Unity imports the
+Studio project's own source `.wav` files and XML metadata as game assets, shipping duplicates
+of audio FMOD already owns. FMOD's own guidance is to keep the Studio project outside the
+Unity assets tree.
+
+**FMOD Studio 2.03 has no supported headless project-creation path.** Verified three ways:
+
+| Route | Result |
+|---|---|
+| `fmodstudiocl -script <js> New.fspro` | `Project Load Error: … could not be located.` Refuses to create. |
+| Scripting API | No `project.new` / `project.open` / `project.saveAs`. `project.filepath` is read-only. `NewProject` and `SaveAs` exist only as `studio.window.actions` — GUI actions that open modal dialogs. |
+| FMOD for Unity | `SettingsEditor.cs` only *browses* for an existing `.fspro` (`OpenFilePanel`). Ships no project template. |
+
+So project creation is a one-time GUI action and cannot be automated:
+
+```text
+FMOD Studio -> File -> New Project
+save as: <repo>/FMODAssets/Desk42/Desk42.fspro
+```
+
+`tools/fmod/Build-FmodBanks.ps1` exits 9 with exactly these instructions when the project is
+absent. Everything downstream of that click is automated.
+
+**Consequence for the automation.** `desk42-technical-pipeline.js` is written, syntax-checked
+and tracked, but has **never been executed** — there is no project to execute it against. Its
+FMOD API calls are drawn from the shipped 2.03.14 scripting reference and its worked examples,
+not from a passing run. Treat it as unvalidated until its first real invocation.
+
+### 10.2 Environment defect found and repaired — missing logging library
+
+The vendor tree in this worktree was an **incomplete copy**: Windows x64 shipped
+`fmodstudio.dll` (release) but **not `fmodstudioL.dll`** (logging). Every other platform —
+android, html5, ios, tvos, uwp — carried its logging variant, so the gap was Windows-only.
+
+The Editor and development players link the **logging** build. The result was
+`DllNotFoundException: fmodstudioL` → `SystemNotInitializedException` → FMOD could not
+initialise at all, and the pre-existing PlayMode test
+`EliasFiveShiftRoutePlayModeTests.RouteA_NormalisedAddress_CompletesFiveShiftProof` failed in
+State B while passing in State A.
+
+Repaired by copying the file from the main worktree's import (release-DLL hashes match, so
+same package origin). `fmodstudioL.dll` sha256 `2063E106…`. The tree stays untracked.
+
+`Verify-FmodEnvironment.ps1` now checks the logging library explicitly — it previously passed
+a demonstrably unusable environment.
+
+### 10.3 Editor result
+
+| Check | Result |
+|---|---|
+| FMOD 2.03.14 initialises | **YES** — after §10.2. `RuntimeManager.GetBus` reaches the Studio system and reports "bus not found" rather than "not initialised" |
+| Correct banks load | **NO** — zero banks exist |
+| `event:/Desk/Interaction` resolves | **NO** — not authored |
+| One `AudioService` request reaches `FmodAudioBackend` exactly once | **YES** — `ProofAudioContractTests.OneShot_RoutesToBackendExactlyOnce` |
+| Positional requests preserve coordinates | **YES** — `ProofAudioSafetyTests.PneumaticTube_PreservesWorldPosition` |
+| Unknown event gives the expected diagnostic | **YES** — after the fix in §10.5 |
+| No FMOD exception loading Shift | **YES** — after the fix in §10.5 |
+| Experimental directors remain disabled | **YES** — 4/4, asserted in the activated state |
+| Mercy / Flow inactive | **YES** — `MercyAndFlow_AreNotInTheProofContract`, no gameplay callers |
+| Shift 5 cannot request `EliasRegistrationCausal` | **YES** — caller-level and boundary-level, both states |
+
+### 10.4 Windows standalone result
+
+Windows x64 **development** player, built headlessly from the activated environment via
+`Assets/_Project/Scripts/Editor/ProofStandaloneBuild.cs`. Build: `Succeeded`, 0 errors,
+124,208,452 bytes. Contains `FMODUnity.dll` and `fmodstudioL.dll`; contains no `.bank`.
+
+Cold-started **twice** with no Unity Editor process running, driven through the live Shift
+scene by the existing `-desk42ProofEvidencePath` development route (branch A).
+
+| Check | Run 1 | Run 2 |
+|---|---|---|
+| Process starts / exits 0 | PASS | PASS |
+| FMOD native runtime initialises | PASS | PASS |
+| Banks load | **FAIL — none exist** | **FAIL — none exist** |
+| Technical event invocation | **NOT ATTEMPTABLE — not authored** | same |
+| Shift scene loads | PASS (`shift_start` telemetry) | PASS |
+| FMOD exceptions | 0 | 0 |
+| Quit / relaunch | PASS | PASS |
+| Evidence frames written | 100 | 100 |
+
+Reported diagnostic, both runs:
+
+```text
+[FmodAudioBackend] FMOD initialised but banks are NOT usable (loaded bank count = 0).
+[FMODManager] Buses unavailable ([FMOD] Bus not found 'bus:/'). No banks are loaded.
+```
+
+**Audible output: NOT human-confirmed, and not achievable in this state.** No bank and no
+authored event exist, so there is nothing that could sound. Nothing here should be read as
+evidence that a participant heard anything.
+
+### 10.5 Defects found by these runs, and fixed
+
+1. **`FMODManager.Awake()` threw into gameplay.** It called `RuntimeManager.GetBus()`
+   unguarded, so an unconfigured FMOD install produced an unhandled exception during scene
+   load — violating the stated "never throws into gameplay" posture. Now guarded, with a
+   `_busesResolved` flag gating every FMOD entry point. A missing bus (banks absent) logs a
+   **warning**; anything else (failed native init) logs an **error**, matching how
+   `FmodAudioBackend` already classifies the same two conditions.
+
+2. **`FmodAudioBackend.PlayOneShot` reported `Unavailable` for an unauthored event.**
+   `RuntimeManager.GetEventDescription` *throws* `EventNotFoundException` rather than
+   returning an invalid handle, so the `desc.isValid()` branch never ran and the generic catch
+   collapsed "nobody authored this" into "the backend is broken" — erasing the distinction the
+   result enum exists to preserve. Now caught specifically and reported as `UnknownEvent`.
+
+3. **`FmodAudioBackend` logged "FMOD ready" against an empty project.**
+   `RuntimeManager.HaveAllBanksLoaded` is **vacuously true** with zero banks, so the backend
+   announced readiness when nothing could possibly play. Caught by the first cold-start run.
+   `IsAvailable` now additionally requires `getBankCount() > 0`, and both log lines report the
+   count.
+
+All three are State-B-only paths (`#if DESK42_FMOD`); State A compiles them out.
+
+### 10.6 Test matrix — both states, 0 failures
+
+| | EditMode | PlayMode |
+|---|---|---|
+| **State A** — FMOD deactivated, committed public config | 402 total, 396 passed, **0 failed**, 6 skipped | 17 total, 17 passed, **0 failed** |
+| **State B** — FMOD 2.03.14 locally imported and activated | 402 total, 396 passed, **0 failed**, 6 skipped | 17 total, 17 passed, **0 failed** |
+
+The 6 EditMode skips are pre-existing and unrelated to audio (`ATBEdgeCaseTests`,
+`CascadePresenterTests`).
+
+State B additionally confirms:
+- `DESK42_FMOD` defined for Standalone / Android / WebGL
+- `FMODUnity` present in `Desk42.Core.asmdef`
+- **positive `FmodAudioBackend` activation** — `AudioService.BackendName == "FmodAudioBackend"`,
+  never silently falling back to `NullAudioBackend`
+  (`FmodBackendActivationPlayModeTests`, new)
+- technical event lookup **fails as expected**, because the event is not authored
+
+**Clean-clone State A caveat.** State A was run with the vendor tree present on disk but
+deactivated. That is not the same as a genuine clean clone with no `Assets/Plugins/FMOD` at
+all. `FmodIntegrationTests.FmodActivation_MatchesPackagePresence` locks the two states
+together, and the A/B on isolated worktrees recorded in §9 covered the no-vendor case for
+`4c4ef26`, but a fresh-clone compile was **not** re-run in this pass.
+
+### 10.7 Remaining blocker for final authored audio
+
+Two distinct blockers, in order:
+
+1. **Technical (this pass):** create `FMODAssets/Desk42/Desk42.fspro` once via the FMOD Studio
+   GUI. ~30 seconds of human action. Then `tools/fmod/Build-FmodBanks.ps1` runs the whole chain
+   unattended, and the four currently-failing bank/event checks become testable.
+   `FMODStudioSettings.asset` also has to exist and live outside the ignored vendor tree
+   (see §9).
+
+2. **Content (unchanged):** `event:/Proof/EliasRegistration18A` stays an intentionally
+   unfilled production slot. It is not stubbed, not aliased, and not backed by the technical
+   tone. It is blocked on AudioLab delivering the authored Venn identity, and no amount of
+   pipeline work substitutes for it.
+
+The technical tone proves transport only. It is **not** the Venn motif and carries no
+narrative identity.

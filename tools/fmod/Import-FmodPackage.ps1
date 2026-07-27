@@ -13,7 +13,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ProjectPath = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+# Two levels up: this script lives in tools/fmod/, not tools/.
+$ProjectPath = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $VersionFile = Join-Path $ProjectPath "ProjectSettings\ProjectVersion.txt"
 
 $VersionLine  = Get-Content $VersionFile | Where-Object { $_ -match "m_EditorVersion:" } | Select-Object -First 1

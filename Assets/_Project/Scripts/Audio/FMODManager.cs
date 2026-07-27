@@ -36,6 +36,15 @@ namespace Desk42.Audio
         private FMOD.Studio.Bus _busMusic;
         private FMOD.Studio.Bus _busSFX;
         private FMOD.Studio.Bus _busAmbience;
+
+        /// <summary>
+        /// False until the native system is up AND every bus resolved. Every
+        /// FMOD call below is gated on this: the runtime throws
+        /// SystemNotInitializedException when FMODStudioSettings.asset is
+        /// missing or no banks are built, and an audio wrapper must not turn
+        /// an unconfigured install into a gameplay-breaking exception.
+        /// </summary>
+        private bool _busesResolved;
 #endif
 
         // ── Unity Lifecycle ───────────────────────────────────
@@ -52,11 +61,40 @@ namespace Desk42.Audio
             DontDestroyOnLoad(gameObject);
 
 #if DESK42_FMOD
-            _busMaster   = FMODUnity.RuntimeManager.GetBus(BUS_MASTER);
-            _busMusic    = FMODUnity.RuntimeManager.GetBus(BUS_MUSIC);
-            _busSFX      = FMODUnity.RuntimeManager.GetBus(BUS_SFX);
-            _busAmbience = FMODUnity.RuntimeManager.GetBus(BUS_AMBIENCE);
-            Debug.Log("[FMODManager] Buses resolved.");
+            try
+            {
+                _busMaster   = FMODUnity.RuntimeManager.GetBus(BUS_MASTER);
+                _busMusic    = FMODUnity.RuntimeManager.GetBus(BUS_MUSIC);
+                _busSFX      = FMODUnity.RuntimeManager.GetBus(BUS_SFX);
+                _busAmbience = FMODUnity.RuntimeManager.GetBus(BUS_AMBIENCE);
+                _busesResolved = true;
+                Debug.Log("[FMODManager] Buses resolved.");
+            }
+            catch (FMODUnity.BusNotFoundException ex)
+            {
+                // Buses live in the Master Bank. Not finding them means no
+                // banks are loaded yet — an AUTHORING gap, and the expected
+                // state before the Studio project has been built. Warning, not
+                // error, matching how FmodAudioBackend classifies the same
+                // condition; an error here would fail every PlayMode test for
+                // a situation we already know about.
+                _busesResolved = false;
+                Debug.LogWarning(
+                    $"[FMODManager] Buses unavailable ({ex.Message}). No banks " +
+                    $"are loaded, so bus control is inert. Build the FMOD Studio " +
+                    $"project to populate them.");
+            }
+            catch (System.Exception ex)
+            {
+                // Anything else — failed native init, missing settings asset —
+                // is a genuine INTEGRATION fault and must be loud.
+                _busesResolved = false;
+                Debug.LogError(
+                    $"[FMODManager] Bus resolution FAILED: {ex.GetType().Name}: " +
+                    $"{ex.Message}. FMOD is imported but not usable — the usual " +
+                    $"cause is a missing FMODStudioSettings.asset. Continuing " +
+                    $"silent; this is an integration fault, not an authoring gap.");
+            }
 #else
             Debug.Log("[FMODManager] FMOD not available (DESK42_FMOD not defined). " +
                       "Audio stubs active.");
@@ -76,6 +114,7 @@ namespace Desk42.Audio
         public void SetGlobalParameter(string name, float value)
         {
 #if DESK42_FMOD
+            if (!_busesResolved) return;
             FMODUnity.RuntimeManager.StudioSystem.setParameterByName(name, value);
 #endif
             // Stub: silent — called every frame, can't log
@@ -85,6 +124,7 @@ namespace Desk42.Audio
         public void SetBusVolume(string busPath, float volume)
         {
 #if DESK42_FMOD
+            if (!_busesResolved) return;
             var bus = FMODUnity.RuntimeManager.GetBus(busPath);
             bus.setVolume(Mathf.Clamp01(volume));
 #endif
@@ -94,6 +134,7 @@ namespace Desk42.Audio
         public void PlayOneShot(string eventPath, Vector3 position = default)
         {
 #if DESK42_FMOD
+            if (!_busesResolved) return;
             FMODUnity.RuntimeManager.PlayOneShot(eventPath, position);
 #endif
         }
@@ -103,6 +144,7 @@ namespace Desk42.Audio
         public void SetMasterVolume(float volume)
         {
 #if DESK42_FMOD
+            if (!_busesResolved) return;
             _busMaster.setVolume(Mathf.Clamp01(volume));
 #endif
         }
@@ -110,6 +152,7 @@ namespace Desk42.Audio
         public void SetMusicVolume(float volume)
         {
 #if DESK42_FMOD
+            if (!_busesResolved) return;
             _busMusic.setVolume(Mathf.Clamp01(volume));
 #endif
         }
@@ -117,6 +160,7 @@ namespace Desk42.Audio
         public void SetSFXVolume(float volume)
         {
 #if DESK42_FMOD
+            if (!_busesResolved) return;
             _busSFX.setVolume(Mathf.Clamp01(volume));
 #endif
         }

@@ -88,7 +88,7 @@ artifacts/
 # Desk-42 is a PUBLIC repository. The official Firelight FMOD for Unity
 # package is vendor-licensed binary content and is deliberately NOT
 # committed. Reproduce it locally with:
-#     powershell -File tools/Import-FmodPackage.ps1 -PackagePath <pkg>
+#     powershell -File tools/fmod/Import-FmodPackage.ps1 -PackagePath <pkg>
 # Pinned version, size and SHA-256 are recorded in
 # docs/proof-build/D1-AUDIO-INTEGRATION-SPEC.md.
 Assets/Plugins/FMOD/
@@ -102,6 +102,30 @@ Assets/StreamingAssets/FMOD.meta
 **/FMODStudioCache.asset.meta
 *.fmod_logs
 fmod_editor.log
+
+# ── FMOD Studio project (FMODAssets/Desk42) ──
+# Lives at repository top level, deliberately NOT under Assets/: Unity would
+# otherwise import the Studio project's own .wav and XML as game assets and
+# ship duplicates of audio FMOD already owns.
+# The .fspro and Metadata/ ARE authoritative source and stay tracked.
+# Everything below is build product, per-user state, or transient.
+FMODAssets/Desk42/Build/
+FMODAssets/Desk42/.cache/
+FMODAssets/Desk42/.unsaved/
+FMODAssets/Desk42/.user/
+*.fspro.user
+**/*.bank
+**/*.bank.meta
+# guids.txt is regenerated on every build.
+FMODAssets/**/guids.txt
+
+# Standalone player output from ProofStandaloneBuild — build product.
+/Build/
+
+# Technical verification asset — deterministic build product, not source.
+# Regenerate with tools/fmod/New-TechnicalTestAsset.ps1; the expected
+# SHA-256 is recorded in docs/proof-build/D1-AUDIO-INTEGRATION-SPEC.md.
+tools/fmod/assets/
 
 # Unity batchmode transient scenes
 Assets/InitTestScene*.unity
