@@ -83,3 +83,26 @@ artifacts/
 /tmp/
 **/__pycache__/
 *.pyc
+
+# ── FMOD vendor integration (public repo: NOT distributed here) ──
+# Desk-42 is a PUBLIC repository. The official Firelight FMOD for Unity
+# package is vendor-licensed binary content and is deliberately NOT
+# committed. Reproduce it locally with:
+#     powershell -File tools/Import-FmodPackage.ps1 -PackagePath <pkg>
+# Pinned version, size and SHA-256 are recorded in
+# docs/proof-build/D1-AUDIO-INTEGRATION-SPEC.md.
+Assets/Plugins/FMOD/
+Assets/Plugins/FMOD.meta
+Assets/Plugins.meta
+
+# FMOD generated / cache / log artefacts — never authoritative source
+Assets/StreamingAssets/FMOD/
+Assets/StreamingAssets/FMOD.meta
+**/FMODStudioCache.asset
+**/FMODStudioCache.asset.meta
+*.fmod_logs
+fmod_editor.log
+
+# Unity batchmode transient scenes
+Assets/InitTestScene*.unity
+Assets/InitTestScene*.unity.meta

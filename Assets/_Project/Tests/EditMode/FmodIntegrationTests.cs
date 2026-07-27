@@ -13,22 +13,39 @@ namespace Desk42.Tests.EditMode
     /// </summary>
     public sealed class FmodIntegrationTests
     {
+        /// <summary>
+        /// Desk-42 is a PUBLIC repository, so the vendor FMOD package is not
+        /// committed. DESK42_FMOD is therefore deliberately OFF in committed
+        /// settings — committing it while the plugin is untracked made every
+        /// clean clone fail to compile.
+        ///
+        /// The define is a LOCAL activation, enabled only in an environment
+        /// that has imported the package. This test asserts the two states are
+        /// consistent rather than demanding either one.
+        /// </summary>
         [Test]
-        public void Desk42FmodDefine_IsEnabled()
+        public void FmodActivation_MatchesPackagePresence()
         {
-            // Positive proof the define is ON. Without this the FMOD-gated
-            // code compiles as stubs and every other test still passes, which
-            // would make a failed activation invisible.
+            bool packagePresent = Directory.Exists("Assets/Plugins/FMOD");
+
 #if DESK42_FMOD
-            Assert.Pass("DESK42_FMOD is defined.");
+            Assert.IsTrue(packagePresent,
+                "DESK42_FMOD is defined but Assets/Plugins/FMOD is absent — " +
+                "this configuration cannot compile. Import the package or " +
+                "clear the define.");
 #else
-            Assert.Fail("DESK42_FMOD is NOT defined — FMOD-gated code is stubbed.");
+            Assert.Pass(packagePresent
+                ? "Package imported locally; define not yet enabled."
+                : "No package and no define — consistent committed state.");
 #endif
         }
 
         [Test]
-        public void FmodPackage_IsPresentAtTheConventionalLocation()
+        public void FmodPackage_WhenPresent_IsAtTheConventionalLocation()
         {
+            if (!Directory.Exists("Assets/Plugins/FMOD"))
+                Assert.Ignore("FMOD not imported in this environment (public repo).");
+
             Assert.IsTrue(Directory.Exists("Assets/Plugins/FMOD"),
                 "FMOD must live at the conventional Assets/Plugins/FMOD.");
             Assert.IsTrue(File.Exists("Assets/Plugins/FMOD/FMODUnity.asmdef"),
@@ -38,6 +55,9 @@ namespace Desk42.Tests.EditMode
         [Test]
         public void FmodVersion_IsTheLocked_2_03_14()
         {
+            if (!Directory.Exists("Assets/Plugins/FMOD"))
+                Assert.Ignore("FMOD not imported in this environment.");
+
             // fmod.cs carries the native version as a packed constant.
             const string fmodSrc = "Assets/Plugins/FMOD/src/fmod.cs";
             Assert.IsTrue(File.Exists(fmodSrc), $"{fmodSrc} missing.");
@@ -49,6 +69,9 @@ namespace Desk42.Tests.EditMode
         [Test]
         public void WindowsX64_NativeLibrariesArePresent()
         {
+            if (!Directory.Exists("Assets/Plugins/FMOD"))
+                Assert.Ignore("FMOD not imported in this environment.");
+
             Assert.IsTrue(
                 File.Exists("Assets/Plugins/FMOD/platforms/win/lib/x86_64/fmodstudio.dll"),
                 "Windows x64 native library missing — standalone would " +
@@ -59,8 +82,14 @@ namespace Desk42.Tests.EditMode
         public void CoreAssembly_ReferencesFmodUnity()
         {
             string asmdef = File.ReadAllText("Assets/_Project/Scripts/Desk42.Core.asmdef");
+#if DESK42_FMOD
             Assert.IsTrue(asmdef.Contains("FMODUnity"),
-                "Desk42.Core must reference FMODUnity or the gated code cannot compile.");
+                "DESK42_FMOD is on, so Desk42.Core must reference FMODUnity.");
+#else
+            Assert.IsFalse(asmdef.Contains("FMODUnity"),
+                "Committed settings must not reference FMODUnity while the " +
+                "vendor package is untracked — a clean clone could not compile.");
+#endif
         }
 
         [Test]

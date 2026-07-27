@@ -223,3 +223,58 @@ Flow stay unwired, with a test asserting no gameplay caller has appeared.
 `EliasRegistrationCausal`) and the boundary (`AudioService` returns `Suppressed`). The caller
 test exists so a wrong Shift-5 caller fails a test rather than being silently masked by the
 service guard.
+
+
+---
+
+## 9. Repository treatment — PUBLIC repo, vendor binaries NOT distributed
+
+`satyrogle/Desk-42` is **PUBLIC** (`private: false`, confirmed by an unauthenticated
+GitHub API call — a private repo returns 404). This triggers the locked stop condition:
+**no FMOD vendor binaries enter this repository.** LFS was therefore NOT used; LFS was
+conditional on a private/access-controlled remote.
+
+```text
+package             fmodstudio20314.unitypackage
+version             FMOD for Unity 2.03.14  (native 0x00020314)
+source              official Firelight distribution
+size                95,621,972 bytes
+sha256              613A8371C2F021BC1803DD573B6A82AD1905E9A537133F801D1C29F58B266B82
+imported size       297 MB at Assets/Plugins/FMOD
+repository handling PINNED EXTERNAL IMPORT — untracked, reproduced locally
+reproduce           powershell -File tools/Import-FmodPackage.ps1 -PackagePath <pkg>
+already in history  NO — verified, nothing to purge
+```
+
+### Tracked vs untracked
+
+| Path | Treatment |
+|---|---|
+| `Assets/Plugins/FMOD/**` | **untracked** (gitignored) — vendor licensed |
+| `Assets/StreamingAssets/FMOD/**` | untracked — generated bank copies are not authoritative source |
+| `FMODStudioCache.asset`, `*.fmod_logs`, `fmod_editor.log` | untracked — cache/log |
+| `tools/Import-FmodPackage.ps1` | tracked — the reproducible import |
+| `Assets/_Project/Scripts/Audio/**` | tracked — project-owned source |
+| `AudioEventCatalog` mappings | tracked — project-owned contract |
+
+`FMODStudioSettings.asset` is project configuration and **should** be shareable, but it does
+not exist yet (FMOD's setup wizard has not run). When created it must live outside the
+ignored vendor tree, or the ignore rule must be narrowed to admit it.
+
+### Activation is LOCAL, not committed
+
+`DESK42_FMOD` and the `FMODUnity` asmdef reference were briefly committed in `4c4ef26`
+while the plugin stayed untracked. That made **every clean clone fail to compile**
+(`CS0246: 'FMOD' could not be found`), proven by an A/B on isolated worktrees. Both are now
+backed out of committed settings and are local activation steps, performed only in an
+environment that has imported the package.
+
+`FmodActivation_MatchesPackagePresence` locks the two states together so the inconsistent
+combination cannot be committed again.
+
+### Blocked — separate licensing decision required
+
+Distributing the FMOD native integration from a public repository is a licensing question,
+not an engineering one. **D1 steps 6–9 are blocked on it**, because Studio project, banks,
+Editor verification and standalone cold-start all presuppose a shareable, reproducible FMOD
+setup. Repository visibility was not changed.
