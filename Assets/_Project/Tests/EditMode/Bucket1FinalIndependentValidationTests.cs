@@ -353,6 +353,171 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void CategorySynergy_IdenticalValidTagWithResolver_AwardsOnce()
+        {
+            var previous = ResolvedClaim(
+                "CLM-VALID-TAG-PREVIOUS", "species-a", "known-tag");
+            var current = Claim(
+                "CLM-VALID-TAG-CURRENT", species: "species-b");
+            current.AnomalyTagIds = new[] { "known-tag" };
+            var data = RunData(activeClaim: current);
+            data.ResolvedClaims.Add(previous);
+            var run = Controller(data);
+            var shift = ShiftManagerWithTags(
+                Tag("known-tag", "SharedCategory"));
+            Present(current, data, Meta);
+
+            var committed = CommitWithBonusRates(
+                current, ClaimResolutionKind.Approve,
+                run, Meta, shift.BonusRates);
+
+            Assert.IsTrue(committed.Committed);
+            Assert.AreEqual(15, data.CorporateCredits,
+                "A known identical tag proves one shared authored category: " +
+                "base 12 plus one +3 synergy.");
+        }
+
+        [Test]
+        public void CategorySynergy_IdenticalUnknownTagWithResolver_DoesNotAward()
+        {
+            var previous = ResolvedClaim(
+                "CLM-UNKNOWN-TAG-PREVIOUS", "species-a", "unknown-tag");
+            var current = Claim(
+                "CLM-UNKNOWN-TAG-CURRENT", species: "species-b");
+            current.AnomalyTagIds = new[] { "unknown-tag" };
+            var data = RunData(activeClaim: current);
+            data.ResolvedClaims.Add(previous);
+            var run = Controller(data);
+            var shift = ShiftManagerWithTags();
+            Present(current, data, Meta);
+
+            var committed = CommitWithBonusRates(
+                current, ClaimResolutionKind.Approve,
+                run, Meta, shift.BonusRates);
+
+            Assert.IsTrue(committed.Committed);
+            Assert.AreEqual(12, data.CorporateCredits,
+                "Identical unknown IDs do not prove that an authored category exists.");
+            Assert.IsTrue(SaveSystem.LoadMeta().Encounters
+                .IsCompleted(current.EncounterId),
+                "An unresolved tag must not prevent the authoritative save.");
+        }
+
+        [Test]
+        public void CategorySynergy_DistinctUnknownOrMalformedTags_DoNotAward()
+        {
+            var previous = ResolvedClaim(
+                "CLM-UNKNOWN-DISTINCT-PREVIOUS",
+                "species-a",
+                "unknown-tag-a");
+            previous.AnomalyTagIds =
+                new[] { "unknown-tag-a", null, " " };
+            var current = Claim(
+                "CLM-UNKNOWN-DISTINCT-CURRENT", species: "species-b");
+            current.AnomalyTagIds =
+                new[] { "unknown-tag-b", string.Empty, "\t" };
+            var data = RunData(activeClaim: current);
+            data.ResolvedClaims.Add(previous);
+            var run = Controller(data);
+            var shift = ShiftManagerWithTags();
+            Present(current, data, Meta);
+
+            var committed = CommitWithBonusRates(
+                current, ClaimResolutionKind.Approve,
+                run, Meta, shift.BonusRates);
+
+            Assert.IsTrue(committed.Committed);
+            Assert.AreEqual(12, data.CorporateCredits);
+            var loaded = SaveSystem.LoadRun();
+            Assert.IsTrue(loaded.ActiveClaim.IsResolved);
+            Assert.IsTrue(loaded.ActiveClaim.ConsequencesApplied);
+        }
+
+        [Test]
+        public void CategorySynergy_MultipleQualifyingPairs_AwardOnlyOnce()
+        {
+            var previous = ResolvedClaim(
+                "CLM-MULTI-PREVIOUS", "species-a", "tag-a1");
+            previous.AnomalyTagIds = new[] { "tag-a1", "tag-a2" };
+            var current = Claim(
+                "CLM-MULTI-CURRENT", species: "species-b");
+            current.AnomalyTagIds = new[] { "tag-b1", "tag-b2" };
+            var data = RunData(activeClaim: current);
+            data.ResolvedClaims.Add(previous);
+            var run = Controller(data);
+            var shift = ShiftManagerWithTags(
+                Tag("tag-a1", "SharedCategory"),
+                Tag("tag-a2", "SharedCategory"),
+                Tag("tag-b1", "SharedCategory"),
+                Tag("tag-b2", "SharedCategory"));
+            Present(current, data, Meta);
+
+            var committed = CommitWithBonusRates(
+                current, ClaimResolutionKind.Approve,
+                run, Meta, shift.BonusRates);
+
+            Assert.IsTrue(committed.Committed);
+            Assert.AreEqual(15, data.CorporateCredits,
+                "Any number of qualifying pairs must produce one +3 synergy.");
+        }
+
+        [Test]
+        public void CategorySynergy_AbsentResolver_DoesNotInferFromRawTagIdentity()
+        {
+            var previous = ResolvedClaim(
+                "CLM-NO-RESOLVER-PREVIOUS", "species-a", "unproven-tag");
+            var current = Claim(
+                "CLM-NO-RESOLVER-CURRENT", species: "species-b");
+            current.AnomalyTagIds = new[] { "unproven-tag" };
+            var data = RunData(activeClaim: current);
+            data.ResolvedClaims.Add(previous);
+            var run = Controller(data);
+            Present(current, data, Meta);
+
+            var committed = CommitWithBonusRates(
+                current, ClaimResolutionKind.Approve,
+                run, Meta, new ClaimBonusRates(5, 3));
+
+            Assert.IsTrue(committed.Committed);
+            Assert.AreEqual(12, data.CorporateCredits,
+                "Without an authoritative resolver, raw ID identity is not " +
+                "evidence of an authored category.");
+        }
+
+        [Test]
+        public void CategorySynergy_ThrowingResolver_FailsClosedAndStillSaves()
+        {
+            var previous = ResolvedClaim(
+                "CLM-THROWING-PREVIOUS", "species-a", "tag-a");
+            var current = Claim(
+                "CLM-THROWING-CURRENT", species: "species-b");
+            current.AnomalyTagIds = new[] { "tag-b" };
+            var data = RunData(activeClaim: current);
+            data.ResolvedClaims.Add(previous);
+            var run = Controller(data);
+            Present(current, data, Meta);
+            var rates = new ClaimBonusRates(
+                5, 3,
+                _ => throw new InvalidOperationException("Malformed tag lookup."));
+
+            CommitResult committed = default;
+            Assert.DoesNotThrow(() =>
+                committed = CommitWithBonusRates(
+                    current, ClaimResolutionKind.Approve,
+                    run, Meta, rates));
+
+            Assert.IsTrue(committed.Committed);
+            Assert.AreEqual(12, data.CorporateCredits);
+            var loaded = SaveSystem.LoadRun();
+            var loadedMeta = SaveSystem.LoadMeta();
+            Assert.IsTrue(loaded.ActiveClaim.IsResolved);
+            Assert.IsTrue(loaded.ActiveClaim.ConsequencesApplied);
+            Assert.IsTrue(loadedMeta.Encounters.IsCompleted(current.EncounterId));
+            Assert.AreEqual(1,
+                loadedMeta.GetTotalVisits(current.ClientVariantId));
+        }
+
+        [Test]
         public void DeferredClaimIdGuard_StaleEventCannotReapplyCurrentClaimBonuses()
         {
             SeedEngine.Init(7001);
@@ -460,10 +625,13 @@ namespace Desk42.Tests.EditMode
             var data = RunData(activeClaim: current);
             data.ResolvedClaims.Add(previous);
             var run = Controller(data);
+            var shift = ShiftManagerWithTags(
+                Tag("shared-tag", "SharedCategory"));
             Present(current, data, Meta);
 
-            var committed = Commit(
-                current, ClaimResolutionKind.Approve, run, Meta);
+            var committed = CommitWithBonusRates(
+                current, ClaimResolutionKind.Approve,
+                run, Meta, shift.BonusRates);
             int creditsAfterCommit = data.CorporateCredits;
             int memosAfterCommit = data.GeneratedMemoIds.Count;
 
@@ -480,9 +648,9 @@ namespace Desk42.Tests.EditMode
                 "The resolved-history copy must persist the exact-once marker.");
 
             var resumed = Controller(loaded);
-            var duplicate = Commit(
+            var duplicate = CommitWithBonusRates(
                 loaded.ActiveClaim, ClaimResolutionKind.Approve,
-                resumed, loadedMeta);
+                resumed, loadedMeta, shift.BonusRates);
 
             Assert.IsFalse(duplicate.Committed);
             Assert.AreEqual(CommitRejection.AlreadyCommitted, duplicate.Rejection);
@@ -502,8 +670,9 @@ namespace Desk42.Tests.EditMode
                 "A new encounter must not inherit the previous claim's marker.");
 
             int beforeNext = loaded.CorporateCredits;
-            var nextCommit = Commit(
-                next, ClaimResolutionKind.Deny, resumed, loadedMeta);
+            var nextCommit = CommitWithBonusRates(
+                next, ClaimResolutionKind.Deny,
+                resumed, loadedMeta, shift.BonusRates);
 
             Assert.IsTrue(nextCommit.Committed);
             Assert.IsTrue(next.ConsequencesApplied);
@@ -688,8 +857,17 @@ namespace Desk42.Tests.EditMode
             MetaProgressData meta,
             ClaimBonusRates bonusRates)
         {
-            var outcome = new ClaimResolutionOutcome(
-                kind, creditsEarned: 12, sanityCost: 3f, soulCost: 1f);
+            ClaimResolutionOutcome outcome = kind switch
+            {
+                ClaimResolutionKind.Approve => new ClaimResolutionOutcome(
+                    kind, creditsEarned: 12, sanityCost: 3f, soulCost: 1f),
+                ClaimResolutionKind.Deny => new ClaimResolutionOutcome(
+                    kind, creditsEarned: 0, sanityCost: 3f, soulCost: 0f),
+                ClaimResolutionKind.Liquify =>
+                    ClaimResolutionConsequencePolicy.Liquify(),
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(kind), kind, null),
+            };
             return EncounterCommitService.CommitEncounterResult(
                 claim, outcome, run, meta,
                 proof: null, eliasContent: null, bonusRates);

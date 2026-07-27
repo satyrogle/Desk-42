@@ -41,7 +41,13 @@ namespace Desk42.Encounter
         /// Maps an anomaly tag id to its category. Sequential synergy matches on
         /// CATEGORY, not tag id — two different tags in the same category must
         /// still earn the bonus. Supplied by ShiftManager, which owns the
-        /// AnomalyTagData assets. Null falls back to raw id comparison.
+        /// AnomalyTagData assets.
+        ///
+        /// Null means NO authoritative category evidence exists, so category
+        /// synergy fails closed. It does NOT fall back to raw id comparison:
+        /// tag identity is not evidence that a tag belongs to an authored
+        /// category, and the resolver-absent path is reachable in production
+        /// via ClaimBonusRates.Default.
         /// </summary>
         public readonly System.Func<string, string> TagCategoryResolver;
 
@@ -184,6 +190,20 @@ namespace Desk42.Encounter
         /// Comparing raw tag ids would silently narrow the bonus to identical
         /// tags and drop legitimate same-category pairs.
         /// </summary>
+        /// <summary>
+        /// Sequential category synergy: at least one anomaly tag from each
+        /// claim must RESOLVE to an authored category, and those categories
+        /// must be equal.
+        ///
+        /// There is deliberately no tag-identity shortcut. Two claims carrying
+        /// the same tag id prove nothing on their own — an unknown tag is
+        /// still unknown when it appears twice — and treating identity as a
+        /// match awarded synergy for unresolved tags. Resolution must succeed
+        /// first; equality is then checked on the resolved categories.
+        ///
+        /// Existential: the first qualifying pair wins and the caller awards
+        /// the synergy once, regardless of how many pairs would qualify.
+        /// </summary>
         private static bool SharesTagCategory(
             ActiveClaimData a, ActiveClaimData b,
             System.Func<string, string> categoryOf)
@@ -191,34 +211,24 @@ namespace Desk42.Encounter
             if (a?.AnomalyTagIds == null || a.AnomalyTagIds.Length == 0) return false;
             if (b?.AnomalyTagIds == null || b.AnomalyTagIds.Length == 0) return false;
 
+            // No resolver means no authoritative category evidence at all.
+            // Fail closed: other consequences still commit normally.
+            if (categoryOf == null) return false;
+
             foreach (string tag in a.AnomalyTagIds)
             {
                 if (string.IsNullOrWhiteSpace(tag)) continue;
 
                 string catA = SafeCategory(categoryOf, tag);
+                if (string.IsNullOrWhiteSpace(catA)) continue;   // unresolved -> no match
 
                 foreach (string other in b.AnomalyTagIds)
                 {
                     if (string.IsNullOrWhiteSpace(other)) continue;
 
-                    // The SAME tag necessarily has the same category: category
-                    // is a function of tag, so identity implies category
-                    // equality without needing to resolve it. This is not "raw
-                    // id comparison as the rule" — DIFFERENT tags below still
-                    // require authoritative resolution.
-                    if (string.Equals(tag, other, System.StringComparison.Ordinal))
-                        return true;
-
-                    // Different tags: both must resolve, and to the same
-                    // authored category. An unresolved tag contributes nothing,
-                    // so two distinct unknown tags never match each other.
-                    if (string.IsNullOrWhiteSpace(catA)) continue;
-
                     string catB = SafeCategory(categoryOf, other);
-                    if (string.IsNullOrWhiteSpace(catB)) continue;
+                    if (string.IsNullOrWhiteSpace(catB)) continue;   // unresolved -> no match
 
-                    // Existential: one qualifying pair is enough, and the caller
-                    // awards the synergy once regardless of how many pairs match.
                     if (string.Equals(catA, catB, System.StringComparison.Ordinal))
                         return true;
                 }
