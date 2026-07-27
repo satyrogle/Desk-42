@@ -381,7 +381,7 @@ namespace Desk42.Debugging
                 ["encounterId"]      = o.Context.EncounterId,
                 ["claimantStableId"] = o.Context.ClaimantStableId,
                 ["role"]             = RoleOf(o.Context.ClaimantStableId),
-                ["isCausalIdentity"] = Audio.ProofAudioCatalog.IsCausalIdentity(o.Event),
+                ["isCausalIdentity"] = Audio.ProofAudioPolicy.IsCausalIdentity(o.Event),
                 ["backend"]          = Audio.AudioService.BackendName,
             });
 

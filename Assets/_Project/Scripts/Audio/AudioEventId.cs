@@ -9,7 +9,7 @@
 // AudioEventId is the APPLICATION-LEVEL namespace, not a proof-only one:
 // it carries ordinary desk audio (PneumaticTubeThreat) alongside the
 // proof identities. The proof subset is named explicitly in
-// ProofAudioCatalog.ProofSubset rather than inferred from the type
+// ProofAudioPolicy.ProofSubset rather than inferred from the type
 // name, so adding a non-proof identity can never silently widen what
 // counts as proof audio.
 //
@@ -74,10 +74,17 @@ namespace Desk42.Audio
     }
 
     /// <summary>
-    /// The single mapping layer between logical identities and FMOD paths.
+    /// The single mapping layer between logical identities and FMOD paths, for
+    /// ALL application audio. General ownership: lookup and validation that
+    /// apply to every AudioEventId, proof or not.
+    ///
+    /// Rules about which identities belong to the Five-Shift experiment live in
+    /// ProofAudioPolicy, not here — this catalog gained PneumaticTubeThreat and
+    /// is no longer proof-only.
+    ///
     /// Kept as plain strings so it compiles without the FMOD package.
     /// </summary>
-    public static class ProofAudioCatalog
+    public static class AudioEventCatalog
     {
         private static readonly Dictionary<AudioEventId, string> Paths = new()
         {
@@ -93,9 +100,30 @@ namespace Desk42.Audio
         public static IEnumerable<AudioEventId> All => Paths.Keys;
 
         /// <summary>
+        /// FMOD path for a logical identity, or null when unmapped.
+        /// Returning null rather than throwing keeps a missing mapping a
+        /// diagnosable no-op instead of a crash mid-encounter.
+        /// </summary>
+        public static string TryGetPath(AudioEventId id)
+            => Paths.TryGetValue(id, out string path) ? path : null;
+
+        /// <summary>True when the identity has exactly one mapped path.</summary>
+        public static bool IsMapped(AudioEventId id) => Paths.ContainsKey(id);
+    }
+
+    /// <summary>
+    /// Proof-specific rules over AudioEventId. Owns ONLY which identities
+    /// belong to the Five-Shift experiment and the restrictions that follow —
+    /// never the path mapping, which is AudioEventCatalog's.
+    ///
+    /// No second enum, no duplicated catalog.
+    /// </summary>
+    public static class ProofAudioPolicy
+    {
+        /// <summary>
         /// The Five-Shift proof subset, stated explicitly. Membership is
-        /// declared here, never inferred from the enum type name, so a future
-        /// non-proof identity cannot quietly join the proof surface.
+        /// declared here, never inferred from a type name, so a non-proof
+        /// identity cannot quietly join the proof surface.
         /// </summary>
         public static readonly AudioEventId[] ProofSubset =
         {
@@ -109,14 +137,6 @@ namespace Desk42.Audio
         /// <summary>True when the identity belongs to the proof contract.</summary>
         public static bool IsProofIdentity(AudioEventId id)
             => System.Array.IndexOf(ProofSubset, id) >= 0;
-
-        /// <summary>
-        /// FMOD path for a logical identity, or null when unmapped.
-        /// Returning null rather than throwing keeps a missing mapping a
-        /// diagnosable no-op instead of a crash mid-encounter.
-        /// </summary>
-        public static string TryGetPath(AudioEventId id)
-            => Paths.TryGetValue(id, out string path) ? path : null;
 
         /// <summary>
         /// True for the Shift 2 causal identity. Exists so the Shift 5

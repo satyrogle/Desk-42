@@ -39,7 +39,13 @@ Defining the symbol before steps 1–2 breaks compilation in `Desk42.Audio`.
 ## 2. Event contract (D1B)
 
 Authoritative list: `Assets/_Project/Scripts/Audio/AudioEventId.cs`.
-Gameplay references the **enum**; FMOD paths exist only in `ProofAudioCatalog`.
+Gameplay references the **enum**; FMOD paths exist only in `AudioEventCatalog`.
+
+**Ownership split.** `AudioEventCatalog` is general — it maps *every* `AudioEventId`,
+including the non-proof `PneumaticTubeThreat`, and owns lookup/validation.
+`ProofAudioPolicy` owns only which identities belong to the Five-Shift experiment
+(`ProofSubset`, `IsProofIdentity`) and the rules that follow (`IsCausalIdentity`,
+`IsPermittedOnShift5`). One enum, one catalog, no duplication.
 
 | Logical identity | Purpose | Intended FMOD path |
 |---|---|---|
@@ -51,7 +57,7 @@ Gameplay references the **enum**; FMOD paths exist only in `ProofAudioCatalog`.
 | `PneumaticTubeThreat` | ordinary desk audio — **not a proof identity** | `event:/Threat/PneumaticTube` |
 
 The enum is named **`AudioEventId`**: it is the application-level logical namespace, not a
-proof-only one. The proof subset is declared explicitly in `ProofAudioCatalog.ProofSubset`
+proof-only one. The proof subset is declared explicitly in `ProofAudioPolicy.ProofSubset`
 rather than inferred from the type name, so adding a non-proof identity cannot silently widen
 what counts as proof audio.
 

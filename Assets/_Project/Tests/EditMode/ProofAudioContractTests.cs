@@ -88,14 +88,49 @@ namespace Desk42.Tests.EditMode
         // ── Event identity contract ──────────────────────────
 
         [Test]
+        public void AllSixIdentities_HaveExactlyOneMapping()
+        {
+            var all = new[]
+            {
+                AudioEventId.DeskInteraction,
+                AudioEventId.ProcedureFeedback,
+                AudioEventId.EliasRegistrationCausal,
+                AudioEventId.ComplianceStreakConfirm,
+                AudioEventId.Shift5EliasReturn,
+                AudioEventId.PneumaticTubeThreat,
+            };
+
+            foreach (var id in all)
+                Assert.IsTrue(AudioEventCatalog.IsMapped(id), $"{id} is unmapped.");
+
+            CollectionAssert.AreEquivalent(all, AudioEventCatalog.All.ToList(),
+                "The general catalog must own every identity, proof or not.");
+            Assert.AreEqual("event:/Threat/PneumaticTube",
+                AudioEventCatalog.TryGetPath(AudioEventId.PneumaticTubeThreat));
+        }
+
+        [Test]
+        public void OwnershipSplit_CatalogMapsEverything_PolicyOwnsProofRulesOnly()
+        {
+            // The catalog is general; proof membership is the policy's.
+            Assert.IsTrue(AudioEventCatalog.IsMapped(AudioEventId.PneumaticTubeThreat));
+            Assert.IsFalse(ProofAudioPolicy.IsProofIdentity(AudioEventId.PneumaticTubeThreat),
+                "Ordinary desk audio is mapped but is not part of the proof surface.");
+
+            foreach (var id in ProofAudioPolicy.ProofSubset)
+                Assert.IsTrue(AudioEventCatalog.IsMapped(id),
+                    $"Proof identity {id} must still resolve through the general catalog.");
+        }
+
+        [Test]
         public void EveryContractIdentity_HasAUniqueStablePath()
         {
-            var paths = ProofAudioCatalog.All
-                .Select(ProofAudioCatalog.TryGetPath).ToList();
+            var paths = AudioEventCatalog.All
+                .Select(AudioEventCatalog.TryGetPath).ToList();
 
             CollectionAssert.AllItemsAreNotNull(paths);
             CollectionAssert.AllItemsAreUnique(paths);
-            CollectionAssert.AllItemsAreUnique(ProofAudioCatalog.All.ToList());
+            CollectionAssert.AllItemsAreUnique(AudioEventCatalog.All.ToList());
         }
 
         [Test]
@@ -109,7 +144,7 @@ namespace Desk42.Tests.EditMode
                          AudioEventId.ComplianceStreakConfirm,
                          AudioEventId.Shift5EliasReturn,
                      })
-                Assert.IsNotNull(ProofAudioCatalog.TryGetPath(required), $"{required} unmapped.");
+                Assert.IsNotNull(AudioEventCatalog.TryGetPath(required), $"{required} unmapped.");
         }
 
         [Test]
@@ -118,12 +153,12 @@ namespace Desk42.Tests.EditMode
             Assert.AreNotEqual(AudioEventId.EliasRegistrationCausal,
                 AudioEventId.Shift5EliasReturn);
             Assert.AreNotEqual(
-                ProofAudioCatalog.TryGetPath(AudioEventId.EliasRegistrationCausal),
-                ProofAudioCatalog.TryGetPath(AudioEventId.Shift5EliasReturn),
+                AudioEventCatalog.TryGetPath(AudioEventId.EliasRegistrationCausal),
+                AudioEventCatalog.TryGetPath(AudioEventId.Shift5EliasReturn),
                 "The return must not resolve to the causal motif.");
-            Assert.IsTrue(ProofAudioCatalog.IsCausalIdentity(
+            Assert.IsTrue(ProofAudioPolicy.IsCausalIdentity(
                 AudioEventId.EliasRegistrationCausal));
-            Assert.IsFalse(ProofAudioCatalog.IsCausalIdentity(
+            Assert.IsFalse(ProofAudioPolicy.IsCausalIdentity(
                 AudioEventId.Shift5EliasReturn));
         }
 
@@ -164,9 +199,9 @@ namespace Desk42.Tests.EditMode
             Assert.AreEqual(AudioRequestResult.Requested,
                 AudioService.PlayOneShot(
                     AudioEventId.Shift5EliasReturn, new AudioRequestContext(5)));
-            Assert.IsTrue(ProofAudioCatalog.IsPermittedOnShift5(
+            Assert.IsTrue(ProofAudioPolicy.IsPermittedOnShift5(
                 AudioEventId.Shift5EliasReturn));
-            Assert.IsFalse(ProofAudioCatalog.IsPermittedOnShift5(
+            Assert.IsFalse(ProofAudioPolicy.IsPermittedOnShift5(
                 AudioEventId.EliasRegistrationCausal));
         }
 
@@ -186,21 +221,21 @@ namespace Desk42.Tests.EditMode
                     AudioEventId.ComplianceStreakConfirm,
                     AudioEventId.Shift5EliasReturn,
                 },
-                ProofAudioCatalog.ProofSubset);
+                ProofAudioPolicy.ProofSubset);
 
             Assert.IsFalse(
-                ProofAudioCatalog.IsProofIdentity(AudioEventId.PneumaticTubeThreat),
+                ProofAudioPolicy.IsProofIdentity(AudioEventId.PneumaticTubeThreat),
                 "Ordinary desk audio must not join the proof surface.");
             Assert.IsTrue(
-                ProofAudioCatalog.IsProofIdentity(AudioEventId.EliasRegistrationCausal));
+                ProofAudioPolicy.IsProofIdentity(AudioEventId.EliasRegistrationCausal));
         }
 
         [Test]
         public void MercyAndFlow_AreNotInTheProofContract()
         {
-            foreach (var id in ProofAudioCatalog.All)
+            foreach (var id in AudioEventCatalog.All)
             {
-                string path = ProofAudioCatalog.TryGetPath(id) ?? "";
+                string path = AudioEventCatalog.TryGetPath(id) ?? "";
                 Assert.IsFalse(path.Contains("Mercy"), $"{id} maps to a Mercy state.");
                 Assert.IsFalse(path.Contains("Flow"), $"{id} maps to a Flow state.");
             }
@@ -213,9 +248,9 @@ namespace Desk42.Tests.EditMode
         {
             // Mara Kest has no audio identity of her own and, critically, no
             // route to the Elias causal identity.
-            foreach (var id in ProofAudioCatalog.All)
+            foreach (var id in AudioEventCatalog.All)
             {
-                string path = ProofAudioCatalog.TryGetPath(id) ?? "";
+                string path = AudioEventCatalog.TryGetPath(id) ?? "";
                 Assert.IsFalse(path.Contains("Mara") || path.Contains("control_"),
                     $"{id} maps to the control claimant.");
             }

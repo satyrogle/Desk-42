@@ -125,7 +125,7 @@ namespace Desk42.Audio
         public static AudioRequestResult PlayOneShot(
             AudioEventId id, AudioRequestContext context = default)
         {
-            string path = ProofAudioCatalog.TryGetPath(id);
+            string path = AudioEventCatalog.TryGetPath(id);
             AudioRequestResult result;
 
             if (id == AudioEventId.None || path == null)
@@ -133,7 +133,7 @@ namespace Desk42.Audio
                 result = AudioRequestResult.UnknownEvent;
                 Debug.LogWarning($"[AudioService] No mapping for '{id}'.");
             }
-            else if (context.ShiftNumber == 5 && ProofAudioCatalog.IsCausalIdentity(id))
+            else if (context.ShiftNumber == 5 && ProofAudioPolicy.IsCausalIdentity(id))
             {
                 // Locked: the scored return must not acoustically name the
                 // earlier cause. Refused at the boundary, not by convention.

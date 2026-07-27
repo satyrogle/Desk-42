@@ -145,9 +145,9 @@ namespace Desk42.Tests.EditMode
         [Test]
         public void OnlyPermittedIdentity_ForShift5IsTheGenericReturn()
         {
-            Assert.IsTrue(ProofAudioCatalog.IsPermittedOnShift5(
+            Assert.IsTrue(ProofAudioPolicy.IsPermittedOnShift5(
                 AudioEventId.Shift5EliasReturn));
-            Assert.IsFalse(ProofAudioCatalog.IsPermittedOnShift5(
+            Assert.IsFalse(ProofAudioPolicy.IsPermittedOnShift5(
                 AudioEventId.EliasRegistrationCausal));
         }
 
@@ -224,7 +224,7 @@ namespace Desk42.Tests.EditMode
         [Test]
         public void PneumaticTubeIdentity_MapsToTheIntendedPath()
             => Assert.AreEqual("event:/Threat/PneumaticTube",
-                ProofAudioCatalog.TryGetPath(AudioEventId.PneumaticTubeThreat));
+                AudioEventCatalog.TryGetPath(AudioEventId.PneumaticTubeThreat));
 
         [Test]
         public void PneumaticTube_PreservesWorldPosition()
@@ -245,7 +245,7 @@ namespace Desk42.Tests.EditMode
 
             Assert.IsFalse(src.Contains(nameof(AudioEventId.EliasRegistrationCausal)));
             Assert.IsFalse(src.Contains(nameof(AudioEventId.Shift5EliasReturn)));
-            Assert.IsFalse(ProofAudioCatalog.IsCausalIdentity(
+            Assert.IsFalse(ProofAudioPolicy.IsCausalIdentity(
                 AudioEventId.PneumaticTubeThreat),
                 "The tube identity must never be treated as a proof identity.");
         }
@@ -255,12 +255,12 @@ namespace Desk42.Tests.EditMode
         {
             // Distinct identity, distinct path — it cannot stand in for a proof
             // event, and no proof event resolves to its path.
-            string tubePath = ProofAudioCatalog.TryGetPath(AudioEventId.PneumaticTubeThreat);
+            string tubePath = AudioEventCatalog.TryGetPath(AudioEventId.PneumaticTubeThreat);
 
-            foreach (var id in ProofAudioCatalog.All)
+            foreach (var id in AudioEventCatalog.All)
             {
                 if (id == AudioEventId.PneumaticTubeThreat) continue;
-                Assert.AreNotEqual(tubePath, ProofAudioCatalog.TryGetPath(id),
+                Assert.AreNotEqual(tubePath, AudioEventCatalog.TryGetPath(id),
                     $"{id} collides with the pneumatic tube path.");
             }
         }
