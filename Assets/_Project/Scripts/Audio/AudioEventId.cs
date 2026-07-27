@@ -1,10 +1,17 @@
 // ============================================================
-// DESK 42 — Proof audio event contract (D1B)
+// DESK 42 — Application audio event contract (D1B)
 //
 // ONE authoritative list of logical audio identities for the
-// Five-Shift proof slice, plus the single mapping layer to eventual
-// FMOD paths. Gameplay code references the enum; it never contains an
-// FMOD path string.
+// application, plus the single mapping layer to eventual FMOD paths.
+// Gameplay code references the enum; it never contains an FMOD path
+// string.
+//
+// AudioEventId is the APPLICATION-LEVEL namespace, not a proof-only one:
+// it carries ordinary desk audio (PneumaticTubeThreat) alongside the
+// proof identities. The proof subset is named explicitly in
+// ProofAudioCatalog.ProofSubset rather than inferred from the type
+// name, so adding a non-proof identity can never silently widen what
+// counts as proof audio.
 //
 // This file has NO FMOD dependency and compiles with DESK42_FMOD
 // undefined. The mapping is data only — resolving a path does not load,
@@ -32,7 +39,7 @@ namespace Desk42.Audio
     /// Stable logical audio identities for the proof slice. Values are
     /// explicit so reordering cannot silently change a saved/logged identity.
     /// </summary>
-    public enum ProofAudioEvent
+    public enum AudioEventId
     {
         None = 0,
 
@@ -72,40 +79,58 @@ namespace Desk42.Audio
     /// </summary>
     public static class ProofAudioCatalog
     {
-        private static readonly Dictionary<ProofAudioEvent, string> Paths = new()
+        private static readonly Dictionary<AudioEventId, string> Paths = new()
         {
-            [ProofAudioEvent.DeskInteraction]         = "event:/Desk/Interaction",
-            [ProofAudioEvent.ProcedureFeedback]       = "event:/Desk/ProcedureApplied",
-            [ProofAudioEvent.EliasRegistrationCausal] = "event:/Proof/EliasRegistration18A",
-            [ProofAudioEvent.ComplianceStreakConfirm] = "event:/Desk/ComplianceStreak",
-            [ProofAudioEvent.Shift5EliasReturn]       = "event:/Proof/EliasReturnGeneric",
-            [ProofAudioEvent.PneumaticTubeThreat]     = "event:/Threat/PneumaticTube",
+            [AudioEventId.DeskInteraction]         = "event:/Desk/Interaction",
+            [AudioEventId.ProcedureFeedback]       = "event:/Desk/ProcedureApplied",
+            [AudioEventId.EliasRegistrationCausal] = "event:/Proof/EliasRegistration18A",
+            [AudioEventId.ComplianceStreakConfirm] = "event:/Desk/ComplianceStreak",
+            [AudioEventId.Shift5EliasReturn]       = "event:/Proof/EliasReturnGeneric",
+            [AudioEventId.PneumaticTubeThreat]     = "event:/Threat/PneumaticTube",
         };
 
-        /// <summary>Every identity in the proof contract.</summary>
-        public static IEnumerable<ProofAudioEvent> All => Paths.Keys;
+        /// <summary>Every identity in the application contract.</summary>
+        public static IEnumerable<AudioEventId> All => Paths.Keys;
+
+        /// <summary>
+        /// The Five-Shift proof subset, stated explicitly. Membership is
+        /// declared here, never inferred from the enum type name, so a future
+        /// non-proof identity cannot quietly join the proof surface.
+        /// </summary>
+        public static readonly AudioEventId[] ProofSubset =
+        {
+            AudioEventId.DeskInteraction,
+            AudioEventId.ProcedureFeedback,
+            AudioEventId.EliasRegistrationCausal,
+            AudioEventId.ComplianceStreakConfirm,
+            AudioEventId.Shift5EliasReturn,
+        };
+
+        /// <summary>True when the identity belongs to the proof contract.</summary>
+        public static bool IsProofIdentity(AudioEventId id)
+            => System.Array.IndexOf(ProofSubset, id) >= 0;
 
         /// <summary>
         /// FMOD path for a logical identity, or null when unmapped.
         /// Returning null rather than throwing keeps a missing mapping a
         /// diagnosable no-op instead of a crash mid-encounter.
         /// </summary>
-        public static string TryGetPath(ProofAudioEvent id)
+        public static string TryGetPath(AudioEventId id)
             => Paths.TryGetValue(id, out string path) ? path : null;
 
         /// <summary>
         /// True for the Shift 2 causal identity. Exists so the Shift 5
         /// suppression rule is directly assertable rather than assumed.
         /// </summary>
-        public static bool IsCausalIdentity(ProofAudioEvent id)
-            => id == ProofAudioEvent.EliasRegistrationCausal;
+        public static bool IsCausalIdentity(AudioEventId id)
+            => id == AudioEventId.EliasRegistrationCausal;
 
         /// <summary>
         /// Identities permitted during the scored Shift 5 return. The causal
         /// identity is excluded by construction, not by convention.
         /// </summary>
-        public static bool IsPermittedOnShift5(ProofAudioEvent id)
-            => id != ProofAudioEvent.EliasRegistrationCausal && id != ProofAudioEvent.None;
+        public static bool IsPermittedOnShift5(AudioEventId id)
+            => id != AudioEventId.EliasRegistrationCausal && id != AudioEventId.None;
     }
 
     /// <summary>Outcome of an audio request. Never throws into gameplay.</summary>
@@ -157,13 +182,13 @@ namespace Desk42.Audio
     /// <summary>Emitted on every request so observers need no FMOD coupling.</summary>
     public readonly struct AudioRequestObservation
     {
-        public readonly ProofAudioEvent Event;
+        public readonly AudioEventId Event;
         public readonly AudioRequestResult Result;
         public readonly AudioRequestContext Context;
         public readonly string ResolvedPath;
 
         public AudioRequestObservation(
-            ProofAudioEvent id, AudioRequestResult result,
+            AudioEventId id, AudioRequestResult result,
             AudioRequestContext context, string resolvedPath)
         {
             Event        = id;

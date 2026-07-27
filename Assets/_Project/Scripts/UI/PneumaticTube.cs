@@ -88,7 +88,7 @@ namespace Desk42.UI
             // masquerading as success. The OSHA fee label below remains the
             // visible feedback either way.
             Audio.AudioService.PlayOneShot(
-                Audio.ProofAudioEvent.PneumaticTubeThreat,
+                Audio.AudioEventId.PneumaticTubeThreat,
                 Audio.AudioRequestContext.AtPosition(
                     GameManager.Instance?.Run?.ShiftNumber ?? 0, transform.position));
 

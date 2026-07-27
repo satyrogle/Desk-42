@@ -38,7 +38,7 @@ Defining the symbol before steps 1–2 breaks compilation in `Desk42.Audio`.
 
 ## 2. Event contract (D1B)
 
-Authoritative list: `Assets/_Project/Scripts/Audio/ProofAudioEvents.cs`.
+Authoritative list: `Assets/_Project/Scripts/Audio/AudioEventId.cs`.
 Gameplay references the **enum**; FMOD paths exist only in `ProofAudioCatalog`.
 
 | Logical identity | Purpose | Intended FMOD path |
@@ -48,6 +48,12 @@ Gameplay references the **enum**; FMOD paths exist only in `ProofAudioCatalog`.
 | `EliasRegistrationCausal` | Shift 2 registration / causal identity — **SLOT ONLY** | `event:/Proof/EliasRegistration18A` |
 | `ComplianceStreakConfirm` | Compliance Streak confirmation | `event:/Desk/ComplianceStreak` |
 | `Shift5EliasReturn` | generic Shift 5 return | `event:/Proof/EliasReturnGeneric` |
+| `PneumaticTubeThreat` | ordinary desk audio — **not a proof identity** | `event:/Threat/PneumaticTube` |
+
+The enum is named **`AudioEventId`**: it is the application-level logical namespace, not a
+proof-only one. The proof subset is declared explicitly in `ProofAudioCatalog.ProofSubset`
+rather than inferred from the type name, so adding a non-proof identity cannot silently widen
+what counts as proof audio.
 
 **Narrative constraint.** `EliasRegistrationCausal` is an event slot only. No motif is
 composed, generated or reinterpreted in this bucket. No authored audio exists yet.

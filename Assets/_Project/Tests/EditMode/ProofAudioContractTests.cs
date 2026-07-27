@@ -14,7 +14,7 @@ namespace Desk42.Tests.EditMode
     {
         private sealed class RecordingBackend : IAudioBackend
         {
-            public readonly List<(ProofAudioEvent id, string path)> Calls = new();
+            public readonly List<(AudioEventId id, string path)> Calls = new();
             public bool Available = true;
             public bool Throw;
             public int InitCount;
@@ -23,7 +23,7 @@ namespace Desk42.Tests.EditMode
             public void Initialize(int shiftNumber) => InitCount++;
 
             public AudioRequestResult PlayOneShot(
-                ProofAudioEvent id, string path, AudioRequestContext ctx)
+                AudioEventId id, string path, AudioRequestContext ctx)
             {
                 if (Throw) throw new System.InvalidOperationException("backend blew up");
                 Calls.Add((id, path));
@@ -43,14 +43,14 @@ namespace Desk42.Tests.EditMode
 
             Assert.IsFalse(AudioService.IsAvailable);
             Assert.AreEqual(AudioRequestResult.Unavailable,
-                AudioService.PlayOneShot(ProofAudioEvent.DeskInteraction),
+                AudioService.PlayOneShot(AudioEventId.DeskInteraction),
                 "A missing package must be diagnosable, not silently 'fine'.");
         }
 
         [Test]
         public void UnknownEvent_IsReportedNotThrown()
             => Assert.AreEqual(AudioRequestResult.UnknownEvent,
-                AudioService.PlayOneShot(ProofAudioEvent.None));
+                AudioService.PlayOneShot(AudioEventId.None));
 
         [Test]
         public void BackendException_DoesNotEscapeIntoGameplay()
@@ -58,9 +58,9 @@ namespace Desk42.Tests.EditMode
             AudioService.SetBackend(new RecordingBackend { Throw = true });
 
             Assert.DoesNotThrow(() =>
-                AudioService.PlayOneShot(ProofAudioEvent.DeskInteraction));
+                AudioService.PlayOneShot(AudioEventId.DeskInteraction));
             Assert.AreEqual(AudioRequestResult.Unavailable,
-                AudioService.PlayOneShot(ProofAudioEvent.DeskInteraction));
+                AudioService.PlayOneShot(AudioEventId.DeskInteraction));
         }
 
         [Test]
@@ -78,7 +78,7 @@ namespace Desk42.Tests.EditMode
             AudioService.SetBackend(backend);
 
             var result = AudioService.PlayOneShot(
-                ProofAudioEvent.DeskInteraction, new AudioRequestContext(1));
+                AudioEventId.DeskInteraction, new AudioRequestContext(1));
 
             Assert.AreEqual(AudioRequestResult.Requested, result);
             Assert.AreEqual(1, backend.Calls.Count);
@@ -103,11 +103,11 @@ namespace Desk42.Tests.EditMode
         {
             foreach (var required in new[]
                      {
-                         ProofAudioEvent.DeskInteraction,
-                         ProofAudioEvent.ProcedureFeedback,
-                         ProofAudioEvent.EliasRegistrationCausal,
-                         ProofAudioEvent.ComplianceStreakConfirm,
-                         ProofAudioEvent.Shift5EliasReturn,
+                         AudioEventId.DeskInteraction,
+                         AudioEventId.ProcedureFeedback,
+                         AudioEventId.EliasRegistrationCausal,
+                         AudioEventId.ComplianceStreakConfirm,
+                         AudioEventId.Shift5EliasReturn,
                      })
                 Assert.IsNotNull(ProofAudioCatalog.TryGetPath(required), $"{required} unmapped.");
         }
@@ -115,16 +115,16 @@ namespace Desk42.Tests.EditMode
         [Test]
         public void Shift2Causal_AndShift5Return_AreDistinctIdentities()
         {
-            Assert.AreNotEqual(ProofAudioEvent.EliasRegistrationCausal,
-                ProofAudioEvent.Shift5EliasReturn);
+            Assert.AreNotEqual(AudioEventId.EliasRegistrationCausal,
+                AudioEventId.Shift5EliasReturn);
             Assert.AreNotEqual(
-                ProofAudioCatalog.TryGetPath(ProofAudioEvent.EliasRegistrationCausal),
-                ProofAudioCatalog.TryGetPath(ProofAudioEvent.Shift5EliasReturn),
+                ProofAudioCatalog.TryGetPath(AudioEventId.EliasRegistrationCausal),
+                ProofAudioCatalog.TryGetPath(AudioEventId.Shift5EliasReturn),
                 "The return must not resolve to the causal motif.");
             Assert.IsTrue(ProofAudioCatalog.IsCausalIdentity(
-                ProofAudioEvent.EliasRegistrationCausal));
+                AudioEventId.EliasRegistrationCausal));
             Assert.IsFalse(ProofAudioCatalog.IsCausalIdentity(
-                ProofAudioEvent.Shift5EliasReturn));
+                AudioEventId.Shift5EliasReturn));
         }
 
         // ── Shift 5 suppression is structural ────────────────
@@ -136,7 +136,7 @@ namespace Desk42.Tests.EditMode
             AudioService.SetBackend(backend);
 
             var result = AudioService.PlayOneShot(
-                ProofAudioEvent.EliasRegistrationCausal, new AudioRequestContext(5));
+                AudioEventId.EliasRegistrationCausal, new AudioRequestContext(5));
 
             Assert.AreEqual(AudioRequestResult.Suppressed, result);
             Assert.IsEmpty(backend.Calls,
@@ -151,7 +151,7 @@ namespace Desk42.Tests.EditMode
 
             Assert.AreEqual(AudioRequestResult.Requested,
                 AudioService.PlayOneShot(
-                    ProofAudioEvent.EliasRegistrationCausal, new AudioRequestContext(2)));
+                    AudioEventId.EliasRegistrationCausal, new AudioRequestContext(2)));
             Assert.AreEqual(1, backend.Calls.Count);
         }
 
@@ -163,14 +163,37 @@ namespace Desk42.Tests.EditMode
 
             Assert.AreEqual(AudioRequestResult.Requested,
                 AudioService.PlayOneShot(
-                    ProofAudioEvent.Shift5EliasReturn, new AudioRequestContext(5)));
+                    AudioEventId.Shift5EliasReturn, new AudioRequestContext(5)));
             Assert.IsTrue(ProofAudioCatalog.IsPermittedOnShift5(
-                ProofAudioEvent.Shift5EliasReturn));
+                AudioEventId.Shift5EliasReturn));
             Assert.IsFalse(ProofAudioCatalog.IsPermittedOnShift5(
-                ProofAudioEvent.EliasRegistrationCausal));
+                AudioEventId.EliasRegistrationCausal));
         }
 
         // ── Exclusions ───────────────────────────────────────
+
+        [Test]
+        public void ProofSubset_IsDeclaredExplicitly_NotInferredFromTypeName()
+        {
+            // AudioEventId is application-level and now also carries ordinary
+            // desk audio, so proof membership must be stated, not assumed.
+            CollectionAssert.AreEquivalent(
+                new[]
+                {
+                    AudioEventId.DeskInteraction,
+                    AudioEventId.ProcedureFeedback,
+                    AudioEventId.EliasRegistrationCausal,
+                    AudioEventId.ComplianceStreakConfirm,
+                    AudioEventId.Shift5EliasReturn,
+                },
+                ProofAudioCatalog.ProofSubset);
+
+            Assert.IsFalse(
+                ProofAudioCatalog.IsProofIdentity(AudioEventId.PneumaticTubeThreat),
+                "Ordinary desk audio must not join the proof surface.");
+            Assert.IsTrue(
+                ProofAudioCatalog.IsProofIdentity(AudioEventId.EliasRegistrationCausal));
+        }
 
         [Test]
         public void MercyAndFlow_AreNotInTheProofContract()
@@ -181,7 +204,7 @@ namespace Desk42.Tests.EditMode
                 Assert.IsFalse(path.Contains("Mercy"), $"{id} maps to a Mercy state.");
                 Assert.IsFalse(path.Contains("Flow"), $"{id} maps to a Flow state.");
             }
-            Assert.IsFalse(System.Enum.GetNames(typeof(ProofAudioEvent))
+            Assert.IsFalse(System.Enum.GetNames(typeof(AudioEventId))
                 .Any(n => n.Contains("Mercy") || n.Contains("Flow")));
         }
 
@@ -224,7 +247,7 @@ namespace Desk42.Tests.EditMode
             foreach (string file in new[]
                      {
                          "Assets/_Project/Scripts/Audio/AudioService.cs",
-                         "Assets/_Project/Scripts/Audio/ProofAudioEvents.cs",
+                         "Assets/_Project/Scripts/Audio/AudioEventId.cs",
                      })
             {
                 string src = System.IO.File.ReadAllText(file);

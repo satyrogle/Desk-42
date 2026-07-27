@@ -2,7 +2,7 @@
 // DESK 42 — AudioService boundary (D1A)
 //
 // The single application-facing audio abstraction. Gameplay requests a
-// LOGICAL identity (ProofAudioEvent); it never touches FMODUnity,
+// LOGICAL identity (AudioEventId); it never touches FMODUnity,
 // RuntimeManager, bank handles or event paths.
 //
 // This file has NO unconditional FMOD reference and compiles with
@@ -39,7 +39,7 @@ namespace Desk42.Audio
         /// NOT "the participant heard it" — only a real FMOD implementation can
         /// confirm invocation.
         /// </summary>
-        AudioRequestResult PlayOneShot(ProofAudioEvent id, string resolvedPath,
+        AudioRequestResult PlayOneShot(AudioEventId id, string resolvedPath,
             AudioRequestContext context);
     }
 
@@ -55,7 +55,7 @@ namespace Desk42.Audio
         public void Initialize(int shiftNumber) { }
 
         public AudioRequestResult PlayOneShot(
-            ProofAudioEvent id, string resolvedPath, AudioRequestContext context)
+            AudioEventId id, string resolvedPath, AudioRequestContext context)
             => AudioRequestResult.Unavailable;
     }
 
@@ -123,12 +123,12 @@ namespace Desk42.Audio
         /// enforced HERE, at the boundary, so no call site can bypass it.
         /// </summary>
         public static AudioRequestResult PlayOneShot(
-            ProofAudioEvent id, AudioRequestContext context = default)
+            AudioEventId id, AudioRequestContext context = default)
         {
             string path = ProofAudioCatalog.TryGetPath(id);
             AudioRequestResult result;
 
-            if (id == ProofAudioEvent.None || path == null)
+            if (id == AudioEventId.None || path == null)
             {
                 result = AudioRequestResult.UnknownEvent;
                 Debug.LogWarning($"[AudioService] No mapping for '{id}'.");

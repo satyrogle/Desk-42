@@ -136,7 +136,7 @@ namespace Desk42.Tests.EditMode
 
                 Assert.IsFalse(
                     File.ReadAllText(file).Contains(
-                        nameof(ProofAudioEvent.EliasRegistrationCausal)),
+                        nameof(AudioEventId.EliasRegistrationCausal)),
                     $"{file} names the Shift 2 causal identity. The scored return " +
                     $"must not acoustically identify the earlier cause.");
             }
@@ -146,9 +146,9 @@ namespace Desk42.Tests.EditMode
         public void OnlyPermittedIdentity_ForShift5IsTheGenericReturn()
         {
             Assert.IsTrue(ProofAudioCatalog.IsPermittedOnShift5(
-                ProofAudioEvent.Shift5EliasReturn));
+                AudioEventId.Shift5EliasReturn));
             Assert.IsFalse(ProofAudioCatalog.IsPermittedOnShift5(
-                ProofAudioEvent.EliasRegistrationCausal));
+                AudioEventId.EliasRegistrationCausal));
         }
 
         [Test]
@@ -158,7 +158,7 @@ namespace Desk42.Tests.EditMode
             AudioService.ResetToNull();
             Assert.AreEqual(AudioRequestResult.Suppressed,
                 AudioService.PlayOneShot(
-                    ProofAudioEvent.EliasRegistrationCausal, new AudioRequestContext(5)));
+                    AudioEventId.EliasRegistrationCausal, new AudioRequestContext(5)));
         }
 
         // ── One gameplay-facing audio boundary ───────────────
@@ -215,7 +215,7 @@ namespace Desk42.Tests.EditMode
 
             Assert.IsTrue(src.Contains("AudioService.PlayOneShot"),
                 "PneumaticTube must request audio through the boundary.");
-            Assert.IsTrue(src.Contains(nameof(ProofAudioEvent.PneumaticTubeThreat)),
+            Assert.IsTrue(src.Contains(nameof(AudioEventId.PneumaticTubeThreat)),
                 "PneumaticTube must request its own logical identity.");
             Assert.IsFalse(src.Contains("\"event:/"),
                 "No FMOD path string may appear in gameplay code.");
@@ -224,7 +224,7 @@ namespace Desk42.Tests.EditMode
         [Test]
         public void PneumaticTubeIdentity_MapsToTheIntendedPath()
             => Assert.AreEqual("event:/Threat/PneumaticTube",
-                ProofAudioCatalog.TryGetPath(ProofAudioEvent.PneumaticTubeThreat));
+                ProofAudioCatalog.TryGetPath(AudioEventId.PneumaticTubeThreat));
 
         [Test]
         public void PneumaticTube_PreservesWorldPosition()
@@ -243,10 +243,10 @@ namespace Desk42.Tests.EditMode
         {
             string src = File.ReadAllText("Assets/_Project/Scripts/UI/PneumaticTube.cs");
 
-            Assert.IsFalse(src.Contains(nameof(ProofAudioEvent.EliasRegistrationCausal)));
-            Assert.IsFalse(src.Contains(nameof(ProofAudioEvent.Shift5EliasReturn)));
+            Assert.IsFalse(src.Contains(nameof(AudioEventId.EliasRegistrationCausal)));
+            Assert.IsFalse(src.Contains(nameof(AudioEventId.Shift5EliasReturn)));
             Assert.IsFalse(ProofAudioCatalog.IsCausalIdentity(
-                ProofAudioEvent.PneumaticTubeThreat),
+                AudioEventId.PneumaticTubeThreat),
                 "The tube identity must never be treated as a proof identity.");
         }
 
@@ -255,11 +255,11 @@ namespace Desk42.Tests.EditMode
         {
             // Distinct identity, distinct path — it cannot stand in for a proof
             // event, and no proof event resolves to its path.
-            string tubePath = ProofAudioCatalog.TryGetPath(ProofAudioEvent.PneumaticTubeThreat);
+            string tubePath = ProofAudioCatalog.TryGetPath(AudioEventId.PneumaticTubeThreat);
 
             foreach (var id in ProofAudioCatalog.All)
             {
-                if (id == ProofAudioEvent.PneumaticTubeThreat) continue;
+                if (id == AudioEventId.PneumaticTubeThreat) continue;
                 Assert.AreNotEqual(tubePath, ProofAudioCatalog.TryGetPath(id),
                     $"{id} collides with the pneumatic tube path.");
             }
