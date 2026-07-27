@@ -661,7 +661,10 @@ PlayerSettings:
   webGLMemoryGeometricGrowthStep: 0.2
   webGLMemoryGeometricGrowthCap: 96
   webGLPowerPreference: 2
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    Standalone: DESK42_FMOD
+    Android: DESK42_FMOD
+    WebGL: DESK42_FMOD
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend: {}
