@@ -178,38 +178,91 @@ namespace Desk42.Tests.EditMode
         }
 
         /// <summary>
-        /// FMODManager is backend-internal; AudioService is the gameplay-facing
-        /// boundary. One PRE-EXISTING violation is pinned here rather than
-        /// refactored, because rerouting it needs a logical identity that is not
-        /// part of the proof event contract and is outside this closeout's
-        /// scope. Pinning stops it spreading while leaving the fix explicit.
+        /// HARD INVARIANT. Gameplay must not know FMODManager exists; the
+        /// gameplay-facing boundary is AudioService. The previous temporary
+        /// exception for PneumaticTube is gone — it now routes through the
+        /// boundary, so there are zero gameplay-facing call sites.
+        ///
+        /// FMODManager may remain an internal helper for the eventual
+        /// FmodAudioBackend inside the Audio layer.
         /// </summary>
         [Test]
-        public void FmodManager_GameplayUsage_DoesNotSpreadBeyondTheKnownSite()
+        public void NoGameplayFile_CallsFmodManagerDirectly()
         {
-            const string knownException = "Assets/_Project/Scripts/UI/PneumaticTube.cs";
             var offenders = new List<string>();
 
             foreach (string file in Directory.GetFiles(
                          "Assets/_Project/Scripts", "*.cs", SearchOption.AllDirectories))
             {
                 string norm = file.Replace('\\', '/');
-                if (norm.Contains("/Scripts/Audio/")) continue;
-                if (norm.EndsWith("UI/PneumaticTube.cs")) continue;
+                if (norm.Contains("/Scripts/Audio/")) continue;   // backend-internal
 
                 if (File.ReadAllText(file).Contains("FMODManager."))
                     offenders.Add(norm);
             }
 
             Assert.IsEmpty(offenders,
-                "New gameplay-facing FMODManager usage. The boundary is AudioService; " +
-                $"the only accepted legacy site is {knownException}.\n" +
-                string.Join("\n", offenders));
+                "Gameplay must route audio through AudioService: "
+                + string.Join(", ", offenders));
+        }
 
-            Assert.IsTrue(File.Exists(knownException)
-                && File.ReadAllText(knownException).Contains("FMODManager."),
-                "The pinned legacy site changed. If PneumaticTube was migrated to " +
-                "AudioService, remove this exception rather than leaving it stale.");
+        // ── PneumaticTube migration ──────────────────────────
+
+        [Test]
+        public void PneumaticTube_RequestsItsIdentityThroughAudioService()
+        {
+            string src = File.ReadAllText("Assets/_Project/Scripts/UI/PneumaticTube.cs");
+
+            Assert.IsTrue(src.Contains("AudioService.PlayOneShot"),
+                "PneumaticTube must request audio through the boundary.");
+            Assert.IsTrue(src.Contains(nameof(ProofAudioEvent.PneumaticTubeThreat)),
+                "PneumaticTube must request its own logical identity.");
+            Assert.IsFalse(src.Contains("\"event:/"),
+                "No FMOD path string may appear in gameplay code.");
+        }
+
+        [Test]
+        public void PneumaticTubeIdentity_MapsToTheIntendedPath()
+            => Assert.AreEqual("event:/Threat/PneumaticTube",
+                ProofAudioCatalog.TryGetPath(ProofAudioEvent.PneumaticTubeThreat));
+
+        [Test]
+        public void PneumaticTube_PreservesWorldPosition()
+        {
+            string src = File.ReadAllText("Assets/_Project/Scripts/UI/PneumaticTube.cs");
+            Assert.IsTrue(src.Contains("transform.position"),
+                "Spatial intent must survive the migration, not be discarded.");
+
+            var ctx = AudioRequestContext.AtPosition(3, new UnityEngine.Vector3(1f, 2f, 3f));
+            Assert.IsTrue(ctx.WorldPosition.HasValue);
+            Assert.AreEqual(new UnityEngine.Vector3(1f, 2f, 3f), ctx.WorldPosition.Value);
+        }
+
+        [Test]
+        public void PneumaticTube_CannotRequestAnEliasCausalIdentity()
+        {
+            string src = File.ReadAllText("Assets/_Project/Scripts/UI/PneumaticTube.cs");
+
+            Assert.IsFalse(src.Contains(nameof(ProofAudioEvent.EliasRegistrationCausal)));
+            Assert.IsFalse(src.Contains(nameof(ProofAudioEvent.Shift5EliasReturn)));
+            Assert.IsFalse(ProofAudioCatalog.IsCausalIdentity(
+                ProofAudioEvent.PneumaticTubeThreat),
+                "The tube identity must never be treated as a proof identity.");
+        }
+
+        [Test]
+        public void PneumaticTubeIdentity_IsNotAFallbackForAnyProofEvent()
+        {
+            // Distinct identity, distinct path — it cannot stand in for a proof
+            // event, and no proof event resolves to its path.
+            string tubePath = ProofAudioCatalog.TryGetPath(ProofAudioEvent.PneumaticTubeThreat);
+
+            foreach (var id in ProofAudioCatalog.All)
+            {
+                if (id == ProofAudioEvent.PneumaticTubeThreat) continue;
+                Assert.AreNotEqual(tubePath, ProofAudioCatalog.TryGetPath(id),
+                    $"{id} collides with the pneumatic tube path.");
+            }
         }
     }
 }

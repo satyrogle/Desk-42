@@ -81,11 +81,16 @@ namespace Desk42.UI
 
         private void PlayWhirAndDing()
         {
-            // FMOD path resolved in the Studio project. The
-            // non-FMOD build just logs. Either way, the OSHA fee
-            // label below provides the visible feedback.
-            Audio.FMODManager.Instance?.PlayOneShot("event:/Threat/PneumaticTube",
-                transform.position);
+            // Routed through the AudioService boundary rather than FMODManager:
+            // gameplay must not know FMOD exists. World position is preserved,
+            // so the spatial intent of the original call survives the migration.
+            // With the Null backend active this is a reported no-op, not silence
+            // masquerading as success. The OSHA fee label below remains the
+            // visible feedback either way.
+            Audio.AudioService.PlayOneShot(
+                Audio.ProofAudioEvent.PneumaticTubeThreat,
+                Audio.AudioRequestContext.AtPosition(
+                    GameManager.Instance?.Run?.ShiftNumber ?? 0, transform.position));
 
             if (!AccessibilitySettings.ReducedMotion)
                 StartCoroutine(PulseRoot());

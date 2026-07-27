@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Desk42.Audio
 {
@@ -55,6 +56,14 @@ namespace Desk42.Audio
         /// the experiment must not acoustically name the earlier cause.
         /// </summary>
         Shift5EliasReturn = 5,
+
+        /// <summary>
+        /// Pneumatic tube threat feedback. ORDINARY desk audio — deliberately
+        /// NOT a proof identity: it is never a fallback for a proof event, is
+        /// absent from the Shift 2 / Shift 5 causal mappings, and has no
+        /// relationship to Elias or the control claimant.
+        /// </summary>
+        PneumaticTubeThreat = 6,
     }
 
     /// <summary>
@@ -70,6 +79,7 @@ namespace Desk42.Audio
             [ProofAudioEvent.EliasRegistrationCausal] = "event:/Proof/EliasRegistration18A",
             [ProofAudioEvent.ComplianceStreakConfirm] = "event:/Desk/ComplianceStreak",
             [ProofAudioEvent.Shift5EliasReturn]       = "event:/Proof/EliasReturnGeneric",
+            [ProofAudioEvent.PneumaticTubeThreat]     = "event:/Threat/PneumaticTube",
         };
 
         /// <summary>Every identity in the proof contract.</summary>
@@ -121,13 +131,27 @@ namespace Desk42.Audio
         public readonly string EncounterId;
         public readonly string ClaimantStableId;
 
+        /// <summary>
+        /// Optional world position for spatialised one-shots. Vector3 is a Unity
+        /// type, not an FMOD one, so carrying it here keeps the boundary
+        /// FMOD-free while preserving spatial intent rather than discarding it
+        /// to fit the abstraction.
+        /// </summary>
+        public readonly Vector3? WorldPosition;
+
         public AudioRequestContext(
-            int shiftNumber, string encounterId = null, string claimantStableId = null)
+            int shiftNumber, string encounterId = null, string claimantStableId = null,
+            Vector3? worldPosition = null)
         {
             ShiftNumber      = shiftNumber;
             EncounterId      = encounterId;
             ClaimantStableId = claimantStableId;
+            WorldPosition    = worldPosition;
         }
+
+        /// <summary>Spatial one-shot with no encounter context.</summary>
+        public static AudioRequestContext AtPosition(int shiftNumber, Vector3 position)
+            => new(shiftNumber, worldPosition: position);
     }
 
     /// <summary>Emitted on every request so observers need no FMOD coupling.</summary>
