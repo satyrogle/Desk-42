@@ -168,3 +168,46 @@ standalone_cold_start:      PENDING INSTALL
 
 **Authored proof audio is missing.** Nothing in D1 constitutes evidence that final narrative
 audio content exists or is complete.
+
+
+---
+
+## 7. Audio ownership rule (locked)
+
+There is exactly **one gameplay-facing audio API**:
+
+```text
+gameplay -> AudioService -> FmodAudioBackend -> FMOD
+```
+
+`FMODManager` may be reused **internally by the backend** where useful. It must not
+become a second gameplay-facing API, and no gameplay file may call it — enforced by
+`ProofAudioSafetyTests.FmodManager_IsNotASecondGameplayFacingAudioApi`, alongside the
+existing guard against direct `FMODUnity.RuntimeManager` use.
+
+`FMODManager` is deliberately **not refactored** now: it is unreferenced by gameplay, so
+changing it before the package exists would be churn against an untestable target.
+
+## 8. Pre-import safety state (applied)
+
+The four experimental directors attached to `Shift.unity` are **explicitly disabled**
+(`m_Enabled: 0`), set by script GUID via `tools/Set-SceneComponentEnabled.py`:
+
+| Director | GUID | Scene state |
+|---|---|---|
+| `BinauralStressEngine` | `a352ef7c…` | disabled |
+| `ProceduralJazzGenerator` | `28f9c6f9…` | disabled |
+| `StressCrescendo` | `5fe965bb…` | disabled |
+| `SpatialAudioThreatSystem` | `dea70daa…` | disabled |
+
+Scripts are retained and serialized for future work; only the components are disabled, so
+defining `DESK42_FMOD` later cannot make them live. Locked by
+`ProofAudioSafetyTests.ExperimentalDirectors_AreDisabledInShiftScene`.
+
+`DistortionAudioDirector` remains unattached and therefore compiled-but-inactive. Mercy and
+Flow stay unwired, with a test asserting no gameplay caller has appeared.
+
+**Shift 5 suppression is enforced at two levels:** the caller (no Shift-5 path file may name
+`EliasRegistrationCausal`) and the boundary (`AudioService` returns `Suppressed`). The caller
+test exists so a wrong Shift-5 caller fails a test rather than being silently masked by the
+service guard.
