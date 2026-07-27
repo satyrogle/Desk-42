@@ -165,18 +165,45 @@ namespace Desk42.Core
         }
 
         /// <summary>
-        /// Unresolved liabilities backed by a valid source encounter, in
-        /// creation order. Orphans are skipped.
+        /// One canonical record per SourceEncounterId, in persisted order.
+        ///
+        /// Malformed data can physically contain several rows sharing a source
+        /// encounter. Identity is the source encounter, so those rows are ONE
+        /// logical liability — enumerating them raw multiplied it. FIRST
+        /// occurrence wins, which matches TryGet, matches normal Create, and
+        /// matches append-order persistence.
+        ///
+        /// Read-only: duplicates are not deleted and nothing is written back,
+        /// so loading a malformed save stays non-destructive.
         /// </summary>
-        public static List<ApprovalLiabilityRecord> ActiveLiabilities(MetaProgressData meta)
+        public static List<ApprovalLiabilityRecord> CanonicalRecords(MetaProgressData meta)
         {
             var result = new List<ApprovalLiabilityRecord>();
             var ledger = meta?.ApprovalLiabilities;
             if (ledger == null) return result;
 
+            var seen = new HashSet<string>(StringComparer.Ordinal);
             foreach (var r in ledger.Records)
             {
-                if (r == null || r.Resolved) continue;
+                if (r == null || string.IsNullOrWhiteSpace(r.SourceEncounterId)) continue;
+                if (!seen.Add(r.SourceEncounterId)) continue;   // later duplicate: ignored
+                result.Add(r);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Unresolved liabilities backed by a valid source encounter, in
+        /// creation order. Canonicalised first, so a later malformed duplicate
+        /// can neither resurrect a resolved liability nor list one twice.
+        /// Orphans are skipped.
+        /// </summary>
+        public static List<ApprovalLiabilityRecord> ActiveLiabilities(MetaProgressData meta)
+        {
+            var result = new List<ApprovalLiabilityRecord>();
+            foreach (var r in CanonicalRecords(meta))
+            {
+                if (r.Resolved) continue;
                 if (!IsValid(r, meta.Encounters)) continue;
                 result.Add(r);
             }
@@ -184,8 +211,12 @@ namespace Desk42.Core
         }
 
         /// <summary>
-        /// Valid liabilities whose provenance names this claimant. A query
-        /// convenience for AUTHORED claimants — never liability identity.
+        /// Valid liabilities whose CANONICAL provenance names this claimant. A
+        /// query convenience for authored claimants — never liability identity.
+        ///
+        /// Filtering uses the canonical record only, so a duplicate row
+        /// carrying different provenance cannot attribute the same source
+        /// encounter to a second claimant.
         /// </summary>
         public static List<ApprovalLiabilityRecord> ForClaimant(
             MetaProgressData meta, string clientVariantId)
@@ -193,12 +224,8 @@ namespace Desk42.Core
             var result = new List<ApprovalLiabilityRecord>();
             if (string.IsNullOrWhiteSpace(clientVariantId)) return result;
 
-            var ledger = meta?.ApprovalLiabilities;
-            if (ledger == null) return result;
-
-            foreach (var r in ledger.Records)
+            foreach (var r in CanonicalRecords(meta))
             {
-                if (r == null) continue;
                 if (!string.Equals(r.SourceClientVariantId, clientVariantId,
                         StringComparison.Ordinal)) continue;
                 if (!IsValid(r, meta.Encounters)) continue;
