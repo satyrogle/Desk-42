@@ -79,6 +79,7 @@ namespace Desk42.Debugging
             RumorMill.OnClaimResolved         += HandleClaimResolved;
             RumorMill.OnEliasProcedureApplied += HandleProcedureApplied;
             RumorMill.OnEliasAftermathApplied += HandleAftermathApplied;
+            Audio.AudioService.RequestObserved  += HandleAudioRequest;
         }
 
         private void OnDisable()
@@ -88,6 +89,7 @@ namespace Desk42.Debugging
             RumorMill.OnClaimResolved         -= HandleClaimResolved;
             RumorMill.OnEliasProcedureApplied -= HandleProcedureApplied;
             RumorMill.OnEliasAftermathApplied -= HandleAftermathApplied;
+            Audio.AudioService.RequestObserved  -= HandleAudioRequest;
         }
 
         // ── Evidence file ────────────────────────────────────
@@ -359,6 +361,29 @@ namespace Desk42.Debugging
                 ["proof"]              = ProofSnapshot(state),
             });
         }
+
+        /// <summary>
+        /// Passive record of audio REQUESTS at the AudioService boundary. The
+        /// observer subscribes; it never triggers playback, selects an event or
+        /// alters a parameter, and it has no FMOD dependency.
+        ///
+        /// Deliberately records the request RESULT, never "played": only a real
+        /// FMOD backend can confirm successful invocation, so claiming audio was
+        /// heard would be fabricated evidence.
+        /// </summary>
+        private void HandleAudioRequest(Audio.AudioRequestObservation o)
+            => Emit("audio_request", new Dictionary<string, object>
+            {
+                ["audioEvent"]       = o.Event.ToString(),
+                ["result"]           = o.Result.ToString(),
+                ["resolvedPath"]     = o.ResolvedPath,
+                ["shift"]            = o.Context.ShiftNumber,
+                ["encounterId"]      = o.Context.EncounterId,
+                ["claimantStableId"] = o.Context.ClaimantStableId,
+                ["role"]             = RoleOf(o.Context.ClaimantStableId),
+                ["isCausalIdentity"] = Audio.ProofAudioCatalog.IsCausalIdentity(o.Event),
+                ["backend"]          = Audio.AudioService.BackendName,
+            });
 
         private void HandleAftermathApplied(EliasAftermathAppliedEvent e)
             => Emit("elias_aftermath_applied", new Dictionary<string, object>
