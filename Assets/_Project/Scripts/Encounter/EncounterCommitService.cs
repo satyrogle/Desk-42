@@ -288,6 +288,19 @@ namespace Desk42.Encounter
                 claim, run, runData, meta, bonusRates);
 
 
+            // ── 8d. Approval liability (Bucket C Δ2) ────────
+            // A qualifying approval creates a persistent consequence keyed by
+            // THIS encounter. Inside the transaction and before the save, so a
+            // successful commit always has its liability on disk and a commit
+            // that never became authoritative can never leave one behind.
+            // Exact-once is the ledger's persisted source-EncounterId key, not
+            // a runtime flag.
+            if (ApprovalLiabilityPolicy.IsLiabilityCreating(applied.Kind)
+                && meta.ApprovalLiabilities != null)
+            {
+                meta.ApprovalLiabilities.Create(encounterId, claim?.ClientVariantId);
+            }
+
             // ── 9. Save ──────────────────────────────────────
             // Previously absent entirely: resolution mutated run + meta and
             // never persisted, so a crash or quit lost the whole encounter.

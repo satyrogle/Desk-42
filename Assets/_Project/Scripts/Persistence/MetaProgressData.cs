@@ -241,6 +241,14 @@ namespace Desk42.Core
         /// </summary>
         [JsonProperty] public EncounterHistory Encounters = new();
 
+        /// <summary>
+        /// Approval liabilities keyed by source EncounterId (Bucket C Δ2).
+        /// Campaign-persistent so a liability survives run boundary, save/load
+        /// and restart. Additive: legacy meta.json loads with an empty ledger
+        /// and NO liability is backfilled from historical approvals.
+        /// </summary>
+        [JsonProperty] public ApprovalLiabilityLedger ApprovalLiabilities = new();
+
         // ── Five-Shift Proof State (persisted — Bucket 2) ─────
 
         /// <summary>
