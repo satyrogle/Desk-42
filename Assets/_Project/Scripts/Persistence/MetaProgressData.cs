@@ -242,6 +242,14 @@ namespace Desk42.Core
         [JsonProperty] public EncounterHistory Encounters = new();
 
         /// <summary>
+        /// Unresolved encounters carried forward (Bucket C Δ3A). Meta-owned
+        /// because RunData does not survive the run boundary, which is exactly
+        /// why interrupted work used to be unrecoverable. Additive: legacy
+        /// saves load with an empty ledger and nothing is synthesised.
+        /// </summary>
+        [JsonProperty] public CarriedEncounterLedger CarriedEncounters = new();
+
+        /// <summary>
         /// Approval liabilities keyed by source EncounterId (Bucket C Δ2).
         /// Campaign-persistent so a liability survives run boundary, save/load
         /// and restart. Additive: legacy meta.json loads with an empty ledger

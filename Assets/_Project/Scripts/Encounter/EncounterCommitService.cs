@@ -183,6 +183,43 @@ namespace Desk42.Encounter
                 alreadyCommitted);
         }
 
+        // ── Interruption (NOT a disposition) ─────────────────
+
+        /// <summary>
+        /// Explicitly marks an unresolved encounter as carried forward.
+        ///
+        /// Interruption is a deliberate state transition, never inferred from a
+        /// scene unloading, UI closing or the app quitting. It records NO
+        /// disposition, creates NO approval liability and applies NO final
+        /// consequences — the encounter simply continues later under its
+        /// ORIGINAL EncounterId and claimant provenance.
+        ///
+        /// Durable immediately: it saves through the existing SaveSystem
+        /// boundary rather than a new persistence path. Idempotent — carrying
+        /// the same encounter twice updates one record and bumps its counter.
+        /// </summary>
+        public static bool InterruptEncounter(
+            ActiveClaimData claim, RunData runData, MetaProgressData meta)
+        {
+            if (claim == null || meta?.CarriedEncounters == null) return false;
+            if (claim.IsResolved) return false;   // terminal work is never carried
+
+            string encounterId = EnsureEncounterId(claim, runData);
+            if (string.IsNullOrWhiteSpace(encounterId)) return false;
+
+            // A completed encounter must never be resurrected as outstanding.
+            if (meta.Encounters?.IsCompleted(encounterId) == true) return false;
+
+            var record = meta.CarriedEncounters.Carry(claim, runData?.ShiftNumber ?? 0);
+
+            Debug.Log($"[EncounterCommit] Interrupted '{encounterId}' " +
+                      $"(claimant {claim.ClientVariantId}, " +
+                      $"interruptions={record.InterruptCount}) — carried forward.");
+
+            PersistQuietly(runData, meta);
+            return true;
+        }
+
         // ── The transaction ──────────────────────────────────
 
         /// <summary>
@@ -300,6 +337,12 @@ namespace Desk42.Encounter
             {
                 meta.ApprovalLiabilities.Create(encounterId, claim?.ClientVariantId);
             }
+
+            // ── 8e. Release carried work (Bucket C Δ3A) ─────
+            // This encounter has terminally resolved, so it is no longer
+            // outstanding. Released before the save so a resolved encounter can
+            // never come back as carried work after a restart.
+            meta.CarriedEncounters?.Release(encounterId);
 
             // ── 9. Save ──────────────────────────────────────
             // Previously absent entirely: resolution mutated run + meta and

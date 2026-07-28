@@ -166,6 +166,12 @@ namespace Desk42.Core
             if (runData.PendingClaims.Count == 0 && runData.ActiveClaim == null)
                 GenerateInitialQueue(run.ShiftNumber, runData);
 
+            // Bucket C Δ3A: reinsert unresolved carried work. Runs AFTER queue
+            // generation so a fresh queue cannot discard it, and dedupes by
+            // EncounterId so repeated generation, reload or scene
+            // reconstruction cannot enqueue the same encounter twice.
+            RestoreCarriedEncounters(runData);
+
             // Ensure the ante quota is set for the current phase
             SyncAnteQuota(run, runData);
 
@@ -337,6 +343,48 @@ namespace Desk42.Core
         }
 
         // ── Claim Queue ───────────────────────────────────────
+
+        /// <summary>
+        /// Puts carried (interrupted) encounters back at the front of the
+        /// queue, deduped by EncounterId — never by claimant or display name,
+        /// since one claimant may legitimately have several encounters.
+        ///
+        /// Front-of-queue is the narrowest deterministic ordering that makes
+        /// carry-forward functional: outstanding work is dealt with before new
+        /// work. No existing design rule is overridden and the scheduler is
+        /// otherwise untouched.
+        /// </summary>
+        private void RestoreCarriedEncounters(RunData runData)
+        {
+            var meta = GameManager.Instance?.Meta;
+            var ledger = meta?.CarriedEncounters;
+            if (ledger == null || ledger.Count == 0) return;
+
+            foreach (var carried in ledger.Canonical())
+            {
+                string encounterId = carried.EncounterId;
+
+                // Already terminally resolved: release rather than re-present.
+                if (meta.Encounters?.IsCompleted(encounterId) == true)
+                {
+                    ledger.Release(encounterId);
+                    continue;
+                }
+
+                bool alreadyQueued =
+                    (runData.ActiveClaim != null && string.Equals(
+                        runData.ActiveClaim.EncounterId, encounterId,
+                        System.StringComparison.Ordinal))
+                    || runData.PendingClaims.Exists(c => c != null && string.Equals(
+                        c.EncounterId, encounterId, System.StringComparison.Ordinal));
+
+                if (alreadyQueued) continue;
+
+                runData.PendingClaims.Insert(0, carried.Claim);
+                Debug.Log($"[ShiftManager] Restored carried encounter " +
+                          $"'{encounterId}' ({carried.ClientVariantId}).");
+            }
+        }
 
         private void GenerateInitialQueue(int shiftNumber, RunData runData)
         {
@@ -546,6 +594,17 @@ namespace Desk42.Core
         {
             if (_shiftEnding) return; // already ending — guard against re-entry
             if (run == null) return;
+
+            // Bucket C Δ3A: the shift is ending. An unresolved claim at the desk
+            // is interrupted work, not an abandoned one — mark it explicitly so
+            // it survives the run boundary under its ORIGINAL EncounterId.
+            // Interruption records no disposition and applies no consequences.
+            var endingData = run.RawData;
+            if (endingData?.ActiveClaim != null && !endingData.ActiveClaim.IsResolved)
+            {
+                Encounter.EncounterCommitService.InterruptEncounter(
+                    endingData.ActiveClaim, endingData, GameManager.Instance?.Meta);
+            }
 
             run.AdvancePhase(ShiftPhase.ClockOut);
             StartCoroutine(EndShiftSequence());
