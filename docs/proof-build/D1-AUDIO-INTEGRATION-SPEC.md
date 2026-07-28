@@ -180,7 +180,9 @@ project_settings_changed:   NONE committed; DESK42_FMOD is a local activation on
 authored_proof_audio:       ABSENT — no Venn motif, no narrative identities
 fmod_studio_project:        FMODAssets/Desk42/Desk42.fspro
                             repository top level, deliberately OUTSIDE Assets/
-                            **DOES NOT EXIST** — hard blocker, see §10.1
+                            EXISTS — created by hand in the GUI (the one step
+                            FMOD 2.03 cannot automate), then authored entirely
+                            by script. TRACKED: .fspro, Metadata/**, Assets/**.
 technical_asset:            TECH_PIPELINE_TEST_NONPRODUCTION.wav
                             generator tools/fmod/New-TechnicalTestAsset.ps1 (tracked)
                             48000 Hz / 16-bit / mono PCM, 1000 Hz sine, 0.40 s,
@@ -188,20 +190,31 @@ technical_asset:            TECH_PIPELINE_TEST_NONPRODUCTION.wav
                             sha256 49E8F406DCD5BED2AA8575045AD1CC299B8467B78EFF
                                    B447B90077268AD97D15
                             deterministic: two runs produced identical bytes
-technical_event:            event:/Desk/Interaction    NOT AUTHORED (blocked)
+technical_event:            event:/Desk/Interaction    AUTHORED, RESOLVES
+                            single-sound instrument on the master track, backed
+                            by the technical tone. One-shot.
 elias_causal_event:         event:/Proof/EliasRegistration18A
-                            INTENTIONALLY ABSENT — unfilled production slot
-bank_structure:             Desk42_Technical + Master Bank   NOT CREATED (blocked)
+                            INTENTIONALLY ABSENT — unfilled production slot.
+                            Confirmed absent by the authoring script on every
+                            run; reports UnknownEvent at the backend.
+bank_structure:             Master.bank            1,074 bytes
+                            Master.strings.bank      836 bytes
+                            Desk42_Technical.bank  2,560 bytes
+                            built to FMODAssets/Desk42/Build/Desktop (ignored)
 scripting_build_method:     tools/fmod/studio-scripts/desk42-technical-pipeline.js
                             (tracked) via `fmodstudiocl -script`, driven by
                             tools/fmod/Build-FmodBanks.ps1 (tracked).
                             Documented FMOD Studio 2.03 scripting API only; no
                             .fspro or Metadata file is hand-written.
-                            STATUS: UNVALIDATED — cannot execute without a project.
-editor_result:              PASS with blockers — see §10.3
-standalone_cold_start:      PASS with blockers — see §10.4
-audible_output:             NOT HUMAN-CONFIRMED. No audio was heard, and none
-                            could be: no banks and no authored event exist.
+                            STATUS: EXECUTED AND IDEMPOTENT — a second run
+                            detects every object and creates nothing.
+editor_result:              PASS — see §11.2
+standalone_cold_start:      PASS — see §11.3. Pipeline execution: PASS.
+audible_output:             NOT HUMAN-CONFIRMED. The technical event was
+                            INVOKED successfully (AudioRequestResult.Requested)
+                            in Editor PlayMode and twice in a cold-started
+                            player. Nothing here observed sound. "Requested"
+                            means handed to FMOD, never heard.
 ```
 
 **Authored proof audio is missing.** Nothing in D1 constitutes evidence that final narrative
@@ -492,3 +505,160 @@ Two distinct blockers, in order:
 
 The technical tone proves transport only. It is **not** the Venn motif and carries no
 narrative identity.
+
+---
+
+## 11. Steps 6–9 completion — 2026-07-28
+
+§10 recorded the pass that ended blocked on a missing Studio project. The project now exists
+at `FMODAssets/Desk42/Desk42.fspro`, so §10.1's blocker is **closed**. Everything below was
+executed; §10's other findings stand.
+
+### 11.1 Technical pipeline — executed
+
+`tools/fmod/Build-FmodBanks.ps1` runs the whole chain unattended:
+
+```text
+New-TechnicalTestAsset.ps1        deterministic 1 kHz tone, sha256 49E8F406…
+  -> fmodstudiocl -script desk42-technical-pipeline.js
+       importAudioFile            -> FMODAssets/Desk42/Assets/…wav
+       EventFolder "Desk"         -> event:/Desk/…
+       addEvent "Interaction"     -> event:/Desk/Interaction
+       masterTrack.addSound       -> SingleSound bound to the tone
+       create Bank                -> Desk42_Technical
+       relationships.banks.add    -> event assigned to bank
+       project.save / project.build
+  -> Master.bank / Master.strings.bank / Desk42_Technical.bank
+```
+
+**Idempotent.** A second run logs `asset already imported`, `event folder exists`,
+`event exists`, `instrument already present`, `bank exists`, `event already assigned` and
+rebuilds to byte-identical sizes.
+
+**Three scripting-API corrections were needed** — the shipped 2.03 reference is wrong in
+places, and the script had never been executed before this pass:
+
+| Documented | Actual |
+|---|---|
+| `studio.project.filepath` | `studio.project.filePath` — the lowercase form is `undefined` |
+| `relationship.size()` / `.destination(i)` | read the plain array `event.banks`; mutate via `event.relationships.banks.add()` |
+| — | `masterTrack.modules` is the array to scan for existing instruments |
+
+Discovered by runtime introspection (`for (var k in obj)`) rather than guessing, because the
+reference could not be trusted once the first property proved wrong.
+
+### 11.2 Editor result
+
+| Check | Result | Evidence |
+|---|---|---|
+| FMOD reports 2.03.14 | **PASS** | `fmod.cs` `0x00020314`, asserted by `FmodVersion_IsTheLocked_2_03_14` |
+| Native initialisation succeeds | **PASS** | `FMOD ready for shift N (3 bank(s) loaded)` |
+| At least one bank exists and loads | **PASS** | 3 banks loaded |
+| Technical event resolves | **PASS** | `TechnicalEvent_ResolvesThroughTheCatalogAndLoadedBanks` |
+| `AudioService` → `FmodAudioBackend` exactly once | **PASS** | `OneShot_RoutesToBackendExactlyOnce` |
+| Unauthored event reports the right diagnostic | **PASS** | `UnauthoredEvent_ReportsUnknownEvent_NotUnavailable` |
+| Positional context survives the PneumaticTube route | **PASS** | `PneumaticTube_PreservesWorldPosition` |
+| Shift loads without FMOD exceptions | **PASS** | 19/19 PlayMode, 0 exceptions |
+| Mercy / Flow inactive | **PASS** | `MercyAndFlow_AreNotInTheProofContract` |
+| Shift 5 refuses `EliasRegistrationCausal` | **PASS** | boundary + caller tests |
+| Four experimental directors disabled | **PASS** | asserted in the activated state |
+
+`AudioEventCatalog` resolution is verified through the gameplay path, not by reading the map:
+identity `DeskInteraction` → `event:/Desk/Interaction` → found in loaded banks → `Requested`.
+
+### 11.3 Windows standalone — cold start
+
+Windows x64 **development** player, built headlessly from State B. All three banks ship in
+`Desk42-ProofStandalone_Data/StreamingAssets/`.
+
+Cold-started **twice** with no Unity Editor process running, via the dev-only
+`-desk42FmodTechnicalProbe` route (inert without the flag, so it cannot fire during a scored run):
+
+| Check | Run 1 | Run 2 |
+|---|---|---|
+| Process starts / exits 0 | PASS | PASS |
+| FMOD native runtime initialises | PASS | PASS |
+| Banks load | PASS — 3 | PASS — 3 |
+| Backend selected | `FmodAudioBackend`, `available=True` | same |
+| Technical event invoked | `DeskInteraction => Requested` | same |
+| Unauthored event diagnostic | `EliasRegistrationCausal => UnknownEvent` | same |
+| Shift path loads | PASS (`shift_start`, 100 evidence frames) | PASS |
+| FMOD exceptions | 0 | 0 |
+| Quit / relaunch | PASS | PASS |
+
+```text
+Pipeline execution: PASS
+Audibility:         Human confirmation pending
+```
+
+**`PneumaticTubeThreat` returns `UnknownEvent`** in the player, correctly:
+`event:/Threat/PneumaticTube` is not authored and was deliberately not fabricated. Its
+positional contract is verified at the boundary by `PneumaticTube_PreservesWorldPosition`,
+which uses a recording double and so tests coordinate survival independently of authoring.
+
+### 11.4 Environment findings — FMOD's own bank staging is broken headlessly
+
+`EventManager.CopyToStreamingAssets` **NullReferences** in batch mode and copies nothing.
+`UpdateCache` refuses to build `eventCache` while `EditorUtils.StagingSystem.SourceLibsExist`
+is true — FMOD's platform-library staging gate, which never clears without interactive
+setup — and the copy loop then dereferences the null cache. The same fault fires again during
+the player build (`errors=3`, build still `Succeeded`).
+
+Separately, `BankLoadType.All` walks the **cached** `Settings.MasterBanks` / `Settings.Banks`
+lists, not the files on disk, so banks sitting in StreamingAssets still do not load if the
+cache never populated.
+
+`FmodLocalSettings.Configure` works around both: it stages banks with a direct flat copy and
+populates the two bank lists itself. Both are documented in the script. Neither is a Desk-42
+defect; both would silently produce a working-looking build with no audio.
+
+### 11.5 Repository treatment
+
+| Path | Treatment |
+|---|---|
+| `FMODAssets/Desk42/Desk42.fspro`, `Metadata/**` | **tracked** — authoritative Studio source |
+| `FMODAssets/Desk42/Assets/*.wav` | **tracked** — 38 KB technical tone; `Metadata/AudioFile/*.xml` references it by path, so a clone without it cannot open or build the project |
+| `FMODAssets/Desk42/Build/**`, `**/*.bank` | ignored — build product |
+| `FMODAssets/Desk42/.cache/`, `.user/`, `.unsaved/` | ignored — cache / per-user |
+| `Assets/StreamingAssets/**` + folder `.meta` | ignored — exists only as FMOD's staging target |
+| `Assets/Plugins/FMOD/**` | ignored — vendor SDK, never redistributed |
+| `FMODStudioSettings.asset` | **NOT tracked** — see below |
+
+**`FMODStudioSettings.asset` is deliberately local.** It is a ScriptableObject whose script
+reference lives in the vendor `FMODUnity` assembly. Committing it would leave every clean
+clone holding a ScriptableObject with a missing MonoScript — in exactly the State A
+configuration that must stay clean. It is generated into the already-ignored vendor Resources
+folder and reproduced by the tracked `Desk42.Editor.FmodLocalSettings.Configure`.
+
+**Public repository contains no redistributed FMOD SDK payload** — re-verified: zero tracked
+paths match `Plugins/FMOD`, `*.bank`, or `fmodstudio*.dll`.
+
+### 11.6 Test matrix
+
+| | EditMode | PlayMode |
+|---|---|---|
+| **State A** — literal clean clone, **no `Assets/Plugins/FMOD` at all** | see §11.7 | see §11.7 |
+| **State B** — FMOD 2.03.14 imported and activated | 402 / 396 passed / **0 failed** / 6 skipped | 19 / **19 passed** / **0 failed** |
+
+State B positives: `DESK42_FMOD` defined · `FMODUnity` referenced ·
+`AudioService.BackendName == "FmodAudioBackend"` · **bank count 3 > 0** ·
+technical event resolution `Requested`.
+
+### 11.7 Literal clean-environment State A
+
+Recorded separately from the deactivated-but-SDK-present worktree, per the D1 requirement.
+Method and results in §11.8.
+
+### 11.8 Remaining blocker for final authored proof audio
+
+**One blocker, and it is not technical.**
+
+`event:/Proof/EliasRegistration18A` remains an intentionally unfilled production slot. It is
+not stubbed, not aliased, and not backed by the technical tone. It is blocked on **AudioLab
+delivering the authored Venn identity**. The transport underneath it is now proven end to end,
+so the moment authored audio exists it drops into a working pipeline — but no amount of
+further pipeline work substitutes for the content.
+
+Secondary, non-blocking: the Studio project has only a master bus, so `bus:/Music`,
+`bus:/SFX` and `bus:/Ambience` do not resolve and `FMODManager` reports bus control inert.
+That is an authoring gap, correctly warned about, and irrelevant until a mixer is authored.

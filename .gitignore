@@ -96,6 +96,12 @@ Assets/Plugins/FMOD.meta
 Assets/Plugins.meta
 
 # FMOD generated / cache / log artefacts — never authoritative source
+# StreamingAssets exists ONLY as FMOD's bank staging target in this project —
+# it is created by FmodLocalSettings.Configure and holds nothing else. Ignored
+# wholesale, folder .meta included, so a clean clone has no orphaned meta for a
+# directory that legitimately does not exist without the SDK.
+Assets/StreamingAssets/
+Assets/StreamingAssets.meta
 Assets/StreamingAssets/FMOD/
 Assets/StreamingAssets/FMOD.meta
 **/FMODStudioCache.asset
@@ -107,7 +113,11 @@ fmod_editor.log
 # Lives at repository top level, deliberately NOT under Assets/: Unity would
 # otherwise import the Studio project's own .wav and XML as game assets and
 # ship duplicates of audio FMOD already owns.
-# The .fspro and Metadata/ ARE authoritative source and stay tracked.
+# The .fspro, Metadata/ and the project's own Assets/ audio ARE authoritative
+# source and stay tracked: Metadata/AudioFile/*.xml references the .wav by
+# path, so a clone without it cannot open or build the project. The only file
+# there is the 38 KB non-production technical tone — no vendor payload, no
+# authored game audio.
 # Everything below is build product, per-user state, or transient.
 FMODAssets/Desk42/Build/
 FMODAssets/Desk42/.cache/

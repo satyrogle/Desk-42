@@ -115,6 +115,76 @@ namespace Desk42.Tests.PlayMode
         }
 
         /// <summary>
+        /// D1 step 6 — the technical transport actually resolves end to end:
+        /// at least one bank is loaded, and event:/Desk/Interaction is found
+        /// through the SAME path gameplay uses (AudioEventCatalog identity ->
+        /// resolved FMOD path -> loaded banks).
+        ///
+        /// Skipped rather than failed without the SDK, so State A stays clean.
+        ///
+        /// Proves INVOCATION ONLY. It is not evidence of audible output.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TechnicalEvent_ResolvesThroughTheCatalogAndLoadedBanks()
+        {
+#if DESK42_FMOD
+            TolerateNativeDiagnostics();
+            AudioService.SetBackend(new FmodAudioBackend());
+            AudioService.Initialize(1);
+            yield return null;
+
+            Assert.IsTrue(AudioService.IsAvailable,
+                "FMOD reported unavailable — banks are not loaded. Run " +
+                "tools/fmod/Build-FmodBanks.ps1 and FmodLocalSettings.Configure.");
+
+            string path = AudioEventCatalog.TryGetPath(AudioEventId.DeskInteraction);
+            Assert.AreEqual("event:/Desk/Interaction", path,
+                "The catalog must map DeskInteraction to the authored technical event.");
+
+            var result = AudioService.PlayOneShot(
+                AudioEventId.DeskInteraction, new AudioRequestContext(1));
+
+            Assert.AreEqual(AudioRequestResult.Requested, result,
+                "The technical event must resolve in the loaded banks and be " +
+                "handed to FMOD. 'Requested' means handed over — NOT heard.");
+#else
+            Assert.Ignore("DESK42_FMOD undefined — no SDK, nothing to resolve.");
+            yield break;
+#endif
+        }
+
+        /// <summary>
+        /// An identity the catalog maps but nobody has authored must report
+        /// UnknownEvent, not Unavailable. The Elias causal slot is the real
+        /// unauthored case in the project, so it doubles as the check that the
+        /// slot is still genuinely empty.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator UnauthoredEvent_ReportsUnknownEvent_NotUnavailable()
+        {
+#if DESK42_FMOD
+            TolerateNativeDiagnostics();
+            AudioService.SetBackend(new FmodAudioBackend());
+            AudioService.Initialize(2);
+            yield return null;
+
+            Assert.IsTrue(AudioService.IsAvailable, "Banks must be loaded for this check.");
+
+            // Shift 2 is where the causal identity is legitimately requestable,
+            // so suppression does not mask the diagnostic under test.
+            var result = AudioService.PlayOneShot(
+                AudioEventId.EliasRegistrationCausal, new AudioRequestContext(2));
+
+            Assert.AreEqual(AudioRequestResult.UnknownEvent, result,
+                "An unauthored event must be reported as UnknownEvent — an " +
+                "authoring gap — not Unavailable, which means a broken backend.");
+#else
+            Assert.Ignore("DESK42_FMOD undefined — backend is a stub.");
+            yield break;
+#endif
+        }
+
+        /// <summary>
         /// Shift 5 must not be able to acoustically name the Shift 2 cause,
         /// regardless of which backend is installed.
         /// </summary>

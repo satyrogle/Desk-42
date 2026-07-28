@@ -82,7 +82,9 @@ function parentDir(path) {
 
 // <repo>/FMODAssets/Desk42/Desk42.fspro -> <repo>
 function repositoryRoot() {
-    var dir = parentDir(studio.project.filepath); // <repo>/FMODAssets/Desk42
+    // NOTE: the property is filePath (capital P). The 2.03 scripting reference
+    // documents it as "project.filepath", which is undefined at runtime.
+    var dir = parentDir(studio.project.filePath); // <repo>/FMODAssets/Desk42
     for (var i = 0; i < 2; i++) { dir = parentDir(dir); }
     return dir;
 }
@@ -206,14 +208,18 @@ function ensureBank(name) {
 
 function assignEventToBank(event, bank) {
     try {
-        var banks = event.relationships.banks;
-        for (var i = 0; i < banks.size(); i++) {
-            if (banks.destination(i).id === bank.id) {
+        // Read through the plain array (event.banks); mutate through the
+        // ManagedRelationship (event.relationships.banks.add). The relationship
+        // exposes add/insert/remove/destinations — NOT the size()/destination(i)
+        // pair the 2.03 reference implies.
+        var assigned = event.banks || [];
+        for (var i = 0; i < assigned.length; i++) {
+            if (assigned[i] && assigned[i].id === bank.id) {
                 log("event already assigned to bank " + bank.name);
                 return;
             }
         }
-        banks.add(bank);
+        event.relationships.banks.add(bank);
         log("assigned " + EVENT_PATH + " -> bank:/" + bank.name);
     } catch (e) {
         describe(event, "Event");
@@ -225,7 +231,7 @@ function assignEventToBank(event, bank) {
 // Main
 // ------------------------------------------------------------
 
-log("Studio project: " + studio.project.filepath);
+log("Studio project: " + studio.project.filePath);
 
 var root    = repositoryRoot();
 var wavPath = root + "/" + ASSET_REL_PATH;
