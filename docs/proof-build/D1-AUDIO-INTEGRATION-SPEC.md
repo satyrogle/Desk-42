@@ -637,7 +637,8 @@ paths match `Plugins/FMOD`, `*.bank`, or `fmodstudio*.dll`.
 
 | | EditMode | PlayMode |
 |---|---|---|
-| **State A** — literal clean clone, **no `Assets/Plugins/FMOD` at all** | see §11.7 | see §11.7 |
+| **State A** — literal clean clone, **no `Assets/Plugins/FMOD` at all** | 402 / 393 passed / **0 failed** / 9 skipped | 19 / 17 passed / **0 failed** / 2 skipped |
+| **State A** — deactivated, SDK present on disk | 402 / 396 passed / **0 failed** / 6 skipped | 17 / **17 passed** / **0 failed** |
 | **State B** — FMOD 2.03.14 imported and activated | 402 / 396 passed / **0 failed** / 6 skipped | 19 / **19 passed** / **0 failed** |
 
 State B positives: `DESK42_FMOD` defined · `FMODUnity` referenced ·
@@ -646,8 +647,44 @@ technical event resolution `Requested`.
 
 ### 11.7 Literal clean-environment State A
 
-Recorded separately from the deactivated-but-SDK-present worktree, per the D1 requirement.
-Method and results in §11.8.
+The strict reproducibility test §10.6 flagged as **not** run. Recorded separately from the
+deactivated-but-SDK-present worktree, because that one still physically contains the SDK and
+therefore cannot prove a clean clone compiles.
+
+**Method.** `git clone --no-hardlinks` of this repository into a fresh directory, checked out
+at the commit below, with **no `Assets/Plugins/FMOD` present at all** and no local
+activation applied. Nothing was copied in.
+
+```text
+clone           C:/Users/jacob/desk42-cleanclone
+commit          8fd5e510a4f77e17b6d83a78c3b728435f845cf0
+Assets/Plugins/FMOD          ABSENT (verified)
+DESK42_FMOD occurrences      0
+FMODUnity in Desk42.Core     0
+FMODAssets/Desk42 source     present and complete
+technical .wav sha256        49E8F406…  — byte-identical through git
+tracked SDK payload          0 paths match Plugins/FMOD, *.bank, fmodstudio*.dll
+```
+
+**Result — zero failures, project compiles and runs with no SDK whatsoever:**
+
+```text
+EditMode   402 total   393 passed   0 FAILED   9 skipped
+PlayMode    19 total    17 passed   0 FAILED   2 skipped
+```
+
+The skip delta against the SDK-present run is exactly the SDK-gated set, all correctly
+`Assert.Ignore`-ing rather than silently passing:
+
+- EditMode +3 — `FmodPackage_WhenPresent_IsAtTheConventionalLocation`,
+  `FmodVersion_IsTheLocked_2_03_14`, `WindowsX64_NativeLibrariesArePresent`
+- PlayMode +2 — `TechnicalEvent_ResolvesThroughTheCatalogAndLoadedBanks`,
+  `UnauthoredEvent_ReportsUnknownEvent_NotUnavailable`
+
+The 6 remaining EditMode skips are pre-existing and unrelated to audio.
+
+This closes the §10.6 caveat: a clean clone of the public repository builds and passes with
+no FMOD SDK, while carrying the complete, reproducible Studio project source.
 
 ### 11.8 Remaining blocker for final authored proof audio
 
