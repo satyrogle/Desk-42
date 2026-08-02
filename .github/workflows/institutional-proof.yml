@@ -1,0 +1,136 @@
+name: Institutional Proof
+
+on:
+  push:
+    paths:
+      - 'Assets/_Project/Scripts/Institutional/**'
+      - 'Assets/_Project/Tests/EditMode/Institutional*.cs'
+      - 'Assets/_Project/Tests/EditMode/Desk42.Tests.EditMode.asmdef'
+      - 'DESK42_SYSTEM_CONSTITUTION.md'
+      - 'ProjectSettings/ProjectVersion.txt'
+      - 'Packages/manifest.json'
+      - 'Packages/packages-lock.json'
+      - '.github/workflows/institutional-proof.yml'
+      - 'tools/ci/Assert-UnityTestResults.ps1'
+  pull_request:
+    paths:
+      - 'Assets/_Project/Scripts/Institutional/**'
+      - 'Assets/_Project/Tests/EditMode/Institutional*.cs'
+      - 'Assets/_Project/Tests/EditMode/Desk42.Tests.EditMode.asmdef'
+      - 'DESK42_SYSTEM_CONSTITUTION.md'
+      - 'ProjectSettings/ProjectVersion.txt'
+      - 'Packages/manifest.json'
+      - 'Packages/packages-lock.json'
+      - '.github/workflows/institutional-proof.yml'
+      - 'tools/ci/Assert-UnityTestResults.ps1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: institutional-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: 'true'
+  UNITY_VERSION: 2022.3.62f3
+  PACKAGES_LOCK_SHA256: 33A5B75D8EB048F51A44470724D8DD6F50E0DCB11FB4E73005B488EE7258757D
+  PROJECT_PATH: .
+  UNITY_MCP_KEEP_CONNECTED: 'false'
+  UNITY_MCP_START_SERVER: 'false'
+
+jobs:
+  editmode:
+    name: EditMode / ${{ matrix.suite }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: institutional-targeted
+            custom_parameters: '-testFilter "Desk42.Tests.EditMode.InstitutionalAgentSimulationTests;Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests"'
+            allowed_skips: ''
+            required_fixtures: 'Desk42.Tests.EditMode.InstitutionalAgentSimulationTests;Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests'
+          - suite: full-editmode
+            custom_parameters: ''
+            allowed_skips: 'Desk42.Tests.EditMode.SynergyResolverTests.WIRING_GAP_DurationAndCostChains_HaveNoStructuredPerStepTrace'
+            required_fixtures: 'Desk42.Tests.EditMode.InstitutionalAgentSimulationTests;Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests'
+
+    steps:
+      - name: Check out exact workflow commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          lfs: true
+
+      - name: Verify pinned project inputs
+        shell: pwsh
+        run: |
+          $projectVersion = Get-Content -LiteralPath 'ProjectSettings/ProjectVersion.txt' -Raw
+          if ($projectVersion -notmatch [regex]::Escape("m_EditorVersion: $env:UNITY_VERSION")) {
+            throw "ProjectVersion.txt does not pin Unity $env:UNITY_VERSION"
+          }
+          $actualHash = (Get-FileHash -LiteralPath 'Packages/packages-lock.json' -Algorithm SHA256).Hash
+          if ($actualHash -ne $env:PACKAGES_LOCK_SHA256) {
+            throw "packages-lock.json hash mismatch: $actualHash"
+          }
+
+      - name: Run Unity tests
+        id: unity_tests
+        uses: game-ci/unity-test-runner@0ff419b913a3630032cbe0de48a0099b5a9f0ed9 # v4.3.1
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: ${{ env.UNITY_VERSION }}
+          projectPath: ${{ env.PROJECT_PATH }}
+          testMode: EditMode
+          artifactsPath: TestResults/${{ matrix.suite }}
+          customParameters: ${{ matrix.custom_parameters }}
+
+      - name: Reject failures and unexpected skips
+        shell: pwsh
+        run: >-
+          ./tools/ci/Assert-UnityTestResults.ps1
+          -ResultsRoot 'TestResults/${{ matrix.suite }}'
+          -AllowedSkippedTests '${{ matrix.allowed_skips }}'
+          -RequiredFixturePrefixes '${{ matrix.required_fixtures }}'
+
+      - name: Record reproduction metadata
+        if: always()
+        shell: pwsh
+        run: |
+          $root = 'TestResults/${{ matrix.suite }}'
+          New-Item -ItemType Directory -Path $root -Force | Out-Null
+          $metadata = [ordered]@{
+            commitSha = '${{ github.sha }}'
+            ref = '${{ github.ref }}'
+            suite = '${{ matrix.suite }}'
+            unityVersion = '${{ env.UNITY_VERSION }}'
+            projectVersion = (Get-Content -LiteralPath 'ProjectSettings/ProjectVersion.txt' -Raw).Trim()
+            packageLockSha256 = (Get-FileHash -LiteralPath 'Packages/packages-lock.json' -Algorithm SHA256).Hash
+            runnerOs = '${{ runner.os }}'
+            runnerArchitecture = '${{ runner.arch }}'
+          }
+          $metadata | ConvertTo-Json | Set-Content -LiteralPath "$root/reproduction-metadata.json"
+
+      - name: Verify Unity did not mutate tracked inputs
+        if: always()
+        shell: pwsh
+        run: |
+          $changes = git status --porcelain --untracked-files=no
+          if ($changes) {
+            $changes | Write-Host
+            throw 'Unity or Package Manager modified tracked repository inputs.'
+          }
+
+      - name: Upload Unity results and metadata
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: institutional-proof-${{ matrix.suite }}-${{ github.sha }}
+          path: TestResults/${{ matrix.suite }}
+          if-no-files-found: error
+          retention-days: 30
