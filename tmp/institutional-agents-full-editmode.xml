@@ -1,0 +1,1125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="128" result="Passed" total="128" passed="127" failed="0" inconclusive="0" skipped="1" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.5149803">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="128" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.514980" total="128" passed="127" failed="0" inconclusive="0" skipped="1" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1138" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="127" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.507675" total="127" passed="126" failed="0" inconclusive="0" skipped="1" asserts="0">
+      <properties>
+        <property name="_PID" value="33368" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1139" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="127" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.506544" total="127" passed="126" failed="0" inconclusive="0" skipped="1" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1140" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="127" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.505615" total="127" passed="126" failed="0" inconclusive="0" skipped="1" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1141" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="127" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.504596" total="127" passed="126" failed="0" inconclusive="0" skipped="1" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-suite type="TestFixture" id="1003" name="BehaviourTreeTests" fullname="Desk42.Tests.EditMode.BehaviourTreeTests" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" testcasecount="22" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.031640" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-case id="1004" name="ActionNode_ReturnsCorrectStatus" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.ActionNode_ReturnsCorrectStatus" methodname="ActionNode_ReturnsCorrectStatus" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1760216137" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.010543" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1020" name="BehaviourTree_AutoResets_AfterCompletion" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.BehaviourTree_AutoResets_AfterCompletion" methodname="BehaviourTree_AutoResets_AfterCompletion" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="960756480" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000903" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1022" name="BehaviourTree_InsertBlocker_PreventsCardFromWorking" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.BehaviourTree_InsertBlocker_PreventsCardFromWorking" methodname="BehaviourTree_InsertBlocker_PreventsCardFromWorking" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1717295559" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001972" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[BehaviourTree] Blocker inserted for ThreatAudit (retained_counsel).
+]]></output>
+              </test-case>
+              <test-case id="1021" name="BehaviourTree_Pause_StopsExecution" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.BehaviourTree_Pause_StopsExecution" methodname="BehaviourTree_Pause_StopsExecution" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="2054667176" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000180" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1018" name="BlockerNode_AlwaysReturnFailure" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.BlockerNode_AlwaysReturnFailure" methodname="BlockerNode_AlwaysReturnFailure" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="325762843" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000154" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1019" name="BlockerNode_StopsSequenceFromProgressing" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.BlockerNode_StopsSequenceFromProgressing" methodname="BlockerNode_StopsSequenceFromProgressing" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="510613789" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000371" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1024" name="BTContext_Blackboard_ClearRemovesAllEntries" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.BTContext_Blackboard_ClearRemovesAllEntries" methodname="BTContext_Blackboard_ClearRemovesAllEntries" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="674593062" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000291" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1025" name="BTContext_Blackboard_DefaultValueOnMissing" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.BTContext_Blackboard_DefaultValueOnMissing" methodname="BTContext_Blackboard_DefaultValueOnMissing" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1973122729" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000116" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1023" name="BTContext_Blackboard_SetAndGet" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.BTContext_Blackboard_SetAndGet" methodname="BTContext_Blackboard_SetAndGet" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1827110107" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000273" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1017" name="ConditionalGate_AllowsChildWhenConditionTrue" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.ConditionalGate_AllowsChildWhenConditionTrue" methodname="ConditionalGate_AllowsChildWhenConditionTrue" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="826981638" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000349" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1016" name="ConditionalGate_BlocksChildWhenConditionFalse" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.ConditionalGate_BlocksChildWhenConditionFalse" methodname="ConditionalGate_BlocksChildWhenConditionFalse" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1440755705" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000203" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1011" name="Inverter_FlipsFailureToSuccess" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.Inverter_FlipsFailureToSuccess" methodname="Inverter_FlipsFailureToSuccess" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1671182515" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000241" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1010" name="Inverter_FlipsSuccessToFailure" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.Inverter_FlipsSuccessToFailure" methodname="Inverter_FlipsSuccessToFailure" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1770572067" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000162" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1012" name="Inverter_PassesRunningThrough" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.Inverter_PassesRunningThrough" methodname="Inverter_PassesRunningThrough" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1603078177" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000154" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1006" name="Selector_FailsIfAllChildrenFail" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.Selector_FailsIfAllChildrenFail" methodname="Selector_FailsIfAllChildrenFail" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="2085626852" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000339" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1007" name="Selector_ResumesFromRunningChild" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.Selector_ResumesFromRunningChild" methodname="Selector_ResumesFromRunningChild" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="926927541" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000291" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1005" name="Selector_ReturnsFirstSuccess" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.Selector_ReturnsFirstSuccess" methodname="Selector_ReturnsFirstSuccess" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="136975240" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000342" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1009" name="Sequence_FailsOnFirstFailure" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.Sequence_FailsOnFirstFailure" methodname="Sequence_FailsOnFirstFailure" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1906945234" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000259" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1008" name="Sequence_SucceedsOnlyIfAllChildrenSucceed" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.Sequence_SucceedsOnlyIfAllChildrenSucceed" methodname="Sequence_SucceedsOnlyIfAllChildrenSucceed" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="671615046" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000255" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1015" name="WaitNode_ResetsElapsedOnReset" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.WaitNode_ResetsElapsedOnReset" methodname="WaitNode_ResetsElapsedOnReset" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1485935983" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000724" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1013" name="WaitNode_ReturnsRunningBeforeDurationElapses" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.WaitNode_ReturnsRunningBeforeDurationElapses" methodname="WaitNode_ReturnsRunningBeforeDurationElapses" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="766746463" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000145" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1014" name="WaitNode_ReturnsSuccessAfterDuration" fullname="Desk42.Tests.EditMode.BehaviourTreeTests.WaitNode_ReturnsSuccessAfterDuration" methodname="WaitNode_ReturnsSuccessAfterDuration" classname="Desk42.Tests.EditMode.BehaviourTreeTests" runstate="Runnable" seed="1077862646" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000130" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1026" name="BSMTests" fullname="Desk42.Tests.EditMode.BSMTests" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" testcasecount="54" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.041911" total="54" passed="54" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-case id="1080" name="CSM_Expedite_Inject_Success" fullname="Desk42.Tests.EditMode.BSMTests.CSM_Expedite_Inject_Success" methodname="CSM_Expedite_Inject_Success" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1264337690" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.006248" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Resigned (duration: 3s, depth: 1)
+]]></output>
+              </test-case>
+              <test-case id="1068" name="CSM_Initializes_BaseBTNotNull" fullname="Desk42.Tests.EditMode.BSMTests.CSM_Initializes_BaseBTNotNull" methodname="CSM_Initializes_BaseBTNotNull" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1336617914" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001377" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1069" name="CSM_Initializes_BaseBTNotPaused" fullname="Desk42.Tests.EditMode.BSMTests.CSM_Initializes_BaseBTNotPaused" methodname="CSM_Initializes_BaseBTNotPaused" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="891638208" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000217" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1067" name="CSM_Initializes_WithPendingState" fullname="Desk42.Tests.EditMode.BSMTests.CSM_Initializes_WithPendingState" methodname="CSM_Initializes_WithPendingState" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1865738568" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000219" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1070" name="CSM_IsNotInInjectedState_Initially" fullname="Desk42.Tests.EditMode.BSMTests.CSM_IsNotInInjectedState_Initially" methodname="CSM_IsNotInInjectedState_Initially" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1976267524" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000223" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1079" name="CSM_LegalHold_Inject_Success" fullname="Desk42.Tests.EditMode.BSMTests.CSM_LegalHold_Inject_Success" methodname="CSM_LegalHold_Inject_Success" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="612139283" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000746" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Litigious (duration: 8s, depth: 1)
+]]></output>
+              </test-case>
+              <test-case id="1078" name="CSM_RepeatOffender_ThreatAudit_BlockedByBlocker" fullname="Desk42.Tests.EditMode.BSMTests.CSM_RepeatOffender_ThreatAudit_BlockedByBlocker" methodname="CSM_RepeatOffender_ThreatAudit_BlockedByBlocker" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1683766800" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000686" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[BehaviourTree] Blocker inserted for ThreatAudit (retained_counsel).
+]]></output>
+              </test-case>
+              <test-case id="1071" name="CSM_TryInject_BlockedByBTBlocker" fullname="Desk42.Tests.EditMode.BSMTests.CSM_TryInject_BlockedByBTBlocker" methodname="CSM_TryInject_BlockedByBTBlocker" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="563210896" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000638" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[BehaviourTree] Blocker inserted for ThreatAudit (retained_counsel).
+]]></output>
+              </test-case>
+              <test-case id="1072" name="CSM_TryInject_DissociatingClient_Returns_ClientDissociating" fullname="Desk42.Tests.EditMode.BSMTests.CSM_TryInject_DissociatingClient_Returns_ClientDissociating" methodname="CSM_TryInject_DissociatingClient_Returns_ClientDissociating" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="172472459" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000248" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1077" name="CSM_TryInject_FiresOnStateChangedEvent" fullname="Desk42.Tests.EditMode.BSMTests.CSM_TryInject_FiresOnStateChangedEvent" methodname="CSM_TryInject_FiresOnStateChangedEvent" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="456371598" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001533" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[TransitionTable] Rule matched: PendingReview -> Cooperative (P:999) -> Cooperative
+[StateStack] Pushed Pending (duration: 5s, depth: 1)
+]]></output>
+              </test-case>
+              <test-case id="1076" name="CSM_TryInject_OrganicCard_ReturnsBlockedByCurrentState" fullname="Desk42.Tests.EditMode.BSMTests.CSM_TryInject_OrganicCard_ReturnsBlockedByCurrentState" methodname="CSM_TryInject_OrganicCard_ReturnsBlockedByCurrentState" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="489585010" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000317" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1074" name="CSM_TryInject_PausesBaseBT" fullname="Desk42.Tests.EditMode.BSMTests.CSM_TryInject_PausesBaseBT" methodname="CSM_TryInject_PausesBaseBT" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="909894245" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000663" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: 5s, depth: 1)
+]]></output>
+              </test-case>
+              <test-case id="1073" name="CSM_TryInject_PendingReview_Success_PushesStack" fullname="Desk42.Tests.EditMode.BSMTests.CSM_TryInject_PendingReview_Success_PushesStack" methodname="CSM_TryInject_PendingReview_Success_PushesStack" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1844181183" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000678" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: 5s, depth: 1)
+]]></output>
+              </test-case>
+              <test-case id="1075" name="CSM_TryInject_SetsNewMoodState" fullname="Desk42.Tests.EditMode.BSMTests.CSM_TryInject_SetsNewMoodState" methodname="CSM_TryInject_SetsNewMoodState" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="605058240" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001210" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[TransitionTable] Rule matched: PendingReview -> Suspicious (P:999) -> Suspicious
+[StateStack] Pushed Pending (duration: 5s, depth: 1)
+]]></output>
+              </test-case>
+              <test-case id="1049" name="CurrentStateIs_MatchesCorrectly" fullname="Desk42.Tests.EditMode.BSMTests.CurrentStateIs_MatchesCorrectly" methodname="CurrentStateIs_MatchesCorrectly" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1641313737" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000156" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1051" name="FactionReputation_AboveThreshold" fullname="Desk42.Tests.EditMode.BSMTests.FactionReputation_AboveThreshold" methodname="FactionReputation_AboveThreshold" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1957735022" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000196" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1052" name="FactionReputation_BelowThreshold" fullname="Desk42.Tests.EditMode.BSMTests.FactionReputation_BelowThreshold" methodname="FactionReputation_BelowThreshold" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1713178362" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000128" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1046" name="HasCounterTrait_FalseIfAbsent" fullname="Desk42.Tests.EditMode.BSMTests.HasCounterTrait_FalseIfAbsent" methodname="HasCounterTrait_FalseIfAbsent" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="392404691" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000224" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1047" name="HasCounterTrait_FalseIfListNull" fullname="Desk42.Tests.EditMode.BSMTests.HasCounterTrait_FalseIfListNull" methodname="HasCounterTrait_FalseIfListNull" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="680050844" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000121" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1045" name="HasCounterTrait_TrueIfPresent" fullname="Desk42.Tests.EditMode.BSMTests.HasCounterTrait_TrueIfPresent" methodname="HasCounterTrait_TrueIfPresent" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="39320222" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000192" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1044" name="ImpatienceAbove_StrictGreaterThan" fullname="Desk42.Tests.EditMode.BSMTests.ImpatienceAbove_StrictGreaterThan" methodname="ImpatienceAbove_StrictGreaterThan" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1781670163" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000156" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1040" name="IsRepeatOffender_FalseOnFirstVisit" fullname="Desk42.Tests.EditMode.BSMTests.IsRepeatOffender_FalseOnFirstVisit" methodname="IsRepeatOffender_FalseOnFirstVisit" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1626816246" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000116" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1041" name="IsRepeatOffender_TrueAfterFirstVisit" fullname="Desk42.Tests.EditMode.BSMTests.IsRepeatOffender_TrueAfterFirstVisit" methodname="IsRepeatOffender_TrueAfterFirstVisit" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="2117494818" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000122" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1050" name="OfficeTempIs_CaseInsensitive" fullname="Desk42.Tests.EditMode.BSMTests.OfficeTempIs_CaseInsensitive" methodname="OfficeTempIs_CaseInsensitive" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1012883549" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000171" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1043" name="SoulIntegrityAbove_EvaluatesThreshold" fullname="Desk42.Tests.EditMode.BSMTests.SoulIntegrityAbove_EvaluatesThreshold" methodname="SoulIntegrityAbove_EvaluatesThreshold" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1092292258" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000150" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1042" name="SoulIntegrityBelow_EvaluatesThreshold" fullname="Desk42.Tests.EditMode.BSMTests.SoulIntegrityBelow_EvaluatesThreshold" methodname="SoulIntegrityBelow_EvaluatesThreshold" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="2076205703" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000141" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1048" name="SpeciesIs_CaseInsensitive" fullname="Desk42.Tests.EditMode.BSMTests.SpeciesIs_CaseInsensitive" methodname="SpeciesIs_CaseInsensitive" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="962633244" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000183" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1039" name="Stack_AfterTopPops_BottomBecomesActive" fullname="Desk42.Tests.EditMode.BSMTests.Stack_AfterTopPops_BottomBecomesActive" methodname="Stack_AfterTopPops_BottomBecomesActive" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1500643532" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.002434" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: ∞, depth: 1)
+[StateStack] Pushed Pending (duration: 0.1s, depth: 2)
+[StateStack] Popped Pending (timer expired).
+]]></output>
+              </test-case>
+              <test-case id="1037" name="Stack_ClearAll_ExitsAllStates" fullname="Desk42.Tests.EditMode.BSMTests.Stack_ClearAll_ExitsAllStates" methodname="Stack_ClearAll_ExitsAllStates" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="257321628" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001056" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: ∞, depth: 1)
+[StateStack] Pushed Pending (duration: ∞, depth: 2)
+]]></output>
+              </test-case>
+              <test-case id="1035" name="Stack_ForcePopTop_ExitsAndRemovesState" fullname="Desk42.Tests.EditMode.BSMTests.Stack_ForcePopTop_ExitsAndRemovesState" methodname="Stack_ForcePopTop_ExitsAndRemovesState" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="9245018" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001087" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: ∞, depth: 1)
+[StateStack] Force-popped Pending.
+]]></output>
+              </test-case>
+              <test-case id="1036" name="Stack_ForcePopTop_OnEmptyStack_DoesNothing" fullname="Desk42.Tests.EditMode.BSMTests.Stack_ForcePopTop_OnEmptyStack_DoesNothing" methodname="Stack_ForcePopTop_OnEmptyStack_DoesNothing" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="554046217" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000732" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1027" name="Stack_IsEmpty_Initially" fullname="Desk42.Tests.EditMode.BSMTests.Stack_IsEmpty_Initially" methodname="Stack_IsEmpty_Initially" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1533568561" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000607" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1033" name="Stack_NoTimer_TimeRemainingIsInfinity" fullname="Desk42.Tests.EditMode.BSMTests.Stack_NoTimer_TimeRemainingIsInfinity" methodname="Stack_NoTimer_TimeRemainingIsInfinity" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1461494869" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000550" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: ∞, depth: 1)
+]]></output>
+              </test-case>
+              <test-case id="1038" name="Stack_OnlyTopStateTicks" fullname="Desk42.Tests.EditMode.BSMTests.Stack_OnlyTopStateTicks" methodname="Stack_OnlyTopStateTicks" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="927377872" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000934" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: ∞, depth: 1)
+[StateStack] Pushed Pending (duration: ∞, depth: 2)
+]]></output>
+              </test-case>
+              <test-case id="1028" name="Stack_Push_EntersStateAndSetsActive" fullname="Desk42.Tests.EditMode.BSMTests.Stack_Push_EntersStateAndSetsActive" methodname="Stack_Push_EntersStateAndSetsActive" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1862519434" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000567" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: ∞, depth: 1)
+]]></output>
+              </test-case>
+              <test-case id="1034" name="Stack_SelfTermination_PopsAndCallsExit" fullname="Desk42.Tests.EditMode.BSMTests.Stack_SelfTermination_PopsAndCallsExit" methodname="Stack_SelfTermination_PopsAndCallsExit" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="2088402178" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000999" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: ∞, depth: 1)
+[StateStack] Popped Pending (self-terminated).
+]]></output>
+              </test-case>
+              <test-case id="1030" name="Stack_Tick_ReturnsFalse_WhenEmpty" fullname="Desk42.Tests.EditMode.BSMTests.Stack_Tick_ReturnsFalse_WhenEmpty" methodname="Stack_Tick_ReturnsFalse_WhenEmpty" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1245048793" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000137" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1029" name="Stack_Tick_ReturnsTrueWhileActive" fullname="Desk42.Tests.EditMode.BSMTests.Stack_Tick_ReturnsTrueWhileActive" methodname="Stack_Tick_ReturnsTrueWhileActive" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="748924445" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000663" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: ∞, depth: 1)
+]]></output>
+              </test-case>
+              <test-case id="1032" name="Stack_TimeRemaining_DecreasesWithTick" fullname="Desk42.Tests.EditMode.BSMTests.Stack_TimeRemaining_DecreasesWithTick" methodname="Stack_TimeRemaining_DecreasesWithTick" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="459187159" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.003139" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: 1s, depth: 1)
+]]></output>
+              </test-case>
+              <test-case id="1031" name="Stack_TimerExpiry_PopsAndCallsExit" fullname="Desk42.Tests.EditMode.BSMTests.Stack_TimerExpiry_PopsAndCallsExit" methodname="Stack_TimerExpiry_PopsAndCallsExit" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1224419847" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000995" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[StateStack] Pushed Pending (duration: 0.5s, depth: 1)
+[StateStack] Popped Pending (timer expired).
+]]></output>
+              </test-case>
+              <test-case id="1054" name="TransitionRule_ActionMatch_NoConditions_ReturnsTrue" fullname="Desk42.Tests.EditMode.BSMTests.TransitionRule_ActionMatch_NoConditions_ReturnsTrue" methodname="TransitionRule_ActionMatch_NoConditions_ReturnsTrue" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="543271542" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000163" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1053" name="TransitionRule_ActionMismatch_ReturnsFalse" fullname="Desk42.Tests.EditMode.BSMTests.TransitionRule_ActionMismatch_ReturnsFalse" methodname="TransitionRule_ActionMismatch_ReturnsFalse" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1094548240" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000147" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1057" name="TransitionRule_AllConditionsPass_ReturnsTrue" fullname="Desk42.Tests.EditMode.BSMTests.TransitionRule_AllConditionsPass_ReturnsTrue" methodname="TransitionRule_AllConditionsPass_ReturnsTrue" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="248577401" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000250" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1056" name="TransitionRule_ConditionFails_ReturnsFalse" fullname="Desk42.Tests.EditMode.BSMTests.TransitionRule_ConditionFails_ReturnsFalse" methodname="TransitionRule_ConditionFails_ReturnsFalse" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1249558201" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000200" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1055" name="TransitionRule_EmptyTrigger_MatchesAnyAction" fullname="Desk42.Tests.EditMode.BSMTests.TransitionRule_EmptyTrigger_MatchesAnyAction" methodname="TransitionRule_EmptyTrigger_MatchesAnyAction" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1552071073" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000144" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1058" name="TransitionRule_SecondConditionFails_ReturnsFalse" fullname="Desk42.Tests.EditMode.BSMTests.TransitionRule_SecondConditionFails_ReturnsFalse" methodname="TransitionRule_SecondConditionFails_ReturnsFalse" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="2144677682" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000209" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1064" name="TransitionTable_AddRuntimeRule_IsEvaluated" fullname="Desk42.Tests.EditMode.BSMTests.TransitionTable_AddRuntimeRule_IsEvaluated" methodname="TransitionTable_AddRuntimeRule_IsEvaluated" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1323945621" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000614" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[TransitionTable] Rule matched: CooperationRoute -> Cooperative (P:100) -> Cooperative
+]]></output>
+              </test-case>
+              <test-case id="1066" name="TransitionTable_ClearRuntimeRules_FallsBackToBase" fullname="Desk42.Tests.EditMode.BSMTests.TransitionTable_ClearRuntimeRules_FallsBackToBase" methodname="TransitionTable_ClearRuntimeRules_FallsBackToBase" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="699042644" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000282" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1060" name="TransitionTable_FirstVisit_ThreatAudit_FallsBackToPending" fullname="Desk42.Tests.EditMode.BSMTests.TransitionTable_FirstVisit_ThreatAudit_FallsBackToPending" methodname="TransitionTable_FirstVisit_ThreatAudit_FallsBackToPending" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1221601432" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000163" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1062" name="TransitionTable_HighSoul_Redact_ResolvesToSuspicious" fullname="Desk42.Tests.EditMode.BSMTests.TransitionTable_HighSoul_Redact_ResolvesToSuspicious" methodname="TransitionTable_HighSoul_Redact_ResolvesToSuspicious" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1305260040" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000552" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[TransitionTable] Rule matched: Redact -> Suspicious (default) -> Suspicious
+]]></output>
+              </test-case>
+              <test-case id="1061" name="TransitionTable_LowSoul_Redact_ResolvesToParanoid" fullname="Desk42.Tests.EditMode.BSMTests.TransitionTable_LowSoul_Redact_ResolvesToParanoid" methodname="TransitionTable_LowSoul_Redact_ResolvesToParanoid" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1456677310" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000580" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[TransitionTable] Rule matched: Redact -> Paranoid (low soul) -> Paranoid
+]]></output>
+              </test-case>
+              <test-case id="1063" name="TransitionTable_NoMatch_ReturnsFallback" fullname="Desk42.Tests.EditMode.BSMTests.TransitionTable_NoMatch_ReturnsFallback" methodname="TransitionTable_NoMatch_ReturnsFallback" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="787546890" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000163" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1059" name="TransitionTable_RepeatOffender_ThreatAudit_ResolvesToLitigious" fullname="Desk42.Tests.EditMode.BSMTests.TransitionTable_RepeatOffender_ThreatAudit_ResolvesToLitigious" methodname="TransitionTable_RepeatOffender_ThreatAudit_ResolvesToLitigious" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1220803779" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000560" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[TransitionTable] Rule matched: Threaten -> Litigious (repeat offender) -> Litigious
+]]></output>
+              </test-case>
+              <test-case id="1065" name="TransitionTable_RuntimeRuleOutprioritisesBase" fullname="Desk42.Tests.EditMode.BSMTests.TransitionTable_RuntimeRuleOutprioritisesBase" methodname="TransitionTable_RuntimeRuleOutprioritisesBase" classname="Desk42.Tests.EditMode.BSMTests" runstate="Runnable" seed="1818158621" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000595" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[TransitionTable] Rule matched: ThreatAudit -> Litigious (P:999) -> Litigious
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1081" name="DeskEntropyTierTests" fullname="Desk42.Tests.EditMode.DeskEntropyTierTests" classname="Desk42.Tests.EditMode.DeskEntropyTierTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.044713" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-case id="1086" name="Entropy_AtMaximum_AllTiersFullyVisible" fullname="Desk42.Tests.EditMode.DeskEntropyTierTests.Entropy_AtMaximum_AllTiersFullyVisible" methodname="Entropy_AtMaximum_AllTiersFullyVisible" classname="Desk42.Tests.EditMode.DeskEntropyTierTests" runstate="Runnable" seed="863153388" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001980" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1082" name="Entropy_BelowAllThresholds_AllTiersInvisible" fullname="Desk42.Tests.EditMode.DeskEntropyTierTests.Entropy_BelowAllThresholds_AllTiersInvisible" methodname="Entropy_BelowAllThresholds_AllTiersInvisible" classname="Desk42.Tests.EditMode.DeskEntropyTierTests" runstate="Runnable" seed="2028362374" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000269" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1085" name="Entropy_CollapsedTier_Tier1And2Full_Tier3PartiallyVisible" fullname="Desk42.Tests.EditMode.DeskEntropyTierTests.Entropy_CollapsedTier_Tier1And2Full_Tier3PartiallyVisible" methodname="Entropy_CollapsedTier_Tier1And2Full_Tier3PartiallyVisible" classname="Desk42.Tests.EditMode.DeskEntropyTierTests" runstate="Runnable" seed="1477425904" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000254" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1084" name="Entropy_DeterioratedTier_Tier1Full_Tier2PartiallyVisible" fullname="Desk42.Tests.EditMode.DeskEntropyTierTests.Entropy_DeterioratedTier_Tier1Full_Tier2PartiallyVisible" methodname="Entropy_DeterioratedTier_Tier1Full_Tier2PartiallyVisible" classname="Desk42.Tests.EditMode.DeskEntropyTierTests" runstate="Runnable" seed="473522554" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000255" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1083" name="Entropy_MidClutterTier_Tier1PartiallyVisible_OthersZero" fullname="Desk42.Tests.EditMode.DeskEntropyTierTests.Entropy_MidClutterTier_Tier1PartiallyVisible_OthersZero" methodname="Entropy_MidClutterTier_Tier1PartiallyVisible_OthersZero" classname="Desk42.Tests.EditMode.DeskEntropyTierTests" runstate="Runnable" seed="1934982175" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000249" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1087" name="PreviewEntropy_ClampsOutOfRangeInput" fullname="Desk42.Tests.EditMode.DeskEntropyTierTests.PreviewEntropy_ClampsOutOfRangeInput" methodname="PreviewEntropy_ClampsOutOfRangeInput" classname="Desk42.Tests.EditMode.DeskEntropyTierTests" runstate="Runnable" seed="869451287" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000377" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1088" name="WIRING_GAP_StampCorruptionMapping_TiedToSanity_DoesNotExist" fullname="Desk42.Tests.EditMode.DeskEntropyTierTests.WIRING_GAP_StampCorruptionMapping_TiedToSanity_DoesNotExist" methodname="WIRING_GAP_StampCorruptionMapping_TiedToSanity_DoesNotExist" classname="Desk42.Tests.EditMode.DeskEntropyTierTests" runstate="Runnable" seed="2088198542" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.040053" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1089" name="ExpenseUnmetEventTests" fullname="Desk42.Tests.EditMode.ExpenseUnmetEventTests" classname="Desk42.Tests.EditMode.ExpenseUnmetEventTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.011172" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-case id="1090" name="InsufficientCredits_PublishesExpenseUnmetEvent_AndAccumulatesDebt" fullname="Desk42.Tests.EditMode.ExpenseUnmetEventTests.InsufficientCredits_PublishesExpenseUnmetEvent_AndAccumulatesDebt" methodname="InsufficientCredits_PublishesExpenseUnmetEvent_AndAccumulatesDebt" classname="Desk42.Tests.EditMode.ExpenseUnmetEventTests" runstate="Runnable" seed="1511190156" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.007194" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[PersonalExpenses] Cannot afford Medical Copay: ¢12 (short ¢12). Debt accumulating.
+[PersonalExpenses] Cannot afford Rent: ¢18 (short ¢18). Debt accumulating.
+]]></output>
+              </test-case>
+              <test-case id="1093" name="NullMeta_DoesNotThrow" fullname="Desk42.Tests.EditMode.ExpenseUnmetEventTests.NullMeta_DoesNotThrow" methodname="NullMeta_DoesNotThrow" classname="Desk42.Tests.EditMode.ExpenseUnmetEventTests" runstate="Runnable" seed="844983901" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000703" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+]]></output>
+              </test-case>
+              <test-case id="1092" name="NullRunData_DoesNotThrow" fullname="Desk42.Tests.EditMode.ExpenseUnmetEventTests.NullRunData_DoesNotThrow" methodname="NullRunData_DoesNotThrow" classname="Desk42.Tests.EditMode.ExpenseUnmetEventTests" runstate="Runnable" seed="1330182977" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000619" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+]]></output>
+              </test-case>
+              <test-case id="1091" name="SufficientCredits_NeverPublishesExpenseUnmetEvent" fullname="Desk42.Tests.EditMode.ExpenseUnmetEventTests.SufficientCredits_NeverPublishesExpenseUnmetEvent" methodname="SufficientCredits_NeverPublishesExpenseUnmetEvent" classname="Desk42.Tests.EditMode.ExpenseUnmetEventTests" runstate="Runnable" seed="1198486821" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001472" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[PersonalExpenses] Paid Medical Copay: ¢12. Remaining: ¢99988.
+[PersonalExpenses] Paid Rent: ¢18. Remaining: ¢99970.
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1094" name="InstitutionalAgentSimulationTests" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.174301" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-case id="1098" name="EquivalentProfileSubstitution_PreservesBehaviour" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.EquivalentProfileSubstitution_PreservesBehaviour" methodname="EquivalentProfileSubstitution_PreservesBehaviour" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="345366496" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.015505" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1099" name="InstitutionalRegime_SamePersonAndSeed_ChangesDecisionForTraceableReasons" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.InstitutionalRegime_SamePersonAndSeed_ChangesDecisionForTraceableReasons" methodname="InstitutionalRegime_SamePersonAndSeed_ChangesDecisionForTraceableReasons" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="1485381477" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000888" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1104" name="OfficialStatus_ChangesBoundedAnomalyEffectWithoutGlobalMeter" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.OfficialStatus_ChangesBoundedAnomalyEffectWithoutGlobalMeter" methodname="OfficialStatus_ChangesBoundedAnomalyEffectWithoutGlobalMeter" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="175430011" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000651" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1095" name="Population_EightProfiles_MaintainsInvariantsAcrossTicks" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.Population_EightProfiles_MaintainsInvariantsAcrossTicks" methodname="Population_EightProfiles_MaintainsInvariantsAcrossTicks" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="694308925" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.018320" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1097" name="Population_OrderPermutation_ProducesIsomorphicOutcome" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.Population_OrderPermutation_ProducesIsomorphicOutcome" methodname="Population_OrderPermutation_ProducesIsomorphicOutcome" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="1996365016" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.013339" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1103" name="PopulationSaveRoundTrip_PreservesDeterministicContinuation" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.PopulationSaveRoundTrip_PreservesDeterministicContinuation" methodname="PopulationSaveRoundTrip_PreservesDeterministicContinuation" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="2023835351" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.087768" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1100" name="RelevantBeliefPerturbation_ChangesDecisionAndExplainsWhy" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.RelevantBeliefPerturbation_ChangesDecisionAndExplainsWhy" methodname="RelevantBeliefPerturbation_ChangesDecisionAndExplainsWhy" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="711576753" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000558" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1101" name="RelevantRelationshipPerturbation_ChangesActionTargetAndExplainsWhy" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.RelevantRelationshipPerturbation_ChangesActionTargetAndExplainsWhy" methodname="RelevantRelationshipPerturbation_ChangesActionTargetAndExplainsWhy" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="576591000" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000654" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1096" name="Simulation_SameSeedAndInputs_ProducesIdenticalDecisionTrace" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.Simulation_SameSeedAndInputs_ProducesIdenticalDecisionTrace" methodname="Simulation_SameSeedAndInputs_ProducesIdenticalDecisionTrace" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="1960779848" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.034429" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 9090 (AAAJ6C).
+]]></output>
+              </test-case>
+              <test-case id="1102" name="UnseenValidProfile_UsesGenericDecisionPipeline" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.UnseenValidProfile_UsesGenericDecisionPipeline" methodname="UnseenValidProfile_UsesGenericDecisionPipeline" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="200046974" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000374" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1105" name="SaveSystemTests" fullname="Desk42.Tests.EditMode.SaveSystemTests" classname="Desk42.Tests.EditMode.SaveSystemTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.130860" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-case id="1110" name="HasActiveRun_AfterDelete_ReturnsFalse" fullname="Desk42.Tests.EditMode.SaveSystemTests.HasActiveRun_AfterDelete_ReturnsFalse" methodname="HasActiveRun_AfterDelete_ReturnsFalse" classname="Desk42.Tests.EditMode.SaveSystemTests" runstate="Runnable" seed="1465021304" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.032459" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1109" name="HasActiveRun_AfterSave_ReturnsTrue" fullname="Desk42.Tests.EditMode.SaveSystemTests.HasActiveRun_AfterSave_ReturnsTrue" methodname="HasActiveRun_AfterSave_ReturnsTrue" classname="Desk42.Tests.EditMode.SaveSystemTests" runstate="Runnable" seed="922718507" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.017940" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1111" name="HasActiveRun_CompletedRun_ReturnsFalse" fullname="Desk42.Tests.EditMode.SaveSystemTests.HasActiveRun_CompletedRun_ReturnsFalse" methodname="HasActiveRun_CompletedRun_ReturnsFalse" classname="Desk42.Tests.EditMode.SaveSystemTests" runstate="Runnable" seed="1070102807" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.012579" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1107" name="LoadMeta_WhenNoFileExists_ReturnsDefaultInstance" fullname="Desk42.Tests.EditMode.SaveSystemTests.LoadMeta_WhenNoFileExists_ReturnsDefaultInstance" methodname="LoadMeta_WhenNoFileExists_ReturnsDefaultInstance" classname="Desk42.Tests.EditMode.SaveSystemTests" runstate="Runnable" seed="1474885876" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.002436" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SaveSystem] ⚠ All save data wiped.
+]]></output>
+              </test-case>
+              <test-case id="1113" name="RumorMill_ClearSubscriptions_NoLongerFires" fullname="Desk42.Tests.EditMode.SaveSystemTests.RumorMill_ClearSubscriptions_NoLongerFires" methodname="RumorMill_ClearSubscriptions_NoLongerFires" classname="Desk42.Tests.EditMode.SaveSystemTests" runstate="Runnable" seed="104719780" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000391" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1112" name="RumorMill_Subscribe_ReceivesPublishedEvent" fullname="Desk42.Tests.EditMode.SaveSystemTests.RumorMill_Subscribe_ReceivesPublishedEvent" methodname="RumorMill_Subscribe_ReceivesPublishedEvent" classname="Desk42.Tests.EditMode.SaveSystemTests" runstate="Runnable" seed="1689354669" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000431" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1106" name="SaveAndLoad_MetaProgressData_RoundTrips" fullname="Desk42.Tests.EditMode.SaveSystemTests.SaveAndLoad_MetaProgressData_RoundTrips" methodname="SaveAndLoad_MetaProgressData_RoundTrips" classname="Desk42.Tests.EditMode.SaveSystemTests" runstate="Runnable" seed="1130368088" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.046053" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1108" name="SaveAndLoad_RunData_RoundTrips" fullname="Desk42.Tests.EditMode.SaveSystemTests.SaveAndLoad_RunData_RoundTrips" methodname="SaveAndLoad_RunData_RoundTrips" classname="Desk42.Tests.EditMode.SaveSystemTests" runstate="Runnable" seed="1303343077" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.013727" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1114" name="SeedEngineTests" fullname="Desk42.Tests.EditMode.SeedEngineTests" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.038673" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-case id="1116" name="DifferentSeeds_ProduceDifferentSequences" fullname="Desk42.Tests.EditMode.SeedEngineTests.DifferentSeeds_ProduceDifferentSequences" methodname="DifferentSeeds_ProduceDifferentSequences" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="879755599" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.002411" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[SeedEngine] Initialised with seed 1 (AAAAAB).
+[SeedEngine] Initialised with seed 2 (AAAAAC).
+]]></output>
+              </test-case>
+              <test-case id="1118" name="Next_RespectsRange" fullname="Desk42.Tests.EditMode.SeedEngineTests.Next_RespectsRange" methodname="Next_RespectsRange" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="867405164" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.005193" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[SeedEngine] Initialised with seed 0 (AAAAAA).
+]]></output>
+              </test-case>
+              <test-case id="1121" name="NextBool_OneProbability_AlwaysTrue" fullname="Desk42.Tests.EditMode.SeedEngineTests.NextBool_OneProbability_AlwaysTrue" methodname="NextBool_OneProbability_AlwaysTrue" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="400846169" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.002332" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[SeedEngine] Initialised with seed 0 (AAAAAA).
+]]></output>
+              </test-case>
+              <test-case id="1120" name="NextBool_ZeroProbability_AlwaysFalse" fullname="Desk42.Tests.EditMode.SeedEngineTests.NextBool_ZeroProbability_AlwaysFalse" methodname="NextBool_ZeroProbability_AlwaysFalse" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="2001969955" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.002017" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[SeedEngine] Initialised with seed 0 (AAAAAA).
+]]></output>
+              </test-case>
+              <test-case id="1119" name="NextFloat_RespectsRange" fullname="Desk42.Tests.EditMode.SeedEngineTests.NextFloat_RespectsRange" methodname="NextFloat_RespectsRange" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="459245747" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.007238" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[SeedEngine] Initialised with seed 0 (AAAAAA).
+]]></output>
+              </test-case>
+              <test-case id="1115" name="SameSeed_ProducesSameSequence" fullname="Desk42.Tests.EditMode.SeedEngineTests.SameSeed_ProducesSameSequence" methodname="SameSeed_ProducesSameSequence" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="2102258" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.002160" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[SeedEngine] Initialised with seed 99999 (AADBW9).
+[SeedEngine] Initialised with seed 99999 (AADBW9).
+]]></output>
+              </test-case>
+              <test-case id="1123" name="ShareCode_InvalidInput_ReturnsFalse" fullname="Desk42.Tests.EditMode.SeedEngineTests.ShareCode_InvalidInput_ReturnsFalse" methodname="ShareCode_InvalidInput_ReturnsFalse" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="100618010" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000886" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+]]></output>
+              </test-case>
+              <test-case id="1122" name="ShareCode_RoundTrips" fullname="Desk42.Tests.EditMode.SeedEngineTests.ShareCode_RoundTrips" methodname="ShareCode_RoundTrips" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="513762095" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.002090" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[SeedEngine] Initialised with seed 987654321 (7P64FT).
+[SeedEngine] Initialised with seed 987654321 (7P64FT).
+]]></output>
+              </test-case>
+              <test-case id="1124" name="Shuffle_ProducesFullPermutation" fullname="Desk42.Tests.EditMode.SeedEngineTests.Shuffle_ProducesFullPermutation" methodname="Shuffle_ProducesFullPermutation" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="1486036211" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.003281" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[SeedEngine] Initialised with seed 777 (AAAA2K).
+]]></output>
+              </test-case>
+              <test-case id="1125" name="Shuffle_SameSeed_ProducesSameOrder" fullname="Desk42.Tests.EditMode.SeedEngineTests.Shuffle_SameSeed_ProducesSameOrder" methodname="Shuffle_SameSeed_ProducesSameOrder" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="1732171860" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.003841" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[SeedEngine] Initialised with seed 42 (AAAABL).
+[SeedEngine] Initialised with seed 42 (AAAABL).
+]]></output>
+              </test-case>
+              <test-case id="1117" name="Streams_AreIndependent" fullname="Desk42.Tests.EditMode.SeedEngineTests.Streams_AreIndependent" methodname="Streams_AreIndependent" classname="Desk42.Tests.EditMode.SeedEngineTests" runstate="Runnable" seed="1622802631" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001990" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 12345 (AAANB3).
+[SeedEngine] Initialised with seed 42 (AAAABL).
+[SeedEngine] Initialised with seed 42 (AAAABL).
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1126" name="SynergyResolverTests" fullname="Desk42.Tests.EditMode.SynergyResolverTests" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.027295" total="11" passed="10" failed="0" inconclusive="0" skipped="1" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-case id="1133" name="NoActiveSupplies_CreditCostUnchanged" fullname="Desk42.Tests.EditMode.SynergyResolverTests.NoActiveSupplies_CreditCostUnchanged" methodname="NoActiveSupplies_CreditCostUnchanged" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" seed="839408049" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.002399" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1130" name="NoActiveSupplies_DurationUnchanged" fullname="Desk42.Tests.EditMode.SynergyResolverTests.NoActiveSupplies_DurationUnchanged" methodname="NoActiveSupplies_DurationUnchanged" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" seed="1699109456" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000466" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1128" name="Paperclip_DoesNotAffectOtherCardTypes" fullname="Desk42.Tests.EditMode.SynergyResolverTests.Paperclip_DoesNotAffectOtherCardTypes" methodname="Paperclip_DoesNotAffectOtherCardTypes" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" seed="889403113" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.011685" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Supply] Placed: paperclip
+]]></output>
+              </test-case>
+              <test-case id="1127" name="Paperclip_DoublesPendingReviewDuration" fullname="Desk42.Tests.EditMode.SynergyResolverTests.Paperclip_DoublesPendingReviewDuration" methodname="Paperclip_DoublesPendingReviewDuration" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" seed="2021473178" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001175" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Supply] Placed: paperclip
+[SynergyResolver] paperclip: duration 10.00s → 20.00s (PendingReview)
+]]></output>
+              </test-case>
+              <test-case id="1136" name="Paperclip_DurationChange_IsCurrentlyOnlyObservableViaLog" fullname="Desk42.Tests.EditMode.SynergyResolverTests.Paperclip_DurationChange_IsCurrentlyOnlyObservableViaLog" methodname="Paperclip_DurationChange_IsCurrentlyOnlyObservableViaLog" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" seed="45115118" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001927" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Supply] Placed: paperclip
+[SynergyResolver] paperclip: duration 10.00s → 20.00s (PendingReview)
+]]></output>
+              </test-case>
+              <test-case id="1129" name="Paperclip_PlusNoOpPaperWeight_ChainComposesCorrectly" fullname="Desk42.Tests.EditMode.SynergyResolverTests.Paperclip_PlusNoOpPaperWeight_ChainComposesCorrectly" methodname="Paperclip_PlusNoOpPaperWeight_ChainComposesCorrectly" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" seed="141837572" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001557" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Supply] Placed: paperclip
+[Supply] Placed: paper_weight
+[SynergyResolver] paperclip: duration 10.00s → 20.00s (PendingReview)
+]]></output>
+              </test-case>
+              <test-case id="1134" name="PaperWeight_ReducesSoulCostByOne" fullname="Desk42.Tests.EditMode.SynergyResolverTests.PaperWeight_ReducesSoulCostByOne" methodname="PaperWeight_ReducesSoulCostByOne" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" seed="396605051" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001209" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Supply] Placed: paper_weight
+[SynergyResolver] paper_weight: soul cost delta -1.00
+]]></output>
+              </test-case>
+              <test-case id="1135" name="PaperWeight_SoulCostFlooredAtZero" fullname="Desk42.Tests.EditMode.SynergyResolverTests.PaperWeight_SoulCostFlooredAtZero" methodname="PaperWeight_SoulCostFlooredAtZero" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" seed="18548278" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000973" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Supply] Placed: paper_weight
+[SynergyResolver] paper_weight: soul cost delta -0.50
+]]></output>
+              </test-case>
+              <test-case id="1132" name="RubberStamp_OnlyAppliesOnce_SecondCallUnaffected" fullname="Desk42.Tests.EditMode.SynergyResolverTests.RubberStamp_OnlyAppliesOnce_SecondCallUnaffected" methodname="RubberStamp_OnlyAppliesOnce_SecondCallUnaffected" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" seed="828544344" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001509" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Supply] Placed: rubber_stamp
+[RubberStamp] First slam this encounter is free.
+[SynergyResolver] rubber_stamp: cost delta -5 (PendingReview)
+]]></output>
+              </test-case>
+              <test-case id="1131" name="RubberStamp_ZeroesFirstSlamCreditCost" fullname="Desk42.Tests.EditMode.SynergyResolverTests.RubberStamp_ZeroesFirstSlamCreditCost" methodname="RubberStamp_ZeroesFirstSlamCreditCost" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Runnable" seed="1386388767" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001334" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[Supply] Placed: rubber_stamp
+[RubberStamp] First slam this encounter is free.
+[SynergyResolver] rubber_stamp: cost delta -5 (PendingReview)
+]]></output>
+              </test-case>
+              <test-case id="1137" name="WIRING_GAP_DurationAndCostChains_HaveNoStructuredPerStepTrace" fullname="Desk42.Tests.EditMode.SynergyResolverTests.WIRING_GAP_DurationAndCostChains_HaveNoStructuredPerStepTrace" methodname="WIRING_GAP_DurationAndCostChains_HaveNoStructuredPerStepTrace" classname="Desk42.Tests.EditMode.SynergyResolverTests" runstate="Explicit" seed="1879403626" result="Skipped" label="Explicit" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000161" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+    <test-suite type="Assembly" id="1145" name="Unity.Addressables.Editor.Tests.DocExampleCode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Unity.Addressables.Editor.Tests.DocExampleCode.dll" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.001236" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="33368" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1146" name="AddressableAssets" fullname="AddressableAssets" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000811" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1147" name="DocExampleCode" fullname="AddressableAssets.DocExampleCode" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000663" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestFixture" id="1143" name="TestStub" fullname="AddressableAssets.DocExampleCode.TestStub" classname="AddressableAssets.DocExampleCode.TestStub" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000488" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-case id="1144" name="RequiredTest" fullname="AddressableAssets.DocExampleCode.TestStub.RequiredTest" methodname="RequiredTest" classname="AddressableAssets.DocExampleCode.TestStub" runstate="Runnable" seed="567786021" result="Passed" start-time="2026-08-02 14:25:27Z" end-time="2026-08-02 14:25:27Z" duration="0.000064" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\tmp\institutional-agents-full-editmode.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

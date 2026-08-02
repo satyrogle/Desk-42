@@ -7,7 +7,7 @@ namespace Desk42.Institutional
     /// A detached snapshot of the information an actor may use for one decision.
     /// It deliberately contains no references to other agents or authoritative lived state.
     /// </summary>
-    public sealed class AgentPerception
+    internal sealed class AgentPerception
     {
         public string StableId;
         public int SimulationOrdinal;
@@ -35,6 +35,14 @@ namespace Desk42.Institutional
                 if (string.Equals(relationship.TargetAgentId, targetAgentId, StringComparison.Ordinal))
                     return relationship;
             }
+            return null;
+        }
+
+        public BeliefState GetBelief(string beliefId)
+        {
+            for (int i = 0; i < Beliefs.Count; i++)
+                if (string.Equals(Beliefs[i].BeliefId, beliefId, StringComparison.Ordinal))
+                    return Beliefs[i];
             return null;
         }
 

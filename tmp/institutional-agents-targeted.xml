@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="9" result="Passed" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.2131563">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="127" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.213156" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1137" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="126" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.206100" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="26200" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1138" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="126" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.204373" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1139" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="126" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.202835" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1140" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="126" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.201288" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-suite type="TestFixture" id="1094" name="InstitutionalAgentSimulationTests" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.198685" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-case id="1098" name="EquivalentProfileSubstitution_PreservesBehaviour" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.EquivalentProfileSubstitution_PreservesBehaviour" methodname="EquivalentProfileSubstitution_PreservesBehaviour" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="1147697598" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.024415" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1103" name="OfficialStatus_ChangesBoundedAnomalyEffectWithoutGlobalMeter" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.OfficialStatus_ChangesBoundedAnomalyEffectWithoutGlobalMeter" methodname="OfficialStatus_ChangesBoundedAnomalyEffectWithoutGlobalMeter" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="1035443000" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.001482" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1095" name="Population_EightProfiles_MaintainsInvariantsAcrossTicks" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.Population_EightProfiles_MaintainsInvariantsAcrossTicks" methodname="Population_EightProfiles_MaintainsInvariantsAcrossTicks" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="1928200463" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.019621" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1097" name="Population_OrderPermutation_ProducesIsomorphicOutcome" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.Population_OrderPermutation_ProducesIsomorphicOutcome" methodname="Population_OrderPermutation_ProducesIsomorphicOutcome" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="938905566" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.013460" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1102" name="PopulationSaveRoundTrip_PreservesDeterministicContinuation" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.PopulationSaveRoundTrip_PreservesDeterministicContinuation" methodname="PopulationSaveRoundTrip_PreservesDeterministicContinuation" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="612765970" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.087453" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1099" name="RelevantBeliefPerturbation_ChangesDecisionAndExplainsWhy" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.RelevantBeliefPerturbation_ChangesDecisionAndExplainsWhy" methodname="RelevantBeliefPerturbation_ChangesDecisionAndExplainsWhy" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="1235255772" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.001863" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1100" name="RelevantRelationshipPerturbation_ChangesActionTargetAndExplainsWhy" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.RelevantRelationshipPerturbation_ChangesActionTargetAndExplainsWhy" methodname="RelevantRelationshipPerturbation_ChangesActionTargetAndExplainsWhy" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="35863522" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.000893" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1096" name="Simulation_SameSeedAndInputs_ProducesIdenticalDecisionTrace" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.Simulation_SameSeedAndInputs_ProducesIdenticalDecisionTrace" methodname="Simulation_SameSeedAndInputs_ProducesIdenticalDecisionTrace" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="947339779" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.035958" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[SeedEngine] Initialised with seed 9090 (AAAJ6C).
+]]></output>
+              </test-case>
+              <test-case id="1101" name="UnseenValidProfile_UsesGenericDecisionPipeline" fullname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests.UnseenValidProfile_UsesGenericDecisionPipeline" methodname="UnseenValidProfile_UsesGenericDecisionPipeline" classname="Desk42.Tests.EditMode.InstitutionalAgentSimulationTests" runstate="Runnable" seed="1164600731" result="Passed" start-time="2026-08-02 14:19:08Z" end-time="2026-08-02 14:19:08Z" duration="0.000584" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\tmp\institutional-agents-targeted.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

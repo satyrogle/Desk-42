@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="15" result="Failed(Child)" total="15" passed="13" failed="2" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:05Z" duration="0.3684379">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="147" result="Failed" site="Child" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:05Z" duration="0.368438" total="15" passed="13" failed="2" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1158" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="146" result="Failed" site="Child" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:05Z" duration="0.362078" total="15" passed="13" failed="2" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="16720" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1159" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="146" result="Failed" site="Child" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:05Z" duration="0.360184" total="15" passed="13" failed="2" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1160" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="146" result="Failed" site="Child" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:05Z" duration="0.358420" total="15" passed="13" failed="2" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1161" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="146" result="Failed" site="Child" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:05Z" duration="0.356682" total="15" passed="13" failed="2" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1109" name="InstitutionalConsequenceLoopTests" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" testcasecount="15" result="Failed" site="Child" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:05Z" duration="0.354061" total="15" passed="13" failed="2" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1122" name="ConfigurationLabelsAndEnumKindDoNotDriveBehaviour" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.ConfigurationLabelsAndEnumKindDoNotDriveBehaviour" methodname="ConfigurationLabelsAndEnumKindDoNotDriveBehaviour" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="1416615213" result="Passed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:04Z" duration="0.048675" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1110" name="Gate01_SameSeed_ABCProduceThreeMaterialHistories" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate01_SameSeed_ABCProduceThreeMaterialHistories" methodname="Gate01_SameSeed_ABCProduceThreeMaterialHistories" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="1708352624" result="Failed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:04Z" duration="0.015950" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: ReversedAndDenied
+  But was:  Affirmed
+]]></message>
+                  <stack-trace><![CDATA[at Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate01_SameSeed_ABCProduceThreeMaterialHistories () [0x000bc] in C:\Users\jacob\Desk 42\Assets\_Project\Tests\EditMode\InstitutionalConsequenceLoopTests.cs:35
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1111" name="Gate02_ConnectedWinnerAndLoserShareARealTransferredAllocation" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate02_ConnectedWinnerAndLoserShareARealTransferredAllocation" methodname="Gate02_ConnectedWinnerAndLoserShareARealTransferredAllocation" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="1057836335" result="Passed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:04Z" duration="0.004712" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1112" name="Gate03_GenericActionsHaveDifferentConsequentialPaths" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate03_GenericActionsHaveDifferentConsequentialPaths" methodname="Gate03_GenericActionsHaveDifferentConsequentialPaths" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="501131066" result="Passed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:04Z" duration="0.007873" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1113" name="Gate04_ActionsCreateEvidenceAndCasesWithChronologicalCausalPaths" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate04_ActionsCreateEvidenceAndCasesWithChronologicalCausalPaths" methodname="Gate04_ActionsCreateEvidenceAndCasesWithChronologicalCausalPaths" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="1943438398" result="Passed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:04Z" duration="0.012004" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1114" name="Gate05_ProvisionalRelianceMutatesStateAndSurvivesOnlyAfterReversal" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate05_ProvisionalRelianceMutatesStateAndSurvivesOnlyAfterReversal" methodname="Gate05_ProvisionalRelianceMutatesStateAndSurvivesOnlyAfterReversal" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="1526985779" result="Failed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:04Z" duration="0.004797" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate05_ProvisionalRelianceMutatesStateAndSurvivesOnlyAfterReversal () [0x001f3] in C:\Users\jacob\Desk 42\Assets\_Project\Tests\EditMode\InstitutionalConsequenceLoopTests.cs:198
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1115" name="Gate06_CitedScopedHoldingAddsInterpretiveWeightAndTransfersAllocation" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate06_CitedScopedHoldingAddsInterpretiveWeightAndTransfersAllocation" methodname="Gate06_CitedScopedHoldingAddsInterpretiveWeightAndTransfersAllocation" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="1224736042" result="Passed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:04Z" duration="0.008231" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1116" name="Gate07_EverySelectedActionHasAnAttributablePerceptionUtilityTrace" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate07_EverySelectedActionHasAnAttributablePerceptionUtilityTrace" methodname="Gate07_EverySelectedActionHasAnAttributablePerceptionUtilityTrace" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="1997794745" result="Passed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:04Z" duration="0.022398" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1117" name="Gate08_RulingsFreezeExactEvidencePolicyProcedureAndCitationEnvelopes" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate08_RulingsFreezeExactEvidencePolicyProcedureAndCitationEnvelopes" methodname="Gate08_RulingsFreezeExactEvidencePolicyProcedureAndCitationEnvelopes" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="1482204884" result="Passed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:04Z" duration="0.013856" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1118" name="Gate09_AuthoritativeLivedStateIsSeparatedByAssemblyAndProjection" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate09_AuthoritativeLivedStateIsSeparatedByAssemblyAndProjection" methodname="Gate09_AuthoritativeLivedStateIsSeparatedByAssemblyAndProjection" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="1572245766" result="Passed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:04Z" duration="0.041638" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1119" name="Gate10_ReplayIsByteForByteDeterministic" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate10_ReplayIsByteForByteDeterministic" methodname="Gate10_ReplayIsByteForByteDeterministic" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="332096703" result="Passed" start-time="2026-08-02 16:55:04Z" end-time="2026-08-02 16:55:05Z" duration="0.067275" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1120" name="Gate11_RemappedIdsNamesEmployersAndListOrderPreserveCausalPattern" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate11_RemappedIdsNamesEmployersAndListOrderPreserveCausalPattern" methodname="Gate11_RemappedIdsNamesEmployersAndListOrderPreserveCausalPattern" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="458867095" result="Passed" start-time="2026-08-02 16:55:05Z" end-time="2026-08-02 16:55:05Z" duration="0.065717" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1121" name="Gate12_NoDirector_CausalAblationsRemoveTheirOwnConsequences" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.Gate12_NoDirector_CausalAblationsRemoveTheirOwnConsequences" methodname="Gate12_NoDirector_CausalAblationsRemoveTheirOwnConsequences" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="1356396501" result="Passed" start-time="2026-08-02 16:55:05Z" end-time="2026-08-02 16:55:05Z" duration="0.013275" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1124" name="SharedOpportunity_IsConsumedOnceAfterFrozenDecisions" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.SharedOpportunity_IsConsumedOnceAfterFrozenDecisions" methodname="SharedOpportunity_IsConsumedOnceAfterFrozenDecisions" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="727022926" result="Passed" start-time="2026-08-02 16:55:05Z" end-time="2026-08-02 16:55:05Z" duration="0.001135" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1123" name="TimelineNeverPlacesAnEffectBeforeItsCause" fullname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests.TimelineNeverPlacesAnEffectBeforeItsCause" methodname="TimelineNeverPlacesAnEffectBeforeItsCause" classname="Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests" runstate="Runnable" seed="785818115" result="Passed" start-time="2026-08-02 16:55:05Z" end-time="2026-08-02 16:55:05Z" duration="0.013117" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\tmp\consequence-loop-v2-targeted-7.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

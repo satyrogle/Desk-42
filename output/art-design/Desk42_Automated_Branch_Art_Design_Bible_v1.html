@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Desk 42 Automated Branch Art Design Bible</title>
+<style>
+  :root {
+    --ink:#18201e; --paper:#f4edd9; --panel:#fffdf6; --line:#cfc7b0;
+    --green:#173f32; --green2:#255c49; --cream:#f1e8ce; --orange:#ce713a;
+    --red:#b73b32; --teal:#20d6c7; --magenta:#d447a7; --blue:#61736f;
+    --brass:#b28a46; --muted:#6d746f; --dark:#0e1816;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; background:var(--paper); color:var(--ink); font-family:"Segoe UI",Arial,sans-serif; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  @page { size:Letter landscape; margin:0; }
+  .page { width:11in; height:8.5in; page-break-after:always; position:relative; overflow:hidden; padding:.36in .42in; background:linear-gradient(135deg,#fbf8ef,#eee5cf); }
+  .page.dark { color:#f8f2df; background:linear-gradient(135deg,#0c1714,#173f32); }
+  h1,h2,h3,p { margin:0; }
+  h1 { font-size:46px; line-height:.98; letter-spacing:-1px; }
+  h2 { font-size:29px; line-height:1.05; margin-bottom:.16in; }
+  h3 { font-size:15px; line-height:1.15; margin-bottom:6px; }
+  p,li { font-size:11.5px; line-height:1.32; }
+  ul { margin:0; padding-left:17px; }
+  li { margin-bottom:4px; }
+  .eyebrow { display:block; margin-bottom:8px; color:var(--orange); font-weight:900; font-size:10px; text-transform:uppercase; letter-spacing:.12em; }
+  .dark .eyebrow { color:#ffd3a7; }
+  .subtitle { margin-top:13px; font-size:16px; line-height:1.28; max-width:7.7in; color:#dce8df; }
+  .footer { position:absolute; left:.42in; right:.42in; bottom:.16in; display:flex; justify-content:space-between; color:#6f746f; font-size:9px; }
+  .dark .footer { color:#9fb7ae; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:.15in; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:.13in; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:.11in; }
+  .grid6 { display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(2,1fr); gap:.11in; }
+  .card { background:rgba(255,253,246,.96); border:1px solid var(--line); border-radius:8px; padding:.13in; box-shadow:0 6px 15px rgba(15,24,21,.08); }
+  .dark .card { color:#f7f0de; background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.17); box-shadow:none; }
+  .card.darkcard { background:#10201c; color:#f8f2df; border-color:#2e5548; }
+  .callout { background:#0f1917; color:#f8f2df; border-left:8px solid var(--red); border-radius:7px; padding:.14in; font-size:15px; line-height:1.3; }
+  .callout.teal { border-left-color:var(--teal); }
+  .tag { display:inline-block; border-radius:999px; padding:4px 7px; margin:4px 3px 0 0; background:#153c30; color:#d9f5e9; font-size:9px; font-weight:800; }
+  .tag.red { background:#56201c; color:#ffd4ce; }
+  .tag.orange { background:#59301b; color:#ffe1ca; }
+  .tag.teal { background:#0b4946; color:#c6fffb; }
+  .mini-table { width:100%; border-collapse:collapse; font-size:10px; }
+  .mini-table th { background:#10201c; color:#f8f2df; text-align:left; padding:5px 6px; }
+  .mini-table td { border-bottom:1px solid var(--line); padding:5px 6px; vertical-align:top; }
+  .mini-table tr:last-child td { border-bottom:0; }
+  .img { width:100%; height:100%; object-fit:contain; display:block; image-rendering:auto; }
+  .frame { border:1px solid #334c44; border-radius:8px; overflow:hidden; background:#0c1412; }
+  .caption { margin-top:5px; font-size:9px; color:#767b76; }
+  .hero { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:saturate(.92) brightness(.58); }
+  .coverwash { position:absolute; inset:0; background:linear-gradient(90deg,rgba(7,14,12,.98) 0%,rgba(7,14,12,.92) 38%,rgba(7,14,12,.22) 75%,rgba(7,14,12,.08) 100%); }
+  .covercopy { position:relative; z-index:2; width:5.4in; margin-top:.42in; }
+  .coverline { width:1.15in; height:7px; background:var(--red); margin:.2in 0; }
+  .big { font-size:37px; font-weight:950; line-height:1; color:var(--red); }
+  .metric { padding:.12in; border-top:6px solid var(--green); background:#fffdf6; border-radius:7px; }
+  .metric:nth-child(2) { border-top-color:var(--orange); }
+  .metric:nth-child(3) { border-top-color:var(--red); }
+  .metric:nth-child(4) { border-top-color:var(--teal); }
+  .palette { display:grid; grid-template-columns:repeat(10,1fr); gap:5px; }
+  .swatch { height:.68in; border-radius:6px; padding:5px; display:flex; align-items:end; font-size:8px; font-weight:800; color:white; border:1px solid rgba(0,0,0,.16); }
+  .swatch.light { color:#18201e; }
+  .flow { display:grid; grid-template-columns:1fr 24px 1fr 24px 1fr 24px 1fr; align-items:center; gap:6px; }
+  .flowbox { background:#fffdf6; border:2px solid var(--green); border-radius:7px; min-height:.72in; padding:8px; text-align:center; }
+  .flowbox.red { border-color:var(--red); }
+  .arrow { height:4px; background:var(--orange); position:relative; }
+  .arrow:after { content:""; position:absolute; right:-1px; top:-5px; border-left:9px solid var(--orange); border-top:7px solid transparent; border-bottom:7px solid transparent; }
+  .reverse { background:var(--red); }
+  .reverse:after { border-left-color:var(--red); }
+  .prompt { background:#0f1917; color:#e8f0e8; border-radius:7px; padding:.12in; font:9px/1.28 Consolas,"Courier New",monospace; white-space:pre-wrap; }
+  .step { position:relative; padding-left:.43in; min-height:.42in; }
+  .step b:first-child { position:absolute; left:0; top:0; width:.30in; height:.30in; border-radius:50%; background:var(--green); color:white; display:flex; align-items:center; justify-content:center; }
+  .fullbleed { padding:0; background:#0b1412; }
+  .fullbleed .plate { width:100%; height:100%; object-fit:cover; }
+  .plate-note { position:absolute; left:.35in; bottom:.34in; background:rgba(8,15,13,.88); color:#f7f0df; padding:.12in .16in; border-left:6px solid var(--orange); border-radius:6px; max-width:5.8in; font-size:13px; }
+  .small { font-size:9.5px; line-height:1.25; }
+  .tight p,.tight li { font-size:10.3px; }
+</style>
+</head>
+<body>
+
+<section class="page dark">
+  <img class="hero" src="images/D42_AutomatedBranch_HeroConcept_v1.png" alt="Automated Branch 42 visual direction concept">
+  <div class="coverwash"></div>
+  <div class="covercopy">
+    <span class="eyebrow">Desk 42 - Automated Branch</span>
+    <h1>Art Design<br>Bible</h1>
+    <div class="coverline"></div>
+    <p class="subtitle">A production-facing visual direction and Comfy ArtLab manual for a pixel-art bureaucracy factory whose defective decisions return as appeals.</p>
+    <div style="margin-top:.22in;">
+      <span class="tag">pixel automation</span><span class="tag">alien claims</span><span class="tag red">appeal feedback</span><span class="tag orange">solo-dev scope</span>
+    </div>
+    <div class="callout" style="margin-top:.25in;">Cream dossiers move forward. Red appeals move backward. The office chokes on what it officially decided.</div>
+  </div>
+  <div class="footer"><span>Visual development concept - not runtime art</span><span>Version 1.0 | 02 Aug 2026</span></div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">The Decision</span>
+  <h2>Keep the identity. Replace the picture.</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Survives</h3>
+      <ul><li>Institutional green, paper cream and approval red.</li><li>Hard pixel clusters, two shadow steps, upper-left light.</li><li>Stamps, tubes, cabinets, CRTs and analog authority.</li><li>Alien people treated as routine casework.</li><li>Dry comedy produced by correct policy execution.</li></ul>
+    </div>
+    <div class="card darkcard">
+      <h3>Retires</h3>
+      <ul><li>Moths as identity or default species.</li><li>One desk and a permanent card hand.</li><li>Sanity, Fugue and arbitrary visual corruption.</li><li>Combat, occult horror and decorative tentacles.</li><li>Vertical tower composition and generic factory assemblers.</li></ul>
+    </div>
+  </div>
+  <div class="grid4" style="margin-top:.16in;">
+    <div class="metric"><div class="big">1</div><h3>Floor</h3><p>Bounded, lateral and contiguous.</p></div>
+    <div class="metric"><div class="big">6</div><h3>Departments</h3><p>Different verbs, not rainbow rooms.</p></div>
+    <div class="metric"><div class="big">2</div><h3>Flows</h3><p>Claims forward; appeals reverse.</p></div>
+    <div class="metric"><div class="big">0</div><h3>Moths</h3><p>The previous mascot is gone.</p></div>
+  </div>
+  <div class="callout teal" style="margin-top:.16in;">The old desk survives only as the five-minute manual opening and the final empty-desk image.</div>
+  <div class="footer"><span>01 - Visual reset</span><span>Philosophy salvage, world-art rebuild</span></div>
+</section>
+
+<section class="page fullbleed">
+  <img class="plate" src="images/D42_AutomatedBranch_HeroConcept_v1.png" alt="Automated branch concept plate">
+  <div class="plate-note"><b>North-star frame:</b> a single readable floor, visible queues, recognisable office machinery and a red appeal line physically contradicting the clean forward flow.</div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">Camera and Scale</span>
+  <h2>One projection, discrete zoom, no hidden art explosion</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Locked view</h3>
+      <ul><li>Fixed three-quarter orthographic camera.</li><li>One quadrant; no building rotation.</li><li>Camera-facing walls cut away consistently.</li><li>Pan across a bounded floor.</li><li>Branch, Operations and Inspection zoom steps.</li><li>Integer-stable pixels; no fractional shimmer.</li></ul>
+      <div class="callout teal" style="margin-top:.12in;font-size:13px;">The floor should read like a circuit diagram made out of office furniture.</div>
+    </div>
+    <div class="card">
+      <h3>Native targets</h3>
+      <table class="mini-table"><tr><th>Contract</th><th>Target</th></tr><tr><td>Logical canvas</td><td>384 x 216, 16:9</td></tr><tr><td>Floor diamond</td><td>32 x 16 px</td></tr><tr><td>Worker cell</td><td>about 32 x 48 px</td></tr><tr><td>Workstations</td><td>32-96 px footprints</td></tr><tr><td>UI icon master</td><td>32 x 32 px</td></tr><tr><td>1080p presentation</td><td>5x integer scale</td></tr></table>
+    </div>
+  </div>
+  <div class="grid3" style="margin-top:.15in;">
+    <div class="card"><h3>Branch zoom</h3><p>Routes, queues, department balance and expansion bays.</p></div>
+    <div class="card"><h3>Operations zoom</h3><p>Workers, machine cycles, dossier states and jams.</p></div>
+    <div class="card"><h3>Inspection zoom</h3><p>Policy cause, evidence trace and maintenance fault.</p></div>
+  </div>
+  <div class="footer"><span>03 - Projection contract</span><span>Lock before commissioning assets</span></div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">Palette and Materials</span>
+  <h2>Paper is the payload. Green is authority. Red is consequence.</h2>
+  <div class="palette">
+    <div class="swatch" style="background:#173f32">green</div><div class="swatch light" style="background:#f1e8ce">paper</div><div class="swatch" style="background:#18201e">ink</div><div class="swatch" style="background:#61736f">tube</div><div class="swatch" style="background:#8d522c">wood</div><div class="swatch" style="background:#ce713a">work</div><div class="swatch" style="background:#b73b32">appeal</div><div class="swatch" style="background:#20d6c7">anomaly</div><div class="swatch" style="background:#d447a7">rupture</div><div class="swatch" style="background:#b28a46">brass</div>
+  </div>
+  <div class="grid3" style="margin-top:.18in;">
+    <div class="card"><h3>70% Base</h3><p>Institutional green, paper and neutral structure. The world feels coherent before accents arrive.</p></div>
+    <div class="card"><h3>20% Support</h3><p>Dusty metal, wood, glass and material wear that describes actual use.</p></div>
+    <div class="card"><h3>8% Task + 2% Impossible</h3><p>Orange and red communicate work and consequence. Teal/magenta remain scarce.</p></div>
+  </div>
+  <div class="grid2" style="margin-top:.15in;">
+    <div class="card"><h3>Approved surfaces</h3><ul><li>Painted steel with deliberate edge wear.</li><li>Linoleum seams reinforcing the grid.</li><li>Wire trays, paper, card, cloth files and twine.</li><li>Bakelite keys and brass high-touch hardware.</li><li>Dusty translucent tubes with steel collars.</li></ul></div>
+    <div class="card darkcard"><h3>Reject</h3><ul><li>Glass-office minimalism.</li><li>Warehouse belts as the default route.</li><li>Neon cyberpunk and holograms.</li><li>Uniform random scratches.</li><li>Teal everywhere because aliens exist.</li></ul></div>
+  </div>
+  <div class="footer"><span>04 - Colour and material</span><span>70 / 20 / 8 / 2</span></div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">Department Grammar</span>
+  <h2>Six departments, six physical verbs</h2>
+  <div class="grid6 tight" style="height:5.68in;">
+    <div class="card"><h3>Intake - Separate</h3><p>Fan trays, scanner apertures and many arrivals becoming one ordered line. Dusty blue glass and wire baskets.</p></div>
+    <div class="card"><h3>Verification - Compare</h3><p>Paired lightbeds, split shutters and contradiction needles. Amber light stays local to evidence.</p></div>
+    <div class="card"><h3>Adjudication - Commit</h3><p>The branch's strongest downward motion: heavy stamp press, sealed gate and restrained red at impact.</p></div>
+    <div class="card"><h3>Archive - Retrieve</h3><p>Visible capacity, index drums, mobile shelving and old information becoming physically harder to reach.</p></div>
+    <div class="card"><h3>Legal - Loop</h3><p>Reverse tubes, bound briefs, hearing clocks and locked bays for test cases. Error returns here.</p></div>
+    <div class="card"><h3>Payroll - Pulse</h3><p>Punch clocks, rota wheels and predictable staff availability. Breaks are visible before they happen.</p></div>
+  </div>
+  <div class="callout" style="margin-top:.13in;">A department must remain recognisable in greyscale. Accent colour is the sixth cue, not the first.</div>
+  <div class="footer"><span>05 - Department identity</span><span>Silhouette before colour</span></div>
+</section>
+
+<section class="page fullbleed" style="background:#e9e4da;">
+  <img class="plate" style="object-fit:contain;" src="images/D42_AutomationPropKit_Concept_v1.png" alt="Automation prop kit concept">
+  <div class="plate-note"><b>Machine grammar:</b> visible input, operation and output; office furniture pushed one step too far. These are concept candidates, not extracted runtime sprites.</div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">Flow and State</span>
+  <h2>The dossier is ore; the appeal is rework with standing</h2>
+  <div class="flow">
+    <div class="flowbox"><b>Arrival</b><br><span class="small">loose cream sheets</span></div><div class="arrow"></div><div class="flowbox"><b>Verified</b><br><span class="small">amber evidence band</span></div><div class="arrow"></div><div class="flowbox"><b>Ruled</b><br><span class="small">sealed packet</span></div><div class="arrow reverse"></div><div class="flowbox red"><b>Appeal</b><br><span class="small">red outer jacket returns</span></div>
+  </div>
+  <div class="grid2" style="margin-top:.17in;">
+    <div class="card">
+      <h3>Dossier shape states</h3>
+      <table class="mini-table"><tr><th>State</th><th>Visible change</th></tr><tr><td>Registered</td><td>blue corner tab and clip</td></tr><tr><td>Contradictory</td><td>misaligned bands and hard teal split</td></tr><tr><td>Held</td><td>orange clock tab projects from folder</td></tr><tr><td>Appeal</td><td>red jacket encloses original packet</td></tr><tr><td>Test case</td><td>red jacket plus brass lock clip</td></tr></table>
+    </div>
+    <div class="card darkcard">
+      <h3>Congestion is physical</h3>
+      <ul><li>Occupied buffer slots.</li><li>Folders leaning and compressing.</li><li>Raised output trays.</li><li>Staff detours and handoff waits.</li><li>Reverse tubes crossing clean flow.</li><li>Less clear floor around the bottleneck.</li></ul>
+      <p style="margin-top:8px;color:#f1c6c0;">Do not solve this with a red bar floating over the machine.</p>
+    </div>
+  </div>
+  <div class="callout teal" style="margin-top:.15in;">Players should be able to point at the decision that created the red folder now blocking Legal.</div>
+  <div class="footer"><span>07 - Work-item language</span><span>Shape plus colour plus route</span></div>
+</section>
+
+<section class="page fullbleed" style="background:#77736d;">
+  <img class="plate" style="object-fit:contain;" src="images/D42_StaffClaimant_LineupConcept_v1.png" alt="Staff and claimant concept lineup">
+  <div class="plate-note"><b>People, not mascots:</b> employees read through role tools; alien anatomy is grounded by practical clothes, files and exhausted posture. Final sprites require authored model sheets and manual pixel redraw.</div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">Characters and Anomalies</span>
+  <h2>Readable workers; one impossible behaviour at a time</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Staff silhouette hooks</h3>
+      <table class="mini-table"><tr><th>Role</th><th>Tool/profile</th></tr><tr><td>Intake</td><td>forward tray or compact scanner</td></tr><tr><td>Verification</td><td>round loupe/headset and evidence board</td></tr><tr><td>Adjudication</td><td>heavy stamp tool, squared posture</td></tr><tr><td>Archive</td><td>file bundle or retrieval hook</td></tr><tr><td>Legal</td><td>bound brief and hearing clock</td></tr><tr><td>Payroll</td><td>rota drum or punch-card rack</td></tr></table>
+    </div>
+    <div class="card">
+      <h3>Claimant principles</h3>
+      <ul><li>One dominant body idea.</li><li>Practical institutional clothing.</li><li>Hands or equivalent controls remain legible.</li><li>Emotion reads through posture, not mascot faces.</li><li>No insects, moths, cult designs or combat stance.</li></ul>
+    </div>
+  </div>
+  <div class="grid3" style="margin-top:.15in;">
+    <div class="card darkcard"><h3>Ordinary shell</h3><p>An anomaly begins as a recognisable cabinet, copier, tube or clock.</p></div>
+    <div class="card darkcard"><h3>One contradiction</h3><p>It performs one impossible operation that can be explained in three beats.</p></div>
+    <div class="card darkcard"><h3>Local colour</h3><p>Teal marks the impossible boundary; magenta marks a rare collision.</p></div>
+  </div>
+  <div class="callout teal" style="margin-top:.15in;">Ordinary input - impossible operation - legible consequence.</div>
+  <div class="footer"><span>09 - Character system</span><span>Role and accommodation, not enemy archetypes</span></div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">UI, Animation and Audio</span>
+  <h2>The world shows throughput; UI explains causality</h2>
+  <div class="grid3">
+    <div class="card"><h3>Persistent HUD</h3><p>Day/time, Head Office objective, cash/reserve, backlog, appeal load and manual intervention. No cards or sanity.</p></div>
+    <div class="card"><h3>Claim rail</h3><p>Identity - evidence - confidence - policy - ruling - appeal history.</p></div>
+    <div class="card"><h3>Machine inspector</h3><p>Input queue - operation - output rule - staff coverage - exact fault.</p></div>
+  </div>
+  <div class="grid2" style="margin-top:.15in;">
+    <div class="card">
+      <h3>Animation rhythm</h3>
+      <div class="flow" style="grid-template-columns:1fr 16px 1fr 16px 1fr 16px 1fr;"><div class="flowbox">receive</div><div class="arrow"></div><div class="flowbox">align</div><div class="arrow"></div><div class="flowbox">stamp</div><div class="arrow"></div><div class="flowbox">eject</div></div>
+      <p>Jams fail at the same point in the normal cycle. Appeals move against the branch's normal rhythm.</p>
+    </div>
+    <div class="card darkcard">
+      <h3>Audio handoff</h3>
+      <table class="mini-table"><tr><th>Department</th><th>Signature</th></tr><tr><td>Intake</td><td>tray slide, scanner chirp</td></tr><tr><td>Verification</td><td>paper flip, relay, needle settle</td></tr><tr><td>Adjudication</td><td>stamp impact, latch</td></tr><tr><td>Legal</td><td>descending tube, clock, binder clamp</td></tr><tr><td>Payroll</td><td>punch clock, rota drum</td></tr></table>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:.15in;">A machine fault should sound like its normal rhythm becoming incomplete, not a generic alarm replacing it.</div>
+  <div class="footer"><span>10 - Feedback language</span><span>State, route, reaction, VFX, UI</span></div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">Comfy ArtLab</span>
+  <h2>The proven prop route is structure first, appearance second</h2>
+  <div class="grid3" style="height:2.2in;">
+    <div class="frame"><img class="img" src="images/D42_ArtLab_CabinetBlenderBeauty.png"><div></div></div>
+    <div class="frame"><img class="img" src="images/D42_ArtLab_CabinetControlEdge.png"></div>
+    <div class="frame"><img class="img" src="images/D42_ArtLab_CabinetSelectedVisualDev.png"></div>
+  </div>
+  <div class="grid3" style="margin-top:.08in;"><div class="caption">1. Blender owns geometry and camera.</div><div class="caption">2. Structural edge becomes ControlNet input.</div><div class="caption">3. Selected visual-development candidate.</div></div>
+  <div class="flow" style="margin-top:.16in;"><div class="flowbox">Brief</div><div class="arrow"></div><div class="flowbox">Structure</div><div class="arrow"></div><div class="flowbox">Appearance</div><div class="arrow"></div><div class="flowbox red">Human gate</div></div>
+  <div class="grid2" style="margin-top:.14in;">
+    <div class="card"><h3>What worked</h3><p>Blender-guided SDXL ControlNet preserved filing-cabinet structure and produced repeatable candidate pixels. Contact sheets, manifests, validation and dry-run promotion exist.</p></div>
+    <div class="card darkcard"><h3>What did not</h3><p>Character identity-safe editing was not validated. The selected cabinet still needs native-grid redraw. Technical checks never make raw generated art shippable.</p></div>
+  </div>
+  <div class="footer"><span>11 - ArtLab proof</span><span>Structured props, not one-click game art</span></div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">ArtLab Recovery and Settings</span>
+  <h2>Reuse the proven pipeline; do not rebuild it from memory</h2>
+  <div class="grid2">
+    <div class="card darkcard">
+      <h3>Recovery source</h3>
+      <div class="prompt">Branch: codex/artlab-fast-assets
+Commit: f871c307e98da1a6a638407a5c08793b95a05fbc
+
+Raw output:
+C:\Users\jacob\ComfyUI-Shared\output\Desk42\ArtLab</div>
+      <p style="margin-top:8px;">The current checkout contains only ignored cache files under ArtLab. Restore selectively before production.</p>
+    </div>
+    <div class="card">
+      <h3>Proven SDXL route</h3>
+      <table class="mini-table"><tr><td>Checkpoint</td><td>Juggernaut-XL v9</td></tr><tr><td>Canvas</td><td>512 x 512</td></tr><tr><td>Sampler</td><td>DPM++ 2M / Karras</td></tr><tr><td>Steps / CFG</td><td>26 / 7.0</td></tr><tr><td>Control</td><td>0.85 strength, end 0.90</td></tr><tr><td>Pixel pass</td><td>128 area downscale, 28 colours, Bayer-4</td></tr><tr><td>Final proof</td><td>256 x 256 RGBA, still needs cleanup</td></tr></table>
+    </div>
+  </div>
+  <div class="grid4" style="margin-top:.15in;">
+    <div class="card"><h3>Brief</h3><p>Binary requirements and rejections.</p></div><div class="card"><h3>Generate</h3><p>Fixed seed family and structural controls.</p></div><div class="card"><h3>Gate</h3><p>Human semantic review at native scale.</p></div><div class="card"><h3>Promote</h3><p>Only refined, validated and provenance-complete art.</p></div>
+  </div>
+  <div class="callout teal" style="margin-top:.15in;">Blender owns shape. ComfyUI owns surface options. The human owns the final pixel asset.</div>
+  <div class="footer"><span>12 - Reproducible pipeline</span><span>Brief - generated - selected - refined - promoted</span></div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">Executable Prompt Language</span>
+  <h2>Prompt the asset's job, not merely its mood</h2>
+  <div class="grid2">
+    <div>
+      <h3>Shared style DNA</h3>
+      <div class="prompt">authored 2D pixel art for a bureaucratic automation management game,
+fixed three-quarter orthographic view, institutional deep green and paper cream,
+approval red limited to commitments and appeals, hard pixel clusters,
+selective one-pixel outlines, two stepped shadows, upper-left fluorescent light,
+controlled 28-colour palette, readable at native gameplay scale</div>
+      <h3 style="margin-top:.14in;">Machine block</h3>
+      <div class="prompt">isolated modular workstation, clear input hopper,
+visible central operation, readable output tray, service panel,
+deep green painted steel, cream paper payload, brass high-touch fittings,
+animation-ready silhouette, plain background, no labels</div>
+    </div>
+    <div>
+      <h3>Universal negative</h3>
+      <div class="prompt">moth, insect, antennae, furry mascot, cult, occult rune,
+combat, weapon, armor, dungeon, vertical tower, dollhouse skyscraper,
+glossy sci-fi, hologram, neon cyberpunk, photorealism, painterly rendering,
+soft gradient, bloom, random pixel noise, unreadable silhouette,
+fake UI, readable text, logo, watermark, generated sprite sheet,
+multiple camera angles, inconsistent scale</div>
+      <div class="callout" style="margin-top:.15in;font-size:13px;">Every machine prompt states its input, operation, output, footprint and required runtime states.</div>
+    </div>
+  </div>
+  <div class="footer"><span>13 - Prompt contract</span><span>Function before adjectives</span></div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">Scope and Production</span>
+  <h2>First playable art is a machine kit, not a content catalogue</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>First playable ceiling</h3>
+      <table class="mini-table"><tr><td>Floor/wall modules</td><td>12-16</td></tr><tr><td>Tube/conveyor modules</td><td>10-12</td></tr><tr><td>Core workstations</td><td>3, with 5-7 states each</td></tr><tr><td>Shared staff bodies</td><td>2 plus 3 role overlays</td></tr><tr><td>Claimant silhouettes</td><td>4</td></tr><tr><td>Dossier states</td><td>8-10</td></tr><tr><td>UI icons</td><td>16-24</td></tr><tr><td>Dressing props</td><td>12</td></tr></table>
+    </div>
+    <div class="card darkcard">
+      <h3>Order of attack</h3>
+      <div class="step"><b>1</b><h3>Flow proof</h3><p>Forward cream route and reverse red appeal route.</p></div>
+      <div class="step"><b>2</b><h3>Three stations</h3><p>Intake, Verification and Adjudication states.</p></div>
+      <div class="step"><b>3</b><h3>Shared people</h3><p>One body family, role tools and four claimants.</p></div>
+      <div class="step"><b>4</b><h3>ArtLab proof</h3><p>One prop through every gate and into Unity.</p></div>
+    </div>
+  </div>
+  <div class="grid3" style="margin-top:.15in;"><div class="card"><h3>Week 1</h3><p>Camera, grid, route kit and dossier sheet.</p></div><div class="card"><h3>Weeks 2-3</h3><p>Station states, staff and claimant model sheets.</p></div><div class="card"><h3>Weeks 4-6</h3><p>Restored pipeline, UI causality, appeal return and one anomaly.</p></div></div>
+  <div class="footer"><span>14 - Solo art budget</span><span>Systemic reuse over unique content</span></div>
+</section>
+
+<section class="page">
+  <span class="eyebrow">Acceptance Gates</span>
+  <h2>A beautiful asset can still fail the game</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Every asset must pass</h3>
+      <table class="mini-table"><tr><td>Function</td><td>Input, operation and output are inferable.</td></tr><tr><td>Silhouette</td><td>Reads at gameplay scale and in greyscale.</td></tr><tr><td>State family</td><td>Idle, working and blocked differ structurally.</td></tr><tr><td>Camera/grid</td><td>Footprint, pivot and ports are exact.</td></tr><tr><td>Pixel craft</td><td>Intentional clusters; no filter noise.</td></tr><tr><td>Accessibility</td><td>Critical state has shape or motion support.</td></tr><tr><td>Provenance</td><td>Model, workflow, seed and edits recorded.</td></tr><tr><td>Unity test</td><td>Reads at Branch and Operations zoom.</td></tr></table>
+    </div>
+    <div class="card darkcard">
+      <h3>Kill the direction if</h3>
+      <ul><li>A route cannot be traced in one second.</li><li>Departments need colour or labels to read.</li><li>An appeal resembles ordinary red loot.</li><li>Machines look like factory boxes wearing paper.</li><li>Aliens look like collectible mascots.</li><li>Complexity becomes visual noise before it becomes gameplay.</li><li>AI correction costs more than direct pixel redraw.</li><li>The final empty desk does not echo the built branch.</li></ul>
+    </div>
+  </div>
+  <div class="callout teal" style="margin-top:.17in;">The first public-quality frame must show that the branch manufactured a bad decision and the decision has returned to demand processing.</div>
+  <div class="footer"><span>15 - Quality bar</span><span>Native-scale proof over presentation polish</span></div>
+</section>
+
+<section class="page dark">
+  <span class="eyebrow">Final North Star</span>
+  <h1 style="max-width:8.8in;font-size:43px;">The office should make an argument the player can watch.</h1>
+  <div class="grid2" style="margin-top:.28in;">
+    <div class="card darkcard">
+      <div class="big" style="color:var(--cream);font-size:29px;line-height:1.25;">This arrived.<br>That department changed it.<br>This policy committed it.<br>That decision came back.<br>Now the machine is choking on what it said.</div>
+    </div>
+    <div class="frame" style="height:3.65in;"><img class="img" style="object-fit:cover;" src="images/D42_AutomatedBranch_HeroConcept_v1.png"></div>
+  </div>
+  <div class="callout" style="margin-top:.2in;">If the image only communicates “strange office,” it is atmosphere. If it communicates the chain above, it is Desk 42.</div>
+  <div class="footer"><span>16 - Art thesis</span><span>Factorio where defective products hire lawyers</span></div>
+</section>
+
+</body>
+</html>

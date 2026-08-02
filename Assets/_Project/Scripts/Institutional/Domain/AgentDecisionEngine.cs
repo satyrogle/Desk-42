@@ -8,7 +8,7 @@ namespace Desk42.Institutional
     /// only the actor's needs, commitments, relationships, beliefs, perceived agent ids,
     /// and the rules exposed by the institution. It never reads lived ground truth.
     /// </summary>
-    public sealed class AgentDecisionEngine
+    internal sealed class AgentDecisionEngine
     {
         public AgentDecision Decide(AgentDecisionContext context)
         {
@@ -37,6 +37,32 @@ namespace Desk42.Institutional
                 }
             }
 
+            var evaluations = new List<CandidateEvaluation>(candidates.Count);
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                ActionCandidate candidate = candidates[i];
+                var evaluation = new CandidateEvaluation
+                {
+                    CandidateId = candidate.CandidateId,
+                    Action = candidate.Action,
+                    TargetId = candidate.TargetId,
+                    OpportunityId = candidate.OpportunityId,
+                    SubjectBeliefId = candidate.SubjectBeliefId,
+                    Score = candidate.Score,
+                };
+                for (int reasonIndex = 0; reasonIndex < candidate.Reasons.Count; reasonIndex++)
+                {
+                    DecisionReason reason = candidate.Reasons[reasonIndex];
+                    evaluation.Reasons.Add(new DecisionReason
+                    {
+                        ReasonId = reason.ReasonId,
+                        SourceId = reason.SourceId,
+                        ScoreDelta = reason.ScoreDelta,
+                    });
+                }
+                evaluations.Add(evaluation);
+            }
+
             return new AgentDecision
             {
                 Tick = context.Tick,
@@ -46,10 +72,15 @@ namespace Desk42.Institutional
                 ActorId = context.Actor.StableId,
                 Action = winner.Action,
                 TargetId = winner.TargetId,
+                OpportunityId = winner.OpportunityId,
                 SubjectBeliefId = winner.SubjectBeliefId,
                 IntendedNeed = winner.IntendedNeed,
                 Score = winner.Score,
                 Reasons = winner.Reasons,
+                CandidateEvaluations = evaluations,
+                PerceptionSnapshot = context.Actor,
+                RegimeSnapshot = context.Regime,
+                InputSnapshot = context.Input,
             };
         }
 
@@ -65,29 +96,128 @@ namespace Desk42.Institutional
             AgentPerception actor = context.Actor;
             if (!context.Input.WorkAvailable || !actor.Standing.CanWork) return;
 
-            var candidate = new ActionCandidate("work", SocietyActionKind.Work, actor.EmployerId, null);
+            AddWorkCandidate(context, candidates, "work", actor.EmployerId, null, 0);
+            if (context.Input.WorkOpportunities == null) return;
+            for (int i = 0; i < context.Input.WorkOpportunities.Count; i++)
+            {
+                WorkOpportunity opportunity = context.Input.WorkOpportunities[i];
+                if (!CanPerformWorkOpportunity(actor, opportunity)) continue;
+                AddWorkCandidate(
+                    context,
+                    candidates,
+                    $"work:{opportunity.OpportunityId}",
+                    opportunity.OpportunityId,
+                    opportunity.OpportunityId,
+                    opportunity.UtilityBonus);
+            }
+        }
+
+        private static void AddWorkCandidate(
+            AgentDecisionContext context,
+            List<ActionCandidate> candidates,
+            string candidateId,
+            string targetId,
+            string opportunityId,
+            int opportunityBonus)
+        {
+            AgentPerception actor = context.Actor;
+            var candidate = new ActionCandidate(
+                candidateId,
+                SocietyActionKind.Work,
+                targetId,
+                null,
+                null,
+                opportunityId);
             candidate.Add("need.subsistence", NeedKind.Subsistence.ToString(), Need(actor, NeedKind.Subsistence) / 2);
             candidate.Add("need.autonomy_cost", NeedKind.Autonomy.ToString(), -(Need(actor, NeedKind.Autonomy) / 5));
             candidate.Add("disposition.duty", null, actor.Disposition.Duty / 3);
             candidate.Add("regime.work_reward", null, context.Regime.WorkReward / 5);
             candidate.Add("commitment.employment", actor.EmployerId,
                 CommitmentStrength(actor, "employment", actor.EmployerId) / 3);
+            if (!string.IsNullOrEmpty(opportunityId))
+                candidate.Add("opportunity.work", opportunityId, opportunityBonus);
             AddVariation(context, candidate);
             candidates.Add(candidate);
+        }
+
+        private static bool CanPerformWorkOpportunity(
+            AgentPerception actor,
+            WorkOpportunity opportunity)
+        {
+            if (opportunity == null || string.IsNullOrWhiteSpace(opportunity.OpportunityId)) return false;
+            if (!string.IsNullOrWhiteSpace(opportunity.RequiredOfficialStatusId) &&
+                !actor.Standing.IsRecognised(opportunity.RequiredOfficialStatusId)) return false;
+            if (opportunity.ParticipantAgentIds != null && opportunity.ParticipantAgentIds.Count > 0)
+                return ContainsOrdinal(opportunity.ParticipantAgentIds, actor.StableId);
+            return string.IsNullOrWhiteSpace(opportunity.RequiredEmployerId) ||
+                   string.Equals(actor.EmployerId, opportunity.RequiredEmployerId, StringComparison.Ordinal);
         }
 
         private static void AddSeekAidCandidate(AgentDecisionContext context, List<ActionCandidate> candidates)
         {
             AgentPerception actor = context.Actor;
             if (!context.Input.AidAvailable || !actor.Standing.CanSeekAid) return;
+            if (context.Input.AidOpportunities != null &&
+                (context.Input.RestrictAidToOpportunities || context.Input.AidOpportunities.Count > 0))
+            {
+                for (int i = 0; i < context.Input.AidOpportunities.Count; i++)
+                {
+                    AidOpportunity opportunity = context.Input.AidOpportunities[i];
+                    if (opportunity == null || string.IsNullOrWhiteSpace(opportunity.OpportunityId)) continue;
+                    if (opportunity.EligibleAgentIds != null && opportunity.EligibleAgentIds.Count > 0 &&
+                        !ContainsOrdinal(opportunity.EligibleAgentIds, actor.StableId)) continue;
+                    if (!string.IsNullOrWhiteSpace(opportunity.RequiredOfficialStatusId) &&
+                        !actor.Standing.IsRecognised(opportunity.RequiredOfficialStatusId)) continue;
+                    AddSeekAidCandidate(context, candidates, opportunity);
+                }
+                return;
+            }
+            if (!string.IsNullOrWhiteSpace(context.Input.AidRequiredOfficialStatusId) &&
+                !actor.Standing.IsRecognised(context.Input.AidRequiredOfficialStatusId))
+            {
+                return;
+            }
 
             var candidate = new ActionCandidate("seek-aid", SocietyActionKind.SeekAid, "branch-42", null);
+            if (!string.IsNullOrWhiteSpace(context.Input.AidRequiredOfficialStatusId))
+            {
+                candidate.Add(
+                    "standing.required-status",
+                    context.Input.AidRequiredOfficialStatusId,
+                    0);
+            }
             candidate.Add("need.health", NeedKind.Health.ToString(), Need(actor, NeedKind.Health) / 2);
             candidate.Add("need.safety", NeedKind.Safety.ToString(), Need(actor, NeedKind.Safety) / 3);
             candidate.Add("attitude.institutional-trust", null, actor.InstitutionalTrust / 5);
             candidate.Add("disposition.institutional-reliance", null,
                 actor.Disposition.InstitutionalReliance / 4);
             candidate.Add("regime.aid-effectiveness", null, context.Regime.AidEffectiveness / 5);
+            AddVariation(context, candidate);
+            candidates.Add(candidate);
+        }
+
+        private static void AddSeekAidCandidate(
+            AgentDecisionContext context,
+            List<ActionCandidate> candidates,
+            AidOpportunity opportunity)
+        {
+            AgentPerception actor = context.Actor;
+            var candidate = new ActionCandidate(
+                $"seek-aid:{opportunity.OpportunityId}",
+                SocietyActionKind.SeekAid,
+                opportunity.OpportunityId,
+                null,
+                null,
+                opportunity.OpportunityId);
+            if (!string.IsNullOrWhiteSpace(opportunity.RequiredOfficialStatusId))
+                candidate.Add("standing.required-status", opportunity.RequiredOfficialStatusId, 0);
+            candidate.Add("need.health", NeedKind.Health.ToString(), Need(actor, NeedKind.Health) / 2);
+            candidate.Add("need.safety", NeedKind.Safety.ToString(), Need(actor, NeedKind.Safety) / 3);
+            candidate.Add("attitude.institutional-trust", null, actor.InstitutionalTrust / 5);
+            candidate.Add("disposition.institutional-reliance", null,
+                actor.Disposition.InstitutionalReliance / 4);
+            candidate.Add("regime.aid-effectiveness", null, context.Regime.AidEffectiveness / 5);
+            candidate.Add("opportunity.aid", opportunity.OpportunityId, opportunity.UtilityBonus);
             AddVariation(context, candidate);
             candidates.Add(candidate);
         }
@@ -189,8 +319,29 @@ namespace Desk42.Institutional
             {
                 return;
             }
+            if (context.Input.AppealOpportunities != null &&
+                (context.Input.RestrictAppealToOpportunities ||
+                 context.Input.AppealOpportunities.Count > 0))
+            {
+                for (int i = 0; i < context.Input.AppealOpportunities.Count; i++)
+                {
+                    AppealOpportunity opportunity = context.Input.AppealOpportunities[i];
+                    if (opportunity == null || string.IsNullOrWhiteSpace(opportunity.OpportunityId)) continue;
+                    if (opportunity.PartyAgentIds != null && opportunity.PartyAgentIds.Count > 0 &&
+                        !ContainsOrdinal(opportunity.PartyAgentIds, actor.StableId)) continue;
+                    AddAppealCandidate(context, candidates, opportunity);
+                }
+                return;
+            }
+            if (context.Input.AppealEligibleAgentIds != null &&
+                !ContainsOrdinal(context.Input.AppealEligibleAgentIds, actor.StableId))
+            {
+                return;
+            }
 
             var candidate = new ActionCandidate("appeal", SocietyActionKind.Appeal, "branch-42", null);
+            if (context.Input.AppealEligibleAgentIds != null)
+                candidate.Add("procedure.appeal-eligibility", context.Input.IncidentId, 0);
             candidate.Add("need.autonomy", NeedKind.Autonomy.ToString(), Need(actor, NeedKind.Autonomy) / 2);
             candidate.Add("need.safety", NeedKind.Safety.ToString(), Need(actor, NeedKind.Safety) / 4);
             candidate.Add("disposition.institutional-reliance", null,
@@ -201,15 +352,43 @@ namespace Desk42.Institutional
             candidates.Add(candidate);
         }
 
+        private static void AddAppealCandidate(
+            AgentDecisionContext context,
+            List<ActionCandidate> candidates,
+            AppealOpportunity opportunity)
+        {
+            AgentPerception actor = context.Actor;
+            var candidate = new ActionCandidate(
+                $"appeal:{opportunity.OpportunityId}",
+                SocietyActionKind.Appeal,
+                opportunity.OpportunityId,
+                null,
+                null,
+                opportunity.OpportunityId);
+            candidate.Add("procedure.appeal-eligibility", opportunity.CaseId, 0);
+            candidate.Add("need.autonomy", NeedKind.Autonomy.ToString(), Need(actor, NeedKind.Autonomy) / 2);
+            candidate.Add("need.safety", NeedKind.Safety.ToString(), Need(actor, NeedKind.Safety) / 4);
+            candidate.Add("disposition.institutional-reliance", null,
+                actor.Disposition.InstitutionalReliance / 4);
+            candidate.Add("attitude.institutional-trust", null, actor.InstitutionalTrust / 6);
+            candidate.Add("regime.appeal-accessibility", null, context.Regime.AppealAccessibility / 3);
+            candidate.Add("opportunity.appeal", opportunity.OpportunityId, opportunity.UtilityBonus);
+            AddVariation(context, candidate);
+            candidates.Add(candidate);
+        }
+
         private static void AddVariation(AgentDecisionContext context, ActionCandidate candidate)
         {
-            int variation = StableDecisionRoll.Range(
-                context.MasterSeed,
-                context.Tick,
-                context.Actor.StableId,
-                candidate.CandidateId,
-                -2,
-                3);
+            int amplitude = context.Regime.DecisionVariationAmplitude;
+            int variation = amplitude == 0
+                ? 0
+                : StableDecisionRoll.Range(
+                    context.MasterSeed,
+                    context.Tick,
+                    context.Actor.SimulationOrdinal.ToString(),
+                    candidate.CandidateId,
+                    -amplitude,
+                    amplitude + 1);
             candidate.Add("variation.keyed", candidate.CandidateId, variation);
         }
 
@@ -251,11 +430,19 @@ namespace Desk42.Institutional
             return false;
         }
 
+        private static bool ContainsOrdinal(IReadOnlyList<string> values, string expected)
+        {
+            for (int i = 0; i < values.Count; i++)
+                if (string.Equals(values[i], expected, StringComparison.Ordinal)) return true;
+            return false;
+        }
+
         private sealed class ActionCandidate
         {
             public readonly string CandidateId;
             public readonly SocietyActionKind Action;
             public readonly string TargetId;
+            public readonly string OpportunityId;
             public readonly string SubjectBeliefId;
             public readonly NeedKind? IntendedNeed;
             public readonly List<DecisionReason> Reasons = new();
@@ -266,11 +453,13 @@ namespace Desk42.Institutional
                 SocietyActionKind action,
                 string targetId,
                 string subjectBeliefId,
-                NeedKind? intendedNeed = null)
+                NeedKind? intendedNeed = null,
+                string opportunityId = null)
             {
                 CandidateId = candidateId;
                 Action = action;
                 TargetId = targetId;
+                OpportunityId = opportunityId;
                 SubjectBeliefId = subjectBeliefId;
                 IntendedNeed = intendedNeed;
             }

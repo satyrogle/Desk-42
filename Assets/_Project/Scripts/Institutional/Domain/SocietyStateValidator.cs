@@ -28,6 +28,8 @@ namespace Desk42.Institutional
             ValidateRange(state.Regime.DisclosureProtection, 0, 100, "regime.disclosure-protection");
             ValidateRange(state.Regime.RetaliationRisk, 0, 100, "regime.retaliation-risk");
             ValidateRange(state.Regime.AppealAccessibility, 0, 100, "regime.appeal-accessibility");
+            ValidateRange(state.Regime.DecisionVariationAmplitude, 0, 10,
+                "regime.decision-variation-amplitude");
 
             var ids = new HashSet<string>(StringComparer.Ordinal);
             var ordinals = new HashSet<int>();

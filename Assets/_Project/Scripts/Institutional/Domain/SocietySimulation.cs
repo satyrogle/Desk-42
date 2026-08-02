@@ -17,7 +17,7 @@ namespace Desk42.Institutional
         {
         }
 
-        public SocietySimulation(AgentDecisionEngine decisionEngine)
+        internal SocietySimulation(AgentDecisionEngine decisionEngine)
         {
             _decisionEngine = decisionEngine ?? throw new ArgumentNullException(nameof(decisionEngine));
         }
@@ -46,7 +46,7 @@ namespace Desk42.Institutional
                     MasterSeed = state.MasterSeed,
                     Tick = tick,
                     Actor = AgentPerception.Capture(actor),
-                    PerceivedAgentIds = BuildPerceivedAgentIds(actor),
+                    PerceivedAgentIds = BuildPerceivedAgentIds(actor, input),
                     Regime = state.Regime,
                     Input = input,
                 });
@@ -55,8 +55,10 @@ namespace Desk42.Institutional
 
             // Application pass: phase then actor ordering is explicit and stable.
             result.Decisions.Sort(CompareForApplication);
+            var claimedOpportunityIds = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < result.Decisions.Count; i++)
-                ApplyDecision(state, input, result.Decisions[i], result.Events);
+                ApplyDecision(state, input, result.Decisions[i], result.Events,
+                    claimedOpportunityIds);
 
             // Expose traces in actor order, independent from internal application phases.
             result.Decisions.Sort((left, right) => string.CompareOrdinal(left.ActorId, right.ActorId));
@@ -149,11 +151,29 @@ namespace Desk42.Institutional
             SocietyState state,
             SimulationInput input,
             AgentDecision decision,
-            List<SocietyEvent> events)
+            List<SocietyEvent> events,
+            HashSet<string> claimedOpportunityIds)
         {
             AgentState actor = state.GetAgent(decision.ActorId);
             if (actor == null)
                 throw new InvalidOperationException($"Decision actor no longer exists: {decision.ActorId}");
+
+            if (!string.IsNullOrEmpty(decision.OpportunityId) &&
+                !claimedOpportunityIds.Add(decision.OpportunityId))
+            {
+                SocietyEvent unavailable = NewEvent(
+                    decision.Tick,
+                    input.IncidentId,
+                    SocietyEventKind.NoActionObserved,
+                    actor.StableId,
+                    decision.OpportunityId,
+                    null,
+                    EvidenceVisibility.Observable,
+                    decision.DecisionId);
+                unavailable.OpportunityId = decision.OpportunityId;
+                events.Add(unavailable);
+                return;
+            }
 
             switch (decision.Action)
             {
@@ -200,10 +220,11 @@ namespace Desk42.Institutional
                 input.IncidentId,
                 SocietyEventKind.WorkPerformed,
                 actor.StableId,
-                actor.EmployerId,
+                decision.OpportunityId ?? actor.EmployerId,
                 $"record:work:{decision.Tick}:{actor.StableId}",
                 EvidenceVisibility.Observable,
                 decision.DecisionId);
+            societyEvent.OpportunityId = decision.OpportunityId;
             ChangeNeed(actor, NeedKind.Subsistence, -8, societyEvent.Deltas);
             ChangeNeed(actor, NeedKind.Autonomy, 2, societyEvent.Deltas);
             events.Add(societyEvent);
@@ -221,10 +242,11 @@ namespace Desk42.Institutional
                 input.IncidentId,
                 SocietyEventKind.AidRequested,
                 actor.StableId,
-                "branch-42",
+                decision.OpportunityId ?? "branch-42",
                 $"record:aid-request:{decision.Tick}:{actor.StableId}",
                 EvidenceVisibility.OfficialRecord,
                 decision.DecisionId);
+            societyEvent.OpportunityId = decision.OpportunityId;
             int relief = Math.Max(2, state.Regime.AidEffectiveness / 10);
             ChangeNeed(actor, NeedKind.Health, -relief, societyEvent.Deltas);
             ChangeNeed(actor, NeedKind.Safety, -(relief / 2), societyEvent.Deltas);
@@ -301,6 +323,11 @@ namespace Desk42.Institutional
             societyEvent.EvidenceSubjectId = belief.SubjectId;
             societyEvent.EvidenceObjectId = belief.ObjectId;
             societyEvent.EvidenceSourceId = belief.SourceId;
+            societyEvent.EvidenceBeliefId = belief.BeliefId;
+            societyEvent.EvidenceReliability = belief.Confidence;
+            societyEvent.EvidenceSuppressedByAgentId = belief.LastWithheldTick > 0
+                ? actor.StableId
+                : null;
             events.Add(societyEvent);
         }
 
@@ -342,10 +369,11 @@ namespace Desk42.Institutional
                 input.IncidentId,
                 SocietyEventKind.AppealFiled,
                 actor.StableId,
-                "branch-42",
+                decision.OpportunityId ?? "branch-42",
                 $"record:appeal:{decision.Tick}:{actor.StableId}",
                 EvidenceVisibility.OfficialRecord,
                 decision.DecisionId);
+            societyEvent.OpportunityId = decision.OpportunityId;
             societyEvent.Deltas.Add(new StateDelta
             {
                 EntityId = actor.StableId,
@@ -380,16 +408,28 @@ namespace Desk42.Institutional
             };
         }
 
-        private static List<string> BuildPerceivedAgentIds(AgentState actor)
+        private static List<string> BuildPerceivedAgentIds(AgentState actor, SimulationInput input)
         {
             var perceived = new List<string>(actor.Relationships.Count);
             for (int i = 0; i < actor.Relationships.Count; i++)
             {
                 string targetId = actor.Relationships[i].TargetAgentId;
+                if (input.VisibleAgentIds != null &&
+                    !ContainsOrdinal(input.VisibleAgentIds, targetId))
+                {
+                    continue;
+                }
                 if (!perceived.Contains(targetId)) perceived.Add(targetId);
             }
             perceived.Sort(StringComparer.Ordinal);
             return perceived;
+        }
+
+        private static bool ContainsOrdinal(List<string> values, string expected)
+        {
+            for (int i = 0; i < values.Count; i++)
+                if (string.Equals(values[i], expected, StringComparison.Ordinal)) return true;
+            return false;
         }
 
         private static bool ChangeNeed(

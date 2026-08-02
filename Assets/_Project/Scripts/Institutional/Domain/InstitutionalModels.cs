@@ -226,6 +226,7 @@ namespace Desk42.Institutional
         public int DisclosureProtection = 50;
         public int RetaliationRisk = 50;
         public int AppealAccessibility = 50;
+        public int DecisionVariationAmplitude = 2;
     }
 
     [Serializable]
@@ -259,6 +260,43 @@ namespace Desk42.Institutional
     }
 
     [Serializable]
+    public sealed class WorkOpportunity
+    {
+        public string OpportunityId;
+        public string PurposeId;
+        public string SourceCauseId;
+        public string RequiredEmployerId;
+        public string RequiredOfficialStatusId;
+        public long EarliestCycle;
+        public int UtilityBonus;
+        public List<string> ParticipantAgentIds = new();
+    }
+
+    [Serializable]
+    public sealed class AidOpportunity
+    {
+        public string OpportunityId;
+        public string PurposeId;
+        public string SourceCauseId;
+        public string RequiredOfficialStatusId;
+        public int UtilityBonus;
+        public List<string> EligibleAgentIds = new();
+    }
+
+    [Serializable]
+    public sealed class AppealOpportunity
+    {
+        public string OpportunityId;
+        public string DocketId;
+        public string CaseId;
+        public string ChallengedRulingId;
+        public string SourceCauseId;
+        public long HearingCycle;
+        public int UtilityBonus;
+        public List<string> PartyAgentIds = new();
+    }
+
+    [Serializable]
     public sealed class SimulationInput
     {
         public string IncidentId = "routine-cycle";
@@ -266,14 +304,41 @@ namespace Desk42.Institutional
         public bool AidAvailable = true;
         public bool DisclosureRequested = true;
         public bool AppealWindowOpen = true;
+        public string OpenDocketId;
+        public string AidRequiredOfficialStatusId;
+        public List<string> AppealEligibleAgentIds;
+        public List<WorkOpportunity> WorkOpportunities = new();
+        public List<AidOpportunity> AidOpportunities = new();
+        public List<AppealOpportunity> AppealOpportunities = new();
+        public bool RestrictAidToOpportunities;
+        public bool RestrictAppealToOpportunities;
+
+        /// <summary>
+        /// Optional attendance for this decision opportunity. Null preserves the
+        /// original behaviour (every related agent is perceived); an empty list
+        /// represents an individual interview or isolated workstation.
+        /// </summary>
+        public List<string> VisibleAgentIds;
     }
 
     [Serializable]
-    public sealed class DecisionReason
+    internal sealed class DecisionReason
     {
         public string ReasonId;
         public string SourceId;
         public int ScoreDelta;
+    }
+
+    [Serializable]
+    internal sealed class CandidateEvaluation
+    {
+        public string CandidateId;
+        public SocietyActionKind Action;
+        public string TargetId;
+        public string OpportunityId;
+        public string SubjectBeliefId;
+        public int Score;
+        public List<DecisionReason> Reasons = new();
     }
 
     /// <summary>
@@ -281,7 +346,7 @@ namespace Desk42.Institutional
     /// developer diagnostics, not part of the player-facing observation surface.
     /// </summary>
     [Serializable]
-    public sealed class AgentDecision
+    internal sealed class AgentDecision
     {
         public long Tick;
         public int ApplicationOrdinal;
@@ -290,10 +355,18 @@ namespace Desk42.Institutional
         public string ActorId;
         public SocietyActionKind Action;
         public string TargetId;
+        public string OpportunityId;
         public string SubjectBeliefId;
         public NeedKind? IntendedNeed;
         public int Score;
         public List<DecisionReason> Reasons = new();
+        public List<CandidateEvaluation> CandidateEvaluations = new();
+
+        // Detached assessor diagnostics captured at decision time. Gameplay consumes
+        // the resulting action/event, not these private utility inputs.
+        public AgentPerception PerceptionSnapshot;
+        public InstitutionalRegimeState RegimeSnapshot;
+        public SimulationInput InputSnapshot;
     }
 
     [Serializable]
@@ -315,11 +388,15 @@ namespace Desk42.Institutional
         public SocietyEventKind Kind;
         public string ActorId;
         public string TargetId;
+        public string OpportunityId;
         public string EvidenceId;
         public string EvidencePropositionId;
         public string EvidenceSubjectId;
         public string EvidenceObjectId;
         public string EvidenceSourceId;
+        internal string EvidenceBeliefId;
+        public string EvidenceSuppressedByAgentId;
+        public int EvidenceReliability;
         public EvidenceVisibility Visibility;
         public List<StateDelta> Deltas = new();
     }
@@ -328,11 +405,11 @@ namespace Desk42.Institutional
     public sealed class SimulationStepResult
     {
         public long Tick;
-        public List<AgentDecision> Decisions = new();
+        internal List<AgentDecision> Decisions = new();
         public List<SocietyEvent> Events = new();
     }
 
-    public sealed class AgentDecisionContext
+    internal sealed class AgentDecisionContext
     {
         public int MasterSeed;
         public long Tick;
