@@ -25,17 +25,8 @@ namespace Desk42.Institutional
             AddEvidenceCandidates(context, candidates);
             AddAppealCandidate(context, candidates);
 
+            candidates.Sort(CompareCandidatesByRank);
             ActionCandidate winner = candidates[0];
-            for (int i = 1; i < candidates.Count; i++)
-            {
-                ActionCandidate candidate = candidates[i];
-                if (candidate.Score > winner.Score ||
-                    (candidate.Score == winner.Score &&
-                     string.CompareOrdinal(candidate.CandidateId, winner.CandidateId) < 0))
-                {
-                    winner = candidate;
-                }
-            }
 
             var evaluations = new List<CandidateEvaluation>(candidates.Count);
             for (int i = 0; i < candidates.Count; i++)
@@ -48,22 +39,14 @@ namespace Desk42.Institutional
                     TargetId = candidate.TargetId,
                     OpportunityId = candidate.OpportunityId,
                     SubjectBeliefId = candidate.SubjectBeliefId,
+                    IntendedNeed = candidate.IntendedNeed,
                     Score = candidate.Score,
                 };
-                for (int reasonIndex = 0; reasonIndex < candidate.Reasons.Count; reasonIndex++)
-                {
-                    DecisionReason reason = candidate.Reasons[reasonIndex];
-                    evaluation.Reasons.Add(new DecisionReason
-                    {
-                        ReasonId = reason.ReasonId,
-                        SourceId = reason.SourceId,
-                        ScoreDelta = reason.ScoreDelta,
-                    });
-                }
+                evaluation.Reasons.AddRange(CloneReasons(candidate.Reasons));
                 evaluations.Add(evaluation);
             }
 
-            return new AgentDecision
+            var decision = new AgentDecision
             {
                 Tick = context.Tick,
                 ApplicationOrdinal = context.Actor.SimulationOrdinal,
@@ -76,12 +59,163 @@ namespace Desk42.Institutional
                 SubjectBeliefId = winner.SubjectBeliefId,
                 IntendedNeed = winner.IntendedNeed,
                 Score = winner.Score,
-                Reasons = winner.Reasons,
+                Reasons = CloneReasons(winner.Reasons),
                 CandidateEvaluations = evaluations,
+                SelectedCandidateRank = 0,
                 PerceptionSnapshot = context.Actor,
-                RegimeSnapshot = context.Regime,
-                InputSnapshot = context.Input,
+                RegimeSnapshot = CaptureRegimeSnapshot(context.Regime),
+                InputSnapshot = CaptureInputSnapshot(context.Input),
             };
+            decision.RetainRankedCandidatePlan(evaluations);
+            return decision;
+        }
+
+        private static int CompareCandidatesByRank(ActionCandidate left, ActionCandidate right)
+        {
+            int score = right.Score.CompareTo(left.Score);
+            return score != 0
+                ? score
+                : string.CompareOrdinal(left.CandidateId, right.CandidateId);
+        }
+
+        private static List<DecisionReason> CloneReasons(IReadOnlyList<DecisionReason> source)
+        {
+            var clone = new List<DecisionReason>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                DecisionReason reason = source[i];
+                clone.Add(new DecisionReason
+                {
+                    ReasonId = reason.ReasonId,
+                    SourceId = reason.SourceId,
+                    ScoreDelta = reason.ScoreDelta,
+                });
+            }
+
+            return clone;
+        }
+
+        internal static InstitutionalRegimeState CaptureRegimeSnapshot(
+            InstitutionalRegimeState source)
+        {
+            return new InstitutionalRegimeState
+            {
+                WorkReward = source.WorkReward,
+                AidEffectiveness = source.AidEffectiveness,
+                DisclosureProtection = source.DisclosureProtection,
+                RetaliationRisk = source.RetaliationRisk,
+                AppealAccessibility = source.AppealAccessibility,
+                DecisionVariationAmplitude = source.DecisionVariationAmplitude,
+            };
+        }
+
+        internal static SimulationInput CaptureInputSnapshot(SimulationInput source)
+        {
+            return new SimulationInput
+            {
+                IncidentId = source.IncidentId,
+                WorkAvailable = source.WorkAvailable,
+                AidAvailable = source.AidAvailable,
+                DisclosureRequested = source.DisclosureRequested,
+                AppealWindowOpen = source.AppealWindowOpen,
+                OpenDocketId = source.OpenDocketId,
+                AidRequiredOfficialStatusId = source.AidRequiredOfficialStatusId,
+                AppealEligibleAgentIds = CloneStrings(source.AppealEligibleAgentIds),
+                WorkOpportunities = CloneWorkOpportunities(source.WorkOpportunities),
+                AidOpportunities = CloneAidOpportunities(source.AidOpportunities),
+                AppealOpportunities = CloneAppealOpportunities(source.AppealOpportunities),
+                RestrictAidToOpportunities = source.RestrictAidToOpportunities,
+                RestrictAppealToOpportunities = source.RestrictAppealToOpportunities,
+                VisibleAgentIds = CloneStrings(source.VisibleAgentIds),
+            };
+        }
+
+        private static List<string> CloneStrings(IReadOnlyList<string> source)
+        {
+            if (source == null) return null;
+            var clone = new List<string>(source.Count);
+            for (int i = 0; i < source.Count; i++) clone.Add(source[i]);
+            return clone;
+        }
+
+        private static List<WorkOpportunity> CloneWorkOpportunities(
+            IReadOnlyList<WorkOpportunity> source)
+        {
+            if (source == null) return null;
+            var clone = new List<WorkOpportunity>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                WorkOpportunity opportunity = source[i];
+                clone.Add(opportunity == null
+                    ? null
+                    : new WorkOpportunity
+                    {
+                        OpportunityId = opportunity.OpportunityId,
+                        PurposeId = opportunity.PurposeId,
+                        SourceCauseId = opportunity.SourceCauseId,
+                        RequiredEmployerId = opportunity.RequiredEmployerId,
+                        RequiredOfficialStatusId = opportunity.RequiredOfficialStatusId,
+                        RequiredOfficialStatusRecognised =
+                            opportunity.RequiredOfficialStatusRecognised,
+                        EarliestCycle = opportunity.EarliestCycle,
+                        UtilityBonus = opportunity.UtilityBonus,
+                        ParticipantAgentIds = CloneStrings(opportunity.ParticipantAgentIds),
+                    });
+            }
+
+            return clone;
+        }
+
+        private static List<AidOpportunity> CloneAidOpportunities(
+            IReadOnlyList<AidOpportunity> source)
+        {
+            if (source == null) return null;
+            var clone = new List<AidOpportunity>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                AidOpportunity opportunity = source[i];
+                clone.Add(opportunity == null
+                    ? null
+                    : new AidOpportunity
+                    {
+                        OpportunityId = opportunity.OpportunityId,
+                        PurposeId = opportunity.PurposeId,
+                        SourceCauseId = opportunity.SourceCauseId,
+                        RequiredOfficialStatusId = opportunity.RequiredOfficialStatusId,
+                        RequiredOfficialStatusRecognised =
+                            opportunity.RequiredOfficialStatusRecognised,
+                        UtilityBonus = opportunity.UtilityBonus,
+                        EligibleAgentIds = CloneStrings(opportunity.EligibleAgentIds),
+                    });
+            }
+
+            return clone;
+        }
+
+        private static List<AppealOpportunity> CloneAppealOpportunities(
+            IReadOnlyList<AppealOpportunity> source)
+        {
+            if (source == null) return null;
+            var clone = new List<AppealOpportunity>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                AppealOpportunity opportunity = source[i];
+                clone.Add(opportunity == null
+                    ? null
+                    : new AppealOpportunity
+                    {
+                        OpportunityId = opportunity.OpportunityId,
+                        DocketId = opportunity.DocketId,
+                        CaseId = opportunity.CaseId,
+                        ChallengedRulingId = opportunity.ChallengedRulingId,
+                        SourceCauseId = opportunity.SourceCauseId,
+                        HearingCycle = opportunity.HearingCycle,
+                        UtilityBonus = opportunity.UtilityBonus,
+                        PartyAgentIds = CloneStrings(opportunity.PartyAgentIds),
+                    });
+            }
+
+            return clone;
         }
 
         private static void AddIdleCandidate(List<ActionCandidate> candidates)
@@ -96,7 +230,8 @@ namespace Desk42.Institutional
             AgentPerception actor = context.Actor;
             if (!context.Input.WorkAvailable || !actor.Standing.CanWork) return;
 
-            AddWorkCandidate(context, candidates, "work", actor.EmployerId, null, 0);
+            AddWorkCandidate(
+                context, candidates, "work", actor.EmployerId, null, 0, null, true);
             if (context.Input.WorkOpportunities == null) return;
             for (int i = 0; i < context.Input.WorkOpportunities.Count; i++)
             {
@@ -108,7 +243,9 @@ namespace Desk42.Institutional
                     $"work:{opportunity.OpportunityId}",
                     opportunity.OpportunityId,
                     opportunity.OpportunityId,
-                    opportunity.UtilityBonus);
+                    opportunity.UtilityBonus,
+                    opportunity.RequiredOfficialStatusId,
+                    opportunity.RequiredOfficialStatusRecognised);
             }
         }
 
@@ -118,7 +255,9 @@ namespace Desk42.Institutional
             string candidateId,
             string targetId,
             string opportunityId,
-            int opportunityBonus)
+            int opportunityBonus,
+            string requiredStatusId,
+            bool requiredStatusRecognised)
         {
             AgentPerception actor = context.Actor;
             var candidate = new ActionCandidate(
@@ -136,6 +275,15 @@ namespace Desk42.Institutional
                 CommitmentStrength(actor, "employment", actor.EmployerId) / 3);
             if (!string.IsNullOrEmpty(opportunityId))
                 candidate.Add("opportunity.work", opportunityId, opportunityBonus);
+            if (!string.IsNullOrWhiteSpace(requiredStatusId))
+            {
+                candidate.Add(
+                    requiredStatusRecognised
+                        ? "standing.required-status"
+                        : "standing.required-status-absent",
+                    requiredStatusId,
+                    0);
+            }
             AddVariation(context, candidate);
             candidates.Add(candidate);
         }
@@ -146,7 +294,8 @@ namespace Desk42.Institutional
         {
             if (opportunity == null || string.IsNullOrWhiteSpace(opportunity.OpportunityId)) return false;
             if (!string.IsNullOrWhiteSpace(opportunity.RequiredOfficialStatusId) &&
-                !actor.Standing.IsRecognised(opportunity.RequiredOfficialStatusId)) return false;
+                actor.Standing.IsRecognised(opportunity.RequiredOfficialStatusId) !=
+                opportunity.RequiredOfficialStatusRecognised) return false;
             if (opportunity.ParticipantAgentIds != null && opportunity.ParticipantAgentIds.Count > 0)
                 return ContainsOrdinal(opportunity.ParticipantAgentIds, actor.StableId);
             return string.IsNullOrWhiteSpace(opportunity.RequiredEmployerId) ||
@@ -167,7 +316,8 @@ namespace Desk42.Institutional
                     if (opportunity.EligibleAgentIds != null && opportunity.EligibleAgentIds.Count > 0 &&
                         !ContainsOrdinal(opportunity.EligibleAgentIds, actor.StableId)) continue;
                     if (!string.IsNullOrWhiteSpace(opportunity.RequiredOfficialStatusId) &&
-                        !actor.Standing.IsRecognised(opportunity.RequiredOfficialStatusId)) continue;
+                        actor.Standing.IsRecognised(opportunity.RequiredOfficialStatusId) !=
+                        opportunity.RequiredOfficialStatusRecognised) continue;
                     AddSeekAidCandidate(context, candidates, opportunity);
                 }
                 return;
@@ -210,7 +360,14 @@ namespace Desk42.Institutional
                 null,
                 opportunity.OpportunityId);
             if (!string.IsNullOrWhiteSpace(opportunity.RequiredOfficialStatusId))
-                candidate.Add("standing.required-status", opportunity.RequiredOfficialStatusId, 0);
+            {
+                candidate.Add(
+                    opportunity.RequiredOfficialStatusRecognised
+                        ? "standing.required-status"
+                        : "standing.required-status-absent",
+                    opportunity.RequiredOfficialStatusId,
+                    0);
+            }
             candidate.Add("need.health", NeedKind.Health.ToString(), Need(actor, NeedKind.Health) / 2);
             candidate.Add("need.safety", NeedKind.Safety.ToString(), Need(actor, NeedKind.Safety) / 3);
             candidate.Add("attitude.institutional-trust", null, actor.InstitutionalTrust / 5);
@@ -314,8 +471,8 @@ namespace Desk42.Institutional
         {
             AgentPerception actor = context.Actor;
             if (!context.Input.AppealWindowOpen || !actor.Standing.CanAppeal ||
-                !actor.Standing.IsRecognised("adverse-decision") ||
-                actor.Standing.IsRecognised("appeal-pending"))
+                !actor.Standing.IsRecognised(InstitutionalStatusIds.AdverseDecision) ||
+                actor.Standing.IsRecognised(InstitutionalStatusIds.AppealPending))
             {
                 return;
             }

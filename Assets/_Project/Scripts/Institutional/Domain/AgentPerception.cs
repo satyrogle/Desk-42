@@ -141,5 +141,23 @@ namespace Desk42.Institutional
 
             return perception;
         }
+
+        internal static AgentPerception Copy(AgentPerception source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            return Capture(new AgentState
+            {
+                StableId = source.StableId,
+                SimulationOrdinal = source.SimulationOrdinal,
+                EmployerId = source.EmployerId,
+                InstitutionalTrust = source.InstitutionalTrust,
+                Disposition = source.Disposition,
+                Standing = source.Standing,
+                Needs = source.Needs,
+                Commitments = source.Commitments,
+                Relationships = source.Relationships,
+                Beliefs = source.Beliefs,
+            });
+        }
     }
 }

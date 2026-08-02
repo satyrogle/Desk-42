@@ -3,6 +3,12 @@ using System.Collections.Generic;
 
 namespace Desk42.Institutional
 {
+    public static class InstitutionalStatusIds
+    {
+        public const string AdverseDecision = "adverse-decision";
+        public const string AppealPending = "appeal-pending";
+    }
+
     public enum NeedKind
     {
         Health,
@@ -267,6 +273,7 @@ namespace Desk42.Institutional
         public string SourceCauseId;
         public string RequiredEmployerId;
         public string RequiredOfficialStatusId;
+        public bool RequiredOfficialStatusRecognised = true;
         public long EarliestCycle;
         public int UtilityBonus;
         public List<string> ParticipantAgentIds = new();
@@ -279,6 +286,7 @@ namespace Desk42.Institutional
         public string PurposeId;
         public string SourceCauseId;
         public string RequiredOfficialStatusId;
+        public bool RequiredOfficialStatusRecognised = true;
         public int UtilityBonus;
         public List<string> EligibleAgentIds = new();
     }
@@ -337,8 +345,48 @@ namespace Desk42.Institutional
         public string TargetId;
         public string OpportunityId;
         public string SubjectBeliefId;
+        public NeedKind? IntendedNeed;
         public int Score;
         public List<DecisionReason> Reasons = new();
+    }
+
+    /// <summary>
+    /// Immutable executable portion of one ranked candidate. Diagnostic reasons are
+    /// retained separately in CandidateEvaluations; resolution may only select one of
+    /// these already-scored entries.
+    /// </summary>
+    [Serializable]
+    internal sealed class RankedCandidatePlanEntry
+    {
+        public string CandidateId { get; }
+        public SocietyActionKind Action { get; }
+        public string TargetId { get; }
+        public string OpportunityId { get; }
+        public string SubjectBeliefId { get; }
+        public NeedKind? IntendedNeed { get; }
+        public int Score { get; }
+
+        public RankedCandidatePlanEntry(CandidateEvaluation source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            CandidateId = source.CandidateId;
+            Action = source.Action;
+            TargetId = source.TargetId;
+            OpportunityId = source.OpportunityId;
+            SubjectBeliefId = source.SubjectBeliefId;
+            IntendedNeed = source.IntendedNeed;
+            Score = source.Score;
+        }
+    }
+
+    [Serializable]
+    internal sealed class CapacityReservationTrace
+    {
+        public int CandidateRank;
+        public string CandidateId;
+        public string OpportunityId;
+        public bool Awarded;
+        public string HolderActorId;
     }
 
     /// <summary>
@@ -360,13 +408,33 @@ namespace Desk42.Institutional
         public NeedKind? IntendedNeed;
         public int Score;
         public List<DecisionReason> Reasons = new();
+
+        // Frozen in score-descending, candidate-id-ascending order by the decision
+        // pass. Capacity arbitration may select a later entry, but never re-scores
+        // or rebuilds this plan after another action mutates society state.
         public List<CandidateEvaluation> CandidateEvaluations = new();
+        private readonly List<RankedCandidatePlanEntry> _rankedCandidatePlan = new();
+        [NonSerialized]
+        private IReadOnlyList<RankedCandidatePlanEntry> _rankedCandidatePlanView;
+        public IReadOnlyList<RankedCandidatePlanEntry> RankedCandidatePlan =>
+            _rankedCandidatePlanView ??= _rankedCandidatePlan.AsReadOnly();
+        public int SelectedCandidateRank;
+        public List<CapacityReservationTrace> CapacityReservations = new();
 
         // Detached assessor diagnostics captured at decision time. Gameplay consumes
         // the resulting action/event, not these private utility inputs.
         public AgentPerception PerceptionSnapshot;
         public InstitutionalRegimeState RegimeSnapshot;
         public SimulationInput InputSnapshot;
+
+        internal void RetainRankedCandidatePlan(IReadOnlyList<CandidateEvaluation> evaluations)
+        {
+            if (evaluations == null) throw new ArgumentNullException(nameof(evaluations));
+            if (_rankedCandidatePlan.Count != 0)
+                throw new InvalidOperationException("A decision plan may only be retained once.");
+            for (int i = 0; i < evaluations.Count; i++)
+                _rankedCandidatePlan.Add(new RankedCandidatePlanEntry(evaluations[i]));
+        }
     }
 
     [Serializable]

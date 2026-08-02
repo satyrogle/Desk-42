@@ -53,12 +53,15 @@ namespace Desk42.Institutional
                 result.Decisions.Add(decision);
             }
 
+            // Capacity pass: every plan is already frozen. Stable actor order reserves
+            // contested opportunities and rejected plans fall through to their next
+            // ranked candidate without observing any applied state mutation.
+            ResolveCapacityReservations(result.Decisions);
+
             // Application pass: phase then actor ordering is explicit and stable.
             result.Decisions.Sort(CompareForApplication);
-            var claimedOpportunityIds = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < result.Decisions.Count; i++)
-                ApplyDecision(state, input, result.Decisions[i], result.Events,
-                    claimedOpportunityIds);
+                ApplyDecision(state, input, result.Decisions[i], result.Events);
 
             // Expose traces in actor order, independent from internal application phases.
             result.Decisions.Sort((left, right) => string.CompareOrdinal(left.ActorId, right.ActorId));
@@ -122,6 +125,109 @@ namespace Desk42.Institutional
             return actor != 0 ? actor : string.CompareOrdinal(left.CandidateId, right.CandidateId);
         }
 
+        private static void ResolveCapacityReservations(List<AgentDecision> decisions)
+        {
+            var reservationOrder = new List<AgentDecision>(decisions);
+            reservationOrder.Sort(CompareForCapacityReservation);
+            var opportunityHolders = new Dictionary<string, string>(StringComparer.Ordinal);
+
+            for (int decisionIndex = 0; decisionIndex < reservationOrder.Count; decisionIndex++)
+            {
+                AgentDecision decision = reservationOrder[decisionIndex];
+                bool selected = false;
+                for (int rank = 0; rank < decision.RankedCandidatePlan.Count; rank++)
+                {
+                    RankedCandidatePlanEntry candidate = decision.RankedCandidatePlan[rank];
+                    if (!string.IsNullOrEmpty(candidate.OpportunityId))
+                    {
+                        if (opportunityHolders.TryGetValue(
+                                candidate.OpportunityId,
+                                out string holderActorId))
+                        {
+                            decision.CapacityReservations.Add(new CapacityReservationTrace
+                            {
+                                CandidateRank = rank,
+                                CandidateId = candidate.CandidateId,
+                                OpportunityId = candidate.OpportunityId,
+                                Awarded = false,
+                                HolderActorId = holderActorId,
+                            });
+                            continue;
+                        }
+
+                        opportunityHolders.Add(candidate.OpportunityId, decision.ActorId);
+                        decision.CapacityReservations.Add(new CapacityReservationTrace
+                        {
+                            CandidateRank = rank,
+                            CandidateId = candidate.CandidateId,
+                            OpportunityId = candidate.OpportunityId,
+                            Awarded = true,
+                            HolderActorId = decision.ActorId,
+                        });
+                    }
+
+                    SelectCandidate(
+                        decision,
+                        candidate,
+                        decision.CandidateEvaluations[rank],
+                        rank);
+                    selected = true;
+                    break;
+                }
+
+                if (!selected)
+                {
+                    throw new InvalidOperationException(
+                        $"Decision {decision.DecisionId} has no capacity-valid candidate. " +
+                        "Every ranked plan must retain its unconditional idle fallback.");
+                }
+            }
+        }
+
+        private static int CompareForCapacityReservation(AgentDecision left, AgentDecision right)
+        {
+            int ordinal = left.ApplicationOrdinal.CompareTo(right.ApplicationOrdinal);
+            if (ordinal != 0) return ordinal;
+            int actor = string.CompareOrdinal(left.ActorId, right.ActorId);
+            return actor != 0
+                ? actor
+                : string.CompareOrdinal(left.DecisionId, right.DecisionId);
+        }
+
+        private static void SelectCandidate(
+            AgentDecision decision,
+            RankedCandidatePlanEntry candidate,
+            CandidateEvaluation evaluation,
+            int rank)
+        {
+            decision.SelectedCandidateRank = rank;
+            decision.CandidateId = candidate.CandidateId;
+            decision.Action = candidate.Action;
+            decision.TargetId = candidate.TargetId;
+            decision.OpportunityId = candidate.OpportunityId;
+            decision.SubjectBeliefId = candidate.SubjectBeliefId;
+            decision.IntendedNeed = candidate.IntendedNeed;
+            decision.Score = candidate.Score;
+            decision.Reasons = CloneReasons(evaluation.Reasons);
+        }
+
+        private static List<DecisionReason> CloneReasons(IReadOnlyList<DecisionReason> source)
+        {
+            var clone = new List<DecisionReason>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                DecisionReason reason = source[i];
+                clone.Add(new DecisionReason
+                {
+                    ReasonId = reason.ReasonId,
+                    SourceId = reason.SourceId,
+                    ScoreDelta = reason.ScoreDelta,
+                });
+            }
+
+            return clone;
+        }
+
         private static int CompareAgentsForSimulation(AgentState left, AgentState right)
         {
             int ordinal = left.SimulationOrdinal.CompareTo(right.SimulationOrdinal);
@@ -151,29 +257,11 @@ namespace Desk42.Institutional
             SocietyState state,
             SimulationInput input,
             AgentDecision decision,
-            List<SocietyEvent> events,
-            HashSet<string> claimedOpportunityIds)
+            List<SocietyEvent> events)
         {
             AgentState actor = state.GetAgent(decision.ActorId);
             if (actor == null)
                 throw new InvalidOperationException($"Decision actor no longer exists: {decision.ActorId}");
-
-            if (!string.IsNullOrEmpty(decision.OpportunityId) &&
-                !claimedOpportunityIds.Add(decision.OpportunityId))
-            {
-                SocietyEvent unavailable = NewEvent(
-                    decision.Tick,
-                    input.IncidentId,
-                    SocietyEventKind.NoActionObserved,
-                    actor.StableId,
-                    decision.OpportunityId,
-                    null,
-                    EvidenceVisibility.Observable,
-                    decision.DecisionId);
-                unavailable.OpportunityId = decision.OpportunityId;
-                events.Add(unavailable);
-                return;
-            }
 
             switch (decision.Action)
             {
@@ -362,8 +450,9 @@ namespace Desk42.Institutional
             AgentDecision decision,
             List<SocietyEvent> events)
         {
-            bool wasPending = actor.Standing.IsRecognised("appeal-pending");
-            actor.Standing.SetRecognised("appeal-pending", true);
+            // This pulse records the autonomous filing attempt only. Whether it becomes
+            // a pending institutional appeal is decided by the authority pipeline; the
+            // generic agent layer must not mutate official status speculatively.
             SocietyEvent societyEvent = NewEvent(
                 decision.Tick,
                 input.IncidentId,
@@ -374,13 +463,6 @@ namespace Desk42.Institutional
                 EvidenceVisibility.OfficialRecord,
                 decision.DecisionId);
             societyEvent.OpportunityId = decision.OpportunityId;
-            societyEvent.Deltas.Add(new StateDelta
-            {
-                EntityId = actor.StableId,
-                FieldId = "official-status:appeal-pending",
-                Before = wasPending ? 1 : 0,
-                After = 1,
-            });
             events.Add(societyEvent);
         }
 

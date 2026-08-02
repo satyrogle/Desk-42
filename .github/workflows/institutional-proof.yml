@@ -5,24 +5,40 @@ on:
     paths:
       - 'Assets/_Project/Scripts/Institutional/**'
       - 'Assets/_Project/Tests/EditMode/Institutional*.cs'
+      - 'Assets/_Project/Tests/EditMode/Institutional*.cs.meta'
+      - 'Assets/_Project/Tests/EditMode/SocietyStateDeepCopyTests.cs*'
+      - 'Assets/_Project/Tests/EditMode/Scenarios/**'
+      - 'Assets/_Project/Presentation/**'
+      - 'Assets/_Project/Presentation.meta'
       - 'Assets/_Project/Tests/EditMode/Desk42.Tests.EditMode.asmdef'
+      - 'Assets/_Project/Tests/EditMode/Desk42.Tests.EditMode.asmdef.meta'
       - 'DESK42_SYSTEM_CONSTITUTION.md'
+      - 'Docs/Institutional/**'
+      - 'evidence/InstitutionalEngine/**'
       - 'ProjectSettings/ProjectVersion.txt'
       - 'Packages/manifest.json'
       - 'Packages/packages-lock.json'
       - '.github/workflows/institutional-proof.yml'
-      - 'tools/ci/Assert-UnityTestResults.ps1'
+      - 'tools/ci/*.ps1'
   pull_request:
     paths:
       - 'Assets/_Project/Scripts/Institutional/**'
       - 'Assets/_Project/Tests/EditMode/Institutional*.cs'
+      - 'Assets/_Project/Tests/EditMode/Institutional*.cs.meta'
+      - 'Assets/_Project/Tests/EditMode/SocietyStateDeepCopyTests.cs*'
+      - 'Assets/_Project/Tests/EditMode/Scenarios/**'
+      - 'Assets/_Project/Presentation/**'
+      - 'Assets/_Project/Presentation.meta'
       - 'Assets/_Project/Tests/EditMode/Desk42.Tests.EditMode.asmdef'
+      - 'Assets/_Project/Tests/EditMode/Desk42.Tests.EditMode.asmdef.meta'
       - 'DESK42_SYSTEM_CONSTITUTION.md'
+      - 'Docs/Institutional/**'
+      - 'evidence/InstitutionalEngine/**'
       - 'ProjectSettings/ProjectVersion.txt'
       - 'Packages/manifest.json'
       - 'Packages/packages-lock.json'
       - '.github/workflows/institutional-proof.yml'
-      - 'tools/ci/Assert-UnityTestResults.ps1'
+      - 'tools/ci/*.ps1'
   workflow_dispatch:
 
 permissions:
@@ -50,19 +66,35 @@ jobs:
       matrix:
         include:
           - suite: institutional-targeted
-            custom_parameters: '-testFilter "Desk42.Tests.EditMode.InstitutionalAgentSimulationTests;Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests"'
+            custom_parameters: '-testFilter "Desk42.Tests.EditMode.Institutional;Desk42.Tests.EditMode.Scenarios"'
             allowed_skips: ''
-            required_fixtures: 'Desk42.Tests.EditMode.InstitutionalAgentSimulationTests;Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests'
+            required_fixtures: 'Desk42.Tests.EditMode.InstitutionalAgentSimulationTests;Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests;Desk42.Tests.EditMode.InstitutionalScenarioDefinitionTests;Desk42.Tests.EditMode.InstitutionalScenarioEngineTests;Desk42.Tests.EditMode.InstitutionalCausalGraphValidatorTests;Desk42.Tests.EditMode.InstitutionalDecisionResolutionTests;Desk42.Tests.EditMode.Scenarios'
           - suite: full-editmode
             custom_parameters: ''
             allowed_skips: 'Desk42.Tests.EditMode.SynergyResolverTests.WIRING_GAP_DurationAndCostChains_HaveNoStructuredPerStepTrace'
-            required_fixtures: 'Desk42.Tests.EditMode.InstitutionalAgentSimulationTests;Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests'
+            required_fixtures: 'Desk42.Tests.EditMode.InstitutionalAgentSimulationTests;Desk42.Tests.EditMode.InstitutionalConsequenceLoopTests;Desk42.Tests.EditMode.Scenarios'
 
     steps:
       - name: Check out exact workflow commit
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          fetch-depth: 0
           lfs: true
+
+      - name: Test institutional CI policy
+        shell: pwsh
+        run: ./tools/ci/Test-InstitutionalGatePolicy.ps1
+
+      - name: Enforce data-only scenario assembly boundary
+        shell: pwsh
+        run: ./tools/ci/Assert-InstitutionalScenarioAuthoringBoundary.ps1
+
+      - name: Verify frozen candidate or second-scenario history
+        shell: pwsh
+        run: >-
+          ./tools/ci/Assert-InstitutionalGeneralisationGate.ps1
+          -ScenarioCommit HEAD
+          -ScenarioName GlassCanal
 
       - name: Verify pinned project inputs
         shell: pwsh
@@ -104,6 +136,8 @@ jobs:
         run: |
           $root = 'TestResults/${{ matrix.suite }}'
           New-Item -ItemType Directory -Path $root -Force | Out-Null
+          ./tools/ci/Get-InstitutionalEngineManifest.ps1 `
+            -OutputPath "$root/engine-candidate.sha256" | Out-Null
           $metadata = [ordered]@{
             commitSha = '${{ github.sha }}'
             ref = '${{ github.ref }}'
@@ -120,10 +154,10 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $changes = git status --porcelain --untracked-files=no
+          $changes = git status --porcelain=v1 --untracked-files=all
           if ($changes) {
             $changes | Write-Host
-            throw 'Unity or Package Manager modified tracked repository inputs.'
+            throw 'Unity or Package Manager modified or created repository inputs.'
           }
 
       - name: Upload Unity results and metadata

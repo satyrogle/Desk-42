@@ -198,14 +198,14 @@ the causal agent action, the ruling relied upon, the abandoned alternative,
 and irreversible effects. Reversal creates further consequences rather than
 rewinding history.
 
-## Eighteen-cycle authored calendar
+## Eighteen executable cycles plus baseline initialization
 
 The calendar opens windows and deadlines. It may not directly select agent
 actions or perform institutional transitions.
 
 | Cycle | Authored opening | Systemic result when selected/eligible |
 | ---: | --- | --- |
-| 0 | Seed baseline `CF-9` entitlement for Vey through a recorded baseline ruling | one exclusive entitlement exists |
+| 0 | Seed baseline `CF-9` entitlement for Vey as authored pre-run state | one exclusive entitlement observation exists; no ruling is invented |
 | 1 | Cloud discharge reaches Mara's cistern | lived event, health/water pressure and embodied belief |
 | 2 | Open one sealed-sample opportunity and routine work | ranked contention and fallback |
 | 3 | Open drain-telemetry disclosure | evidence may enter from autonomous disclosure |
@@ -288,6 +288,8 @@ after leaving its registered parcel until physical dissipation.
 - Sera autonomously appeals the later denial.
 - The matching holding changes the later disposition and atomically transfers
   `CF-9` from Vey to Sera.
+- The transfer declaration cites the exact later appellate ruling and holding;
+  a case-level search may not choose its cause.
 
 This is the one configuration required to produce the complete causal chain.
 

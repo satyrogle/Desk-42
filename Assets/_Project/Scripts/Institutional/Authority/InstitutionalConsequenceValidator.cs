@@ -332,9 +332,9 @@ namespace Desk42.Institutional
                 RequireAllExist(holding.SupportingEvidenceArtifactIds, evidenceIds,
                     $"Holding {holding.HoldingId} references missing evidence");
                 Ruling sourceRuling = FindRuling(report, holding.SourceRulingId);
-                Require(sourceRuling != null && new HashSet<string>(
-                        sourceRuling.EvidenceArtifactIds, StringComparer.Ordinal)
-                    .SetEquals(holding.SupportingEvidenceArtifactIds),
+                Require(sourceRuling != null && IsNonEmptyOrdinalSubset(
+                        holding.SupportingEvidenceArtifactIds,
+                        sourceRuling.EvidenceArtifactIds),
                     $"Holding {holding.HoldingId} was not derived from its source ruling evidence.");
                 Appeal sourceAppeal = FindAppeal(report, holding.SourceAppealId);
                 OfficialFinding sourceFinding = FindFinding(report, sourceRuling.FindingId);
@@ -548,6 +548,17 @@ namespace Desk42.Institutional
             if (references == null) throw new InvalidOperationException($"{message}: null list.");
             for (int i = 0; i < references.Count; i++)
                 Require(available.Contains(references[i]), $"{message}: {references[i]}.");
+        }
+
+        private static bool IsNonEmptyOrdinalSubset(
+            List<string> subset,
+            List<string> superset)
+        {
+            if (subset == null || subset.Count == 0 || superset == null) return false;
+            var subsetIds = new HashSet<string>(subset, StringComparer.Ordinal);
+            if (subsetIds.Count != subset.Count) return false;
+            var supersetIds = new HashSet<string>(superset, StringComparer.Ordinal);
+            return supersetIds.IsSupersetOf(subsetIds);
         }
 
         private static void Require(bool condition, string message)

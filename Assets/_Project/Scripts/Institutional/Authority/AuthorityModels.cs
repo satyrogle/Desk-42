@@ -45,8 +45,10 @@ namespace Desk42.Institutional
         internal string OpportunityId;
         internal string SubjectBeliefId;
         internal int UtilityScore;
+        internal int SelectedCandidateRank;
         internal List<DecisionReason> Reasons = new();
         internal List<CandidateEvaluation> CandidateEvaluations = new();
+        internal List<CapacityReservationTrace> CapacityReservations = new();
         internal List<string> ResultEventIds = new();
         internal AgentPerception PerceptionSnapshot;
         internal InstitutionalRegimeState RegimeSnapshot;
@@ -77,6 +79,21 @@ namespace Desk42.Institutional
         internal string HouseholdAgentId;
         internal int HouseholdSubsistenceBefore;
         internal int HouseholdSubsistenceAfter;
+        internal List<RelianceAppliedEffect> AppliedEffects = new();
+    }
+
+    [Serializable]
+    internal sealed class RelianceAppliedEffect
+    {
+        internal string EffectId;
+        internal string AgentId;
+        internal int ResourceBefore;
+        internal int ResourceAfter;
+        internal bool HasNeedEffect;
+        internal NeedKind Need;
+        internal int NeedPressureBefore;
+        internal int NeedPressureAfter;
+        internal string MaterialConsequenceId;
     }
 
     internal sealed class EconomicAccountState

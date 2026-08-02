@@ -1,0 +1,16 @@
+{
+    "name": "Desk42.Institutional.Scenarios",
+    "rootNamespace": "Desk42.Institutional.Scenarios",
+    "references": [
+        "Desk42.Institutional.Domain"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

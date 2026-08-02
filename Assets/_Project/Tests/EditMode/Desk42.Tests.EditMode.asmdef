@@ -5,6 +5,7 @@
         "Desk42.Core",
         "Desk42.Institutional.Domain",
         "Desk42.Institutional.Authority",
+        "Desk42.Institutional.Scenarios",
         "Desk42.Institutional.Runtime",
         "Newtonsoft.Json",
         "UnityEngine.TestRunner",

@@ -80,6 +80,9 @@ namespace Desk42.Institutional
         RelianceSpent,
         WagesLost,
         BackpayAwarded,
+        ResourceGranted,
+        ResourceRevoked,
+        NeedPressureChanged,
     }
 
     public enum InstitutionalTimelineKind
@@ -133,6 +136,12 @@ namespace Desk42.Institutional
         public string CaseId;
         public long EnteredCycle;
         public EvidenceArtifactKind Kind;
+        // Scenario-neutral evidence taxonomy. Kind remains for v0.1 report
+        // compatibility; new scenarios route policy weight through this opaque ID.
+        public string EvidenceClassId;
+        // Opaque declarative template identity used to prove that authored appeal
+        // and holding evidence selections match their runtime artifacts exactly.
+        public string SourceTemplateId;
         public string IssueId;
         public string PropositionId;
         public string OfficialEmployerId;
@@ -212,6 +221,7 @@ namespace Desk42.Institutional
         public string OfficialIssueId;
         public string OfficialIdentityConditionId;
         public string OfficialEmployerId;
+        public CaseFactSet Facts = new();
         public List<string> ConnectedAgentIds = new();
         public List<string> SourceActionEventIds = new();
         public List<string> CitedHoldingIds = new();
@@ -240,8 +250,13 @@ namespace Desk42.Institutional
         public string BoundAgentId;
         public string BoundEmployerId;
         public string IdentityConditionId;
+        public CaseFactSet RequiredFacts = new();
         public bool Retrospective;
 
+        /// <summary>
+        /// Preserves the original participant/employer/identity scope contract.
+        /// Fact requirements are evaluated by the fact overload or the combined overload.
+        /// </summary>
         public bool AppliesTo(string agentId, string employerId, string identityConditionId)
         {
             if (!string.Equals(IdentityConditionId, identityConditionId, StringComparison.Ordinal))
@@ -258,6 +273,32 @@ namespace Desk42.Institutional
                 default:
                     return false;
             }
+        }
+
+        /// <summary>
+        /// Applies this scope's generic requirements as an all-of match. A legacy scope
+        /// with no fact requirements imposes no additional fact restriction.
+        /// </summary>
+        public bool AppliesTo(CaseFactSet facts)
+        {
+            if (facts == null) throw new ArgumentNullException(nameof(facts));
+            facts.Validate();
+
+            if (RequiredFacts == null) return true;
+            RequiredFacts.Validate();
+            return facts.ContainsAll(RequiredFacts);
+        }
+
+        /// <summary>
+        /// Evaluates both the legacy scope dimensions and generic fact requirements.
+        /// </summary>
+        public bool AppliesTo(
+            string agentId,
+            string employerId,
+            string identityConditionId,
+            CaseFactSet facts)
+        {
+            return AppliesTo(agentId, employerId, identityConditionId) && AppliesTo(facts);
         }
     }
 
@@ -295,7 +336,13 @@ namespace Desk42.Institutional
         public string CauseId;
         public string AgentId;
         public MaterialConsequenceKind Kind;
+        public string KindId;
+        public string ResourceId;
         public int ResourceDelta;
+        public bool HasNeedEffect;
+        public NeedKind Need;
+        public int NeedPressureBefore;
+        public int NeedPressureAfter;
     }
 
     /// <summary>
@@ -312,7 +359,24 @@ namespace Desk42.Institutional
         public string EnablingMutationId;
         public string SourceActionEventId;
         public string RecordedChoiceId;
+        public string AbandonedAlternativeId;
+        public string ResourceId;
         public int RecordedResourceDelta;
+    }
+
+    /// <summary>
+    /// Public state of one exclusive, conserved entitlement. The resource and holder
+    /// identifiers are opaque; workplace allocation remains a legacy projection.
+    /// </summary>
+    [Serializable]
+    public sealed class ExclusiveEntitlementObservation
+    {
+        public string EntitlementId;
+        public string ResourceId;
+        public string HolderStatusId;
+        public int ConservedAmount;
+        public string CurrentHolderAgentId;
+        public string LastMutationCauseId;
     }
 
     [Serializable]
@@ -377,6 +441,7 @@ namespace Desk42.Institutional
         public List<RelianceObservation> RelianceObservations = new();
         public List<MaterialConsequence> MaterialConsequences = new();
         public List<ConnectedOutcomePair> ConnectedOutcomes = new();
+        public List<ExclusiveEntitlementObservation> ExclusiveEntitlements = new();
         public List<WorkAllocationObservation> WorkAllocations = new();
         public List<InstitutionalTimelineEntry> Timeline = new();
     }

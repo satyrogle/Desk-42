@@ -394,107 +394,7 @@ namespace Desk42.Institutional
 
         private static void CaptureAgentActions(LoopContext context, SimulationStepResult step)
         {
-            for (int decisionIndex = 0; decisionIndex < step.Decisions.Count; decisionIndex++)
-            {
-                AgentDecision decision = step.Decisions[decisionIndex];
-                var trace = new AgentActionTrace
-                {
-                    Cycle = step.Tick,
-                    DecisionId = decision.DecisionId,
-                    CandidateId = decision.CandidateId,
-                    ActorId = decision.ActorId,
-                    Action = decision.Action,
-                    TargetId = decision.TargetId,
-                    OpportunityId = decision.OpportunityId,
-                    SubjectBeliefId = decision.SubjectBeliefId,
-                    UtilityScore = decision.Score,
-                    PerceptionSnapshot = decision.PerceptionSnapshot,
-                    RegimeSnapshot = decision.RegimeSnapshot,
-                    InputSnapshot = decision.InputSnapshot,
-                };
-                for (int reasonIndex = 0; reasonIndex < decision.Reasons.Count; reasonIndex++)
-                {
-                    DecisionReason reason = decision.Reasons[reasonIndex];
-                    trace.Reasons.Add(new DecisionReason
-                    {
-                        ReasonId = reason.ReasonId,
-                        SourceId = reason.SourceId,
-                        ScoreDelta = reason.ScoreDelta,
-                    });
-                }
-                for (int candidateIndex = 0;
-                     candidateIndex < decision.CandidateEvaluations.Count;
-                     candidateIndex++)
-                {
-                    CandidateEvaluation source = decision.CandidateEvaluations[candidateIndex];
-                    var evaluation = new CandidateEvaluation
-                    {
-                        CandidateId = source.CandidateId,
-                        Action = source.Action,
-                        TargetId = source.TargetId,
-                        OpportunityId = source.OpportunityId,
-                        SubjectBeliefId = source.SubjectBeliefId,
-                        Score = source.Score,
-                    };
-                    for (int reasonIndex = 0; reasonIndex < source.Reasons.Count; reasonIndex++)
-                    {
-                        DecisionReason reason = source.Reasons[reasonIndex];
-                        evaluation.Reasons.Add(new DecisionReason
-                        {
-                            ReasonId = reason.ReasonId,
-                            SourceId = reason.SourceId,
-                            ScoreDelta = reason.ScoreDelta,
-                        });
-                    }
-                    trace.CandidateEvaluations.Add(evaluation);
-                }
-
-                SocietyEvent causedEvent = null;
-                for (int eventIndex = 0; eventIndex < step.Events.Count; eventIndex++)
-                {
-                    SocietyEvent candidate = step.Events[eventIndex];
-                    if (!string.Equals(candidate.CauseDecisionId, decision.DecisionId,
-                        StringComparison.Ordinal)) continue;
-                    trace.ResultEventIds.Add(candidate.EventId);
-                    if (causedEvent == null) causedEvent = candidate;
-                }
-                context.Run.AssessorActionTraces.Add(trace);
-                if (causedEvent == null) continue;
-                context.Report.ObservedAgentActions.Add(new ObservedAgentAction
-                {
-                    Cycle = step.Tick,
-                    ActionEventId = causedEvent.EventId,
-                    ActorId = causedEvent.ActorId,
-                    Activity = PlayerActivity(causedEvent.Kind),
-                    TargetId = PlayerTarget(causedEvent),
-                });
-            }
-        }
-
-        private static ObservedActivityKind PlayerActivity(SocietyEventKind kind)
-        {
-            switch (kind)
-            {
-                case SocietyEventKind.WorkPerformed:
-                    return ObservedActivityKind.WorkPerformed;
-                case SocietyEventKind.AidRequested:
-                    return ObservedActivityKind.AidRequested;
-                case SocietyEventKind.AssistanceGiven:
-                    return ObservedActivityKind.AssistanceGiven;
-                case SocietyEventKind.EvidenceDisclosed:
-                    return ObservedActivityKind.EvidenceSubmitted;
-                case SocietyEventKind.AppealFiled:
-                    return ObservedActivityKind.AppealFiled;
-                default:
-                    return ObservedActivityKind.NoVisibleAction;
-            }
-        }
-
-        private static string PlayerTarget(SocietyEvent societyEvent)
-        {
-            return societyEvent.Kind == SocietyEventKind.ResponseWithheld
-                ? null
-                : societyEvent.TargetId;
+            InstitutionalActionProjector.Capture(context.Run, step);
         }
 
         private static void ProjectAgentActions(LoopContext context, SimulationStepResult step)
@@ -874,13 +774,16 @@ namespace Desk42.Institutional
             {
                 ApplyStatusMutation(context, ruling, context.Roles.PrimaryClaimantId,
                     "identity-continuity", true, 0);
-                OfficialStatusMutation entitlement = ApplyStatusMutation(
+                StatusMutationResult entitlement = ApplyStatusMutation(
                     context, ruling, context.Roles.PrimaryClaimantId,
                     TreatmentEntitlementStatusId, true, 0);
                 ApplyStatusMutation(context, ruling, context.Roles.PrimaryClaimantId,
                     "adverse-decision", false, 0);
                 if (rulingDisposition == RulingDisposition.ProvisionallyRecognised)
                 {
+                    if (!entitlement.Changed || entitlement.RecordedMutation == null)
+                        throw new InvalidOperationException(
+                            "Provisional entitlement must create an official mutation.");
                     ApplyStatusMutation(context, ruling, context.Roles.PrimaryClaimantId,
                         "provisional-relief-paid", true, context.Policy.ProvisionalReliefAmount);
                     AddMaterial(context, 5, ruling.RulingId, context.Roles.PrimaryClaimantId,
@@ -891,7 +794,7 @@ namespace Desk42.Institutional
                     {
                         OpportunityId = "aid-opportunity:continuity-treatment",
                         PurposeId = TreatmentAidPurposeId,
-                        SourceCauseId = entitlement.MutationId,
+                        SourceCauseId = entitlement.RecordedMutation.MutationId,
                         RequiredOfficialStatusId = TreatmentEntitlementStatusId,
                         UtilityBonus = 40,
                         EligibleAgentIds = new List<string> { context.Roles.PrimaryClaimantId },
@@ -1285,56 +1188,20 @@ namespace Desk42.Institutional
             EvidenceEffect effect,
             int weight)
         {
-            return new EvidenceArtifact
-            {
-                ArtifactId = $"artifact:{societyEvent.EventId}",
-                CaseId = caseId,
-                EnteredCycle = societyEvent.Tick,
-                Kind = kind,
-                IssueId = ContinuityIssueId,
-                PropositionId = propositionId,
-                Effect = effect,
-                BaseWeight = weight,
-                Reliability = societyEvent.EvidenceReliability > 0
-                    ? societyEvent.EvidenceReliability
-                    : 100,
-                OfficiallySubmitted = true,
-                SuppressedByAgentId = societyEvent.EvidenceSuppressedByAgentId,
-                KnownByAgentIds = new List<string> { societyEvent.ActorId },
-                EnteredAfterInitialRuling = societyEvent.Tick > 5,
-                Provenance = new EvidenceProvenance
-                {
-                    ProvenanceId = $"provenance:{societyEvent.EventId}",
-                    CreatedCycle = societyEvent.Tick,
-                    SourceAgentId = societyEvent.ActorId,
-                    SourceDecisionId = societyEvent.CauseDecisionId,
-                    SourceSocietyEventId = societyEvent.EventId,
-                    SourceRecordId = societyEvent.EvidenceSourceId ?? societyEvent.EvidenceId,
-                    Visibility = societyEvent.Visibility,
-                    CreatedByAgentAction = true,
-                    ChainOfCustodyIds = new List<string>
-                    {
-                        societyEvent.CauseDecisionId,
-                        societyEvent.EventId,
-                    },
-                },
-            };
+            return InstitutionalEvidencePipeline.FromAction(
+                societyEvent,
+                caseId,
+                ContinuityIssueId,
+                kind,
+                propositionId,
+                effect,
+                weight,
+                5);
         }
 
         private static void AddEvidence(LoopContext context, EvidenceArtifact artifact)
         {
-            if (artifact == null) return;
-            for (int i = 0; i < context.Report.EvidenceArtifacts.Count; i++)
-                if (string.Equals(context.Report.EvidenceArtifacts[i].ArtifactId,
-                    artifact.ArtifactId, StringComparison.Ordinal)) return;
-            context.Report.EvidenceArtifacts.Add(artifact);
-            FindObservedAction(context.Report, artifact.Provenance.SourceSocietyEventId)?.ResultEvidenceArtifactIds
-                .Add(artifact.ArtifactId);
-            AddTimeline(context.Report, artifact.EnteredCycle,
-                InstitutionalTimelineKind.EvidenceEntered,
-                artifact.Provenance.SourceSocietyEventId,
-                artifact.Provenance.SourceAgentId,
-                artifact.ArtifactId);
+            InstitutionalEvidencePipeline.Add(context.Run, artifact);
         }
 
         private static void LinkEvidenceToAuthoritativeBelief(
@@ -1342,20 +1209,11 @@ namespace Desk42.Institutional
             SocietyEvent societyEvent,
             EvidenceArtifact artifact)
         {
-            for (int i = 0; i < context.Run.AuthoritativeBeliefLinks.Count; i++)
-            {
-                AuthoritativeBeliefLink link = context.Run.AuthoritativeBeliefLinks[i];
-                if (!string.Equals(link.AgentId, societyEvent.ActorId, StringComparison.Ordinal) ||
-                    !string.Equals(link.BeliefId, societyEvent.EvidenceBeliefId,
-                        StringComparison.Ordinal)) continue;
-                context.Run.AuthoritativeEvidenceLinks.Add(new AuthoritativeEvidenceLink
-                {
-                    LivedEventId = link.LivedEventId,
-                    EvidenceArtifactId = artifact.ArtifactId,
-                    ObservationKindId = "observation.agent-representation",
-                });
-                return;
-            }
+            InstitutionalEvidencePipeline.LinkToAuthoritativeBelief(
+                context.Run,
+                societyEvent,
+                artifact,
+                "observation.agent-representation");
         }
 
         private static int ScoreEvidence(
@@ -1409,20 +1267,18 @@ namespace Desk42.Institutional
             int threshold,
             List<EvidenceArtifact> evidence)
         {
-            return new OfficialFinding
-            {
-                FindingId = $"finding:{caseId}:{phase}:{cycle}",
-                CaseId = caseId,
-                Cycle = cycle,
-                IssueId = ContinuityIssueId,
-                Disposition = disposition,
-                WeightedEvidenceScore = score,
-                RequiredScore = threshold,
-                EvidenceArtifactIds = CopyEvidenceIds(evidence),
-            };
+            return InstitutionalEvidencePipeline.CreateFinding(
+                caseId,
+                ContinuityIssueId,
+                cycle,
+                phase,
+                disposition,
+                score,
+                threshold,
+                evidence);
         }
 
-        private static OfficialStatusMutation ApplyStatusMutation(
+        private static StatusMutationResult ApplyStatusMutation(
             LoopContext context,
             Ruling ruling,
             string agentId,
@@ -1430,31 +1286,13 @@ namespace Desk42.Institutional
             bool recognised,
             int resourceDelta)
         {
-            AgentState agent = context.Society.GetAgent(agentId);
-            if (agent == null) throw new InvalidOperationException($"Unknown mutation target {agentId}.");
-            bool before = agent.Standing.IsRecognised(statusId);
-            if (before == recognised && resourceDelta == 0)
-                return FindLatestMutation(context.Report, agentId, statusId, recognised);
-
-            var mutation = new OfficialStatusMutation
-            {
-                MutationId = $"mutation:{ruling.Cycle}:{context.Report.OfficialStatusMutations.Count}:{agentId}:{statusId}",
-                Cycle = ruling.Cycle,
-                CauseId = ruling.RulingId,
-                AffectedAgentId = agentId,
-                StatusId = statusId,
-                BeforeRecognised = before,
-                AfterRecognised = recognised,
-                ResourceDelta = resourceDelta,
-            };
-            agent.Standing.SetRecognised(statusId, recognised);
-            if (resourceDelta != 0)
-                FindAccount(context, agentId).AvailableCredits += resourceDelta;
-            context.Report.OfficialStatusMutations.Add(mutation);
-            ruling.OfficialStatusMutationIds.Add(mutation.MutationId);
-            AddTimeline(context.Report, ruling.Cycle, InstitutionalTimelineKind.StatusMutated,
-                ruling.RulingId, agentId, statusId);
-            return mutation;
+            return InstitutionalStatusMutationService.Apply(
+                context.Run,
+                ruling,
+                agentId,
+                statusId,
+                recognised,
+                resourceDelta);
         }
 
         private static void AddMaterial(
@@ -1500,30 +1338,17 @@ namespace Desk42.Institutional
             string caseId,
             long maximumCycle)
         {
-            var result = new List<EvidenceArtifact>();
-            for (int i = 0; i < report.EvidenceArtifacts.Count; i++)
-            {
-                EvidenceArtifact artifact = report.EvidenceArtifacts[i];
-                if (artifact.EnteredCycle <= maximumCycle &&
-                    string.Equals(artifact.CaseId, caseId, StringComparison.Ordinal))
-                    result.Add(artifact);
-            }
-            result.Sort((left, right) => string.CompareOrdinal(left.ArtifactId, right.ArtifactId));
-            return result;
+            return InstitutionalEvidencePipeline.ForCase(report, caseId, maximumCycle);
         }
 
         private static List<string> CopyEvidenceIds(List<EvidenceArtifact> evidence)
         {
-            var ids = new List<string>(evidence.Count);
-            for (int i = 0; i < evidence.Count; i++) ids.Add(evidence[i].ArtifactId);
-            return ids;
+            return InstitutionalEvidencePipeline.CopyIds(evidence);
         }
 
         private static bool ContainsEvidenceKind(List<EvidenceArtifact> evidence, EvidenceArtifactKind kind)
         {
-            for (int i = 0; i < evidence.Count; i++)
-                if (evidence[i].Kind == kind) return true;
-            return false;
+            return InstitutionalEvidencePipeline.ContainsKind(evidence, kind);
         }
 
         private static WorkOpportunity FindWorkOpportunity(LoopContext context, string id)
@@ -1582,10 +1407,7 @@ namespace Desk42.Institutional
             InstitutionalConsequenceReport report,
             string resourceId)
         {
-            for (int i = 0; i < report.EvidenceArtifacts.Count; i++)
-                if (string.Equals(report.EvidenceArtifacts[i].OfficialResourceId, resourceId,
-                    StringComparison.Ordinal)) return report.EvidenceArtifacts[i];
-            return null;
+            return InstitutionalEvidencePipeline.FindByResource(report, resourceId);
         }
 
         private static WorkAllocationState FindAllocation(LoopContext context, string id)
@@ -1630,34 +1452,25 @@ namespace Desk42.Institutional
             string statusId,
             bool recognised)
         {
-            for (int i = report.OfficialStatusMutations.Count - 1; i >= 0; i--)
-            {
-                OfficialStatusMutation mutation = report.OfficialStatusMutations[i];
-                if (string.Equals(mutation.AffectedAgentId, agentId, StringComparison.Ordinal) &&
-                    string.Equals(mutation.StatusId, statusId, StringComparison.Ordinal) &&
-                    mutation.AfterRecognised == recognised) return mutation;
-            }
-            return null;
+            return InstitutionalStatusMutationService.FindLatest(
+                report,
+                agentId,
+                statusId,
+                recognised);
         }
 
         private static ObservedAgentAction FindObservedAction(
             InstitutionalConsequenceReport report,
             string actionEventId)
         {
-            for (int i = 0; i < report.ObservedAgentActions.Count; i++)
-                if (string.Equals(report.ObservedAgentActions[i].ActionEventId, actionEventId,
-                    StringComparison.Ordinal)) return report.ObservedAgentActions[i];
-            return null;
+            return InstitutionalTimeline.FindObservedAction(report, actionEventId);
         }
 
         private static DescendantCase FindDescendantCase(
             InstitutionalConsequenceReport report,
             string caseId)
         {
-            for (int i = 0; i < report.DescendantCases.Count; i++)
-                if (string.Equals(report.DescendantCases[i].CaseId, caseId,
-                    StringComparison.Ordinal)) return report.DescendantCases[i];
-            return null;
+            return InstitutionalTimeline.FindDescendantCase(report, caseId);
         }
 
         private static void ChangeNeedPressure(AgentState agent, NeedKind kind, int delta)
@@ -1680,15 +1493,7 @@ namespace Desk42.Institutional
             string subjectId,
             string detailId)
         {
-            report.Timeline.Add(new InstitutionalTimelineEntry
-            {
-                EntryId = $"timeline:{cycle}:{report.Timeline.Count}:{kind}",
-                Cycle = cycle,
-                Kind = kind,
-                CauseId = causeId,
-                SubjectId = subjectId,
-                DetailId = detailId,
-            });
+            InstitutionalTimeline.Add(report, cycle, kind, causeId, subjectId, detailId);
         }
 
         private sealed class LoopContext

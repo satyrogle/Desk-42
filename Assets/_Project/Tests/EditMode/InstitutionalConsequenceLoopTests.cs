@@ -622,7 +622,7 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
-        public void SharedOpportunity_IsConsumedOnceAfterFrozenDecisions()
+        public void SharedOpportunity_IsReservedOnceAndLoserUsesFrozenFallback()
         {
             SocietyState state = PrototypePopulationFactory.Create(ProofSeed);
             AgentState first = state.Agents.Single(value => value.SimulationOrdinal == 0);
@@ -657,14 +657,28 @@ namespace Desk42.Tests.EditMode
             List<SocietyEvent> claimed = result.Events.Where(value =>
                 value.OpportunityId == opportunityId &&
                 value.Kind == SocietyEventKind.AidRequested).ToList();
-            List<SocietyEvent> rejected = result.Events.Where(value =>
+            List<SocietyEvent> rejectedAtCapacity = result.Events.Where(value =>
                 value.OpportunityId == opportunityId &&
                 value.Kind == SocietyEventKind.NoActionObserved).ToList();
             Assert.AreEqual(1, claimed.Count);
             Assert.AreEqual(first.StableId, claimed[0].ActorId,
-                "Stable application order owns a contested opportunity.");
-            Assert.AreEqual(1, rejected.Count);
-            Assert.AreEqual(second.StableId, rejected[0].ActorId);
+                "Stable simulation ordinal owns a contested opportunity.");
+            Assert.IsEmpty(rejectedAtCapacity,
+                "Capacity rejection must not be emitted as the selected action.");
+
+            AgentDecision fallback = result.Decisions.Single(value =>
+                value.ActorId == second.StableId);
+            Assert.Greater(fallback.SelectedCandidateRank, 0);
+            Assert.IsNull(fallback.OpportunityId);
+            Assert.AreEqual(SocietyActionKind.Idle, fallback.Action);
+            CapacityReservationTrace rejected = fallback.CapacityReservations.Single(value =>
+                value.OpportunityId == opportunityId);
+            Assert.IsFalse(rejected.Awarded);
+            Assert.AreEqual(first.StableId, rejected.HolderActorId);
+            Assert.IsTrue(result.Events.Any(value =>
+                value.ActorId == second.StableId &&
+                value.Kind == SocietyEventKind.NoActionObserved &&
+                value.OpportunityId == null));
         }
 
         [Test]
@@ -704,6 +718,25 @@ namespace Desk42.Tests.EditMode
             winnerGrant.AffectedAgentId = pair.LoserAgentId;
             Assert.Throws<InvalidOperationException>(() =>
                 InstitutionalConsequenceValidator.Validate(oneSidedTransfer));
+        }
+
+        [Test]
+        public void ValidatorAcceptsHoldingSupportingStrictSubsetOfSourceRulingEvidence()
+        {
+            InstitutionalConsequenceReport report = Run(
+                InstitutionalPolicyConfigurations.PrecedentMachine());
+            Holding holding = report.Holdings.Single();
+            Ruling sourceRuling = report.Rulings.Single(value =>
+                value.RulingId == holding.SourceRulingId);
+
+            Assert.Greater(sourceRuling.EvidenceArtifactIds.Count, 1,
+                "The proof fixture must expose a strict evidence subset.");
+            holding.SupportingEvidenceArtifactIds = new List<string>
+            {
+                sourceRuling.EvidenceArtifactIds[0],
+            };
+
+            Assert.DoesNotThrow(() => InstitutionalConsequenceValidator.Validate(report));
         }
 
         private static InstitutionalConsequenceReport Run(InstitutionalPolicyConfiguration policy)

@@ -1,10 +1,18 @@
 using System;
+using System.Collections.Generic;
 
 namespace Desk42.Institutional
 {
+    [Serializable]
+    public sealed class EvidenceClassWeight
+    {
+        public string EvidenceClassId;
+        public int WeightPercent;
+    }
+
     /// <summary>
-    /// Immutable-in-practice executable rule bundle for the 15-cycle proof. The loop
-    /// reads these values; it never branches on the configuration label.
+    /// Immutable-in-practice executable institutional rule bundle. Preserved proof
+    /// and declarative scenario runners consume values, never configuration labels.
     /// </summary>
     [Serializable]
     public sealed class InstitutionalPolicyConfiguration
@@ -26,6 +34,7 @@ namespace Desk42.Institutional
         public int WitnessEvidenceWeightPercent;
         public int ManagementEvidenceWeightPercent;
         public int ActionRecordWeightPercent;
+        public List<EvidenceClassWeight> EvidenceClassWeights = new();
 
         public int InitialRecognitionThreshold;
         public int ProvisionalRecognitionThreshold;
@@ -57,6 +66,52 @@ namespace Desk42.Institutional
                     return ActionRecordWeightPercent;
                 default:
                     return 0;
+            }
+        }
+
+        public int WeightPercent(EvidenceArtifact artifact)
+        {
+            if (artifact == null) throw new ArgumentNullException(nameof(artifact));
+            if (!string.IsNullOrWhiteSpace(artifact.EvidenceClassId))
+            {
+                if (EvidenceClassWeights == null)
+                    throw new InvalidOperationException(
+                        "Opaque evidence classes require configured class weights.");
+                for (int i = 0; i < EvidenceClassWeights.Count; i++)
+                {
+                    EvidenceClassWeight configured = EvidenceClassWeights[i];
+                    if (string.Equals(configured.EvidenceClassId,
+                        artifact.EvidenceClassId, StringComparison.Ordinal))
+                    {
+                        return configured.WeightPercent;
+                    }
+                }
+                throw new InvalidOperationException(
+                    $"No policy weight is configured for opaque evidence class " +
+                    $"'{artifact.EvidenceClassId}'.");
+            }
+            return WeightPercent(artifact.Kind);
+        }
+
+        public void ValidateEvidenceClassCoverage(IEnumerable<string> evidenceClassIds)
+        {
+            if (evidenceClassIds == null) throw new ArgumentNullException(nameof(evidenceClassIds));
+            ValidateEvidenceClassWeights();
+            var configured = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < EvidenceClassWeights.Count; i++)
+                configured.Add(EvidenceClassWeights[i].EvidenceClassId);
+
+            foreach (string evidenceClassId in evidenceClassIds)
+            {
+                if (string.IsNullOrWhiteSpace(evidenceClassId))
+                    throw new InvalidOperationException(
+                        "Scenario evidence classes require non-blank identifiers.");
+                if (!configured.Contains(evidenceClassId))
+                {
+                    throw new InvalidOperationException(
+                        $"Policy '{PolicyConfigurationId}' does not cover evidence class " +
+                        $"'{evidenceClassId}'.");
+                }
             }
         }
 
@@ -94,6 +149,7 @@ namespace Desk42.Institutional
                 WitnessEvidenceWeightPercent = WitnessEvidenceWeightPercent,
                 ManagementEvidenceWeightPercent = ManagementEvidenceWeightPercent,
                 ActionRecordWeightPercent = ActionRecordWeightPercent,
+                EvidenceClassWeights = CloneEvidenceClassWeights(EvidenceClassWeights),
                 InitialRecognitionThreshold = InitialRecognitionThreshold,
                 ProvisionalRecognitionThreshold = ProvisionalRecognitionThreshold,
                 AppealRecognitionThreshold = AppealRecognitionThreshold,
@@ -125,6 +181,7 @@ namespace Desk42.Institutional
             ValidatePercent(WitnessEvidenceWeightPercent, nameof(WitnessEvidenceWeightPercent));
             ValidatePercent(ManagementEvidenceWeightPercent, nameof(ManagementEvidenceWeightPercent));
             ValidatePercent(ActionRecordWeightPercent, nameof(ActionRecordWeightPercent));
+            ValidateEvidenceClassWeights();
             if (DecisionVariationAmplitude < 0 || DecisionVariationAmplitude > 10)
                 throw new InvalidOperationException("Decision variation amplitude must be in [0, 10].");
             if (InitialRecognitionThreshold < 1 || AppealRecognitionThreshold < 1 ||
@@ -142,6 +199,42 @@ namespace Desk42.Institutional
         {
             if (value < 0 || value > 100)
                 throw new InvalidOperationException($"{field} must be in [0, 100].");
+        }
+
+        private void ValidateEvidenceClassWeights()
+        {
+            if (EvidenceClassWeights == null)
+                throw new InvalidOperationException("Evidence class weights cannot be null.");
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < EvidenceClassWeights.Count; i++)
+            {
+                EvidenceClassWeight configured = EvidenceClassWeights[i];
+                if (configured == null || string.IsNullOrWhiteSpace(configured.EvidenceClassId))
+                    throw new InvalidOperationException("Evidence class weight requires an ID.");
+                if (!ids.Add(configured.EvidenceClassId))
+                    throw new InvalidOperationException(
+                        $"Duplicate evidence class weight '{configured.EvidenceClassId}'.");
+                ValidatePercent(configured.WeightPercent,
+                    $"EvidenceClassWeights[{configured.EvidenceClassId}]");
+            }
+        }
+
+        private static List<EvidenceClassWeight> CloneEvidenceClassWeights(
+            List<EvidenceClassWeight> source)
+        {
+            var clone = new List<EvidenceClassWeight>();
+            if (source == null) return clone;
+            for (int i = 0; i < source.Count; i++)
+            {
+                EvidenceClassWeight configured = source[i];
+                if (configured == null) continue;
+                clone.Add(new EvidenceClassWeight
+                {
+                    EvidenceClassId = configured.EvidenceClassId,
+                    WeightPercent = configured.WeightPercent,
+                });
+            }
+            return clone;
         }
     }
 
