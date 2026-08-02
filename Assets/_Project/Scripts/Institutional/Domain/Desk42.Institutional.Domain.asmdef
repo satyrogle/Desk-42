@@ -1,0 +1,14 @@
+{
+    "name": "Desk42.Institutional.Domain",
+    "rootNamespace": "Desk42.Institutional",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

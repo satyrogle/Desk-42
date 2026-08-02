@@ -3,6 +3,9 @@
     "rootNamespace": "Desk42.Tests.EditMode",
     "references": [
         "Desk42.Core",
+        "Desk42.Institutional.Domain",
+        "Desk42.Institutional.Runtime",
+        "Newtonsoft.Json",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
@@ -11,7 +14,8 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll"
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": ["UNITY_INCLUDE_TESTS"],

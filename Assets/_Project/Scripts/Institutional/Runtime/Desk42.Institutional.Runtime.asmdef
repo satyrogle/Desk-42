@@ -1,0 +1,19 @@
+{
+    "name": "Desk42.Institutional.Runtime",
+    "rootNamespace": "Desk42.Institutional.Runtime",
+    "references": [
+        "Desk42.Institutional.Domain",
+        "Newtonsoft.Json"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
