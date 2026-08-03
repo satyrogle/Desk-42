@@ -1,6 +1,6 @@
 # Institutional Engine Candidate Boundary
 
-Status: v0.3.1 extraction and freeze contract.
+Status: v0.4 extraction and freeze contract.
 
 This document compares the preserved Workplace Identity proof with the Glass
 Canal discharge specification. It defines ownership and dependency direction;
@@ -49,7 +49,20 @@ Candidate v0.3.1 changes no executable or test behavior. It narrows the evidence
 wording above so the compatibility claim does not include malformed or extreme
 overflowing inputs.
 
-The v0.3.1 candidate is not established until its protected manifest and
+Literal implementation of Glass Canal then falsified one further v0.3.1 seam:
+the reliance service applied an irreversible action and published every public
+row on one shared cycle. It could not represent the frozen contract's cycle-7
+choice followed by cycle-8 public observation without either moving the causal
+action or leaking future-dated public rows early.
+
+Candidate v0.4 separates those clocks generically. The action cycle still owns
+the autonomous decision, authoritative reliance ledger, economic and need
+changes, and abandoned alternative. A run-owned assessor queue holds detached
+public snapshots until a declared observation cycle. The final phase of that
+cycle atomically publishes the reliance observation, material projections and
+timeline entry. Default `-1` remains same-cycle behavior for existing scenarios.
+
+The v0.4 candidate is not established until its protected manifest and
 immutable tag both exist. The gate fails closed while either is absent.
 
 ## Preserved pulse order
@@ -64,7 +77,11 @@ Every cycle retains one deterministic causal order:
 5. apply selected actions in the declared action-phase order;
 6. project observable actions and evidence into institutional state;
 7. resolve any deadline scheduled for that cycle;
-8. publish only the non-authoritative report surface.
+8. publish delayed public observations due on that cycle, after every other phase.
+
+The `-1` compatibility default still publishes same-cycle reliance rows during
+the action phase, preserving v0.3 behavior. Only an explicitly later observation
+cycle enters the assessor-owned queue and final public-projection phase.
 
 A deadline therefore cannot influence decisions already captured in its cycle.
 
@@ -163,6 +180,7 @@ future immutable report projection replaces the compatibility surface.
 | Connection | wage winner and loser | filter holder winner and loser | paired transfer observation |
 | Citation phase | successor initial ruling | later appellate ruling | exact case/ruling/holding citation declaration |
 | Primary opening | unconditionally active | autonomous sealed sample | causal activation available to primary and descendant cases |
+| Reliance visibility | action and public rows on one cycle | irreversible choice at cycle 7, observable effects at cycle 8 | separate action and bounded public-observation cycles |
 
 `WorkAllocationState`, employer IDs and identity-condition fields remain legacy
 compatibility surfaces for the preserved proof. New generic operations must not
@@ -193,18 +211,18 @@ Linux CI runner.
 
 ## Engine freeze rule
 
-The immutable tag `institutional-engine-candidate-v0.3.1` names the candidate
+The immutable tag `institutional-engine-candidate-v0.4` names the candidate
 commit. That commit tracks
-`evidence/InstitutionalEngine/v0.3.1/engine-manifest.sha256`. The baseline is
+`evidence/InstitutionalEngine/v0.4/engine-manifest.sha256`. The baseline is
 mandatory, and its Git blob at every later scenario commit and its checked-out
 file must remain clean relative to the byte-identical blob at the tag. The
 candidate commit's own CI verifies the baseline without demanding a second
 scenario.
 
-The v0.1, v0.2 and v0.3 tags and evidence directories remain historical
-evidence and are never used as aliases for v0.3.1. The v0.3.1 manifest must be
+The v0.1, v0.2, v0.3 and v0.3.1 tags and evidence directories remain historical
+evidence and are never used as aliases for v0.4. The v0.4 manifest must be
 generated from the fixed candidate itself; no earlier manifest hash may be
-copied forward as v0.3.1 evidence.
+copied forward as v0.4 evidence.
 
 After the freeze, Glass Canal may add only its scenario definition, its tests and
 optional non-executable presentation fixtures. The gate requires a clean worktree

@@ -27,6 +27,354 @@ namespace Desk42.Tests.EditMode
                 fixture.Run.Report));
         }
 
+        [TestCase("cause-decision")]
+        [TestCase("event-kind")]
+        [TestCase("opportunity")]
+        public void Validate_RejectsAReboundFinalSocietyActionEvent(
+            string corruption)
+        {
+            Fixture fixture = BuildValidFixture();
+            RelianceEvent reliance = fixture.Run.RelianceLedger.Single();
+            SocietyEvent source = fixture.Run.FinalSocietyState.EventLedger.Single(
+                value => value.EventId == reliance.SourceActionEventId);
+            switch (corruption)
+            {
+                case "cause-decision":
+                    source.CauseDecisionId = "decision:foreign";
+                    break;
+                case "event-kind":
+                    source.Kind = SocietyEventKind.AidRequested;
+                    break;
+                case "opportunity":
+                    source.OpportunityId = "opportunity:foreign";
+                    break;
+                default:
+                    Assert.Fail($"Unknown corruption '{corruption}'.");
+                    break;
+            }
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalCausalGraphValidator.Validate(fixture.Run));
+            StringAssert.Contains("exact final society event", exception.Message);
+        }
+
+        [Test]
+        public void Validate_AcceptsRelianceObservedAfterItsAuthoritativeAction()
+        {
+            Fixture fixture = BuildValidFixture();
+            RelianceObservation observation =
+                fixture.Run.Report.RelianceObservations.Single();
+            fixture.Run.RelianceLedger.Single().PublicObservationCycle = 6;
+            observation.Cycle = 6;
+            MaterialConsequence material =
+                fixture.Run.Report.MaterialConsequences.Single(value =>
+                    value.ConsequenceId == "material:reliance");
+            material.Cycle = 6;
+            fixture.Run.Report.Timeline.Single(value =>
+                value.Kind == InstitutionalTimelineKind.RelianceCreated).Cycle = 6;
+
+            Assert.DoesNotThrow(() =>
+                InstitutionalCausalGraphValidator.Validate(fixture.Run));
+
+            material.Cycle = 7;
+            InvalidOperationException materialCycleException =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalCausalGraphValidator.Validate(fixture.Run));
+            StringAssert.Contains("material-effect projection",
+                materialCycleException.Message);
+            material.Cycle = 6;
+            fixture.Run.RelianceLedger.Single().PublicObservationCycle = 4;
+            observation.Cycle = 4;
+            material.Cycle = 4;
+            fixture.Run.Report.Timeline.Single(value =>
+                value.Kind == InstitutionalTimelineKind.RelianceCreated).Cycle = 4;
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalCausalGraphValidator.Validate(fixture.Run));
+            StringAssert.Contains("invalid source action", exception.Message);
+        }
+
+        [TestCase("private-choice")]
+        [TestCase("abandoned-alternative")]
+        [TestCase("recorded-delta")]
+        [TestCase("status-trace")]
+        public void Validate_RejectsRelianceAuthorityEnvelopeTamper(string corruption)
+        {
+            Fixture fixture = BuildValidFixture();
+            RelianceEvent reliance = fixture.Run.RelianceLedger.Single();
+            RelianceObservation observation =
+                fixture.Run.Report.RelianceObservations.Single();
+            switch (corruption)
+            {
+                case "private-choice":
+                    reliance.ChoiceId = null;
+                    break;
+                case "abandoned-alternative":
+                    observation.AbandonedAlternativeId = "alternative:forged";
+                    break;
+                case "recorded-delta":
+                    observation.RecordedResourceDelta--;
+                    break;
+                case "status-trace":
+                    fixture.Run.AssessorActionTraces.Single(trace =>
+                            trace.ResultEventIds.Contains(
+                                reliance.SourceActionEventId))
+                        .InputSnapshot.WorkOpportunities.Single()
+                        .RequiredOfficialStatusId = "status:forged";
+                    break;
+                default:
+                    Assert.Fail($"Unknown corruption '{corruption}'.");
+                    break;
+            }
+
+            Assert.Throws<InvalidOperationException>(() =>
+                InstitutionalCausalGraphValidator.Validate(fixture.Run));
+        }
+
+        [Test]
+        public void Validate_RejectsTwoReliancesBoundToOneSourceAction()
+        {
+            Fixture fixture = BuildValidFixture();
+            RelianceEvent source = fixture.Run.RelianceLedger.Single();
+            fixture.Run.RelianceLedger.Add(new RelianceEvent
+            {
+                RelianceEventId = "reliance:duplicate-source",
+                Cycle = source.Cycle,
+                AgentId = source.AgentId,
+                BeneficiaryAgentId = source.BeneficiaryAgentId,
+                ReliedOnRulingId = source.ReliedOnRulingId,
+                ReliedOnMutationId = source.ReliedOnMutationId,
+                SourceActionEventId = source.SourceActionEventId,
+                SourceActionKind = source.SourceActionKind,
+                SourceOpportunityId = source.SourceOpportunityId,
+                RequiredStatusId = source.RequiredStatusId,
+                ExpectedRecognisedState = source.ExpectedRecognisedState,
+                ChoiceId = "choice:duplicate-source",
+                PublicObservationId = "observation:duplicate-source",
+                PublicObservationCycle = source.PublicObservationCycle,
+                RecordedChoiceId = "recorded-choice:duplicate-source",
+                ResourceId = source.ResourceId,
+                AbandonedAlternativeId = "alternative:duplicate-source",
+                ResourceSpent = 1,
+                AlternativeAvailableBefore = true,
+                AlternativeAvailableAfter = false,
+            });
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalCausalGraphValidator.Validate(fixture.Run));
+            StringAssert.Contains("reused by multiple reliance events",
+                exception.Message);
+        }
+
+        [Test]
+        public void Validate_RejectsRelianceOnASupersededStatusMutation()
+        {
+            Fixture fixture = BuildValidFixture();
+            Ruling ruling = AddRuling(
+                fixture.Run.Report,
+                "ruling:status-superseding",
+                "finding:status-superseding",
+                fixture.Run.Report.PrimaryCaseId,
+                "issue:recognition",
+                4,
+                RulingDisposition.Denied,
+                FindingDisposition.NotEstablished,
+                new List<string>());
+            InstitutionalTimelineEntry rulingTimeline =
+                fixture.Run.Report.Timeline.Single(value =>
+                    value.Kind == InstitutionalTimelineKind.RulingIssued &&
+                    value.CauseId == ruling.RulingId);
+            fixture.Run.Report.Timeline.Remove(rulingTimeline);
+            int insertionIndex = fixture.Run.Report.Timeline.FindIndex(value =>
+                value.Cycle > ruling.Cycle);
+            if (insertionIndex < 0) insertionIndex = fixture.Run.Report.Timeline.Count;
+            fixture.Run.Report.Timeline.Insert(insertionIndex, rulingTimeline);
+            var superseding = new OfficialStatusMutation
+            {
+                MutationId = "mutation:permit-superseding",
+                Cycle = 4,
+                CauseId = ruling.RulingId,
+                AffectedAgentId = "agent:a",
+                StatusId = "status:permit",
+                BeforeRecognised = true,
+                AfterRecognised = false,
+            };
+            fixture.Run.Report.OfficialStatusMutations.Add(superseding);
+            ruling.OfficialStatusMutationIds.Add(superseding.MutationId);
+            fixture.Run.Report.Timeline.Insert(
+                insertionIndex + 1,
+                new InstitutionalTimelineEntry
+                {
+                    EntryId = "timeline:4:mutation:permit-superseding",
+                    Cycle = 4,
+                    Kind = InstitutionalTimelineKind.StatusMutated,
+                    CauseId = ruling.RulingId,
+                    SubjectId = "agent:a",
+                    DetailId = "status:permit",
+                });
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalCausalGraphValidator.Validate(fixture.Run));
+            StringAssert.Contains("superseded before its action", exception.Message);
+        }
+
+        [TestCase("negative-resource")]
+        [TestCase("invalid-need")]
+        public void Validate_RejectsOutOfDomainRelianceEffectState(string corruption)
+        {
+            Fixture fixture = BuildValidFixture();
+            RelianceAppliedEffect effect =
+                fixture.Run.RelianceLedger.Single().AppliedEffects.Single();
+            MaterialConsequence material = fixture.Run.Report.MaterialConsequences.Single(
+                value => value.ConsequenceId == effect.MaterialConsequenceId);
+            if (corruption == "negative-resource")
+            {
+                effect.ResourceBefore = -1;
+                effect.ResourceAfter = -4;
+            }
+            else
+            {
+                effect.HasNeedEffect = true;
+                effect.Need = (NeedKind)999;
+                effect.NeedPressureBefore = 20;
+                effect.NeedPressureAfter = 20;
+                material.HasNeedEffect = true;
+                material.Need = (NeedKind)999;
+                material.NeedPressureBefore = 20;
+                material.NeedPressureAfter = 20;
+            }
+
+            Assert.Throws<InvalidOperationException>(() =>
+                InstitutionalCausalGraphValidator.Validate(fixture.Run));
+        }
+
+        [Test]
+        public void Validate_RejectsRelianceRecoveryBeforePublicObservation()
+        {
+            Fixture fixture = BuildValidFixture();
+            RelianceEvent reliance = fixture.Run.RelianceLedger.Single();
+            RelianceObservation observation =
+                fixture.Run.Report.RelianceObservations.Single();
+            reliance.PublicObservationCycle = 6;
+            observation.Cycle = 6;
+            fixture.Run.Report.MaterialConsequences.Single(value =>
+                value.ConsequenceId ==
+                reliance.AppliedEffects.Single().MaterialConsequenceId).Cycle = 6;
+            fixture.Run.Report.Timeline.Single(value =>
+                value.Kind == InstitutionalTimelineKind.RelianceCreated).Cycle = 6;
+
+            ConvertDescendantToValidRelianceRecovery(fixture);
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalCausalGraphValidator.Validate(fixture.Run));
+            StringAssert.Contains("recovery before its public observation",
+                exception.Message);
+        }
+
+        [Test]
+        public void Validate_AcceptsRecoveryFromExactReversalOfReliedOnRuling()
+        {
+            Fixture fixture = BuildValidFixture();
+            ConvertDescendantToValidRelianceRecovery(fixture);
+
+            Assert.DoesNotThrow(() =>
+                InstitutionalCausalGraphValidator.Validate(fixture.Run));
+        }
+
+        [Test]
+        public void Validate_RejectsMultipleRecoveryCasesForOneReliance()
+        {
+            Fixture fixture = BuildValidFixture();
+            RelianceEvent reliance = fixture.Run.RelianceLedger.Single();
+            Ruling recoveryRuling =
+                ConvertDescendantToValidRelianceRecovery(fixture);
+
+            var second = new DescendantCase
+            {
+                CaseId = "case:second-recovery",
+                ParentCaseId = fixture.Run.Report.PrimaryCaseId,
+                OpenedCycle = 6,
+                Kind = DescendantCaseKind.Reliance,
+                Status = DescendantCaseStatus.Open,
+                ParentCauseId = recoveryRuling.RulingId,
+                OriginatingEventId = reliance.SourceActionEventId,
+                OriginatingRulingId = recoveryRuling.RulingId,
+                CausalAgentActionId = reliance.SourceActionEventId,
+                ClaimantAgentId = reliance.AgentId,
+                RespondentId = "institution:second-respondent",
+                OfficialIssueId = "issue:recognition",
+                Facts = Facts(),
+                ConnectedAgentIds = new List<string> { "agent:a" },
+                SourceActionEventIds = new List<string>
+                {
+                    reliance.SourceActionEventId,
+                },
+            };
+            fixture.Run.Report.DescendantCases.Add(second);
+            ObservedAgentAction source = fixture.Run.Report.ObservedAgentActions.Single(
+                value => value.ActionEventId == reliance.SourceActionEventId);
+            source.ResultDescendantCaseIds.Add(second.CaseId);
+            int insertionIndex = fixture.Run.Report.Timeline.FindIndex(value =>
+                value.Cycle > second.OpenedCycle);
+            if (insertionIndex < 0) insertionIndex = fixture.Run.Report.Timeline.Count;
+            fixture.Run.Report.Timeline.Insert(
+                insertionIndex,
+                new InstitutionalTimelineEntry
+                {
+                    EntryId = "timeline:6:second-recovery",
+                    Cycle = 6,
+                    Kind = InstitutionalTimelineKind.DescendantCaseOpened,
+                    CauseId = second.ParentCauseId,
+                    SubjectId = second.CaseId,
+                    DetailId = DescendantCaseKind.Reliance.ToString(),
+                });
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalCausalGraphValidator.Validate(fixture.Run));
+            StringAssert.Contains("multiple recovery cases", exception.Message);
+        }
+
+        [Test]
+        public void Validate_RejectsRecoveryFromAnAppealOfAnotherRuling()
+        {
+            Fixture fixture = BuildValidFixture();
+            ConvertDescendantToValidRelianceRecovery(fixture);
+            fixture.Run.Report.Appeals.Single(value =>
+                    value.AppealId == "appeal:reliance-reversal")
+                .ChallengedRulingId = "ruling:initial";
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalCausalGraphValidator.Validate(fixture.Run));
+            StringAssert.Contains("does not reverse the exact ruling relied on",
+                exception.Message);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Validate_RejectsRelianceMaterialClassificationTamper(
+            bool resourceTamper)
+        {
+            Fixture fixture = BuildValidFixture();
+            MaterialConsequence material =
+                fixture.Run.Report.MaterialConsequences.Single(value =>
+                    value.ConsequenceId == "material:reliance");
+            if (resourceTamper)
+                material.ResourceId = "resource:forged";
+            else
+                material.Kind = MaterialConsequenceKind.ReliefPaid;
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalCausalGraphValidator.Validate(fixture.Run));
+            StringAssert.Contains("material-effect projection", exception.Message);
+        }
+
         [Test]
         public void Validate_RejectsDuplicateAndNullReportRows()
         {
@@ -132,6 +480,29 @@ namespace Desk42.Tests.EditMode
                 () => InstitutionalCausalGraphValidator.Validate(fixture.Run));
 
             StringAssert.Contains("unresolved or future cause", error.Message);
+        }
+
+        [Test]
+        public void Validate_RejectsOrphanMaterialFromRelianceAction()
+        {
+            Fixture fixture = BuildValidFixture();
+            fixture.Run.Report.MaterialConsequences.Add(new MaterialConsequence
+            {
+                ConsequenceId = "material:orphan-reliance",
+                Cycle = 5,
+                CauseId = "action:reliance",
+                AgentId = "agent:b",
+                Kind = MaterialConsequenceKind.ReliefPaid,
+                KindId = "material-kind:orphan-reliance",
+                ResourceId = "resource:credits",
+                ResourceDelta = 0,
+            });
+
+            InvalidOperationException error = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalCausalGraphValidator.Validate(fixture.Run));
+
+            StringAssert.Contains("not linked to an authoritative applied effect",
+                error.Message);
         }
 
         [Test]
@@ -257,6 +628,78 @@ namespace Desk42.Tests.EditMode
             InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
                 InstitutionalCausalGraphValidator.Validate(foreignFixture.Run));
             StringAssert.Contains("predates its case", error.Message);
+        }
+
+        private static Ruling ConvertDescendantToValidRelianceRecovery(
+            Fixture fixture)
+        {
+            InstitutionalConsequenceRun run = fixture.Run;
+            RelianceEvent reliance = run.RelianceLedger.Single();
+            ObservedAgentAction appealAction = AddAction(
+                run,
+                "action:reliance-reversal-appeal",
+                "decision:reliance-reversal-appeal",
+                "agent:b",
+                5,
+                SocietyActionKind.Appeal,
+                SocietyEventKind.AppealFiled,
+                ObservedActivityKind.AppealFiled);
+            var appeal = new Appeal
+            {
+                AppealId = "appeal:reliance-reversal",
+                CaseId = run.Report.PrimaryCaseId,
+                FiledCycle = 5,
+                HearingCycle = 6,
+                AppellantAgentId = "agent:b",
+                FilingActionEventId = appealAction.ActionEventId,
+                ChallengedRulingId = reliance.ReliedOnRulingId,
+                Disposition = AppealDisposition.Reversed,
+                ResultingRulingId = "ruling:reliance-reversal",
+                GroundsEvidenceArtifactIds = new List<string>
+                {
+                    "evidence:source",
+                },
+            };
+            run.Report.Appeals.Add(appeal);
+            InstitutionalTimeline.Add(
+                run.Report,
+                appeal.FiledCycle,
+                InstitutionalTimelineKind.AppealFiled,
+                appealAction.ActionEventId,
+                appeal.AppellantAgentId,
+                appeal.AppealId);
+            Ruling reversal = AddRuling(
+                run.Report,
+                appeal.ResultingRulingId,
+                "finding:reliance-reversal",
+                run.Report.PrimaryCaseId,
+                "issue:recognition",
+                6,
+                RulingDisposition.ReversedAndDenied,
+                FindingDisposition.NotEstablished,
+                new List<string> { "evidence:source" });
+            InstitutionalTimeline.Add(
+                run.Report,
+                reversal.Cycle,
+                InstitutionalTimelineKind.AppealHeard,
+                appeal.AppealId,
+                appeal.CaseId,
+                reversal.RulingId);
+
+            DescendantCase recovery = run.Report.DescendantCases.Single();
+            recovery.Kind = DescendantCaseKind.Reliance;
+            recovery.Status = DescendantCaseStatus.Open;
+            recovery.ParentCauseId = reversal.RulingId;
+            recovery.OriginatingRulingId = reversal.RulingId;
+            InstitutionalTimelineEntry opening = run.Report.Timeline.Single(value =>
+                value.Kind == InstitutionalTimelineKind.DescendantCaseOpened &&
+                value.SubjectId == recovery.CaseId);
+            opening.CauseId = reversal.RulingId;
+            opening.DetailId = DescendantCaseKind.Reliance.ToString();
+            reliance.SurvivedReversal = true;
+            run.Report.Timeline.Sort((left, right) =>
+                left.Cycle.CompareTo(right.Cycle));
+            return reversal;
         }
 
         private static void AddPreOpeningDescendantEvidence(
@@ -495,6 +938,19 @@ namespace Desk42.Tests.EditMode
                 SocietyActionKind.Work,
                 SocietyEventKind.WorkPerformed,
                 ObservedActivityKind.WorkPerformed);
+            AgentActionTrace relianceTrace = run.AssessorActionTraces.Single(value =>
+                value.ResultEventIds.Contains(relianceAction.ActionEventId));
+            relianceTrace.OpportunityId = "opportunity:reliance-work";
+            run.FinalSocietyState.EventLedger.Single(value =>
+                    value.EventId == relianceAction.ActionEventId)
+                .OpportunityId = relianceTrace.OpportunityId;
+            relianceTrace.InputSnapshot.WorkOpportunities.Add(new WorkOpportunity
+            {
+                OpportunityId = relianceTrace.OpportunityId,
+                RequiredOfficialStatusId = "status:permit",
+                RequiredOfficialStatusRecognised = true,
+                ParticipantAgentIds = new List<string> { "agent:a" },
+            });
             var relianceObservation = new RelianceObservation
             {
                 ObservationId = "reliance-observation:choice",
@@ -529,11 +985,33 @@ namespace Desk42.Tests.EditMode
                 ReliedOnRulingId = appealResult.RulingId,
                 ReliedOnMutationId = enablingMutation.MutationId,
                 SourceActionEventId = relianceAction.ActionEventId,
+                SourceActionKind = SocietyActionKind.Work,
+                SourceOpportunityId = relianceTrace.OpportunityId,
+                RequiredStatusId = "status:permit",
+                ExpectedRecognisedState = true,
                 ChoiceId = "choice:actual",
+                PublicObservationId = "reliance-observation:choice",
+                PublicObservationCycle = 5,
+                RecordedChoiceId = "choice:commit",
+                ResourceId = "resource:credits",
                 AbandonedAlternativeId = "alternative:safe",
                 ResourceSpent = 3,
                 AlternativeAvailableBefore = true,
                 AlternativeAvailableAfter = false,
+                AppliedEffects = new List<RelianceAppliedEffect>
+                {
+                    new()
+                    {
+                        EffectId = "effect:reliance-cost",
+                        AgentId = "agent:a",
+                        ResourceBefore = 10,
+                        ResourceAfter = 7,
+                        MaterialKind = MaterialConsequenceKind.RelianceSpent,
+                        MaterialKindId = "material-kind:reliance",
+                        ResourceId = "resource:credits",
+                        MaterialConsequenceId = "material:reliance",
+                    },
+                },
             });
             run.EconomicAccounts.Add(new EconomicAccountState
             {

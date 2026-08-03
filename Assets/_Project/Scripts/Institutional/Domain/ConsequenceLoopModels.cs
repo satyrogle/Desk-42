@@ -344,6 +344,11 @@ namespace Desk42.Institutional
         public List<string> ResultDescendantCaseIds = new();
     }
 
+    /// <summary>
+    /// Player-safe projection of a material effect. Cycle records when the effect
+    /// entered the public institutional record; assessor-only reliance state retains
+    /// the earlier physical action cycle when observation is delayed.
+    /// </summary>
     [Serializable]
     public sealed class MaterialConsequence
     {
@@ -439,7 +444,7 @@ namespace Desk42.Institutional
     [Serializable]
     public sealed class InstitutionalConsequenceReport
     {
-        public const string RulesetVersion = "institutional-consequence-loop-v0.2";
+        public const string RulesetVersion = "institutional-consequence-loop-v0.3";
 
         public string Ruleset = RulesetVersion;
         public int MasterSeed;

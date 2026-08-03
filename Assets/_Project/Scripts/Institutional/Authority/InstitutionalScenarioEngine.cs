@@ -107,6 +107,7 @@ namespace Desk42.Institutional
                 InstitutionalScenarioActionPhase.CreateDueRelianceRecoveries(context, cycle);
                 InstitutionalScenarioAdjudicationPhase.ExecuteDueStatusEffects(context, cycle);
                 InstitutionalScenarioEntitlementPhase.TransferDue(context, cycle);
+                InstitutionalPublicObservationProjector.ProjectDueReliance(run, cycle);
             }
 
             run.Report.FinalCycle = society.CurrentTick;

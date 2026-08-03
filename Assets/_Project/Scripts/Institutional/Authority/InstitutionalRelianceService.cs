@@ -9,6 +9,7 @@ namespace Desk42.Institutional
         InvalidRequest,
         DuplicateReliance,
         DuplicateObservation,
+        SourceActionAlreadyUsed,
         SourceActionNotObserved,
         SourceActionActorMismatch,
         AutonomousTraceNotFound,
@@ -56,6 +57,7 @@ namespace Desk42.Institutional
     {
         internal string RelianceEventId;
         internal string ObservationId;
+        internal long PublicObservationCycle = -1;
         internal string SourceActionEventId;
         internal string ActorAgentId;
         internal SocietyActionKind ExpectedActionKind;
@@ -80,6 +82,7 @@ namespace Desk42.Institutional
         internal RelianceEvent Reliance;
         internal RelianceObservation Observation;
         internal List<MaterialConsequence> MaterialConsequences = new();
+        internal bool PublicProjectionDeferred;
     }
 
     internal enum RelianceRecoveryFailureReason
@@ -141,11 +144,20 @@ namespace Desk42.Institutional
                 return Failed(requestFailure);
 
             ValidateCreationCollections(run);
+            HashSet<string> reservedPublicIds =
+                InstitutionalPublicObservationProjector.CaptureExistingPublicIds(
+                    run.Report);
+            ReservePendingPublicIds(run, reservedPublicIds);
 
             if (FindReliance(run, request.RelianceEventId) != null)
                 return Failed(RelianceFailureReason.DuplicateReliance);
-            if (FindObservation(run.Report, request.ObservationId) != null)
+            if (FindObservation(run.Report, request.ObservationId) != null ||
+                FindPendingObservation(run, request.ObservationId) != null)
                 return Failed(RelianceFailureReason.DuplicateObservation);
+            if (!reservedPublicIds.Add(request.ObservationId))
+                return Failed(RelianceFailureReason.DuplicateObservation);
+            if (FindRelianceBySourceAction(run, request.SourceActionEventId) != null)
+                return Failed(RelianceFailureReason.SourceActionAlreadyUsed);
 
             ObservedAgentAction action = InstitutionalTimeline.FindObservedAction(
                 run.Report,
@@ -155,17 +167,54 @@ namespace Desk42.Institutional
             if (!string.Equals(action.ActorId, request.ActorAgentId,
                     StringComparison.Ordinal))
                 return Failed(RelianceFailureReason.SourceActionActorMismatch);
+            long publicObservationCycle = request.PublicObservationCycle < 0
+                ? action.Cycle
+                : request.PublicObservationCycle;
+            if (publicObservationCycle < action.Cycle)
+                return Failed(RelianceFailureReason.InvalidChronology);
+            bool deferPublicProjection = publicObservationCycle > action.Cycle;
 
-            AgentActionTrace trace = FindTrace(run, request.SourceActionEventId);
-            if (trace == null ||
+            AgentActionTrace trace = FindTrace(
+                run,
+                request.SourceActionEventId,
+                out int traceCount);
+            if (traceCount != 1 || trace == null ||
+                trace.Cycle != action.Cycle ||
                 !string.Equals(trace.ActorId, request.ActorAgentId,
+                    StringComparison.Ordinal))
+            {
+                return Failed(RelianceFailureReason.AutonomousTraceNotFound);
+            }
+            SocietyEvent sourceEvent = FindSocietyEvent(
+                run.FinalSocietyState,
+                request.SourceActionEventId,
+                out int sourceEventCount);
+            if (sourceEventCount != 1 || sourceEvent == null ||
+                !string.Equals(
+                    sourceEvent.CauseDecisionId,
+                    trace.DecisionId,
+                    StringComparison.Ordinal) ||
+                sourceEvent.Tick != trace.Cycle ||
+                !string.Equals(sourceEvent.ActorId, trace.ActorId,
                     StringComparison.Ordinal))
             {
                 return Failed(RelianceFailureReason.AutonomousTraceNotFound);
             }
             if (trace.Action != request.ExpectedActionKind)
                 return Failed(RelianceFailureReason.SourceActionKindMismatch);
+            if (sourceEvent.Kind !=
+                    InstitutionalActionProjector.EventKindFor(
+                        request.ExpectedActionKind) ||
+                action.Activity !=
+                    InstitutionalActionProjector.ActivityFor(sourceEvent.Kind))
+            {
+                return Failed(RelianceFailureReason.SourceActionKindMismatch);
+            }
             if (!string.Equals(trace.OpportunityId, request.ExpectedOpportunityId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    sourceEvent.OpportunityId,
+                    request.ExpectedOpportunityId,
                     StringComparison.Ordinal))
             {
                 return Failed(RelianceFailureReason.SourceOpportunityMismatch);
@@ -200,6 +249,13 @@ namespace Desk42.Institutional
             }
             if (mutation.Cycle != ruling.Cycle || mutation.Cycle >= action.Cycle)
                 return Failed(RelianceFailureReason.InvalidChronology);
+            if (HasInterveningStatusMutation(
+                    run.Report,
+                    mutation,
+                    action.Cycle))
+            {
+                return Failed(RelianceFailureReason.EnablingMutationMismatch);
+            }
 
             AlternativeOptionState alternative = FindAlternative(
                 run,
@@ -231,6 +287,8 @@ namespace Desk42.Institutional
             var stagedNeedPressures = new Dictionary<NeedState, int>();
             int actorResourceDelta = 0;
             var occupiedRecipients = new HashSet<RelianceEffectRecipient>();
+            var occupiedRecipientAgentIds = new HashSet<string>(
+                StringComparer.Ordinal);
             for (int i = 0; i < request.Effects.Count; i++)
             {
                 RelianceEffectDelta effect = request.Effects[i];
@@ -240,6 +298,8 @@ namespace Desk42.Institutional
                 AgentState target = ResolveTarget(effect.Recipient, actor, beneficiary, related);
                 if (target == null)
                     return Failed(RelianceFailureReason.AgentNotFound);
+                if (!occupiedRecipientAgentIds.Add(target.StableId))
+                    return Failed(RelianceFailureReason.InvalidRequest);
 
                 EconomicAccountState account = null;
                 int creditsBefore = 0;
@@ -311,7 +371,7 @@ namespace Desk42.Institutional
                 EffectApplication application = applications[i];
                 application.Material = CreateMaterial(
                     run.Report.MaterialConsequences.Count + i,
-                    action.Cycle,
+                    publicObservationCycle,
                     action.ActionEventId,
                     application.Agent.StableId,
                     application.Effect.MaterialKind,
@@ -319,13 +379,16 @@ namespace Desk42.Institutional
                     application.Effect.ResourceId ?? request.ResourceId,
                     application.Effect.ResourceDelta,
                     request.RelianceEventId,
+                    application.Effect.EffectId,
+                    deferPublicProjection,
                     application.Effect.Need,
                     application.NeedBefore,
                     application.NeedAfter);
                 EnsureMaterialIdAvailable(
-                    run.Report,
+                    run,
                     application.Material.ConsequenceId,
-                    stagedMaterialIds);
+                    stagedMaterialIds,
+                    reservedPublicIds);
                 materials.Add(application.Material);
             }
 
@@ -338,7 +401,15 @@ namespace Desk42.Institutional
                 ReliedOnRulingId = ruling.RulingId,
                 ReliedOnMutationId = mutation.MutationId,
                 SourceActionEventId = action.ActionEventId,
+                SourceActionKind = request.ExpectedActionKind,
+                SourceOpportunityId = request.ExpectedOpportunityId,
+                RequiredStatusId = request.RequiredStatusId,
+                ExpectedRecognisedState = request.ExpectedRecognisedState,
                 ChoiceId = request.ChoiceId,
+                PublicObservationId = request.ObservationId,
+                PublicObservationCycle = publicObservationCycle,
+                RecordedChoiceId = request.RecordedChoiceId,
+                ResourceId = request.ResourceId,
                 AbandonedAlternativeId = alternative.OptionId,
                 ResourceSpent = -actorResourceDelta,
                 HealthPressureAfterAction = ProjectedPressure(
@@ -370,6 +441,9 @@ namespace Desk42.Institutional
                     AgentId = application.Agent.StableId,
                     ResourceBefore = application.CreditsBefore,
                     ResourceAfter = application.CreditsAfter,
+                    MaterialKind = application.Material.Kind,
+                    MaterialKindId = application.Material.KindId,
+                    ResourceId = application.Material.ResourceId,
                     HasNeedEffect = application.Effect.Need.HasValue,
                     Need = application.Effect.Need ?? default,
                     NeedPressureBefore = application.NeedBefore,
@@ -381,7 +455,7 @@ namespace Desk42.Institutional
             var observation = new RelianceObservation
             {
                 ObservationId = request.ObservationId,
-                Cycle = action.Cycle,
+                Cycle = publicObservationCycle,
                 AgentId = actor.StableId,
                 EnablingRulingId = ruling.RulingId,
                 EnablingMutationId = mutation.MutationId,
@@ -392,14 +466,31 @@ namespace Desk42.Institutional
                 RecordedResourceDelta = actorResourceDelta,
             };
 
-            InstitutionalTimelineEntry timelineEntry = CreateTimelineEntry(
-                run.Report,
-                action.Cycle,
-                InstitutionalTimelineKind.RelianceCreated,
-                action.ActionEventId,
-                actor.StableId,
-                observation.ObservationId);
-            EnsureTimelineIdAvailable(run.Report, timelineEntry.EntryId);
+            InstitutionalTimelineEntry timelineEntry = null;
+            PendingReliancePublicProjection pendingProjection = null;
+            if (deferPublicProjection)
+            {
+                pendingProjection = new PendingReliancePublicProjection
+                {
+                    RelianceEventId = request.RelianceEventId,
+                    Observation = CopyObservation(observation),
+                    MaterialConsequences = CopyMaterials(materials),
+                };
+            }
+            else
+            {
+                timelineEntry = CreateTimelineEntry(
+                    run.Report,
+                    action.Cycle,
+                    InstitutionalTimelineKind.RelianceCreated,
+                    action.ActionEventId,
+                    actor.StableId,
+                    observation.ObservationId);
+                EnsureTimelineIdAvailable(
+                    run.Report,
+                    timelineEntry.EntryId,
+                    reservedPublicIds);
+            }
 
             // Commit only after every authority/public row, collection, account,
             // projected value, and generated identifier has been validated.
@@ -409,10 +500,17 @@ namespace Desk42.Institutional
                 staged.Key.Pressure = staged.Value;
             alternative.Available = false;
             alternative.ChangedByActionEventId = action.ActionEventId;
-            run.Report.MaterialConsequences.AddRange(materials);
             run.RelianceLedger.Add(reliance);
-            run.Report.RelianceObservations.Add(observation);
-            run.Report.Timeline.Add(timelineEntry);
+            if (deferPublicProjection)
+            {
+                run.PendingReliancePublicProjections.Add(pendingProjection);
+            }
+            else
+            {
+                run.Report.MaterialConsequences.AddRange(materials);
+                run.Report.RelianceObservations.Add(observation);
+                run.Report.Timeline.Add(timelineEntry);
+            }
 
             return new RelianceCreationResult
             {
@@ -421,6 +519,7 @@ namespace Desk42.Institutional
                 Reliance = reliance,
                 Observation = observation,
                 MaterialConsequences = materials,
+                PublicProjectionDeferred = deferPublicProjection,
             };
         }
 
@@ -469,8 +568,22 @@ namespace Desk42.Institutional
                 return RecoveryFailed(
                     RelianceRecoveryFailureReason.RulingIsNotAReversal);
             }
-            if (reversal.Cycle < reliance.Cycle)
+            if (!IsExactAppealReversal(
+                    run.Report,
+                    reversal,
+                    reliance,
+                    request.ParentCaseId))
+            {
+                return RecoveryFailed(
+                    RelianceRecoveryFailureReason.ReversalRulingNotFound);
+            }
+            if (reversal.Cycle <= reliance.PublicObservationCycle)
                 return RecoveryFailed(RelianceRecoveryFailureReason.InvalidChronology);
+            if (!InstitutionalPublicObservationProjector
+                    .HasExactPublishedRelianceProjection(run, reliance))
+            {
+                return RecoveryFailed(RelianceRecoveryFailureReason.InvalidChronology);
+            }
 
             ObservedAgentAction action = InstitutionalTimeline.FindObservedAction(
                 run.Report,
@@ -481,6 +594,11 @@ namespace Desk42.Institutional
             {
                 return RecoveryFailed(
                     RelianceRecoveryFailureReason.SourceActionNotObserved);
+            }
+            if (reliance.SurvivedReversal || HasRelianceRecovery(run, reliance))
+            {
+                return RecoveryFailed(
+                    RelianceRecoveryFailureReason.DuplicateRecoveryCase);
             }
 
             string caseId = $"{request.CaseIdPrefix}:{reliance.RelianceEventId}";
@@ -545,8 +663,7 @@ namespace Desk42.Institutional
                 !ValidIdentifier(request.ActorAgentId) ||
                 !Enum.IsDefined(typeof(SocietyActionKind), request.ExpectedActionKind) ||
                 (request.ExpectedActionKind != SocietyActionKind.Work &&
-                 request.ExpectedActionKind != SocietyActionKind.SeekAid &&
-                 request.ExpectedActionKind != SocietyActionKind.Appeal) ||
+                 request.ExpectedActionKind != SocietyActionKind.SeekAid) ||
                 !ValidIdentifier(request.ExpectedOpportunityId) ||
                 !ValidIdentifier(request.BeneficiaryAgentId) ||
                 !ValidIdentifier(request.EnablingRulingId) ||
@@ -556,6 +673,7 @@ namespace Desk42.Institutional
                 !ValidIdentifier(request.RecordedChoiceId) ||
                 !ValidIdentifier(request.AbandonedAlternativeId) ||
                 !ValidIdentifier(request.ResourceId) ||
+                request.PublicObservationCycle < -1 ||
                 request.Effects == null || request.Effects.Count == 0 ||
                 request.Effects.Count > MaximumEffects)
             {
@@ -619,18 +737,48 @@ namespace Desk42.Institutional
 
         private static AgentActionTrace FindTrace(
             InstitutionalConsequenceRun run,
-            string actionEventId)
+            string actionEventId,
+            out int count)
         {
+            AgentActionTrace found = null;
+            count = 0;
             for (int i = 0; i < run.AssessorActionTraces.Count; i++)
             {
                 AgentActionTrace trace = run.AssessorActionTraces[i];
                 if (trace.ResultEventIds != null &&
-                    trace.ResultEventIds.Contains(actionEventId)) return trace;
+                    trace.ResultEventIds.Contains(actionEventId))
+                {
+                    found = trace;
+                    count++;
+                }
             }
-            return null;
+            return found;
         }
 
-        private static bool TraceReadsStatus(
+        private static SocietyEvent FindSocietyEvent(
+            SocietyState state,
+            string eventId,
+            out int count)
+        {
+            SocietyEvent found = null;
+            count = 0;
+            if (state?.EventLedger == null) return null;
+            for (int i = 0; i < state.EventLedger.Count; i++)
+            {
+                SocietyEvent candidate = state.EventLedger[i];
+                if (candidate != null && string.Equals(
+                        candidate.EventId,
+                        eventId,
+                        StringComparison.Ordinal))
+                {
+                    found = candidate;
+                    count++;
+                }
+            }
+            return found;
+        }
+
+        internal static bool TraceReadsStatus(
             AgentActionTrace trace,
             string statusId,
             bool recognisedState)
@@ -735,6 +883,132 @@ namespace Desk42.Institutional
             return null;
         }
 
+        private static PendingReliancePublicProjection FindPendingObservation(
+            InstitutionalConsequenceRun run,
+            string observationId)
+        {
+            for (int i = 0; i < run.PendingReliancePublicProjections.Count; i++)
+            {
+                PendingReliancePublicProjection pending =
+                    run.PendingReliancePublicProjections[i];
+                if (string.Equals(
+                        pending?.Observation?.ObservationId,
+                        observationId,
+                        StringComparison.Ordinal))
+                {
+                    return pending;
+                }
+            }
+            return null;
+        }
+
+        private static RelianceEvent FindRelianceBySourceAction(
+            InstitutionalConsequenceRun run,
+            string sourceActionEventId)
+        {
+            for (int i = 0; i < run.RelianceLedger.Count; i++)
+            {
+                RelianceEvent reliance = run.RelianceLedger[i];
+                if (string.Equals(
+                        reliance?.SourceActionEventId,
+                        sourceActionEventId,
+                        StringComparison.Ordinal))
+                {
+                    return reliance;
+                }
+            }
+            return null;
+        }
+
+        private static bool HasRelianceRecovery(
+            InstitutionalConsequenceRun run,
+            RelianceEvent reliance)
+        {
+            for (int i = 0; i < run.Report.DescendantCases.Count; i++)
+            {
+                DescendantCase descendant = run.Report.DescendantCases[i];
+                if (descendant?.Kind == DescendantCaseKind.Reliance &&
+                    string.Equals(
+                        descendant.CausalAgentActionId,
+                        reliance.SourceActionEventId,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        descendant.ClaimantAgentId,
+                        reliance.AgentId,
+                        StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool IsExactAppealReversal(
+            InstitutionalConsequenceReport report,
+            Ruling reversal,
+            RelianceEvent reliance,
+            string parentCaseId)
+        {
+            if (report?.Appeals == null || reversal == null || reliance == null)
+                return false;
+            int exactMatches = 0;
+            for (int i = 0; i < report.Appeals.Count; i++)
+            {
+                Appeal appeal = report.Appeals[i];
+                if (appeal == null || !string.Equals(
+                        appeal.ResultingRulingId,
+                        reversal.RulingId,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                if (appeal.Disposition != AppealDisposition.Reversed ||
+                    !string.Equals(
+                        appeal.CaseId,
+                        parentCaseId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        appeal.ChallengedRulingId,
+                        reliance.ReliedOnRulingId,
+                        StringComparison.Ordinal))
+                {
+                    return false;
+                }
+                exactMatches++;
+            }
+            return exactMatches == 1;
+        }
+
+        private static void ReservePendingPublicIds(
+            InstitutionalConsequenceRun run,
+            ISet<string> reservedIds)
+        {
+            for (int i = 0; i < run.PendingReliancePublicProjections.Count; i++)
+            {
+                PendingReliancePublicProjection pending =
+                    run.PendingReliancePublicProjections[i];
+                if (pending?.Observation == null ||
+                    string.IsNullOrWhiteSpace(pending.Observation.ObservationId) ||
+                    !reservedIds.Add(pending.Observation.ObservationId) ||
+                    pending.MaterialConsequences == null)
+                {
+                    throw new InvalidOperationException(
+                        "Pending reliance state contains invalid or reused public ids.");
+                }
+                for (int j = 0; j < pending.MaterialConsequences.Count; j++)
+                {
+                    string materialId =
+                        pending.MaterialConsequences[j]?.ConsequenceId;
+                    if (string.IsNullOrWhiteSpace(materialId) ||
+                        !reservedIds.Add(materialId))
+                    {
+                        throw new InvalidOperationException(
+                            "Pending reliance state contains invalid or reused public ids.");
+                    }
+                }
+            }
+        }
+
         private static OfficialStatusMutation FindMutation(
             InstitutionalConsequenceReport report,
             string mutationId)
@@ -746,6 +1020,37 @@ namespace Desk42.Institutional
                     return report.OfficialStatusMutations[i];
             }
             return null;
+        }
+
+        private static bool HasInterveningStatusMutation(
+            InstitutionalConsequenceReport report,
+            OfficialStatusMutation enablingMutation,
+            long actionCycle)
+        {
+            for (int i = 0; i < report.OfficialStatusMutations.Count; i++)
+            {
+                OfficialStatusMutation candidate =
+                    report.OfficialStatusMutations[i];
+                if (candidate == null ||
+                    ReferenceEquals(candidate, enablingMutation) ||
+                    !string.Equals(
+                        candidate.AffectedAgentId,
+                        enablingMutation.AffectedAgentId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        candidate.StatusId,
+                        enablingMutation.StatusId,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                if (candidate.Cycle >= enablingMutation.Cycle &&
+                    candidate.Cycle < actionCycle)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private static Ruling FindRuling(
@@ -818,15 +1123,19 @@ namespace Desk42.Institutional
             string resourceId,
             int resourceDelta,
             string relianceEventId,
+            string effectId,
+            bool deferred,
             NeedKind? need,
             int needBefore,
             int needAfter)
         {
             var material = new MaterialConsequence
             {
-                ConsequenceId =
-                    $"material:{cycle}:{index}:" +
-                    $"{agentId}:{kind}:{relianceEventId}",
+                ConsequenceId = deferred
+                    ? $"material:{cycle}:reliance:" +
+                      $"{relianceEventId.Length}:{relianceEventId}:" +
+                      $"{effectId.Length}:{effectId}"
+                    : $"material:{cycle}:{index}:{agentId}:{kind}:{relianceEventId}",
                 Cycle = cycle,
                 CauseId = causeId,
                 AgentId = agentId,
@@ -842,11 +1151,56 @@ namespace Desk42.Institutional
             return material;
         }
 
+        private static RelianceObservation CopyObservation(
+            RelianceObservation source)
+        {
+            return new RelianceObservation
+            {
+                ObservationId = source.ObservationId,
+                Cycle = source.Cycle,
+                AgentId = source.AgentId,
+                EnablingRulingId = source.EnablingRulingId,
+                EnablingMutationId = source.EnablingMutationId,
+                SourceActionEventId = source.SourceActionEventId,
+                RecordedChoiceId = source.RecordedChoiceId,
+                AbandonedAlternativeId = source.AbandonedAlternativeId,
+                ResourceId = source.ResourceId,
+                RecordedResourceDelta = source.RecordedResourceDelta,
+            };
+        }
+
+        private static List<MaterialConsequence> CopyMaterials(
+            IReadOnlyList<MaterialConsequence> sources)
+        {
+            var copies = new List<MaterialConsequence>(sources.Count);
+            for (int i = 0; i < sources.Count; i++)
+            {
+                MaterialConsequence source = sources[i];
+                copies.Add(new MaterialConsequence
+                {
+                    ConsequenceId = source.ConsequenceId,
+                    Cycle = source.Cycle,
+                    CauseId = source.CauseId,
+                    AgentId = source.AgentId,
+                    Kind = source.Kind,
+                    KindId = source.KindId,
+                    ResourceId = source.ResourceId,
+                    ResourceDelta = source.ResourceDelta,
+                    HasNeedEffect = source.HasNeedEffect,
+                    Need = source.Need,
+                    NeedPressureBefore = source.NeedPressureBefore,
+                    NeedPressureAfter = source.NeedPressureAfter,
+                });
+            }
+            return copies;
+        }
+
         private static void ValidateCreationCollections(
             InstitutionalConsequenceRun run)
         {
             if (run.AssessorActionTraces == null ||
                 run.RelianceLedger == null ||
+                run.PendingReliancePublicProjections == null ||
                 run.EconomicAccounts == null ||
                 run.AlternativeOptions == null ||
                 run.FinalSocietyState.Agents == null ||
@@ -884,20 +1238,44 @@ namespace Desk42.Institutional
         }
 
         private static void EnsureMaterialIdAvailable(
-            InstitutionalConsequenceReport report,
+            InstitutionalConsequenceRun run,
             string consequenceId,
-            ISet<string> stagedIds)
+            ISet<string> stagedIds,
+            ISet<string> reservedPublicIds)
         {
             if (!stagedIds.Add(consequenceId))
                 throw new InvalidOperationException(
                     $"Material consequence id '{consequenceId}' is duplicated in the staged reliance.");
-            for (int i = 0; i < report.MaterialConsequences.Count; i++)
+            if (!reservedPublicIds.Add(consequenceId))
             {
-                if (string.Equals(report.MaterialConsequences[i]?.ConsequenceId,
+                throw new InvalidOperationException(
+                    $"Material consequence id '{consequenceId}' is already used by " +
+                    "another public node.");
+            }
+            for (int i = 0; i < run.Report.MaterialConsequences.Count; i++)
+            {
+                if (string.Equals(run.Report.MaterialConsequences[i]?.ConsequenceId,
                         consequenceId, StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException(
                         $"Material consequence id '{consequenceId}' already exists.");
+                }
+            }
+            for (int i = 0; i < run.PendingReliancePublicProjections.Count; i++)
+            {
+                PendingReliancePublicProjection pending =
+                    run.PendingReliancePublicProjections[i];
+                if (pending?.MaterialConsequences == null) continue;
+                for (int j = 0; j < pending.MaterialConsequences.Count; j++)
+                {
+                    if (string.Equals(
+                            pending.MaterialConsequences[j]?.ConsequenceId,
+                            consequenceId,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            $"Material consequence id '{consequenceId}' is already pending.");
+                    }
                 }
             }
         }
@@ -923,8 +1301,15 @@ namespace Desk42.Institutional
 
         private static void EnsureTimelineIdAvailable(
             InstitutionalConsequenceReport report,
-            string entryId)
+            string entryId,
+            ISet<string> reservedPublicIds)
         {
+            if (!reservedPublicIds.Add(entryId))
+            {
+                throw new InvalidOperationException(
+                    $"Institutional timeline id '{entryId}' is already used by " +
+                    "another public node.");
+            }
             for (int i = 0; i < report.Timeline.Count; i++)
             {
                 if (string.Equals(report.Timeline[i]?.EntryId, entryId,

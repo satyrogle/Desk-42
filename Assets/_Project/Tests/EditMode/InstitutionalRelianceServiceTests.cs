@@ -46,6 +46,8 @@ namespace Desk42.Tests.EditMode
             Assert.AreEqual(RelianceFailureReason.None, result.FailureReason);
             Assert.NotNull(result.Reliance);
             Assert.NotNull(result.Observation);
+            Assert.IsFalse(result.PublicProjectionDeferred);
+            Assert.IsEmpty(run.PendingReliancePublicProjections);
             Assert.AreEqual(3, result.MaterialConsequences.Count);
             Assert.AreEqual(-20, result.Observation.RecordedResourceDelta);
             Assert.AreEqual(RulingId, result.Observation.EnablingRulingId);
@@ -76,6 +78,376 @@ namespace Desk42.Tests.EditMode
                 entry.Kind == InstitutionalTimelineKind.RelianceCreated &&
                 entry.CauseId == "action.test.rely" &&
                 entry.DetailId == "observation.test.one"));
+        }
+
+        [Test]
+        public void Create_DelayedPublicProjection_AppliesAuthorityNowAndPublishesFrozenRowsWhenDue()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.delayed", 3, true);
+            AddAlternative(run, "alternative.test.delayed");
+            RelianceCreationRequest request = CreateRequest(
+                "reliance.test.delayed",
+                "observation.test.delayed",
+                "action.test.delayed",
+                "alternative.test.delayed");
+            request.PublicObservationCycle = 4;
+
+            RelianceCreationResult result = InstitutionalRelianceService.TryCreate(
+                run,
+                request);
+
+            Assert.IsTrue(result.Created);
+            Assert.IsTrue(result.PublicProjectionDeferred);
+            Assert.AreEqual(3, result.Reliance.Cycle);
+            Assert.AreEqual(4, result.Observation.Cycle);
+            Assert.AreEqual(80, FindAccount(run, ActorId).AvailableCredits);
+            Assert.IsFalse(run.AlternativeOptions.Single().Available);
+            Assert.That(run.RelianceLedger, Has.Count.EqualTo(1));
+            Assert.That(run.PendingReliancePublicProjections, Has.Count.EqualTo(1));
+            Assert.IsEmpty(run.Report.RelianceObservations);
+            Assert.IsEmpty(run.Report.MaterialConsequences);
+            Assert.IsFalse(run.Report.Timeline.Any(entry =>
+                entry.Kind == InstitutionalTimelineKind.RelianceCreated));
+
+            // The result is diagnostic output; mutating it cannot rewrite the frozen
+            // projection retained by the assessor-owned run.
+            result.Observation.Cycle = 99;
+            result.MaterialConsequences[0].Cycle = 99;
+            InstitutionalPublicObservationProjector.ProjectDueReliance(run, 3);
+            Assert.IsEmpty(run.Report.RelianceObservations);
+
+            InstitutionalPublicObservationProjector.ProjectDueReliance(run, 4);
+
+            Assert.IsEmpty(run.PendingReliancePublicProjections);
+            Assert.That(run.Report.RelianceObservations, Has.Count.EqualTo(1));
+            Assert.AreEqual(4, run.Report.RelianceObservations.Single().Cycle);
+            Assert.That(run.Report.MaterialConsequences, Has.Count.EqualTo(3));
+            Assert.That(run.Report.MaterialConsequences.All(value => value.Cycle == 4));
+            Assert.That(run.Report.Timeline.Single(entry =>
+                entry.Kind == InstitutionalTimelineKind.RelianceCreated).Cycle,
+                Is.EqualTo(4));
+        }
+
+        [Test]
+        public void Create_DeferredSemanticIdsRemainDistinctForColonBearingKeys()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.collision.one", 3, true);
+            AddAutonomousAction(run, "action.collision.two", 3, true);
+            AddAlternative(run, "alternative.collision.one");
+            AddAlternative(run, "alternative.collision.two");
+
+            RelianceCreationRequest first = CreateRequest(
+                "a",
+                "observation.collision.one",
+                "action.collision.one",
+                "alternative.collision.one");
+            first.PublicObservationCycle = 4;
+            first.Effects.RemoveRange(1, first.Effects.Count - 1);
+            first.Effects[0].EffectId = "b:c";
+
+            RelianceCreationRequest second = CreateRequest(
+                "a:b",
+                "observation.collision.two",
+                "action.collision.two",
+                "alternative.collision.two");
+            second.PublicObservationCycle = 4;
+            second.Effects.RemoveRange(1, second.Effects.Count - 1);
+            second.Effects[0].EffectId = "c";
+
+            RelianceCreationResult firstResult =
+                InstitutionalRelianceService.TryCreate(run, first);
+            RelianceCreationResult secondResult =
+                InstitutionalRelianceService.TryCreate(run, second);
+
+            Assert.IsTrue(firstResult.Created);
+            Assert.IsTrue(secondResult.Created);
+            Assert.AreNotEqual(
+                firstResult.MaterialConsequences.Single().ConsequenceId,
+                secondResult.MaterialConsequences.Single().ConsequenceId);
+            Assert.That(run.PendingReliancePublicProjections, Has.Count.EqualTo(2));
+
+            InstitutionalPublicObservationProjector.ProjectDueReliance(run, 4);
+
+            Assert.That(run.Report.MaterialConsequences.Select(value =>
+                value.ConsequenceId).Distinct().Count(), Is.EqualTo(2));
+            Assert.IsEmpty(run.PendingReliancePublicProjections);
+        }
+
+        [Test]
+        public void Create_RejectsASecondRelianceOnTheSameObservedAction()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.single-reliance", 3, true);
+            AddAlternative(run, "alternative.test.first-reliance");
+            AddAlternative(run, "alternative.test.second-reliance");
+
+            RelianceCreationRequest first = CreateRequest(
+                "reliance.test.first",
+                "observation.test.first",
+                "action.test.single-reliance",
+                "alternative.test.first-reliance");
+            first.PublicObservationCycle = 4;
+            Assert.IsTrue(InstitutionalRelianceService.TryCreate(run, first).Created);
+
+            RelianceCreationRequest second = CreateRequest(
+                "reliance.test.second",
+                "observation.test.second",
+                "action.test.single-reliance",
+                "alternative.test.second-reliance");
+            second.PublicObservationCycle = 4;
+            RelianceCreationResult result =
+                InstitutionalRelianceService.TryCreate(run, second);
+
+            Assert.IsFalse(result.Created);
+            Assert.AreEqual(
+                RelianceFailureReason.SourceActionAlreadyUsed,
+                result.FailureReason);
+            Assert.That(run.RelianceLedger, Has.Count.EqualTo(1));
+            Assert.That(run.PendingReliancePublicProjections, Has.Count.EqualTo(1));
+        }
+
+        [TestCase("duplicate-trace")]
+        [TestCase("wrong-cycle")]
+        [TestCase("aliased-recipient")]
+        [TestCase("wrong-cause-decision")]
+        [TestCase("wrong-event-kind")]
+        [TestCase("wrong-event-opportunity")]
+        public void Create_RejectsAnAmbiguousActionOrRecipientEnvelope(
+            string corruption)
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.ambiguous", 3, true);
+            AddAlternative(run, "alternative.test.ambiguous");
+            RelianceCreationRequest request = CreateRequest(
+                "reliance.test.ambiguous",
+                "observation.test.ambiguous",
+                "action.test.ambiguous",
+                "alternative.test.ambiguous");
+            switch (corruption)
+            {
+                case "duplicate-trace":
+                    run.AssessorActionTraces.Add(
+                        run.AssessorActionTraces.Single());
+                    break;
+                case "wrong-cycle":
+                    run.AssessorActionTraces.Single().Cycle++;
+                    break;
+                case "aliased-recipient":
+                    request.BeneficiaryAgentId = ActorId;
+                    break;
+                case "wrong-cause-decision":
+                    run.FinalSocietyState.EventLedger.Single().CauseDecisionId =
+                        "decision.test.foreign";
+                    break;
+                case "wrong-event-kind":
+                    run.FinalSocietyState.EventLedger.Single().Kind =
+                        SocietyEventKind.WorkPerformed;
+                    break;
+                case "wrong-event-opportunity":
+                    run.FinalSocietyState.EventLedger.Single().OpportunityId =
+                        "opportunity.test.foreign";
+                    break;
+                default:
+                    Assert.Fail($"Unknown corruption '{corruption}'.");
+                    break;
+            }
+
+            RelianceCreationResult result =
+                InstitutionalRelianceService.TryCreate(run, request);
+
+            Assert.IsFalse(result.Created);
+            Assert.IsEmpty(run.RelianceLedger);
+            Assert.IsTrue(run.AlternativeOptions.Single().Available);
+        }
+
+        [Test]
+        public void Create_RejectsAnEnablingMutationSupersededBeforeTheAction()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.superseded-status", 4, true);
+            AddAlternative(run, "alternative.test.superseded-status");
+            var supersedingRuling = new Ruling
+            {
+                RulingId = "ruling.test.superseding-status",
+                CaseId = "case.test.primary",
+                Cycle = 3,
+                PolicyConfigurationId = "configuration.test",
+                PolicyVersion = "configuration.test.v1",
+                Disposition = RulingDisposition.Denied,
+                FindingId = "finding.test.superseding-status",
+            };
+            var supersedingMutation = new OfficialStatusMutation
+            {
+                MutationId = "mutation.test.superseding-status",
+                Cycle = 3,
+                CauseId = supersedingRuling.RulingId,
+                AffectedAgentId = ActorId,
+                StatusId = StatusId,
+                BeforeRecognised = true,
+                AfterRecognised = false,
+            };
+            supersedingRuling.OfficialStatusMutationIds.Add(
+                supersedingMutation.MutationId);
+            run.Report.Rulings.Add(supersedingRuling);
+            run.Report.OfficialStatusMutations.Add(supersedingMutation);
+
+            RelianceCreationResult result =
+                InstitutionalRelianceService.TryCreate(
+                    run,
+                    CreateRequest(
+                        "reliance.test.superseded-status",
+                        "observation.test.superseded-status",
+                        "action.test.superseded-status",
+                        "alternative.test.superseded-status"));
+
+            Assert.IsFalse(result.Created);
+            Assert.AreEqual(
+                RelianceFailureReason.EnablingMutationMismatch,
+                result.FailureReason);
+            Assert.IsEmpty(run.RelianceLedger);
+        }
+
+        [Test]
+        public void Create_RejectsObservationIdReusedByAnotherPublicNode()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.global-observation", 3, true);
+            AddAlternative(run, "alternative.test.global-observation");
+            RelianceCreationRequest request = CreateRequest(
+                "reliance.test.global-observation",
+                RulingId,
+                "action.test.global-observation",
+                "alternative.test.global-observation");
+
+            RelianceCreationResult result =
+                InstitutionalRelianceService.TryCreate(run, request);
+
+            Assert.IsFalse(result.Created);
+            Assert.AreEqual(
+                RelianceFailureReason.DuplicateObservation,
+                result.FailureReason);
+            Assert.IsEmpty(run.RelianceLedger);
+        }
+
+        [Test]
+        public void Create_DeferredMaterialIdCollisionIsAtomicAcrossPublicNodeKinds()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.global-material", 3, true);
+            AddAlternative(run, "alternative.test.global-material");
+            RelianceCreationRequest request = CreateRequest(
+                "reliance.test.global-material",
+                "observation.test.global-material",
+                "action.test.global-material",
+                "alternative.test.global-material");
+            request.PublicObservationCycle = 4;
+            string effectId = request.Effects[0].EffectId;
+            string collidingId =
+                $"material:4:reliance:{request.RelianceEventId.Length}:" +
+                $"{request.RelianceEventId}:{effectId.Length}:{effectId}";
+            run.Report.EvidenceArtifacts.Add(new EvidenceArtifact
+            {
+                ArtifactId = collidingId,
+            });
+            int creditsBefore = FindAccount(run, ActorId).AvailableCredits;
+
+            Assert.Throws<InvalidOperationException>(() =>
+                InstitutionalRelianceService.TryCreate(run, request));
+
+            Assert.AreEqual(creditsBefore,
+                FindAccount(run, ActorId).AvailableCredits);
+            Assert.IsEmpty(run.RelianceLedger);
+            Assert.IsEmpty(run.PendingReliancePublicProjections);
+            Assert.IsTrue(run.AlternativeOptions.Single().Available);
+        }
+
+        [TestCase("wrong-reliance")]
+        [TestCase("orphan-material")]
+        [TestCase("wrong-kind")]
+        [TestCase("wrong-resource")]
+        [TestCase("blank-material-id")]
+        [TestCase("wrong-observation-id")]
+        [TestCase("wrong-observation-cycle")]
+        [TestCase("wrong-recorded-choice")]
+        [TestCase("cross-node-id")]
+        public void ProjectDue_CorruptPendingProjection_FailsBeforePublicMutation(
+            string corruption)
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.pending-corruption", 3, true);
+            AddAlternative(run, "alternative.test.pending-corruption");
+            RelianceCreationRequest request = CreateRequest(
+                "reliance.test.pending-corruption",
+                "observation.test.pending-corruption",
+                "action.test.pending-corruption",
+                "alternative.test.pending-corruption");
+            request.PublicObservationCycle = 4;
+            Assert.IsTrue(InstitutionalRelianceService.TryCreate(run, request).Created);
+            PendingReliancePublicProjection pending =
+                run.PendingReliancePublicProjections.Single();
+
+            switch (corruption)
+            {
+                case "wrong-reliance":
+                    pending.RelianceEventId = "reliance.test.missing";
+                    break;
+                case "orphan-material":
+                    pending.MaterialConsequences.Add(new MaterialConsequence
+                    {
+                        ConsequenceId = "material.test.pending-orphan",
+                        Cycle = 4,
+                        CauseId = "action.test.pending-corruption",
+                        AgentId = RelatedId,
+                        Kind = MaterialConsequenceKind.ReliefPaid,
+                        KindId = "material-kind.test.pending-orphan",
+                    });
+                    break;
+                case "wrong-kind":
+                    pending.MaterialConsequences[0].Kind =
+                        MaterialConsequenceKind.ReliefPaid;
+                    break;
+                case "wrong-resource":
+                    pending.MaterialConsequences[0].ResourceId =
+                        "resource.test.reattributed";
+                    break;
+                case "blank-material-id":
+                    pending.MaterialConsequences[0].ConsequenceId = null;
+                    break;
+                case "wrong-observation-id":
+                    pending.Observation.ObservationId = "observation.test.forged";
+                    break;
+                case "wrong-observation-cycle":
+                    pending.Observation.Cycle++;
+                    break;
+                case "wrong-recorded-choice":
+                    pending.Observation.RecordedChoiceId = "recorded-choice.forged";
+                    break;
+                case "cross-node-id":
+                    run.Report.EvidenceArtifacts.Add(new EvidenceArtifact
+                    {
+                        ArtifactId =
+                            pending.MaterialConsequences[0].ConsequenceId,
+                    });
+                    break;
+                default:
+                    Assert.Fail($"Unknown corruption '{corruption}'.");
+                    break;
+            }
+
+            int creditsBeforeProjection = FindAccount(run, ActorId).AvailableCredits;
+            int pendingCount = run.PendingReliancePublicProjections.Count;
+            Assert.Throws<InvalidOperationException>(() =>
+                InstitutionalPublicObservationProjector.ProjectDueReliance(run, 4));
+
+            Assert.AreEqual(creditsBeforeProjection,
+                FindAccount(run, ActorId).AvailableCredits);
+            Assert.AreEqual(pendingCount, run.PendingReliancePublicProjections.Count);
+            Assert.IsEmpty(run.Report.RelianceObservations);
+            Assert.IsEmpty(run.Report.MaterialConsequences);
+            Assert.IsFalse(run.Report.Timeline.Any(value =>
+                value.Kind == InstitutionalTimelineKind.RelianceCreated));
         }
 
         [Test]
@@ -236,6 +608,7 @@ namespace Desk42.Tests.EditMode
                 FindingId = "finding.test.reversal",
             };
             run.Report.Rulings.Add(reversal);
+            AddReversalAppeal(run, reversal, RulingId);
 
             RelianceRecoveryRequest firstRequest =
                 CreateRecoveryRequest("reliance.test.first");
@@ -249,11 +622,14 @@ namespace Desk42.Tests.EditMode
                     run,
                     reversal,
                     CreateRecoveryRequest("reliance.test.second"));
+            RelianceRecoveryRequest duplicateRequest =
+                CreateRecoveryRequest("reliance.test.first");
+            duplicateRequest.CaseIdPrefix = "case.test.alternate-recovery";
             RelianceRecoveryResult duplicate =
                 InstitutionalRelianceService.TryCreateRecoveryAfterReversal(
                     run,
                     reversal,
-                    CreateRecoveryRequest("reliance.test.first"));
+                    duplicateRequest);
 
             Assert.IsTrue(first.Created);
             Assert.IsTrue(second.Created);
@@ -285,6 +661,150 @@ namespace Desk42.Tests.EditMode
                 RelianceRecoveryFailureReason.DuplicateRecoveryCase,
                 duplicate.FailureReason);
             Assert.AreEqual(2, run.Report.DescendantCases.Count);
+        }
+
+        [Test]
+        public void Recovery_CannotBecomePublicBeforeDelayedRelianceObservation()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.delayed-recovery", 3, true);
+            AddAlternative(run, "alternative.test.delayed-recovery");
+            RelianceCreationRequest creation = CreateRequest(
+                "reliance.test.delayed-recovery",
+                "observation.test.delayed-recovery",
+                "action.test.delayed-recovery",
+                "alternative.test.delayed-recovery");
+            creation.PublicObservationCycle = 5;
+            Assert.IsTrue(
+                InstitutionalRelianceService.TryCreate(run, creation).Created);
+
+            var reversal = new Ruling
+            {
+                RulingId = "ruling.test.early-reversal",
+                CaseId = "case.test.primary",
+                Cycle = 6,
+                PolicyConfigurationId = "configuration.test",
+                PolicyVersion = "configuration.test.v1",
+                Disposition = RulingDisposition.ReversedAndDenied,
+                FindingId = "finding.test.early-reversal",
+            };
+            run.Report.Rulings.Add(reversal);
+            AddReversalAppeal(run, reversal, RulingId);
+
+            RelianceRecoveryResult result =
+                InstitutionalRelianceService.TryCreateRecoveryAfterReversal(
+                    run,
+                    reversal,
+                    CreateRecoveryRequest("reliance.test.delayed-recovery"));
+
+            Assert.IsFalse(result.Created);
+            Assert.AreEqual(
+                RelianceRecoveryFailureReason.InvalidChronology,
+                result.FailureReason);
+            Assert.IsEmpty(run.Report.DescendantCases);
+            Assert.IsFalse(run.RelianceLedger.Single().SurvivedReversal);
+        }
+
+        [Test]
+        public void Recovery_RejectsAnAppealThatReversedAnotherRuling()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.wrong-reversal", 3, true);
+            AddAlternative(run, "alternative.test.wrong-reversal");
+            Assert.IsTrue(InstitutionalRelianceService.TryCreate(
+                run,
+                CreateRequest(
+                    "reliance.test.wrong-reversal",
+                    "observation.test.wrong-reversal",
+                    "action.test.wrong-reversal",
+                    "alternative.test.wrong-reversal")).Created);
+            var reversal = new Ruling
+            {
+                RulingId = "ruling.test.wrong-reversal",
+                CaseId = "case.test.primary",
+                Cycle = 5,
+                PolicyConfigurationId = "configuration.test",
+                PolicyVersion = "configuration.test.v1",
+                Disposition = RulingDisposition.ReversedAndDenied,
+                FindingId = "finding.test.wrong-reversal",
+            };
+            run.Report.Rulings.Add(reversal);
+            AddReversalAppeal(run, reversal, "ruling.test.unrelated");
+
+            RelianceRecoveryResult result =
+                InstitutionalRelianceService.TryCreateRecoveryAfterReversal(
+                    run,
+                    reversal,
+                    CreateRecoveryRequest("reliance.test.wrong-reversal"));
+
+            Assert.IsFalse(result.Created);
+            Assert.AreEqual(
+                RelianceRecoveryFailureReason.ReversalRulingNotFound,
+                result.FailureReason);
+            Assert.IsEmpty(run.Report.DescendantCases);
+        }
+
+        [TestCase("observation")]
+        [TestCase("missing-material")]
+        [TestCase("reattributed-material")]
+        [TestCase("missing-timeline")]
+        public void Recovery_RequiresTheCompletePublishedRelianceEnvelope(
+            string corruption)
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.public-envelope", 3, true);
+            AddAlternative(run, "alternative.test.public-envelope");
+            Assert.IsTrue(InstitutionalRelianceService.TryCreate(
+                run,
+                CreateRequest(
+                    "reliance.test.public-envelope",
+                    "observation.test.public-envelope",
+                    "action.test.public-envelope",
+                    "alternative.test.public-envelope")).Created);
+            var reversal = new Ruling
+            {
+                RulingId = "ruling.test.public-envelope-reversal",
+                CaseId = "case.test.primary",
+                Cycle = 5,
+                PolicyConfigurationId = "configuration.test",
+                PolicyVersion = "configuration.test.v1",
+                Disposition = RulingDisposition.ReversedAndDenied,
+                FindingId = "finding.test.public-envelope-reversal",
+            };
+            run.Report.Rulings.Add(reversal);
+            AddReversalAppeal(run, reversal, RulingId);
+            switch (corruption)
+            {
+                case "observation":
+                    run.Report.RelianceObservations.Single().RecordedChoiceId =
+                        "recorded-choice.test.forged";
+                    break;
+                case "missing-material":
+                    run.Report.MaterialConsequences.RemoveAt(0);
+                    break;
+                case "reattributed-material":
+                    run.Report.MaterialConsequences[0].AgentId = BeneficiaryId;
+                    break;
+                case "missing-timeline":
+                    run.Report.Timeline.RemoveAll(entry =>
+                        entry.Kind == InstitutionalTimelineKind.RelianceCreated);
+                    break;
+                default:
+                    Assert.Fail($"Unknown corruption '{corruption}'.");
+                    break;
+            }
+
+            RelianceRecoveryResult result =
+                InstitutionalRelianceService.TryCreateRecoveryAfterReversal(
+                    run,
+                    reversal,
+                    CreateRecoveryRequest("reliance.test.public-envelope"));
+
+            Assert.IsFalse(result.Created);
+            Assert.AreEqual(
+                RelianceRecoveryFailureReason.InvalidChronology,
+                result.FailureReason);
+            Assert.IsEmpty(run.Report.DescendantCases);
         }
 
         private static InstitutionalConsequenceRun CreateRun()
@@ -413,6 +933,18 @@ namespace Desk42.Tests.EditMode
                 SourceId = readsRequiredStatus ? StatusId : "status.test.other",
             });
             run.AssessorActionTraces.Add(trace);
+            run.FinalSocietyState.EventLedger.Add(new SocietyEvent
+            {
+                EventId = actionEventId,
+                CauseDecisionId = trace.DecisionId,
+                IncidentId = "incident.test.reliance",
+                Tick = cycle,
+                Kind = SocietyEventKind.AidRequested,
+                ActorId = ActorId,
+                TargetId = BeneficiaryId,
+                OpportunityId = RelianceOpportunityId,
+                Visibility = EvidenceVisibility.OfficialRecord,
+            });
         }
 
         private static void AddAlternative(
@@ -502,6 +1034,25 @@ namespace Desk42.Tests.EditMode
                     new CaseFact("watershed", "glass-canal"),
                 }),
             };
+        }
+
+        private static void AddReversalAppeal(
+            InstitutionalConsequenceRun run,
+            Ruling reversal,
+            string challengedRulingId)
+        {
+            run.Report.Appeals.Add(new Appeal
+            {
+                AppealId = $"appeal:{reversal.RulingId}",
+                CaseId = reversal.CaseId,
+                FiledCycle = reversal.Cycle - 1,
+                HearingCycle = reversal.Cycle,
+                AppellantAgentId = ActorId,
+                FilingActionEventId = "action.test.appeal-fixture",
+                ChallengedRulingId = challengedRulingId,
+                Disposition = AppealDisposition.Reversed,
+                ResultingRulingId = reversal.RulingId,
+            });
         }
 
         private static EconomicAccountState FindAccount(

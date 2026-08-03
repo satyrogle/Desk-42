@@ -202,6 +202,9 @@ namespace Desk42.Institutional
             {
                 RelianceEventId = declaration.RelianceId,
                 ObservationId = $"observation:{declaration.RelianceId}",
+                PublicObservationCycle = declaration.PublicObservationCycle < 0
+                    ? declaration.Cycle
+                    : declaration.PublicObservationCycle,
                 SourceActionEventId = sourceEvent.EventId,
                 ActorAgentId = actorAgentId,
                 BeneficiaryAgentId = context.AgentIdByRole[declaration.BeneficiaryRoleId],

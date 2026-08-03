@@ -168,8 +168,9 @@ namespace Desk42.Institutional
                     $"Reliance {reliance.ObservationId} has no enabling ruling.");
                 Require(mutationIds.Contains(reliance.EnablingMutationId),
                     $"Reliance {reliance.ObservationId} has no enabling mutation.");
-                Require(actionCycles[reliance.SourceActionEventId] == reliance.Cycle &&
-                        rulingCycles[reliance.EnablingRulingId] < reliance.Cycle,
+                long sourceActionCycle = actionCycles[reliance.SourceActionEventId];
+                Require(sourceActionCycle <= reliance.Cycle &&
+                        rulingCycles[reliance.EnablingRulingId] < sourceActionCycle,
                     $"Reliance {reliance.ObservationId} has invalid chronology.");
                 Require(reliance.RecordedResourceDelta < 0,
                     $"Reliance {reliance.ObservationId} records no irreversible cost.");

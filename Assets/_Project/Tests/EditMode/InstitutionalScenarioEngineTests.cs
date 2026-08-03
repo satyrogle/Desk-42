@@ -448,6 +448,211 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void Run_DelaysDeclaredReliancePublicRowsWithoutDelayingAuthorityEffects()
+        {
+            InstitutionalScenarioDefinition definition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            ScenarioIrreversibleRelianceDefinition declaration =
+                definition.RelianceDefinitions.Single();
+            declaration.PublicObservationCycle = declaration.Cycle + 1;
+
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                definition,
+                WorkplaceIdentityScenario.CreateReliancePolicy());
+
+            RelianceEvent authority = result.AssessorRun.RelianceLedger.Single();
+            RelianceObservation observation =
+                result.Report.RelianceObservations.Single();
+            Assert.AreEqual(declaration.Cycle, authority.Cycle);
+            Assert.AreEqual(declaration.PublicObservationCycle, observation.Cycle);
+            Assert.IsEmpty(result.AssessorRun.PendingReliancePublicProjections);
+            Assert.That(authority.AppliedEffects, Is.Not.Empty);
+            Assert.That(authority.AppliedEffects.All(effect =>
+                result.Report.MaterialConsequences.Single(material =>
+                    material.ConsequenceId == effect.MaterialConsequenceId).Cycle ==
+                declaration.PublicObservationCycle));
+            Assert.That(result.Report.Timeline.Single(entry =>
+                entry.Kind == InstitutionalTimelineKind.RelianceCreated).Cycle,
+                Is.EqualTo(declaration.PublicObservationCycle));
+
+            observation.Cycle = declaration.Cycle;
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalScenarioRunValidator.Validate(result));
+            Assert.That(exception.Message,
+                Does.Contain("action, authority state or public observation"));
+        }
+
+        [TestCase("clear-effects")]
+        [TestCase("recorded-choice")]
+        [TestCase("effect-agent")]
+        [TestCase("material-kind")]
+        [TestCase("material-resource")]
+        [TestCase("material-need")]
+        [TestCase("trace-status")]
+        public void RunValidator_RejectsRelianceProjectionThatDiffersFromDeclaration(
+            string corruption)
+        {
+            InstitutionalScenarioDefinition definition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            InstitutionalPolicyConfiguration policy =
+                WorkplaceIdentityScenario.CreatePrecedentPolicy();
+            InstitutionalScenarioRunResult result =
+                InstitutionalScenarioEngine.Run(definition, policy);
+            RelianceEvent reliance = result.AssessorRun.RelianceLedger.Single();
+            RelianceAppliedEffect applied = reliance.AppliedEffects[0];
+            MaterialConsequence material = result.Report.MaterialConsequences.Single(
+                value => value.ConsequenceId == applied.MaterialConsequenceId);
+
+            switch (corruption)
+            {
+                case "clear-effects":
+                    reliance.AppliedEffects.Clear();
+                    break;
+                case "recorded-choice":
+                    result.Report.RelianceObservations.Single().RecordedChoiceId =
+                        "choice.forged";
+                    break;
+                case "effect-agent":
+                    applied.AgentId = WorkplaceIdentityScenario.EmployerAgentId;
+                    break;
+                case "material-kind":
+                    material.Kind = material.Kind == MaterialConsequenceKind.ReliefPaid
+                        ? MaterialConsequenceKind.RelianceSpent
+                        : MaterialConsequenceKind.ReliefPaid;
+                    break;
+                case "material-resource":
+                    material.ResourceId = "resource.forged";
+                    break;
+                case "material-need":
+                    material.NeedPressureAfter++;
+                    break;
+                case "trace-status":
+                    AgentActionTrace sourceTrace = result.AssessorRun.AssessorActionTraces
+                        .Single(trace => trace.ResultEventIds.Contains(
+                            reliance.SourceActionEventId));
+                    if (sourceTrace.Action == SocietyActionKind.Work)
+                    {
+                        sourceTrace.InputSnapshot.WorkOpportunities.Single(value =>
+                                value.OpportunityId == sourceTrace.OpportunityId)
+                            .RequiredOfficialStatusId = "status.forged";
+                    }
+                    else
+                    {
+                        sourceTrace.InputSnapshot.AidOpportunities.Single(value =>
+                                value.OpportunityId == sourceTrace.OpportunityId)
+                            .RequiredOfficialStatusId = "status.forged";
+                    }
+                    break;
+                default:
+                    Assert.Fail($"Unknown corruption '{corruption}'.");
+                    break;
+            }
+
+            Assert.Throws<InvalidOperationException>(() =>
+                ValidateMutatedRun(definition, policy, result));
+        }
+
+        [Test]
+        public void RunValidator_RejectsAnOmittedDeclaredRelianceEnvelope()
+        {
+            InstitutionalScenarioDefinition definition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            InstitutionalPolicyConfiguration policy =
+                WorkplaceIdentityScenario.CreatePrecedentPolicy();
+            InstitutionalScenarioRunResult result =
+                InstitutionalScenarioEngine.Run(definition, policy);
+            RelianceEvent reliance = result.AssessorRun.RelianceLedger.Single();
+            RelianceObservation observation =
+                result.Report.RelianceObservations.Single();
+
+            result.AssessorRun.RelianceLedger.Clear();
+            result.Report.RelianceObservations.Clear();
+            result.Report.MaterialConsequences.RemoveAll(value =>
+                value.CauseId == reliance.SourceActionEventId);
+            result.Report.Timeline.RemoveAll(value =>
+                value.Kind == InstitutionalTimelineKind.RelianceCreated &&
+                value.DetailId == observation.ObservationId);
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    ValidateMutatedRun(definition, policy, result));
+            Assert.That(exception.Message,
+                Does.Contain("omits or invents a conditionally activated"));
+        }
+
+        [TestCase("omission")]
+        [TestCase("case-id")]
+        [TestCase("trigger")]
+        [TestCase("respondent")]
+        [TestCase("issue")]
+        [TestCase("facts")]
+        public void RunValidator_RejectsAnOmittedOrReattributedDeclaredRecovery(
+            string corruption)
+        {
+            InstitutionalScenarioDefinition definition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            InstitutionalPolicyConfiguration policy =
+                WorkplaceIdentityScenario.CreatePrecedentPolicy();
+            InstitutionalScenarioRunResult result =
+                InstitutionalScenarioEngine.Run(definition, policy);
+            DescendantCase recovery = result.Report.DescendantCases.Single(value =>
+                value.Kind == DescendantCaseKind.Reliance);
+
+            switch (corruption)
+            {
+                case "omission":
+                    result.Report.DescendantCases.Remove(recovery);
+                    result.Report.ObservedAgentActions.Single(value =>
+                            value.ActionEventId == recovery.CausalAgentActionId)
+                        .ResultDescendantCaseIds.Remove(recovery.CaseId);
+                    result.Report.Timeline.RemoveAll(value =>
+                        value.Kind == InstitutionalTimelineKind.DescendantCaseOpened &&
+                        value.SubjectId == recovery.CaseId);
+                    result.AssessorRun.RelianceLedger.Single().SurvivedReversal = false;
+                    break;
+                case "case-id":
+                    recovery.CaseId = "case.workplace.reliance-recovery:forged";
+                    break;
+                case "trigger":
+                    recovery.ParentCauseId =
+                        WorkplaceIdentityScenario.PrimaryInitialRulingId;
+                    break;
+                case "respondent":
+                    recovery.RespondentId =
+                        WorkplaceIdentityScenario.DependentAgentId;
+                    break;
+                case "issue":
+                    recovery.OfficialIssueId = "issue.workplace.forged";
+                    break;
+                case "facts":
+                    recovery.Facts.Facts[0].Value = "choice.workplace.forged";
+                    break;
+                default:
+                    Assert.Fail($"Unknown corruption '{corruption}'.");
+                    break;
+            }
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    ValidateMutatedRun(definition, policy, result));
+            Assert.That(exception.Message, Does.Contain("Reliance recovery"));
+        }
+
+        [Test]
+        public void RunValidator_AcceptsADeclaredRelianceWhoseConditionsNeverActivate()
+        {
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                WorkplaceIdentityScenario.CreateDefinition(),
+                WorkplaceIdentityScenario.CreateFinalDenialPolicy());
+
+            Assert.IsEmpty(result.AssessorRun.RelianceLedger);
+            Assert.IsEmpty(result.Report.RelianceObservations);
+            Assert.DoesNotThrow(() =>
+                InstitutionalScenarioRunValidator.Validate(result));
+        }
+
+        [Test]
         public void RunValidator_RejectsRemovedOrReattributedTransferProjection()
         {
             InstitutionalScenarioDefinition removedDefinition =

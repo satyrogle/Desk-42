@@ -577,7 +577,15 @@ namespace Desk42.Institutional
                 ReliedOnRulingId = dependency.CauseId,
                 ReliedOnMutationId = dependency.MutationId,
                 SourceActionEventId = aidEvent.EventId,
+                SourceActionKind = SocietyActionKind.SeekAid,
+                SourceOpportunityId = aidEvent.OpportunityId,
+                RequiredStatusId = TreatmentEntitlementStatusId,
+                ExpectedRecognisedState = true,
                 ChoiceId = "choice.purchase-continuity-treatment",
+                PublicObservationId = "reliance-observation:primary-treatment",
+                PublicObservationCycle = aidEvent.Tick,
+                RecordedChoiceId = "recorded-choice.continuity-treatment",
+                ResourceId = "resource:credits",
                 AbandonedAlternativeId = alternative.OptionId,
                 ResourceSpent = 45,
                 HealthPressureAfterAction = healthAfter,
@@ -601,6 +609,8 @@ namespace Desk42.Institutional
                 EnablingMutationId = dependency.MutationId,
                 SourceActionEventId = aidEvent.EventId,
                 RecordedChoiceId = "recorded-choice.continuity-treatment",
+                AbandonedAlternativeId = alternative.OptionId,
+                ResourceId = "resource:credits",
                 RecordedResourceDelta = -45,
             };
             context.Report.RelianceObservations.Add(observation);
@@ -611,6 +621,20 @@ namespace Desk42.Institutional
                 observation.ObservationId);
             AddMaterial(context, aidEvent.Tick, aidEvent.EventId, aidEvent.ActorId,
                 MaterialConsequenceKind.RelianceSpent, -45);
+            MaterialConsequence relianceMaterial = context.Report.MaterialConsequences[
+                context.Report.MaterialConsequences.Count - 1];
+            relianceMaterial.ResourceId = "resource:credits";
+            reliance.AppliedEffects.Add(new RelianceAppliedEffect
+            {
+                EffectId = "effect:primary-treatment-cost",
+                AgentId = aidEvent.ActorId,
+                ResourceBefore = creditsBefore,
+                ResourceAfter = account.AvailableCredits,
+                MaterialKind = relianceMaterial.Kind,
+                MaterialKindId = relianceMaterial.KindId,
+                ResourceId = relianceMaterial.ResourceId,
+                MaterialConsequenceId = relianceMaterial.ConsequenceId,
+            });
         }
 
         private static void FileAppeal(LoopContext context, SocietyEvent filingEvent)

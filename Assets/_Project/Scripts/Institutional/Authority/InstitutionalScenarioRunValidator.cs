@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Desk42.Institutional
 {
@@ -29,6 +30,8 @@ namespace Desk42.Institutional
             ValidateDeclaredRulings(context);
             ValidateDeclaredAppeals(context);
             ValidateDeclaredHoldings(context);
+            ValidateDeclaredReliance(context);
+            ValidateDeclaredRelianceRecoveries(context);
             ValidateDeclaredEntitlements(context);
             ValidateDeclaredTransfers(context);
             InstitutionalCausalGraphValidator.Validate(
@@ -193,6 +196,483 @@ namespace Desk42.Institutional
                 "Report did not finish on the declared end cycle.");
             Require(run.FinalSocietyState.CurrentTick == context.Definition.EndCycle,
                 "Society did not finish on the declared end cycle.");
+            Require(run.PendingReliancePublicProjections != null &&
+                    run.PendingReliancePublicProjections.Count == 0,
+                "Scenario execution ended with unpublished reliance projections.");
+        }
+
+        private static void ValidateDeclaredReliance(
+            InstitutionalScenarioExecutionContext context)
+        {
+            var declarations = new Dictionary<
+                string,
+                ScenarioIrreversibleRelianceDefinition>(StringComparer.Ordinal);
+            for (int i = 0; i < context.Definition.RelianceDefinitions.Count; i++)
+            {
+                ScenarioIrreversibleRelianceDefinition declaration =
+                    context.Definition.RelianceDefinitions[i];
+                declarations.Add(declaration.RelianceId, declaration);
+            }
+
+            var observedDeclarationIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < context.Run.RelianceLedger.Count; i++)
+            {
+                RelianceEvent reliance = context.Run.RelianceLedger[i];
+                if (reliance == null ||
+                    !declarations.TryGetValue(
+                        reliance.RelianceEventId,
+                        out ScenarioIrreversibleRelianceDefinition declaration) ||
+                    !observedDeclarationIds.Add(reliance.RelianceEventId))
+                {
+                    throw new InvalidOperationException(
+                        "Scenario run contains a foreign or duplicate authoritative reliance.");
+                }
+
+                string expectedActor =
+                    context.AgentIdByRole[declaration.RelyingRoleId];
+                string expectedRelated = string.IsNullOrWhiteSpace(
+                    declaration.RelatedRoleId)
+                    ? null
+                    : context.AgentIdByRole[declaration.RelatedRoleId];
+                ObservedAgentAction sourceAction = null;
+                int sourceActionCount = 0;
+                for (int j = 0;
+                     j < context.Run.Report.ObservedAgentActions.Count;
+                     j++)
+                {
+                    ObservedAgentAction candidate =
+                        context.Run.Report.ObservedAgentActions[j];
+                    if (!Equal(candidate.ActionEventId, reliance.SourceActionEventId))
+                        continue;
+                    sourceAction = candidate;
+                    sourceActionCount++;
+                }
+
+                string expectedObservationId =
+                    $"observation:{declaration.RelianceId}";
+                RelianceObservation observation = null;
+                int observationCount = 0;
+                for (int j = 0;
+                     j < context.Run.Report.RelianceObservations.Count;
+                     j++)
+                {
+                    RelianceObservation candidate =
+                        context.Run.Report.RelianceObservations[j];
+                    if (!Equal(candidate.ObservationId, expectedObservationId))
+                        continue;
+                    observation = candidate;
+                    observationCount++;
+                }
+
+                long expectedPublicCycle = declaration.PublicObservationCycle < 0
+                    ? declaration.Cycle
+                    : declaration.PublicObservationCycle;
+                AgentActionTrace sourceTrace = null;
+                int sourceTraceCount = 0;
+                for (int j = 0; j < context.Run.AssessorActionTraces.Count; j++)
+                {
+                    AgentActionTrace candidate = context.Run.AssessorActionTraces[j];
+                    if (candidate?.ResultEventIds == null ||
+                        !candidate.ResultEventIds.Contains(
+                            reliance.SourceActionEventId))
+                    {
+                        continue;
+                    }
+                    sourceTrace = candidate;
+                    sourceTraceCount++;
+                }
+                bool hasEnablingEffect =
+                    context.StatusEffectsByDeclarationId.TryGetValue(
+                        declaration.EnablingEffectRequestId,
+                        out ScenarioOfficialStatusEffectExecutionResult enabling) &&
+                    enabling?.StatusMutationResult?.RecordedMutation != null;
+                Require(reliance.Cycle == declaration.Cycle &&
+                        Equal(reliance.AgentId, expectedActor) &&
+                         Equal(
+                             reliance.BeneficiaryAgentId,
+                             context.AgentIdByRole[declaration.BeneficiaryRoleId]) &&
+                         Equal(reliance.HouseholdAgentId, expectedRelated) &&
+                        Equal(reliance.ChoiceId, declaration.IrreversibleChoiceKey) &&
+                        Equal(
+                            reliance.AbandonedAlternativeId,
+                            declaration.AbandonedAlternativeKey) &&
+                        Equal(reliance.ReliedOnRulingId, declaration.EnablingRulingId) &&
+                        reliance.SourceActionKind == declaration.SourceActionKind &&
+                        Equal(
+                            reliance.SourceOpportunityId,
+                            declaration.SourceOpportunityId) &&
+                        Equal(
+                            reliance.RequiredStatusId,
+                            declaration.ExpectedStatusId) &&
+                        reliance.ExpectedRecognisedState ==
+                            declaration.ExpectedRecognisedState &&
+                        sourceActionCount == 1 &&
+                        sourceAction.Cycle == declaration.Cycle &&
+                        Equal(sourceAction.ActorId, expectedActor) &&
+                        sourceTraceCount == 1 &&
+                        sourceTrace.Cycle == declaration.Cycle &&
+                        sourceTrace.Action == declaration.SourceActionKind &&
+                        Equal(
+                            sourceTrace.OpportunityId,
+                            declaration.SourceOpportunityId) &&
+                        InstitutionalRelianceService.TraceReadsStatus(
+                            sourceTrace,
+                            declaration.ExpectedStatusId,
+                            declaration.ExpectedRecognisedState) &&
+                        hasEnablingEffect &&
+                        Equal(
+                            reliance.ReliedOnMutationId,
+                            enabling.StatusMutationResult.RecordedMutation.MutationId) &&
+                        observationCount == 1 &&
+                        observation.Cycle == expectedPublicCycle &&
+                        Equal(observation.AgentId, expectedActor) &&
+                        Equal(
+                            observation.EnablingRulingId,
+                            declaration.EnablingRulingId) &&
+                        Equal(
+                            observation.EnablingMutationId,
+                            reliance.ReliedOnMutationId) &&
+                        Equal(
+                            observation.SourceActionEventId,
+                            reliance.SourceActionEventId) &&
+                        Equal(
+                            observation.RecordedChoiceId,
+                            declaration.IrreversibleChoiceKey) &&
+                        Equal(
+                            observation.AbandonedAlternativeId,
+                            declaration.AbandonedAlternativeKey) &&
+                        Equal(observation.ResourceId, declaration.ResourceId),
+                    $"Reliance '{declaration.RelianceId}' differs from its declared " +
+                    "action, authority state or public observation.");
+
+                Require(reliance.AppliedEffects != null &&
+                        reliance.AppliedEffects.Count == declaration.Effects.Count,
+                    $"Reliance '{declaration.RelianceId}' differs from its declared " +
+                    "material-effect count.");
+                var declaredEffects = new Dictionary<
+                    string,
+                    ScenarioRelianceEffectDefinition>(StringComparer.Ordinal);
+                for (int j = 0; j < declaration.Effects.Count; j++)
+                    declaredEffects.Add(declaration.Effects[j].EffectId, declaration.Effects[j]);
+                var appliedEffectIds = new HashSet<string>(StringComparer.Ordinal);
+                for (int j = 0; j < reliance.AppliedEffects.Count; j++)
+                {
+                    RelianceAppliedEffect applied = reliance.AppliedEffects[j];
+                    if (applied == null ||
+                        !appliedEffectIds.Add(applied.EffectId) ||
+                        !declaredEffects.TryGetValue(
+                            applied.EffectId,
+                            out ScenarioRelianceEffectDefinition effect))
+                    {
+                        throw new InvalidOperationException(
+                            $"Reliance '{declaration.RelianceId}' has an undeclared " +
+                            "or duplicate applied effect.");
+                    }
+                    string expectedRecipientRole = effect.Recipient switch
+                    {
+                        ScenarioRelianceEffectRecipient.RelyingRole =>
+                            declaration.RelyingRoleId,
+                        ScenarioRelianceEffectRecipient.BeneficiaryRole =>
+                            declaration.BeneficiaryRoleId,
+                        ScenarioRelianceEffectRecipient.RelatedRole =>
+                            declaration.RelatedRoleId,
+                        _ => null,
+                    };
+                    string expectedRecipient = string.IsNullOrEmpty(expectedRecipientRole)
+                        ? null
+                        : context.AgentIdByRole[expectedRecipientRole];
+                    string materialId = applied.MaterialConsequenceId;
+                    MaterialConsequence material = null;
+                    int materialCount = 0;
+                    for (int k = 0;
+                         k < context.Run.Report.MaterialConsequences.Count;
+                         k++)
+                    {
+                        MaterialConsequence candidate =
+                            context.Run.Report.MaterialConsequences[k];
+                        if (!Equal(candidate.ConsequenceId, materialId)) continue;
+                        material = candidate;
+                        materialCount++;
+                    }
+                    string expectedKindId = string.IsNullOrWhiteSpace(effect.MaterialKindId)
+                        ? effect.MaterialKind.ToString()
+                        : effect.MaterialKindId;
+                    string expectedResourceId = effect.ResourceId ?? declaration.ResourceId;
+                    int expectedNeedAfter = effect.HasNeedEffect
+                        ? InstitutionalMath.Clamp(
+                            checked(applied.NeedPressureBefore + effect.NeedPressureDelta),
+                            0,
+                            100)
+                        : 0;
+                    Require(materialCount == 1 &&
+                            Equal(applied.AgentId, expectedRecipient) &&
+                            applied.ResourceBefore >= 0 &&
+                            applied.ResourceAfter >= 0 &&
+                            applied.ResourceAfter - applied.ResourceBefore ==
+                                effect.ResourceDelta &&
+                            applied.HasNeedEffect == effect.HasNeedEffect &&
+                            (!effect.HasNeedEffect ||
+                             (applied.Need == effect.Need &&
+                              applied.NeedPressureBefore >= 0 &&
+                              applied.NeedPressureBefore <= 100 &&
+                              applied.NeedPressureAfter == expectedNeedAfter)) &&
+                            material.Cycle == expectedPublicCycle &&
+                            Equal(material.CauseId, reliance.SourceActionEventId) &&
+                            Equal(material.AgentId, expectedRecipient) &&
+                            material.Kind == effect.MaterialKind &&
+                            Equal(material.KindId, expectedKindId) &&
+                            Equal(material.ResourceId, expectedResourceId) &&
+                            material.ResourceDelta == effect.ResourceDelta &&
+                            material.HasNeedEffect == effect.HasNeedEffect &&
+                            (!effect.HasNeedEffect ||
+                             (material.Need == effect.Need &&
+                              material.NeedPressureBefore == applied.NeedPressureBefore &&
+                              material.NeedPressureAfter == expectedNeedAfter)),
+                        $"Reliance '{declaration.RelianceId}' has a material effect " +
+                        "that differs from its declaration or public cycle.");
+                }
+            }
+
+            var expectedDeclarationIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (ScenarioIrreversibleRelianceDefinition declaration in
+                     declarations.Values)
+            {
+                bool enablingStateExists =
+                    context.StatusEffectsByDeclarationId.TryGetValue(
+                        declaration.EnablingEffectRequestId,
+                        out ScenarioOfficialStatusEffectExecutionResult enabling) &&
+                    enabling != null &&
+                    enabling.RequiredDispositionMatched &&
+                    enabling.StatusMutationResult?.RecordedMutation != null &&
+                    enabling.StatusMutationResult.CurrentRecognisedState ==
+                        declaration.ExpectedRecognisedState;
+                if (!enablingStateExists) continue;
+
+                string expectedActor =
+                    context.AgentIdByRole[declaration.RelyingRoleId];
+                int sourceActionCount = 0;
+                for (int traceIndex = 0;
+                     traceIndex < context.Run.AssessorActionTraces.Count;
+                     traceIndex++)
+                {
+                    AgentActionTrace trace =
+                        context.Run.AssessorActionTraces[traceIndex];
+                    if (trace == null ||
+                        trace.Cycle != declaration.Cycle ||
+                        !Equal(trace.ActorId, expectedActor) ||
+                        trace.Action != declaration.SourceActionKind ||
+                        !Equal(
+                            trace.OpportunityId,
+                            declaration.SourceOpportunityId) ||
+                        trace.ResultEventIds == null)
+                    {
+                        continue;
+                    }
+                    for (int resultIndex = 0;
+                         resultIndex < trace.ResultEventIds.Count;
+                         resultIndex++)
+                    {
+                        string resultEventId = trace.ResultEventIds[resultIndex];
+                        if (context.Run.Report.ObservedAgentActions.Any(action =>
+                                Equal(action.ActionEventId, resultEventId) &&
+                                action.Cycle == declaration.Cycle &&
+                                Equal(action.ActorId, expectedActor)))
+                        {
+                            sourceActionCount++;
+                        }
+                    }
+                }
+                Require(sourceActionCount <= 1,
+                    $"Reliance '{declaration.RelianceId}' has ambiguous observed " +
+                    "source actions.");
+                if (sourceActionCount == 1)
+                    expectedDeclarationIds.Add(declaration.RelianceId);
+            }
+            Require(observedDeclarationIds.SetEquals(expectedDeclarationIds),
+                "Scenario run omits or invents a conditionally activated declared " +
+                "reliance action.");
+
+            for (int i = 0;
+                 i < context.Run.Report.RelianceObservations.Count;
+                 i++)
+            {
+                RelianceObservation observation =
+                    context.Run.Report.RelianceObservations[i];
+                bool declared = false;
+                foreach (ScenarioIrreversibleRelianceDefinition declaration in
+                         declarations.Values)
+                {
+                    if (Equal(
+                            observation.ObservationId,
+                            $"observation:{declaration.RelianceId}"))
+                    {
+                        declared = observedDeclarationIds.Contains(
+                            declaration.RelianceId);
+                        break;
+                    }
+                }
+                Require(declared,
+                    "Scenario run contains a foreign public reliance observation.");
+            }
+        }
+
+        private static void ValidateDeclaredRelianceRecoveries(
+            InstitutionalScenarioExecutionContext context)
+        {
+            InstitutionalConsequenceReport report = context.Run.Report;
+            var expectedRecoveryCaseIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < context.Definition.RelianceRecoveries.Count; i++)
+            {
+                ScenarioRelianceRecoveryDefinition declaration =
+                    context.Definition.RelianceRecoveries[i];
+                string expectedCaseId =
+                    $"{declaration.CaseIdPrefix}:{declaration.RelianceId}";
+                RelianceEvent reliance = FindReliance(
+                    context.Run,
+                    declaration.RelianceId,
+                    out int relianceCount);
+                Ruling reversal = FindRuling(
+                    report,
+                    declaration.TriggerReversalRulingId,
+                    out int reversalCount);
+                bool reversalExists = reversalCount == 1 && reversal != null &&
+                    (reversal.Disposition == RulingDisposition.ReversedAndDenied ||
+                     reversal.Disposition ==
+                         RulingDisposition.ReversedAndRecognised);
+                bool expected = relianceCount == 1 && reliance != null &&
+                    reversalExists;
+                if (!expected) continue;
+
+                Require(expectedRecoveryCaseIds.Add(expectedCaseId),
+                    $"Reliance recovery case '{expectedCaseId}' is declared more than once.");
+                DescendantCase recovery = null;
+                int recoveryCount = 0;
+                for (int caseIndex = 0;
+                     caseIndex < report.DescendantCases.Count;
+                     caseIndex++)
+                {
+                    DescendantCase candidate = report.DescendantCases[caseIndex];
+                    if (!Equal(candidate?.CaseId, expectedCaseId)) continue;
+                    recovery = candidate;
+                    recoveryCount++;
+                }
+
+                string expectedClaimant =
+                    context.AgentIdByRole[declaration.ClaimantRoleId];
+                string expectedRespondent =
+                    context.AgentIdByRole[declaration.RespondentRoleId];
+                Require(recoveryCount == 1 && recovery != null &&
+                        recovery.Kind == DescendantCaseKind.Reliance &&
+                        recovery.Status == DescendantCaseStatus.Open &&
+                        recovery.OpenedCycle == declaration.Cycle &&
+                        recovery.OpenedCycle == reversal.Cycle &&
+                        Equal(recovery.ParentCaseId, declaration.ParentCaseId) &&
+                        Equal(
+                            recovery.ParentCauseId,
+                            declaration.TriggerReversalRulingId) &&
+                        Equal(
+                            recovery.OriginatingRulingId,
+                            declaration.TriggerReversalRulingId) &&
+                        Equal(
+                            recovery.OriginatingEventId,
+                            reliance.SourceActionEventId) &&
+                        Equal(
+                            recovery.CausalAgentActionId,
+                            reliance.SourceActionEventId) &&
+                        Equal(recovery.ClaimantAgentId, expectedClaimant) &&
+                        Equal(recovery.ClaimantAgentId, reliance.AgentId) &&
+                        Equal(recovery.RespondentId, expectedRespondent) &&
+                        Equal(recovery.OfficialIssueId, declaration.IssueId) &&
+                        string.IsNullOrWhiteSpace(
+                            recovery.OfficialIdentityConditionId) &&
+                        string.IsNullOrWhiteSpace(recovery.OfficialEmployerId) &&
+                        EqualFacts(recovery.Facts, declaration.Facts) &&
+                        recovery.SourceActionEventIds != null &&
+                        recovery.SourceActionEventIds.Count == 1 &&
+                        Equal(
+                            recovery.SourceActionEventIds[0],
+                            reliance.SourceActionEventId),
+                    $"Reliance recovery '{declaration.RecoveryDefinitionId}' differs " +
+                    "from its declared case, trigger, parties, issue, facts or source.");
+
+                var expectedConnectedAgents = new HashSet<string>(
+                    StringComparer.Ordinal);
+                expectedConnectedAgents.Add(reliance.AgentId);
+                if (!string.IsNullOrWhiteSpace(reliance.BeneficiaryAgentId))
+                    expectedConnectedAgents.Add(reliance.BeneficiaryAgentId);
+                if (!string.IsNullOrWhiteSpace(reliance.HouseholdAgentId))
+                    expectedConnectedAgents.Add(reliance.HouseholdAgentId);
+                Require(recovery.ConnectedAgentIds != null &&
+                        recovery.ConnectedAgentIds.Count ==
+                            expectedConnectedAgents.Count &&
+                        expectedConnectedAgents.SetEquals(
+                            recovery.ConnectedAgentIds) &&
+                        recovery.CitedHoldingIds != null &&
+                        recovery.CitedHoldingIds.Count == 0,
+                    $"Reliance recovery '{declaration.RecoveryDefinitionId}' has a " +
+                    "foreign connected participant or citation.");
+
+                ObservedAgentAction sourceAction = null;
+                int sourceActionCount = 0;
+                for (int actionIndex = 0;
+                     actionIndex < report.ObservedAgentActions.Count;
+                     actionIndex++)
+                {
+                    ObservedAgentAction candidate =
+                        report.ObservedAgentActions[actionIndex];
+                    if (!Equal(
+                            candidate?.ActionEventId,
+                            reliance.SourceActionEventId))
+                    {
+                        continue;
+                    }
+                    sourceAction = candidate;
+                    sourceActionCount++;
+                }
+                Require(sourceActionCount == 1 &&
+                        Count(
+                            sourceAction.ResultDescendantCaseIds,
+                            expectedCaseId) == 1 &&
+                        reliance.SurvivedReversal,
+                    $"Reliance recovery '{declaration.RecoveryDefinitionId}' lacks " +
+                    "its exact action and authority backlinks.");
+
+                int exactAppealCount = 0;
+                int resultingAppealCount = 0;
+                for (int appealIndex = 0;
+                     appealIndex < report.Appeals.Count;
+                     appealIndex++)
+                {
+                    Appeal appeal = report.Appeals[appealIndex];
+                    if (!Equal(
+                            appeal?.ResultingRulingId,
+                            declaration.TriggerReversalRulingId))
+                    {
+                        continue;
+                    }
+                    resultingAppealCount++;
+                    if (appeal.Disposition == AppealDisposition.Reversed &&
+                        Equal(appeal.CaseId, declaration.ParentCaseId) &&
+                        Equal(
+                            appeal.ChallengedRulingId,
+                            reliance.ReliedOnRulingId))
+                    {
+                        exactAppealCount++;
+                    }
+                }
+                Require(resultingAppealCount == 1 && exactAppealCount == 1,
+                    $"Reliance recovery '{declaration.RecoveryDefinitionId}' was not " +
+                    "caused by reversal of the exact ruling relied on.");
+            }
+
+            for (int i = 0; i < report.DescendantCases.Count; i++)
+            {
+                DescendantCase recovery = report.DescendantCases[i];
+                if (recovery?.Kind != DescendantCaseKind.Reliance) continue;
+                Require(expectedRecoveryCaseIds.Contains(recovery.CaseId),
+                    $"Scenario run contains foreign or conditionally unearned " +
+                    $"reliance recovery '{recovery.CaseId}'.");
+            }
         }
 
         private static void ValidateBindings(
@@ -1038,12 +1518,67 @@ namespace Desk42.Institutional
 
         private static int Count(IReadOnlyList<string> values, string expected)
         {
+            if (values == null) return 0;
             int count = 0;
             for (int i = 0; i < values.Count; i++)
             {
                 if (Equal(values[i], expected)) count++;
             }
             return count;
+        }
+
+        private static RelianceEvent FindReliance(
+            InstitutionalConsequenceRun run,
+            string relianceId,
+            out int count)
+        {
+            RelianceEvent result = null;
+            count = 0;
+            if (run?.RelianceLedger == null) return null;
+            for (int i = 0; i < run.RelianceLedger.Count; i++)
+            {
+                RelianceEvent candidate = run.RelianceLedger[i];
+                if (!Equal(candidate?.RelianceEventId, relianceId)) continue;
+                result = candidate;
+                count++;
+            }
+            return result;
+        }
+
+        private static Ruling FindRuling(
+            InstitutionalConsequenceReport report,
+            string rulingId,
+            out int count)
+        {
+            Ruling result = null;
+            count = 0;
+            if (report?.Rulings == null) return null;
+            for (int i = 0; i < report.Rulings.Count; i++)
+            {
+                Ruling candidate = report.Rulings[i];
+                if (!Equal(candidate?.RulingId, rulingId)) continue;
+                result = candidate;
+                count++;
+            }
+            return result;
+        }
+
+        private static bool EqualFacts(CaseFactSet left, CaseFactSet right)
+        {
+            if (left?.Facts == null || right?.Facts == null ||
+                left.Facts.Count != right.Facts.Count)
+            {
+                return false;
+            }
+            for (int i = 0; i < left.Facts.Count; i++)
+            {
+                if (left.Facts[i] == null ||
+                    !left.Facts[i].Equals(right.Facts[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private static bool ContainsExactCitation(

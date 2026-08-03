@@ -81,6 +81,186 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void Validator_BoundsReliancePublicObservationAfterItsAction()
+        {
+            InstitutionalScenarioDefinition valid = ValidDefinition();
+            valid.RelianceDefinitions[0].PublicObservationCycle =
+                valid.RelianceDefinitions[0].Cycle + 1;
+            Assert.DoesNotThrow(
+                () => InstitutionalScenarioDefinitionValidator.Validate(valid));
+
+            InstitutionalScenarioDefinition early = ValidDefinition();
+            early.RelianceDefinitions[0].PublicObservationCycle =
+                early.RelianceDefinitions[0].Cycle - 1;
+            Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(early));
+
+            InstitutionalScenarioDefinition late = ValidDefinition();
+            late.RelianceDefinitions[0].PublicObservationCycle =
+                late.EndCycle + 1;
+            Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(late));
+
+            InstitutionalScenarioDefinition sameCycleRecovery = ValidDefinition();
+            sameCycleRecovery.RelianceDefinitions[0].PublicObservationCycle =
+                sameCycleRecovery.RelianceRecoveries[0].Cycle;
+            Assert.Throws<InvalidOperationException>(() =>
+                InstitutionalScenarioDefinitionValidator.Validate(sameCycleRecovery));
+        }
+
+        [Test]
+        public void Validator_RejectsMultipleReliancesBoundToOneObservedAction()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.Alternatives.Add(new ScenarioAlternativeDefinition
+            {
+                AlternativeKey = "alternative.002",
+                OwnerRoleId = "role.alpha",
+                InitiallyAvailable = true,
+                ResourceValue = 10,
+            });
+            definition.RelianceDefinitions.Add(new ScenarioIrreversibleRelianceDefinition
+            {
+                RelianceId = "reliance.002",
+                Cycle = 5,
+                RelyingRoleId = "role.alpha",
+                SourceOpportunityId = "op.001-aid",
+                SourceActionKind = SocietyActionKind.SeekAid,
+                EnablingEffectRequestId = "effect.001",
+                EnablingRulingId = "ruling:case.001:initial:4",
+                IrreversibleChoiceKey = "choice.002",
+                AbandonedAlternativeKey = "alternative.002",
+                ExpectedStatusId = "status.relief",
+                ExpectedRecognisedState = true,
+                BeneficiaryRoleId = "role.alpha",
+                ResourceId = "resource.reliance.002",
+                Effects = new List<ScenarioRelianceEffectDefinition>
+                {
+                    new()
+                    {
+                        EffectId = "reliance-effect.002",
+                        Recipient = ScenarioRelianceEffectRecipient.RelyingRole,
+                        ResourceDelta = -10,
+                        MaterialKind = MaterialConsequenceKind.RelianceSpent,
+                        MaterialKindId = "material-kind.reliance-spent",
+                        ResourceId = "resource.reliance.002",
+                    },
+                },
+            });
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message,
+                Does.Contain("same role, cycle and source opportunity"));
+        }
+
+        [Test]
+        public void Validator_RejectsRelianceOnAnOpportunityWithoutFrozenStatusInput()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.RelianceDefinitions[0].SourceActionKind =
+                SocietyActionKind.Appeal;
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message,
+                Does.Contain("status-bearing work or aid action"));
+        }
+
+        [Test]
+        public void Validator_RequiresDistinctRolesForReliancesSharingAnOpportunityCycle()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            ScenarioParticipantQuery overlappingQuery =
+                definition.ParticipantRoles[0].Query;
+            definition.ParticipantRoles.Add(new ScenarioParticipantRoleDefinition
+            {
+                RoleId = "role.gamma",
+                Query = new ScenarioParticipantQuery
+                {
+                    RequiredSpeciesId = overlappingQuery.RequiredSpeciesId,
+                    RequiredEmployerId = overlappingQuery.RequiredEmployerId,
+                    RequiredRecognisedStatusIds = new List<string>(
+                        overlappingQuery.RequiredRecognisedStatusIds),
+                    RequiredUnrecognisedStatusIds = new List<string>(
+                        overlappingQuery.RequiredUnrecognisedStatusIds),
+                    RequiredAnomalyTraitIds = new List<string>(
+                        overlappingQuery.RequiredAnomalyTraitIds),
+                    RequiredCommitmentKinds = new List<string>(
+                        overlappingQuery.RequiredCommitmentKinds),
+                },
+            });
+            definition.Opportunities.Single(value =>
+                value.OpportunityId == "op.001-aid").EligibleRoleIds.Add("role.gamma");
+            definition.OfficialStatusEffectRequests.Insert(
+                1,
+                new ScenarioOfficialStatusEffectRequest
+                {
+                    EffectRequestId = "effect.001-beta",
+                    Cycle = 4,
+                    CauseCaseId = "case.001",
+                    CauseRulingId = "ruling:case.001:initial:4",
+                    RequiredRulingDisposition =
+                        RulingDisposition.ProvisionallyRecognised,
+                    TargetRoleId = "role.gamma",
+                    StatusId = "status.relief",
+                    RequestedRecognisedState = true,
+                    RequestedResourceDelta = 25,
+                });
+            definition.Alternatives.Add(new ScenarioAlternativeDefinition
+            {
+                AlternativeKey = "alternative.002",
+                OwnerRoleId = "role.gamma",
+                InitiallyAvailable = true,
+                ResourceValue = 10,
+            });
+            definition.RelianceDefinitions.Add(new ScenarioIrreversibleRelianceDefinition
+            {
+                RelianceId = "reliance.002",
+                Cycle = 5,
+                RelyingRoleId = "role.gamma",
+                SourceOpportunityId = "op.001-aid",
+                SourceActionKind = SocietyActionKind.SeekAid,
+                EnablingEffectRequestId = "effect.001-beta",
+                EnablingRulingId = "ruling:case.001:initial:4",
+                IrreversibleChoiceKey = "choice.002",
+                AbandonedAlternativeKey = "alternative.002",
+                ExpectedStatusId = "status.relief",
+                ExpectedRecognisedState = true,
+                BeneficiaryRoleId = "role.gamma",
+                ResourceId = "resource.reliance.002",
+                Effects = new List<ScenarioRelianceEffectDefinition>
+                {
+                    new()
+                    {
+                        EffectId = "reliance-effect.002",
+                        Recipient = ScenarioRelianceEffectRecipient.RelyingRole,
+                        ResourceDelta = -10,
+                        MaterialKind = MaterialConsequenceKind.RelianceSpent,
+                        MaterialKindId = "material-kind.reliance-spent",
+                        ResourceId = "resource.reliance.002",
+                    },
+                },
+            });
+            definition.InitialEconomicAccounts.Add(
+                new ScenarioInitialEconomicAccountDefinition
+                {
+                    AccountId = "account.003",
+                    OwnerRoleId = "role.gamma",
+                    InitialCredits = 60,
+                    CycleIncome = 3,
+                });
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message,
+                Does.Contain("reliance source roles sharing an opportunity cycle"));
+        }
+
+        [Test]
         public void Validator_RejectsDirectAgentIdsInOperations()
         {
             InstitutionalScenarioDefinition definition = ValidDefinition();

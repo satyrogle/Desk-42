@@ -209,6 +209,12 @@ namespace Desk42.Institutional
     {
         public string RelianceId;
         public long Cycle;
+        /// <summary>
+        /// Cycle on which the already-created reliance becomes part of the public
+        /// institutional record. A value of -1 preserves immediate projection on
+        /// <see cref="Cycle"/>.
+        /// </summary>
+        public long PublicObservationCycle = -1;
         public string RelyingRoleId;
         public string SourceOpportunityId;
         public SocietyActionKind SourceActionKind;
@@ -370,7 +376,7 @@ namespace Desk42.Institutional
     [Serializable]
     public sealed class InstitutionalScenarioDefinition
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 3;
 
         public int SchemaVersion = CurrentSchemaVersion;
         public string ScenarioId;

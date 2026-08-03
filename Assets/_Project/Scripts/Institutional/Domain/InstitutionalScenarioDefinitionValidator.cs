@@ -860,6 +860,9 @@ namespace Desk42.Institutional
             var result = new Dictionary<string, ScenarioIrreversibleRelianceDefinition>(
                 StringComparer.Ordinal);
             var choiceKeys = new HashSet<string>(StringComparer.Ordinal);
+            var sourceRolesByOpportunityCycle = new Dictionary<
+                string,
+                List<string>>(StringComparer.Ordinal);
             string previousId = null;
             for (int i = 0; i < definition.RelianceDefinitions.Count; i++)
             {
@@ -871,18 +874,65 @@ namespace Desk42.Institutional
                 if (!result.TryAdd(item.RelianceId, item))
                     throw new InvalidOperationException($"Duplicate reliance id '{item.RelianceId}'.");
                 ValidateCycle(item.Cycle, definition, "reliance cycle");
+                if (item.PublicObservationCycle < -1)
+                {
+                    throw new InvalidOperationException(
+                        "Reliance public observation cycle must be -1 or a declared scenario cycle.");
+                }
+                long publicObservationCycle = ResolvePublicObservationCycle(item);
+                ValidateCycle(
+                    publicObservationCycle,
+                    definition,
+                    "reliance public observation cycle");
+                if (publicObservationCycle < item.Cycle)
+                {
+                    throw new InvalidOperationException(
+                        "Reliance cannot become public before its irreversible action occurs.");
+                }
                 RequireRoleReference(item.RelyingRoleId, "relying role", roles, agentIds);
+                string sourceOpportunityCycleKey =
+                    OpportunityCycleKey(item.SourceOpportunityId, item.Cycle);
+                if (!sourceRolesByOpportunityCycle.TryGetValue(
+                        sourceOpportunityCycleKey,
+                        out List<string> sourceRoles))
+                {
+                    sourceRoles = new List<string>();
+                    sourceRolesByOpportunityCycle.Add(
+                        sourceOpportunityCycleKey,
+                        sourceRoles);
+                }
+                for (int sourceRoleIndex = 0;
+                     sourceRoleIndex < sourceRoles.Count;
+                     sourceRoleIndex++)
+                {
+                    if (string.Equals(
+                            sourceRoles[sourceRoleIndex],
+                            item.RelyingRoleId,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Reliance definitions cannot bind the same role, cycle and " +
+                            "source opportunity more than once; combine consequences as " +
+                            "effects of one reliance action.");
+                    }
+                    RequireRolesDeclaredDistinct(
+                        sourceRoles[sourceRoleIndex],
+                        item.RelyingRoleId,
+                        roles,
+                        "reliance source roles sharing an opportunity cycle");
+                }
+                sourceRoles.Add(item.RelyingRoleId);
                 RequireRoleReference(item.BeneficiaryRoleId, "reliance beneficiary", roles, agentIds);
                 if (!string.IsNullOrEmpty(item.RelatedRoleId))
                     RequireRoleReference(item.RelatedRoleId, "reliance related role", roles, agentIds);
                 if (!opportunities.TryGetValue(item.SourceOpportunityId, out ScenarioOpportunityDefinition opportunity))
                     throw new InvalidOperationException("Reliance references a missing source opportunity.");
                 if (item.SourceActionKind != SocietyActionKind.Work &&
-                    item.SourceActionKind != SocietyActionKind.SeekAid &&
-                    item.SourceActionKind != SocietyActionKind.Appeal)
+                    item.SourceActionKind != SocietyActionKind.SeekAid)
                 {
                     throw new InvalidOperationException(
-                        "Reliance requires an opportunity-backed action with a stable opportunity id.");
+                        "Reliance requires a status-bearing work or aid action with a " +
+                        "stable opportunity id.");
                 }
                 ValidateActionOpportunityCompatibility(item.SourceActionKind, opportunity.Kind, "reliance");
                 if (!opportunity.EligibleRoleIds.Contains(item.RelyingRoleId))
@@ -1208,27 +1258,43 @@ namespace Desk42.Institutional
                         StringComparison.Ordinal) ||
                     !cases.TryGetValue(item.ParentCaseId, out ScenarioCaseDefinition parentCase) ||
                     item.Cycle != RulingCycle(parentCase, item.TriggerReversalRulingId) ||
-                    item.Cycle <= reliedOn.Cycle)
+                    item.Cycle <= reliedOn.Cycle ||
+                    item.Cycle <= ResolvePublicObservationCycle(reliedOn))
                 {
                     throw new InvalidOperationException(
-                        "Reliance recovery must be caused by a later ruling in its parent case.");
+                        "Reliance recovery must be caused by a later ruling in its parent case " +
+                        "and must follow public observation of the reliance.");
                 }
-                bool appealProducesRuling = false;
+                int resultingAppealCount = 0;
+                int exactReversalAppealCount = 0;
                 foreach (ScenarioAppealDefinition appeal in appeals.Values)
                 {
-                    if (string.Equals(
-                        appeal.ResultingRulingId,
-                        item.TriggerReversalRulingId,
-                        StringComparison.Ordinal))
+                    if (!string.Equals(
+                            appeal.ResultingRulingId,
+                            item.TriggerReversalRulingId,
+                            StringComparison.Ordinal))
                     {
-                        appealProducesRuling = true;
-                        break;
+                        continue;
+                    }
+                    resultingAppealCount++;
+                    if (string.Equals(
+                            appeal.CaseId,
+                            item.ParentCaseId,
+                            StringComparison.Ordinal) &&
+                        string.Equals(
+                            appeal.ChallengedRulingId,
+                            reliedOn.EnablingRulingId,
+                            StringComparison.Ordinal))
+                    {
+                        exactReversalAppealCount++;
                     }
                 }
-                if (!appealProducesRuling)
+                if (resultingAppealCount == 0 ||
+                    exactReversalAppealCount != resultingAppealCount)
                 {
                     throw new InvalidOperationException(
-                        "Reliance recovery trigger must be an appeal's resulting ruling.");
+                        "Every appeal capable of producing a reliance recovery trigger " +
+                        "must challenge the exact ruling relied on in the same case.");
                 }
                 ValidateStableId(item.CaseIdPrefix, "reliance recovery case prefix");
                 RequireRoleReference(item.ClaimantRoleId, "recovery claimant", roles, agentIds);
@@ -1249,6 +1315,14 @@ namespace Desk42.Institutional
                 RejectDirectAgentIdsInFacts(
                     item.Facts, "reliance recovery facts", agentIds);
             }
+        }
+
+        private static long ResolvePublicObservationCycle(
+            ScenarioIrreversibleRelianceDefinition definition)
+        {
+            return definition.PublicObservationCycle < 0
+                ? definition.Cycle
+                : definition.PublicObservationCycle;
         }
 
         private static Dictionary<string, ScenarioHoldingDefinition> ValidateHoldings(

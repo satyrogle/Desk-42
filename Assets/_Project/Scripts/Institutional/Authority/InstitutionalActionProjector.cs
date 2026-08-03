@@ -133,6 +133,27 @@ namespace Desk42.Institutional
             }
         }
 
+        internal static SocietyEventKind EventKindFor(SocietyActionKind action)
+        {
+            switch (action)
+            {
+                case SocietyActionKind.Work:
+                    return SocietyEventKind.WorkPerformed;
+                case SocietyActionKind.SeekAid:
+                    return SocietyEventKind.AidRequested;
+                case SocietyActionKind.Help:
+                    return SocietyEventKind.AssistanceGiven;
+                case SocietyActionKind.Disclose:
+                    return SocietyEventKind.EvidenceDisclosed;
+                case SocietyActionKind.Withhold:
+                    return SocietyEventKind.ResponseWithheld;
+                case SocietyActionKind.Appeal:
+                    return SocietyEventKind.AppealFiled;
+                default:
+                    return SocietyEventKind.NoActionObserved;
+            }
+        }
+
         private static void PreflightExactOnce(
             InstitutionalConsequenceRun run,
             SimulationStepResult step)

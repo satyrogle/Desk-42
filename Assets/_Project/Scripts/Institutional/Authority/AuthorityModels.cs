@@ -65,7 +65,15 @@ namespace Desk42.Institutional
         internal string ReliedOnRulingId;
         internal string ReliedOnMutationId;
         internal string SourceActionEventId;
+        internal SocietyActionKind SourceActionKind;
+        internal string SourceOpportunityId;
+        internal string RequiredStatusId;
+        internal bool ExpectedRecognisedState;
         internal string ChoiceId;
+        internal string PublicObservationId;
+        internal long PublicObservationCycle;
+        internal string RecordedChoiceId;
+        internal string ResourceId;
         internal string AbandonedAlternativeId;
         internal int ResourceSpent;
         internal bool SurvivedReversal;
@@ -89,11 +97,26 @@ namespace Desk42.Institutional
         internal string AgentId;
         internal int ResourceBefore;
         internal int ResourceAfter;
+        internal MaterialConsequenceKind MaterialKind;
+        internal string MaterialKindId;
+        internal string ResourceId;
         internal bool HasNeedEffect;
         internal NeedKind Need;
         internal int NeedPressureBefore;
         internal int NeedPressureAfter;
         internal string MaterialConsequenceId;
+    }
+
+    /// <summary>
+    /// Frozen public rows produced by an authoritative reliance action but withheld
+    /// until their declared observation cycle. This state is assessor-only so a
+    /// future-dated row cannot leak into the player-safe report early.
+    /// </summary>
+    internal sealed class PendingReliancePublicProjection
+    {
+        internal string RelianceEventId;
+        internal RelianceObservation Observation;
+        internal List<MaterialConsequence> MaterialConsequences = new();
     }
 
     internal sealed class EconomicAccountState
@@ -159,6 +182,8 @@ namespace Desk42.Institutional
         internal List<AuthoritativeBeliefLink> AuthoritativeBeliefLinks = new();
         internal List<AgentActionTrace> AssessorActionTraces = new();
         internal List<RelianceEvent> RelianceLedger = new();
+        internal List<PendingReliancePublicProjection>
+            PendingReliancePublicProjections = new();
         internal List<EconomicAccountState> EconomicAccounts = new();
         internal List<AlternativeOptionState> AlternativeOptions = new();
         internal List<WorkAllocationState> WorkAllocations = new();

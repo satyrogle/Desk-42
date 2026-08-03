@@ -526,6 +526,26 @@ namespace Desk42.Institutional
                             descendant.ParentCaseId) &&
                         originatingRuling.Cycle <= descendant.OpenedCycle,
                     $"Descendant case {descendant.CaseId} has an invalid originating ruling.");
+                if (descendant.Kind == DescendantCaseKind.Reliance)
+                {
+                    Require(OrdinalEquals(
+                                descendant.ParentCauseId,
+                                descendant.OriginatingRulingId) &&
+                            OrdinalEquals(
+                                descendant.OriginatingEventId,
+                                descendant.CausalAgentActionId) &&
+                            descendant.SourceActionEventIds.Count == 1 &&
+                            OrdinalEquals(
+                                descendant.SourceActionEventIds[0],
+                                descendant.CausalAgentActionId) &&
+                            originatingRuling.Cycle == descendant.OpenedCycle &&
+                            (originatingRuling.Disposition ==
+                                 RulingDisposition.ReversedAndDenied ||
+                             originatingRuling.Disposition ==
+                                 RulingDisposition.ReversedAndRecognised),
+                        $"Reliance descendant {descendant.CaseId} lacks its exact " +
+                        "reversal and source-action envelope.");
+                }
                 Require(TryResolveCauseCycle(
                             index,
                             descendant.ParentCauseId,
@@ -723,12 +743,12 @@ namespace Desk42.Institutional
                         reliance.SourceActionEventId,
                         out ObservedAgentAction action) &&
                         OrdinalEquals(action.ActorId, reliance.AgentId) &&
-                        action.Cycle == reliance.Cycle,
+                        action.Cycle <= reliance.Cycle,
                     $"Reliance observation {reliance.ObservationId} has an invalid source action.");
                 Require(index.Rulings.TryGetValue(
                         reliance.EnablingRulingId,
                         out Ruling ruling) &&
-                        ruling.Cycle < reliance.Cycle,
+                        ruling.Cycle < action.Cycle,
                     $"Reliance observation {reliance.ObservationId} has an invalid enabling ruling.");
                 Require(index.Mutations.TryGetValue(
                         reliance.EnablingMutationId,
@@ -757,6 +777,16 @@ namespace Desk42.Institutional
                 if (consequence.ResourceDelta != 0)
                     RequireId(consequence.ResourceId,
                         $"material consequence {consequence.ConsequenceId} resource");
+                Require(consequence.HasNeedEffect
+                        ? Enum.IsDefined(typeof(NeedKind), consequence.Need) &&
+                          consequence.NeedPressureBefore >= 0 &&
+                          consequence.NeedPressureBefore <= 100 &&
+                          consequence.NeedPressureAfter >= 0 &&
+                          consequence.NeedPressureAfter <= 100
+                        : consequence.NeedPressureBefore == 0 &&
+                          consequence.NeedPressureAfter == 0,
+                    $"Material consequence {consequence.ConsequenceId} has an " +
+                    "invalid need projection.");
                 Require(TryResolveCauseCycle(
                             index,
                             consequence.CauseId,
@@ -1261,10 +1291,13 @@ namespace Desk42.Institutional
                     run.AuthoritativeBeliefLinks != null &&
                     run.AssessorActionTraces != null &&
                     run.RelianceLedger != null &&
+                    run.PendingReliancePublicProjections != null &&
                     run.EconomicAccounts != null &&
                     run.AlternativeOptions != null &&
                     run.WorkAllocations != null,
                 "Scenario run has an uninitialised authority collection.");
+            Require(run.PendingReliancePublicProjections.Count == 0,
+                "A completed scenario run retains unpublished reliance projections.");
 
             Dictionary<string, LivedEvent> livedEvents = UniqueMap(
                 run.AuthoritativeEvents,
@@ -1355,6 +1388,24 @@ namespace Desk42.Institutional
                 for (int i = 0; i < trace.ResultEventIds.Count; i++)
                 {
                     string resultId = trace.ResultEventIds[i];
+                    SocietyEvent resultEvent = FindSocietyEvent(
+                        run.FinalSocietyState,
+                        resultId,
+                        out int resultEventCount);
+                    Require(resultEventCount == 1 && resultEvent != null &&
+                            OrdinalEquals(
+                                resultEvent.CauseDecisionId,
+                                trace.DecisionId) &&
+                            resultEvent.Tick == trace.Cycle &&
+                            OrdinalEquals(resultEvent.ActorId, trace.ActorId) &&
+                            resultEvent.Kind ==
+                                InstitutionalActionProjector.EventKindFor(
+                                    trace.Action) &&
+                            OrdinalEquals(
+                                resultEvent.OpportunityId,
+                                trace.OpportunityId),
+                        $"Action trace {trace.DecisionId} lacks its exact final " +
+                        $"society event {resultId}.");
                     if (!index.Actions.TryGetValue(resultId, out ObservedAgentAction action))
                         continue;
                     observedTraceCounts[resultId] = observedTraceCounts.TryGetValue(
@@ -1379,7 +1430,9 @@ namespace Desk42.Institutional
                     action.ActionEventId,
                     out int eventCount);
                 Require(eventCount == 1 && societyEvent.Tick == action.Cycle &&
-                        OrdinalEquals(societyEvent.ActorId, action.ActorId),
+                        OrdinalEquals(societyEvent.ActorId, action.ActorId) &&
+                        InstitutionalActionProjector.ActivityFor(
+                            societyEvent.Kind) == action.Activity,
                     $"Observed action {action.ActionEventId} lacks one final society event.");
             }
         }
@@ -1393,6 +1446,10 @@ namespace Desk42.Institutional
                 value => value.RelianceEventId,
                 "authority reliance event");
             var matchedObservations = new HashSet<string>(StringComparer.Ordinal);
+            var relianceSourceActionIds = new HashSet<string>(StringComparer.Ordinal);
+            var materialIdsByRelianceAction = new Dictionary<
+                string,
+                HashSet<string>>(StringComparer.Ordinal);
 
             foreach (RelianceEvent reliance in ledger.Values)
             {
@@ -1402,6 +1459,29 @@ namespace Desk42.Institutional
                     $"authority reliance {reliance.RelianceEventId} actor");
                 RequireId(reliance.BeneficiaryAgentId,
                     $"authority reliance {reliance.RelianceEventId} beneficiary");
+                RequireId(reliance.ChoiceId,
+                    $"authority reliance {reliance.RelianceEventId} private choice");
+                RequireId(reliance.PublicObservationId,
+                    $"authority reliance {reliance.RelianceEventId} public observation");
+                RequireId(reliance.RecordedChoiceId,
+                    $"authority reliance {reliance.RelianceEventId} recorded choice");
+                Require((reliance.SourceActionKind == SocietyActionKind.Work ||
+                         reliance.SourceActionKind == SocietyActionKind.SeekAid) &&
+                        !string.IsNullOrWhiteSpace(reliance.SourceOpportunityId) &&
+                        !string.IsNullOrWhiteSpace(reliance.RequiredStatusId),
+                    $"Authority reliance {reliance.RelianceEventId} lacks a valid " +
+                    "status-bearing source action contract.");
+                ValidateCycle(reliance.PublicObservationCycle, index.Report.FinalCycle,
+                    $"Authority reliance {reliance.RelianceEventId} public observation");
+                Require(reliance.PublicObservationCycle >= reliance.Cycle,
+                    $"Authority reliance {reliance.RelianceEventId} becomes public " +
+                    "before its action.");
+                if (reliance.ResourceSpent != 0)
+                    RequireId(reliance.ResourceId,
+                        $"authority reliance {reliance.RelianceEventId} resource");
+                Require(relianceSourceActionIds.Add(reliance.SourceActionEventId),
+                    $"Authority reliance source action {reliance.SourceActionEventId} " +
+                    "is reused by multiple reliance events.");
                 Require(run.FinalSocietyState.GetAgent(reliance.AgentId) != null &&
                         run.FinalSocietyState.GetAgent(reliance.BeneficiaryAgentId) != null,
                     $"Authority reliance {reliance.RelianceEventId} references an unknown agent.");
@@ -1409,6 +1489,71 @@ namespace Desk42.Institutional
                         index.Mutations.ContainsKey(reliance.ReliedOnMutationId) &&
                         index.Actions.ContainsKey(reliance.SourceActionEventId),
                     $"Authority reliance {reliance.RelianceEventId} has a broken causal link.");
+                ObservedAgentAction sourceAction =
+                    index.Actions[reliance.SourceActionEventId];
+                Require(sourceAction.Cycle == reliance.Cycle &&
+                        OrdinalEquals(sourceAction.ActorId, reliance.AgentId),
+                    $"Authority reliance {reliance.RelianceEventId} does not occur " +
+                    "with its source action.");
+                OfficialStatusMutation enablingMutation =
+                    index.Mutations[reliance.ReliedOnMutationId];
+                Require(OrdinalEquals(
+                            enablingMutation.AffectedAgentId,
+                            reliance.AgentId) &&
+                        OrdinalEquals(
+                            enablingMutation.StatusId,
+                            reliance.RequiredStatusId) &&
+                        enablingMutation.AfterRecognised ==
+                            reliance.ExpectedRecognisedState &&
+                        enablingMutation.Cycle < sourceAction.Cycle,
+                    $"Authority reliance {reliance.RelianceEventId} has an invalid " +
+                    "enabling status mutation.");
+                foreach (OfficialStatusMutation candidate in index.Mutations.Values)
+                {
+                    if (ReferenceEquals(candidate, enablingMutation) ||
+                        !OrdinalEquals(
+                            candidate.AffectedAgentId,
+                            enablingMutation.AffectedAgentId) ||
+                        !OrdinalEquals(
+                            candidate.StatusId,
+                            enablingMutation.StatusId))
+                    {
+                        continue;
+                    }
+                    Require(candidate.Cycle < enablingMutation.Cycle ||
+                            candidate.Cycle >= sourceAction.Cycle,
+                        $"Authority reliance {reliance.RelianceEventId} cites a " +
+                        "status mutation superseded before its action.");
+                }
+                AgentActionTrace sourceTrace = null;
+                int sourceTraceCount = 0;
+                for (int traceIndex = 0;
+                     traceIndex < run.AssessorActionTraces.Count;
+                     traceIndex++)
+                {
+                    AgentActionTrace candidate = run.AssessorActionTraces[traceIndex];
+                    if (candidate?.ResultEventIds == null ||
+                        !candidate.ResultEventIds.Contains(
+                            reliance.SourceActionEventId))
+                    {
+                        continue;
+                    }
+                    sourceTrace = candidate;
+                    sourceTraceCount++;
+                }
+                Require(sourceTraceCount == 1 &&
+                        sourceTrace.Cycle == reliance.Cycle &&
+                        OrdinalEquals(sourceTrace.ActorId, reliance.AgentId) &&
+                        sourceTrace.Action == reliance.SourceActionKind &&
+                        OrdinalEquals(
+                            sourceTrace.OpportunityId,
+                            reliance.SourceOpportunityId) &&
+                        InstitutionalRelianceService.TraceReadsStatus(
+                            sourceTrace,
+                            reliance.RequiredStatusId,
+                            reliance.ExpectedRecognisedState),
+                    $"Authority reliance {reliance.RelianceEventId} lacks its exact " +
+                    "status-reading autonomous action trace.");
                 Require(reliance.ResourceSpent > 0 &&
                         reliance.AlternativeAvailableBefore &&
                         !reliance.AlternativeAvailableAfter,
@@ -1420,8 +1565,87 @@ namespace Desk42.Institutional
                     out int observationCount);
                 Require(observationCount == 1,
                     $"Authority reliance {reliance.RelianceEventId} lacks one public observation.");
+                Require(observation.Cycle == reliance.PublicObservationCycle &&
+                        OrdinalEquals(observation.AgentId, reliance.AgentId) &&
+                        OrdinalEquals(
+                            observation.EnablingRulingId,
+                            reliance.ReliedOnRulingId) &&
+                        OrdinalEquals(
+                            observation.EnablingMutationId,
+                            reliance.ReliedOnMutationId) &&
+                        OrdinalEquals(
+                            observation.SourceActionEventId,
+                            reliance.SourceActionEventId) &&
+                        OrdinalEquals(
+                            observation.RecordedChoiceId,
+                            reliance.RecordedChoiceId) &&
+                        OrdinalEquals(
+                            observation.AbandonedAlternativeId,
+                            reliance.AbandonedAlternativeId) &&
+                        OrdinalEquals(observation.ResourceId, reliance.ResourceId) &&
+                        observation.RecordedResourceDelta ==
+                            -reliance.ResourceSpent,
+                    $"Authority reliance {reliance.RelianceEventId} disagrees with " +
+                    "its frozen public observation envelope.");
                 Require(matchedObservations.Add(observation.ObservationId),
                     $"Public reliance {observation.ObservationId} maps to multiple authority events.");
+
+                if (!materialIdsByRelianceAction.TryGetValue(
+                        reliance.SourceActionEventId,
+                        out HashSet<string> actionMaterialIds))
+                {
+                    actionMaterialIds = new HashSet<string>(StringComparer.Ordinal);
+                    materialIdsByRelianceAction.Add(
+                        reliance.SourceActionEventId,
+                        actionMaterialIds);
+                }
+                Require(reliance.AppliedEffects != null &&
+                        reliance.AppliedEffects.Count >= 1 &&
+                        reliance.AppliedEffects.Count <=
+                            InstitutionalRelianceService.MaximumEffects,
+                    $"Authority reliance {reliance.RelianceEventId} has an invalid " +
+                    "applied-effect count.");
+                var appliedEffectIds = new HashSet<string>(StringComparer.Ordinal);
+                var appliedMaterialIds = new HashSet<string>(StringComparer.Ordinal);
+                for (int i = 0; i < reliance.AppliedEffects.Count; i++)
+                {
+                    RelianceAppliedEffect effect = reliance.AppliedEffects[i];
+                    Require(effect != null &&
+                            !string.IsNullOrWhiteSpace(effect.EffectId) &&
+                            appliedEffectIds.Add(effect.EffectId) &&
+                            !string.IsNullOrWhiteSpace(
+                                effect.MaterialConsequenceId) &&
+                            effect.ResourceBefore >= 0 &&
+                            effect.ResourceAfter >= 0 &&
+                            (effect.HasNeedEffect
+                                ? Enum.IsDefined(typeof(NeedKind), effect.Need) &&
+                                  effect.NeedPressureBefore >= 0 &&
+                                  effect.NeedPressureBefore <= 100 &&
+                                  effect.NeedPressureAfter >= 0 &&
+                                  effect.NeedPressureAfter <= 100
+                                : effect.NeedPressureBefore == 0 &&
+                                  effect.NeedPressureAfter == 0) &&
+                            appliedMaterialIds.Add(effect.MaterialConsequenceId) &&
+                            actionMaterialIds.Add(effect.MaterialConsequenceId) &&
+                            index.Material.TryGetValue(
+                                effect.MaterialConsequenceId,
+                                out MaterialConsequence projected) &&
+                            OrdinalEquals(projected.CauseId, reliance.SourceActionEventId) &&
+                            OrdinalEquals(projected.AgentId, effect.AgentId) &&
+                            projected.Cycle == observation.Cycle &&
+                            projected.ResourceDelta ==
+                                effect.ResourceAfter - effect.ResourceBefore &&
+                            projected.Kind == effect.MaterialKind &&
+                            OrdinalEquals(projected.KindId, effect.MaterialKindId) &&
+                            OrdinalEquals(projected.ResourceId, effect.ResourceId) &&
+                            projected.HasNeedEffect == effect.HasNeedEffect &&
+                            (!effect.HasNeedEffect ||
+                             (projected.Need == effect.Need &&
+                              projected.NeedPressureBefore == effect.NeedPressureBefore &&
+                              projected.NeedPressureAfter == effect.NeedPressureAfter)),
+                        $"Authority reliance {reliance.RelianceEventId} has an invalid " +
+                        "material-effect projection.");
+                }
 
                 int actorMaterialDelta = 0;
                 foreach (MaterialConsequence material in index.Material.Values)
@@ -1439,7 +1663,8 @@ namespace Desk42.Institutional
                         reliance.ResourceSpent == -observation.RecordedResourceDelta,
                     $"Authority reliance {reliance.RelianceEventId} disagrees with its material projection.");
 
-                bool hasRecovery = false;
+                int recoveryCount = 0;
+                DescendantCase recovery = null;
                 foreach (DescendantCase descendant in index.Descendants.Values)
                 {
                     if (descendant.Kind == DescendantCaseKind.Reliance &&
@@ -1448,12 +1673,60 @@ namespace Desk42.Institutional
                             reliance.SourceActionEventId) &&
                         OrdinalEquals(descendant.ClaimantAgentId, reliance.AgentId))
                     {
-                        hasRecovery = true;
-                        break;
+                        recovery = descendant;
+                        recoveryCount++;
+                        Require(descendant.OpenedCycle >
+                                reliance.PublicObservationCycle,
+                            $"Authority reliance {reliance.RelianceEventId} has a " +
+                            "recovery before its public observation.");
                     }
                 }
-                Require(reliance.SurvivedReversal == hasRecovery,
+                Require(recoveryCount <= 1,
+                    $"Authority reliance {reliance.RelianceEventId} has multiple " +
+                    "recovery cases.");
+                if (recoveryCount == 1)
+                {
+                    int resultingAppealCount = 0;
+                    int exactReversalAppealCount = 0;
+                    foreach (Appeal appeal in index.Appeals.Values)
+                    {
+                        if (!OrdinalEquals(
+                                appeal.ResultingRulingId,
+                                recovery.OriginatingRulingId))
+                        {
+                            continue;
+                        }
+                        resultingAppealCount++;
+                        if (appeal.Disposition == AppealDisposition.Reversed &&
+                            OrdinalEquals(
+                                appeal.CaseId,
+                                recovery.ParentCaseId) &&
+                            OrdinalEquals(
+                                appeal.ChallengedRulingId,
+                                reliance.ReliedOnRulingId))
+                        {
+                            exactReversalAppealCount++;
+                        }
+                    }
+                    Require(resultingAppealCount == 1 &&
+                            exactReversalAppealCount == 1,
+                        $"Authority reliance {reliance.RelianceEventId} recovery " +
+                        "does not reverse the exact ruling relied on.");
+                }
+                Require(reliance.SurvivedReversal == (recoveryCount == 1),
                     $"Authority reliance {reliance.RelianceEventId} disagrees with its recovery case.");
+            }
+
+            foreach (MaterialConsequence material in index.Material.Values)
+            {
+                if (materialIdsByRelianceAction.TryGetValue(
+                        material.CauseId,
+                        out HashSet<string> allowedMaterialIds))
+                {
+                    Require(allowedMaterialIds.Contains(material.ConsequenceId),
+                        $"Material consequence {material.ConsequenceId} caused by a " +
+                        "reliance action is not linked to an authoritative applied effect.");
+                }
             }
 
             Require(matchedObservations.Count == index.Reliance.Count,
@@ -1839,20 +2112,9 @@ namespace Desk42.Institutional
             count = 0;
             foreach (RelianceObservation observation in index.Reliance.Values)
             {
-                if (observation.Cycle == reliance.Cycle &&
-                    OrdinalEquals(observation.AgentId, reliance.AgentId) &&
-                    OrdinalEquals(
-                        observation.EnablingRulingId,
-                        reliance.ReliedOnRulingId) &&
-                    OrdinalEquals(
-                        observation.EnablingMutationId,
-                        reliance.ReliedOnMutationId) &&
-                    OrdinalEquals(
-                        observation.SourceActionEventId,
-                        reliance.SourceActionEventId) &&
-                    OrdinalEquals(
-                        observation.AbandonedAlternativeId,
-                        reliance.AbandonedAlternativeId))
+                if (OrdinalEquals(
+                        observation.ObservationId,
+                        reliance.PublicObservationId))
                 {
                     found = observation;
                     count++;
