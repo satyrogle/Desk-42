@@ -5,12 +5,12 @@
 ## Project Summary
 
 - Project root: `C:/Users/jacob/Desk 42`
-- Product branch: `codex/institutional-product-v0.1`
+- Product branch: `codex/endogenous-society-v0.1`
 - Product direction: a systemic alien society simulation built around a deterministic institutional simulation substrate.
 - Frozen legacy game: tag `milestone/bucket4-candidate`, commit `e584ce6c986a8d4ff30fa391c2221c3f8da03a0e`.
 - Frozen engine candidate: tag `institutional-engine-candidate-v0.4.3`, commit `7407d290ea9e4fbab8b8525d47176ac02112374c`.
 - Last analyzed: 2026-08-03
-- Last analyzed commit: `330230228aed547a14b1028b700caaea8eb4838b`
+- Last analyzed commit: `1701bb1` (endogenous society checkpoint before documentation)
 
 ## Confirmed Environment
 
@@ -23,7 +23,7 @@
 
 | Area | Finding | Confidence | Evidence |
 | --- | --- | --- | --- |
-| Institutional simulation | Four first-party assemblies separate Domain, Authority, scenario definitions and Unity persistence | Confirmed | `Assets/_Project/Scripts/Institutional/` |
+| Institutional simulation | Four first-party assemblies separate Domain, Authority, scenario definitions and Unity-facing persistence | Confirmed | `Assets/_Project/Scripts/Institutional/` |
 | Serialization | Newtonsoft.Json 3.2.1 supports `InstitutionalSocietyStore` | Confirmed | `Packages/manifest.json`; runtime asmdef |
 | Testing | Unity Test Framework 1.3.9 with EditMode institutional suites | Confirmed | package manifest and EditMode asmdef |
 | Unity MCP | CoplayDev and IvanMurzak packages are both configured, but no Unity MCP tools are exposed in this Codex task | Confirmed | package files, `.mcp.json`, active tool inventory |
@@ -34,9 +34,9 @@
 | Path | Purpose | Confidence | Evidence |
 | --- | --- | --- | --- |
 | `Assets/_Project/Scripts/Institutional/Domain` | Engine-independent society state, decisions and scenario contracts | Confirmed | no-engine-reference asmdef |
-| `Assets/_Project/Scripts/Institutional/Authority` | Evidence, adjudication, reliance, appeal, precedent and consequence execution | Confirmed | authority asmdef and boundary document |
+| `Assets/_Project/Scripts/Institutional/Authority` | Authoritative material state, evidence, adjudication, endogenous docket generation, rulings, scope execution and active-chain persistence | Confirmed | authority asmdef and checkpoint report |
 | `Assets/_Project/Scripts/Institutional/Authority/Scenarios` | Declarative authored scenario definitions | Confirmed | scenario asmdef references Domain only |
-| `Assets/_Project/Scripts/Institutional/Runtime` | Unity persistence bridge for society state | Confirmed | runtime asmdef and `InstitutionalSocietyStore.cs` |
+| `Assets/_Project/Scripts/Institutional/Runtime` | Unity-facing persistence bridge for public society state | Confirmed | runtime asmdef and `InstitutionalSocietyStore.cs` |
 | `Assets/_Project/Tests/EditMode` | Institutional engine and scenario tests plus temporary legacy tests pending extraction | Confirmed | test asmdef and source inventory |
 | `Docs/Institutional` | Engine boundary and scenario specifications | Confirmed | repository contents |
 | `evidence/InstitutionalEngine` | Frozen validation evidence; not product runtime content | Confirmed | repository contents |
@@ -46,7 +46,7 @@
 | Assembly | Responsibility | Key references | Notes |
 | --- | --- | --- | --- |
 | `Desk42.Institutional.Domain` | Deterministic society domain and declarative contracts | none | no Unity engine reference |
-| `Desk42.Institutional.Authority` | Authoritative institutional transitions | Domain | not auto-referenced; no Unity engine reference |
+| `Desk42.Institutional.Authority` | Authoritative material and institutional transitions plus active-chain snapshot store | Domain, Newtonsoft.Json | not auto-referenced; no Unity engine reference |
 | `Desk42.Institutional.Scenarios` | Concrete scenario data | Domain | cannot invoke Authority |
 | `Desk42.Institutional.Runtime` | Society save/load adapter | Domain, Newtonsoft.Json | Unity-facing |
 | `Desk42.Tests.EditMode` | Institutional validation | institutional assemblies and compatibility `Desk42.Core` | Editor only |
@@ -67,8 +67,9 @@
 | Deterministic pulse simulation | Agent perceptions and decisions are frozen before stable action application | Confirmed | `SocietySimulation.cs`; engine boundary |
 | Domain/authority separation | Lived truth is assembly-private and public projection is non-authoritative | Confirmed | asmdefs, `AssemblyInfo.cs`, engine tests |
 | Declarative scenarios | Scenario assemblies provide definitions and policies but cannot execute transitions | Confirmed | scenario asmdef and CI boundary gate |
-| Persistence | Society state persists separately from the legacy run save | Confirmed | `InstitutionalSocietyStore.cs` |
-| Active consequence persistence | Not implemented | Confirmed | frozen evidence wording |
+| Persistence | Public society state persists separately from the legacy run save | Confirmed | `InstitutionalSocietyStore.cs` |
+| Active consequence persistence | Complete endogenous causal state persists at committed boundaries with exact-once replay IDs, checksum and backup recovery | Confirmed | `EndogenousRunSnapshot.cs`; persistence tests |
+| Endogenous institutional loop | Autonomous actions can create observable docket cases; executable ruling scope can change later decisions and descendant cases | Confirmed for the bounded v0.1 proof | `ENDOGENOUS_SOCIETY_CHECKPOINT_V0.1.md` |
 
 ## Coding Conventions
 
@@ -82,8 +83,10 @@
 - EditMode tests: institutional domain, authority, scenario and persistence coverage in `Desk42.Tests.EditMode`.
 - PlayMode tests: no active product PlayMode coverage at this checkpoint.
 - Hosted baseline at commit `3302302`: targeted institutional suite 334/334 passed; full EditMode 454 passed, 0 failed, 1 approved pre-existing skip.
-- Post-extraction local validation: targeted institutional suite 334/334 passed;
+- Post-extraction local baseline: targeted institutional suite 334/334 passed;
   full remaining EditMode suite 338/338 passed with no skips.
+- Endogenous society v0.1 local validation: institutional suite 381/381 passed;
+  complete EditMode suite 385/385 passed with no skips.
 - CI/build validation: `.github/workflows/institutional-proof.yml` preserves the frozen evidence gate; `.github/workflows/ci.yml` contains the general Unity pipeline.
 
 ## Available Unity Tooling
@@ -99,7 +102,7 @@
 ## Important Constraints
 
 - Do not modify frozen institutional engine files merely to simplify product extraction.
-- Preserve the exact wording: agent society persistence exists; active institutional consequence-loop persistence does not.
+- Describe active-chain persistence narrowly: committed endogenous phase boundaries are supported; arbitrary instruction-level suspension is not.
 - The old game is recovered from its tag/worktree, not copied into the active Unity `Assets` tree.
 - Product presentation and gameplay must consume public institutional boundaries rather than scenario-specific authority internals.
 - Two Unity MCP providers are installed; do not add a third, and rationalize the duplicate setup only as a separate authorized task.
@@ -107,8 +110,8 @@
 ## Unknowns And Confidence
 
 - The final product presentation architecture, input model and render pipeline are not selected.
-- No active player-facing institutional loop exists yet; the current scene is a
-  diagnostic composition root only.
+- No production player-facing endogenous institutional loop exists yet; the
+  current scene remains a diagnostic composition root.
 - A Windows x64 player build and D3D11 smoke launch pass, but visual quality and
   real player interaction are intentionally unvalidated.
 
