@@ -51,7 +51,8 @@ concurrency:
 env:
   CI: 'true'
   UNITY_VERSION: 2022.3.62f3
-  PACKAGES_LOCK_GIT_BLOB_ID: 4edd99bba4e05a24609938f2707bbed322ecb630
+  PACKAGES_MANIFEST_GIT_BLOB_ID: c694d27da60ea06c95184a6bffa3cc39cddc4552
+  PACKAGES_LOCK_GIT_BLOB_ID: 9ea30f5d53017a4af882ca53b77754405e1c2101
   PROJECT_PATH: .
   UNITY_MCP_KEEP_CONNECTED: 'false'
   UNITY_MCP_START_SERVER: 'false'
@@ -103,15 +104,27 @@ jobs:
           if ($projectVersion -notmatch [regex]::Escape("m_EditorVersion: $env:UNITY_VERSION")) {
             throw "ProjectVersion.txt does not pin Unity $env:UNITY_VERSION"
           }
-          $actualBlobId = (& git rev-parse 'HEAD:Packages/packages-lock.json').Trim()
-          if ($LASTEXITCODE -ne 0 -or $actualBlobId -notmatch '^[0-9a-fA-F]{40,64}$') {
-            throw 'Unable to resolve the packages-lock.json Git blob.'
-          }
-          if (-not [string]::Equals(
-              $actualBlobId,
-              $env:PACKAGES_LOCK_GIT_BLOB_ID,
-              [System.StringComparison]::OrdinalIgnoreCase)) {
-            throw "packages-lock.json Git blob mismatch: $actualBlobId"
+          $packagePins = @(
+            [pscustomobject]@{
+              Path = 'Packages/manifest.json'
+              Expected = $env:PACKAGES_MANIFEST_GIT_BLOB_ID
+            },
+            [pscustomobject]@{
+              Path = 'Packages/packages-lock.json'
+              Expected = $env:PACKAGES_LOCK_GIT_BLOB_ID
+            }
+          )
+          foreach ($pin in $packagePins) {
+            $actualBlobId = (& git rev-parse "HEAD:$($pin.Path)").Trim()
+            if ($LASTEXITCODE -ne 0 -or $actualBlobId -notmatch '^[0-9a-fA-F]{40,64}$') {
+              throw "Unable to resolve the $($pin.Path) Git blob."
+            }
+            if (-not [string]::Equals(
+                $actualBlobId,
+                $pin.Expected,
+                [System.StringComparison]::OrdinalIgnoreCase)) {
+              throw "$($pin.Path) Git blob mismatch: $actualBlobId"
+            }
           }
 
       - name: Run Unity tests
@@ -151,6 +164,7 @@ jobs:
             suite = '${{ matrix.suite }}'
             unityVersion = '${{ env.UNITY_VERSION }}'
             projectVersion = (Get-Content -LiteralPath 'ProjectSettings/ProjectVersion.txt' -Raw).Trim()
+            packageManifestGitBlobId = (& git rev-parse 'HEAD:Packages/manifest.json').Trim()
             packageLockGitBlobId = (& git rev-parse 'HEAD:Packages/packages-lock.json').Trim()
             packageLockCheckoutSha256 = (Get-FileHash -LiteralPath 'Packages/packages-lock.json' -Algorithm SHA256).Hash
             runnerOs = '${{ runner.os }}'

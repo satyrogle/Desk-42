@@ -166,10 +166,10 @@ foreach ($scriptPath in $scriptPaths) {
 
 $gatePath = Join-Path $PSScriptRoot 'Assert-InstitutionalGeneralisationGate.ps1'
 $gateText = Get-Content -LiteralPath $gatePath -Raw
-Assert-True ($gateText.Contains("'institutional-engine-candidate-v0.4.2'")) `
+Assert-True ($gateText.Contains("'institutional-engine-candidate-v0.4.3'")) `
     'candidate tag is not pinned'
 Assert-True ($gateText.Contains(
-        "'evidence/InstitutionalEngine/v0.4.2/engine-manifest.sha256'")) `
+        "'evidence/InstitutionalEngine/v0.4.3/engine-manifest.sha256'")) `
     'candidate baseline path is not pinned'
 Assert-False ($gateText.Contains('EngineManifestPath')) `
     'gate still accepts an external manifest path'
@@ -203,9 +203,11 @@ Assert-False ($workflowText.Contains('when present')) `
     'workflow still treats the frozen baseline as optional'
 Assert-True ($workflowText.Contains('PACKAGES_LOCK_GIT_BLOB_ID')) `
     'workflow does not pin the package-lock Git blob'
+Assert-True ($workflowText.Contains('PACKAGES_MANIFEST_GIT_BLOB_ID')) `
+    'workflow does not pin the package-manifest Git blob'
 Assert-True ($workflowText.Contains(
-        "git rev-parse 'HEAD:Packages/packages-lock.json'")) `
-    'workflow does not resolve the package-lock blob from the exact commit'
+        'git rev-parse "HEAD:$($pin.Path)"')) `
+    'workflow does not resolve each package input blob from the exact commit'
 Assert-False ($workflowText.Contains('PACKAGES_LOCK_SHA256')) `
     'workflow still pins platform-dependent package-lock checkout bytes'
 Assert-False ($workflowText.Contains(

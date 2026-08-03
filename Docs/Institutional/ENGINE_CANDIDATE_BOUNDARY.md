@@ -211,22 +211,22 @@ Linux CI runner.
 
 ## Engine freeze rule
 
-The immutable tag `institutional-engine-candidate-v0.4.2` names the candidate
+The immutable tag `institutional-engine-candidate-v0.4.3` names the candidate
 commit. That commit tracks
-`evidence/InstitutionalEngine/v0.4.2/engine-manifest.sha256`. The baseline is
+`evidence/InstitutionalEngine/v0.4.3/engine-manifest.sha256`. The baseline is
 mandatory, and its Git blob at every later scenario commit and its checked-out
 file must remain clean relative to the byte-identical blob at the tag. The
 candidate commit's own CI verifies the baseline without demanding a second
 scenario.
 
-The v0.1, v0.2, v0.3, v0.3.1, v0.4 and v0.4.1 tags and evidence directories
-remain historical evidence and are never used as aliases for v0.4.2. Candidate
-v0.4.1 proved the Git-blob pin and both Unity suites, then exposed two post-test
-workflow defects: container-owned result paths and package-file rewrites. v0.4.2
-runs Unity as the host user and distinguishes line-ending conversion from a
-semantic package-input mutation. The v0.4.2 manifest must be generated from the
-fixed candidate itself; no earlier manifest hash may be copied forward as
-v0.4.2 evidence.
+The v0.1, v0.2, v0.3, v0.3.1, v0.4, v0.4.1 and v0.4.2 tags and evidence
+directories remain historical evidence and are never used as aliases for
+v0.4.3. Candidate v0.4.1 exposed container-owned outputs. Candidate v0.4.2 fixed
+ownership and proved its semantic package guard by capturing Unity's Linux
+toolchain resolution as a failing patch. v0.4.3 commits that exact resolved
+manifest and lock state, pins both Git blobs and retains the fail-closed guard.
+The v0.4.3 manifest must be generated from the fixed candidate itself; no
+earlier manifest hash may be copied forward as v0.4.3 evidence.
 
 After the freeze, Glass Canal may add only its scenario definition, its tests and
 optional non-executable presentation fixtures. The gate requires a clean worktree

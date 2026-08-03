@@ -7,9 +7,9 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$CandidateTag = 'institutional-engine-candidate-v0.4.2'
+$CandidateTag = 'institutional-engine-candidate-v0.4.3'
 $BaselineRelativePath =
-    'evidence/InstitutionalEngine/v0.4.2/engine-manifest.sha256'
+    'evidence/InstitutionalEngine/v0.4.3/engine-manifest.sha256'
 
 $repositoryRoot = (& git rev-parse --show-toplevel 2>&1).Trim()
 if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($repositoryRoot)) {
