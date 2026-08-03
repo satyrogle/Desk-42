@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Globalization;
 using System.IO;
 using UnityEngine;
 
@@ -9,6 +10,8 @@ namespace Desk42.Product.Automation
     public sealed class AutomationBootstrap : MonoBehaviour
     {
         private const string CaptureArgument = "--desk42-automation-capture";
+        private const string CaptureDelayArgument = "--desk42-automation-capture-delay";
+        private const string AutoAuxArgument = "--desk42-automation-auto-aux";
 
         private AutomationFloorController _floor;
         private bool _paused;
@@ -30,11 +33,22 @@ namespace Desk42.Product.Automation
 
         private IEnumerator Start()
         {
-            string capturePath = ArgumentValue(
-                Environment.GetCommandLineArgs(), CaptureArgument);
+            string[] arguments = Environment.GetCommandLineArgs();
+            string capturePath = ArgumentValue(arguments, CaptureArgument);
             if (string.IsNullOrWhiteSpace(capturePath)) yield break;
 
-            yield return new WaitForSecondsRealtime(4f);
+            float captureDelay = 4f;
+            string requestedDelay = ArgumentValue(arguments, CaptureDelayArgument);
+            if (float.TryParse(requestedDelay, NumberStyles.Float,
+                    CultureInfo.InvariantCulture, out float parsedDelay))
+                captureDelay = Mathf.Clamp(parsedDelay, 1f, 60f);
+            if (HasArgument(arguments, AutoAuxArgument))
+            {
+                yield return new WaitForSecondsRealtime(1f);
+                _floor?.InstallAuxVerifierForCapture();
+                captureDelay = Mathf.Max(0f, captureDelay - 1f);
+            }
+            yield return new WaitForSecondsRealtime(captureDelay);
             yield return new WaitForEndOfFrame();
             string fullPath = Path.GetFullPath(capturePath);
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? ".");
@@ -60,7 +74,12 @@ namespace Desk42.Product.Automation
                 Time.timeScale = _paused ? 0f : 1f;
             }
             if (Input.GetKeyDown(KeyCode.Tab)) _flowOverlay = !_flowOverlay;
+            if (Input.GetKeyDown(KeyCode.B)) _floor?.TogglePlacementMode();
+            if (Input.GetKeyDown(KeyCode.R)) _floor?.ToggleRouteMode();
+            if (Input.GetMouseButtonDown(0))
+                _floor?.TryPlaceAuxVerifier(Input.mousePosition);
             _floor?.SetFlowOverlayVisible(_flowOverlay);
+            _floor?.Tick(Time.deltaTime);
         }
 
         private void OnDestroy()
@@ -80,6 +99,8 @@ namespace Desk42.Product.Automation
             GUILayout.Label("INSTITUTIONAL PROCESSING FLOOR  •  LIVE", _small);
             GUILayout.EndVertical();
             Metric("IN FLIGHT", ClaimsInFlight.ToString("00"));
+            Metric("COMPLETED", (_floor?.ClaimsCompleted ?? 0).ToString("00"));
+            Metric("BACKLOG", (_floor?.VerificationBacklog ?? 0).ToString("00"));
             Metric("ROUTE", "INTAKE → OUTPUT");
             Metric("POLICY", "PROOF FORTRESS");
             GUILayout.FlexibleSpace();
@@ -88,11 +109,28 @@ namespace Desk42.Product.Automation
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
 
-            GUILayout.BeginArea(new Rect(16f, Screen.height - 54f, 470f, 38f),
-                GUI.skin.box);
+            GUILayout.BeginArea(new Rect(16f, Screen.height - 62f,
+                    Mathf.Min(Screen.width - 32f, 1000f), 46f), GUI.skin.box);
+            GUILayout.BeginHorizontal();
+            string buildLabel = _floor?.AuxVerifierPlaced == true
+                ? "AUX VERIFIER ONLINE"
+                : _floor?.PlacementArmed == true
+                    ? "CLICK AUX BAY"
+                    : "BUILD AUX VERIFIER [B]";
+            GUI.enabled = _floor?.AuxVerifierPlaced != true;
+            if (GUILayout.Button(buildLabel, GUILayout.Width(180f), GUILayout.Height(28f)))
+                _floor?.TogglePlacementMode();
+            GUI.enabled = _floor?.AuxVerifierPlaced == true;
+            if (GUILayout.Button("ROUTE: " + (_floor?.RouteMode ?? "PRIMARY") + " [R]",
+                    GUILayout.Width(150f), GUILayout.Height(28f)))
+                _floor?.ToggleRouteMode();
+            GUI.enabled = true;
+            GUILayout.Label("BOTTLENECK  " + (_floor?.Bottleneck ?? "STARTING"),
+                _small, GUILayout.Width(220f));
             GUILayout.Label(
                 "SPACE pause  •  TAB flow overlay  •  claims enter automatically",
                 _small);
+            GUILayout.EndHorizontal();
             GUILayout.EndArea();
         }
 
@@ -146,6 +184,14 @@ namespace Desk42.Product.Automation
                     return arguments[i].Substring(prefix.Length);
             }
             return string.Empty;
+        }
+
+        private static bool HasArgument(string[] arguments, string key)
+        {
+            for (int i = 0; i < arguments.Length; i++)
+                if (string.Equals(arguments[i], key,
+                        StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
         }
     }
 }

@@ -9,72 +9,125 @@ namespace Desk42.Product.Automation
         private readonly Transform _root;
         private readonly List<GameObject> _owned = new();
         private readonly List<Renderer> _flowRenderers = new();
-        private readonly List<Vector3> _primaryRoute = new();
-        private AutomationDossierView _dossier;
+        private readonly List<Renderer> _auxRouteRenderers = new();
+        private AutomationFlowRuntime _flow;
+        private GameObject _auxSocket;
+        private bool _placementArmed;
+        private bool _flowOverlayVisible = true;
+
+        private static readonly Vector3 IntakePosition = new(-10.4f, 0.45f, 2.6f);
+        private static readonly Vector3 SplitterPosition = new(-5.3f, 0.45f, 2.6f);
+        private static readonly Vector3 VerifierPosition = new(-0.1f, 0.45f, 2.6f);
+        private static readonly Vector3 AdjudicatorPosition = new(5.1f, 0.45f, 2.6f);
+        private static readonly Vector3 OutputPosition = new(10.2f, 0.45f, 2.6f);
+        private static readonly Vector3 LegalPosition = new(5.1f, 0.45f, -3.2f);
+        private static readonly Vector3 AuxVerifierPosition = new(-0.1f, 0.45f, -3.2f);
 
         internal AutomationFloorController(Transform root)
         {
             _root = root != null ? root : throw new ArgumentNullException(nameof(root));
         }
 
-        internal int ClaimsInFlight => _dossier != null ? 1 : 0;
+        internal int ClaimsInFlight => _flow?.InFlight ?? 0;
+        internal int ClaimsCompleted => _flow?.Completed ?? 0;
+        internal int VerificationBacklog => _flow?.VerificationBacklog ?? 0;
+        internal string Bottleneck => _flow?.Bottleneck ?? "STARTING";
+        internal bool AuxVerifierPlaced => _flow?.AuxVerifierInstalled ?? false;
+        internal bool PlacementArmed => _placementArmed;
+        internal string RouteMode => _flow?.ParallelRouting == true ? "PARALLEL" : "PRIMARY";
 
         internal void BuildVisualFloor()
         {
             CreateCamera();
             CreateLighting();
             CreateRoom();
+            _flow = new AutomationFlowRuntime(_root);
+            _flow.Register(CreateStation(AutomationStationKind.Intake,
+                "PUBLIC INTAKE", IntakePosition, new Color(0.25f, 0.47f, 0.47f),
+                "RECEIVE", 0.65f));
+            _flow.Register(CreateStation(AutomationStationKind.EvidenceSplit,
+                "EVIDENCE SPLIT", SplitterPosition,
+                new Color(0.49f, 0.47f, 0.29f), "SEPARATE", 0.8f));
+            _flow.Register(CreateStation(AutomationStationKind.Verification,
+                "VERIFICATION", VerifierPosition,
+                new Color(0.30f, 0.44f, 0.38f), "SCAN", 4.6f));
+            _flow.Register(CreateStation(AutomationStationKind.Adjudication,
+                "ADJUDICATION", AdjudicatorPosition,
+                new Color(0.45f, 0.34f, 0.30f), "RULE", 1.2f));
+            _flow.Register(CreateStation(AutomationStationKind.Output,
+                "OUTPUT GATE", OutputPosition,
+                new Color(0.34f, 0.43f, 0.28f), "RELEASE", 0.55f));
+            _flow.Register(CreateStation(AutomationStationKind.Legal,
+                "LEGAL / APPEALS", LegalPosition,
+                new Color(0.39f, 0.31f, 0.42f), "RETURN", 2.5f));
 
-            Vector3 intake = new(-10.4f, 0.45f, 2.6f);
-            Vector3 splitter = new(-5.3f, 0.45f, 2.6f);
-            Vector3 verifier = new(-0.1f, 0.45f, 2.6f);
-            Vector3 adjudicator = new(5.1f, 0.45f, 2.6f);
-            Vector3 output = new(10.2f, 0.45f, 2.6f);
-            Vector3 legal = new(5.1f, 0.45f, -3.2f);
-
-            CreateStation("PUBLIC INTAKE", intake, new Color(0.25f, 0.47f, 0.47f),
-                "RECEIVE");
-            CreateStation("EVIDENCE SPLIT", splitter,
-                new Color(0.49f, 0.47f, 0.29f), "SEPARATE");
-            CreateStation("VERIFICATION", verifier,
-                new Color(0.30f, 0.44f, 0.38f), "SCAN");
-            CreateStation("ADJUDICATION", adjudicator,
-                new Color(0.45f, 0.34f, 0.30f), "RULE");
-            CreateStation("OUTPUT GATE", output,
-                new Color(0.34f, 0.43f, 0.28f), "RELEASE");
-            CreateStation("LEGAL / APPEALS", legal,
-                new Color(0.39f, 0.31f, 0.42f), "RETURN");
-
-            _primaryRoute.Add(new Vector3(-13f, 0.42f, 2.6f));
-            _primaryRoute.Add(intake);
-            _primaryRoute.Add(splitter);
-            _primaryRoute.Add(verifier);
-            _primaryRoute.Add(adjudicator);
-            _primaryRoute.Add(output);
-            _primaryRoute.Add(new Vector3(13f, 0.42f, 2.6f));
-            CreateRoute(_primaryRoute, new Color(0.26f, 0.64f, 0.58f));
             CreateRoute(new[]
             {
-                new Vector3(12.8f, 0.42f, -3.2f), legal,
-                new Vector3(-0.1f, 0.42f, -3.2f), verifier,
-            }, new Color(0.67f, 0.31f, 0.30f));
+                new Vector3(-13f, 0.42f, 2.6f), IntakePosition,
+                SplitterPosition, VerifierPosition, AdjudicatorPosition,
+                OutputPosition, new Vector3(13f, 0.42f, 2.6f),
+            }, new Color(0.26f, 0.64f, 0.58f), _flowRenderers);
+            CreateRoute(new[]
+            {
+                SplitterPosition, new Vector3(-3.1f, 0.42f, -3.2f),
+                AuxVerifierPosition, AdjudicatorPosition,
+            }, new Color(0.24f, 0.52f, 0.48f), _auxRouteRenderers);
+            for (int i = 0; i < _auxRouteRenderers.Count; i++)
+                _auxRouteRenderers[i].enabled = false;
+            CreateAuxVerifierSocket();
+        }
 
-            GameObject token = AutomationVisualFactory.CreateFolderToken(
-                _root, "DOSSIER 42-A", new Color(0.84f, 0.74f, 0.50f));
-            _owned.Add(token);
-            _dossier = token.AddComponent<AutomationDossierView>();
-            _dossier.Initialise(_primaryRoute);
+        internal void Tick(float deltaTime)
+        {
+            _flow?.Tick(deltaTime);
+        }
+
+        internal void TogglePlacementMode()
+        {
+            if (AuxVerifierPlaced) return;
+            _placementArmed = !_placementArmed;
+        }
+
+        internal void ToggleRouteMode()
+        {
+            _flow?.ToggleParallelRouting();
+            RefreshAuxRouteAppearance();
+        }
+
+        internal bool TryPlaceAuxVerifier(Vector3 screenPosition)
+        {
+            if (!_placementArmed || AuxVerifierPlaced || Camera.main == null) return false;
+            Ray ray = Camera.main.ScreenPointToRay(screenPosition);
+            var floor = new Plane(Vector3.up, Vector3.zero);
+            if (!floor.Raycast(ray, out float distance)) return false;
+            Vector3 hit = ray.GetPoint(distance);
+            if (Vector3.Distance(new Vector3(hit.x, 0f, hit.z),
+                    new Vector3(AuxVerifierPosition.x, 0f, AuxVerifierPosition.z)) > 2.2f)
+                return false;
+            InstallAuxVerifier();
+            return true;
+        }
+
+        internal void InstallAuxVerifierForCapture()
+        {
+            if (!AuxVerifierPlaced) InstallAuxVerifier();
         }
 
         internal void SetFlowOverlayVisible(bool visible)
         {
+            _flowOverlayVisible = visible;
             for (int i = 0; i < _flowRenderers.Count; i++)
                 if (_flowRenderers[i] != null)
                     _flowRenderers[i].enabled = visible;
+            for (int i = 0; i < _auxRouteRenderers.Count; i++)
+                if (_auxRouteRenderers[i] != null)
+                    _auxRouteRenderers[i].enabled = visible && AuxVerifierPlaced;
         }
 
         public void Dispose()
         {
+            _flow?.Dispose();
+            _flow = null;
             for (int i = _owned.Count - 1; i >= 0; i--)
                 if (_owned[i] != null) UnityEngine.Object.Destroy(_owned[i]);
             _owned.Clear();
@@ -144,8 +197,14 @@ namespace Desk42.Product.Automation
                 new Color(0.73f, 0.74f, 0.59f), TextAnchor.MiddleCenter));
         }
 
-        private void CreateStation(string name, Vector3 position, Color colour,
-            string verb)
+        private AutomationStationRuntime CreateStation(
+            AutomationStationKind kind,
+            string name,
+            Vector3 position,
+            Color colour,
+            string verb,
+            float processDuration,
+            bool isAuxiliary = false)
         {
             GameObject station = AutomationVisualFactory.CreateStation(
                 _root, name, position, colour, verb);
@@ -153,9 +212,18 @@ namespace Desk42.Product.Automation
             _owned.Add(AutomationVisualFactory.CreateStaff(
                 _root, name + " Operator", position + new Vector3(0f, 0f, -1.25f),
                 colour * 0.9f));
+            Renderer light = station.transform.Find("Machine Light")
+                ?.GetComponent<Renderer>();
+            TextMesh queue = station.transform.Find("Label Q 00")
+                ?.GetComponent<TextMesh>();
+            return new AutomationStationRuntime(kind, name, position,
+                processDuration, isAuxiliary, light, queue);
         }
 
-        private void CreateRoute(IReadOnlyList<Vector3> points, Color colour)
+        private void CreateRoute(
+            IReadOnlyList<Vector3> points,
+            Color colour,
+            ICollection<Renderer> renderers)
         {
             for (int i = 0; i < points.Count - 1; i++)
             {
@@ -169,7 +237,46 @@ namespace Desk42.Product.Automation
                 segment.transform.rotation = Quaternion.LookRotation(delta.normalized);
                 _owned.Add(segment);
                 Renderer renderer = segment.GetComponent<Renderer>();
-                _flowRenderers.Add(renderer);
+                renderers.Add(renderer);
+            }
+        }
+
+        private void CreateAuxVerifierSocket()
+        {
+            _auxSocket = AutomationVisualFactory.CreateBlock(
+                _root, "Aux Verifier Socket",
+                new Vector3(AuxVerifierPosition.x, 0.03f, AuxVerifierPosition.z),
+                new Vector3(3.1f, 0.07f, 2.15f),
+                new Color(0.24f, 0.25f, 0.20f));
+            _owned.Add(_auxSocket);
+            AutomationVisualFactory.CreateWorldLabel(
+                _auxSocket.transform, "AUX VERIFIER BAY / CLICK TO INSTALL",
+                new Vector3(0f, 0.16f, 0f), 0.06f,
+                new Color(0.75f, 0.59f, 0.26f), TextAnchor.MiddleCenter);
+        }
+
+        private void InstallAuxVerifier()
+        {
+            _placementArmed = false;
+            if (_auxSocket != null) _auxSocket.SetActive(false);
+            _flow.Register(CreateStation(AutomationStationKind.Verification,
+                "AUX VERIFICATION", AuxVerifierPosition,
+                new Color(0.25f, 0.53f, 0.47f), "PARALLEL SCAN", 3.25f, true));
+            RefreshAuxRouteAppearance();
+        }
+
+        private void RefreshAuxRouteAppearance()
+        {
+            bool active = _flow?.ParallelRouting == true;
+            Color colour = active
+                ? new Color(0.32f, 0.78f, 0.66f)
+                : new Color(0.20f, 0.28f, 0.26f);
+            for (int i = 0; i < _auxRouteRenderers.Count; i++)
+            {
+                Renderer renderer = _auxRouteRenderers[i];
+                if (renderer == null) continue;
+                renderer.enabled = _flowOverlayVisible && AuxVerifierPlaced;
+                renderer.material.color = colour;
             }
         }
 
@@ -181,47 +288,4 @@ namespace Desk42.Product.Automation
         }
     }
 
-    internal sealed class AutomationDossierView : MonoBehaviour
-    {
-        private readonly List<Vector3> _route = new();
-        private int _targetIndex;
-        private float _hold;
-        private Vector3 _baseScale;
-
-        internal void Initialise(IReadOnlyList<Vector3> route)
-        {
-            _route.Clear();
-            for (int i = 0; i < route.Count; i++) _route.Add(route[i]);
-            transform.position = _route[0];
-            _targetIndex = 1;
-            _baseScale = transform.localScale;
-        }
-
-        private void Update()
-        {
-            if (_route.Count < 2) return;
-            if (_hold > 0f)
-            {
-                _hold -= Time.deltaTime;
-                transform.localScale = _baseScale *
-                    (1f + Mathf.Sin(Time.time * 10f) * 0.035f);
-                return;
-            }
-            Vector3 target = _route[_targetIndex];
-            transform.position = Vector3.MoveTowards(
-                transform.position, target, Time.deltaTime * 2.25f);
-            transform.localScale = _baseScale;
-            if ((transform.position - target).sqrMagnitude > 0.0025f) return;
-            _hold = _targetIndex == 0 || _targetIndex == _route.Count - 1
-                ? 0.5f
-                : 1.05f;
-            _targetIndex++;
-            if (_targetIndex >= _route.Count)
-            {
-                _targetIndex = 0;
-                transform.position = _route[0];
-                _targetIndex = 1;
-            }
-        }
-    }
 }

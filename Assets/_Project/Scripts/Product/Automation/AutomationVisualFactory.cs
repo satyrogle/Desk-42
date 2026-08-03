@@ -42,6 +42,8 @@ namespace Desk42.Product.Automation
                 0.105f, new Color(0.88f, 0.84f, 0.67f), TextAnchor.MiddleCenter);
             CreateWorldLabel(root.transform, verb, new Vector3(0f, 1.72f, 0f),
                 0.075f, new Color(0.58f, 0.65f, 0.60f), TextAnchor.MiddleCenter);
+            CreateWorldLabel(root.transform, "Q 00", new Vector3(0.94f, 1.72f, 0f),
+                0.06f, new Color(0.95f, 0.64f, 0.22f), TextAnchor.MiddleCenter);
             return root;
         }
 
