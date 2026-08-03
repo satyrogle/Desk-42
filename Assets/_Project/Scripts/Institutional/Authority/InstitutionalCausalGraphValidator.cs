@@ -1446,6 +1446,7 @@ namespace Desk42.Institutional
                 value => value.RelianceEventId,
                 "authority reliance event");
             var matchedObservations = new HashSet<string>(StringComparer.Ordinal);
+            var matchedRecoveryCaseIds = new HashSet<string>(StringComparer.Ordinal);
             var relianceSourceActionIds = new HashSet<string>(StringComparer.Ordinal);
             var materialIdsByRelianceAction = new Dictionary<
                 string,
@@ -1686,6 +1687,9 @@ namespace Desk42.Institutional
                     "recovery cases.");
                 if (recoveryCount == 1)
                 {
+                    Require(matchedRecoveryCaseIds.Add(recovery.CaseId),
+                        $"Reliance recovery {recovery.CaseId} maps to multiple " +
+                        "authority reliance events.");
                     int resultingAppealCount = 0;
                     int exactReversalAppealCount = 0;
                     foreach (Appeal appeal in index.Appeals.Values)
@@ -1715,6 +1719,14 @@ namespace Desk42.Institutional
                 }
                 Require(reliance.SurvivedReversal == (recoveryCount == 1),
                     $"Authority reliance {reliance.RelianceEventId} disagrees with its recovery case.");
+            }
+
+            foreach (DescendantCase descendant in index.Descendants.Values)
+            {
+                if (descendant.Kind != DescendantCaseKind.Reliance) continue;
+                Require(matchedRecoveryCaseIds.Contains(descendant.CaseId),
+                    $"Reliance descendant {descendant.CaseId} has no matching " +
+                    "authority reliance event.");
             }
 
             foreach (MaterialConsequence material in index.Material.Values)

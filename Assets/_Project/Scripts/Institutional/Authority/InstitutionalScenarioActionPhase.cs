@@ -201,7 +201,8 @@ namespace Desk42.Institutional
             var request = new RelianceCreationRequest
             {
                 RelianceEventId = declaration.RelianceId,
-                ObservationId = $"observation:{declaration.RelianceId}",
+                ObservationId = InstitutionalScenarioDerivedIds.RelianceObservation(
+                    declaration.RelianceId),
                 PublicObservationCycle = declaration.PublicObservationCycle < 0
                     ? declaration.Cycle
                     : declaration.PublicObservationCycle,

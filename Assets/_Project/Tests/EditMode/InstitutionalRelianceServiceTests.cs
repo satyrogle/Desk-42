@@ -124,9 +124,55 @@ namespace Desk42.Tests.EditMode
             Assert.AreEqual(4, run.Report.RelianceObservations.Single().Cycle);
             Assert.That(run.Report.MaterialConsequences, Has.Count.EqualTo(3));
             Assert.That(run.Report.MaterialConsequences.All(value => value.Cycle == 4));
-            Assert.That(run.Report.Timeline.Single(entry =>
-                entry.Kind == InstitutionalTimelineKind.RelianceCreated).Cycle,
-                Is.EqualTo(4));
+            InstitutionalTimelineEntry timeline = run.Report.Timeline.Single(entry =>
+                entry.Kind == InstitutionalTimelineKind.RelianceCreated);
+            Assert.That(timeline.Cycle, Is.EqualTo(4));
+            Assert.That(
+                timeline.EntryId,
+                Is.EqualTo(
+                    InstitutionalScenarioDerivedIds.DeferredRelianceTimeline(
+                        4,
+                        request.RelianceEventId)));
+        }
+
+        [Test]
+        public void Create_DelayedProjection_RejectsHoldingScopeTimelineCollisionAtomically()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.test.scope-collision", 3, true);
+            AddAlternative(run, "alternative.test.scope-collision");
+            RelianceCreationRequest request = CreateRequest(
+                "reliance.test.scope-collision",
+                "observation.test.scope-collision",
+                "action.test.scope-collision",
+                "alternative.test.scope-collision");
+            request.PublicObservationCycle = 4;
+            Assert.IsTrue(InstitutionalRelianceService.TryCreate(run, request).Created);
+            string collidingTimelineId =
+                InstitutionalScenarioDerivedIds.DeferredRelianceTimeline(
+                    request.PublicObservationCycle,
+                    request.RelianceEventId);
+            run.Report.Holdings.Add(new Holding
+            {
+                HoldingId = "holding.test.scope-collision",
+                Scope = new PrecedentScope
+                {
+                    ScopeId = collidingTimelineId,
+                },
+            });
+            int timelineCount = run.Report.Timeline.Count;
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalPublicObservationProjector.ProjectDueReliance(
+                        run,
+                        request.PublicObservationCycle));
+
+            StringAssert.Contains("timeline id", exception.Message);
+            Assert.That(run.PendingReliancePublicProjections, Has.Count.EqualTo(1));
+            Assert.IsEmpty(run.Report.RelianceObservations);
+            Assert.IsEmpty(run.Report.MaterialConsequences);
+            Assert.That(run.Report.Timeline, Has.Count.EqualTo(timelineCount));
         }
 
         [Test]
@@ -173,6 +219,50 @@ namespace Desk42.Tests.EditMode
             Assert.That(run.Report.MaterialConsequences.Select(value =>
                 value.ConsequenceId).Distinct().Count(), Is.EqualTo(2));
             Assert.IsEmpty(run.PendingReliancePublicProjections);
+        }
+
+        [Test]
+        public void Create_PendingTimelineReservationRejectsLaterPublicIdentityBeforeCommit()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            AddAutonomousAction(run, "action.timeline-reservation.first", 3, true);
+            AddAutonomousAction(run, "action.timeline-reservation.second", 3, true);
+            AddAlternative(run, "alternative.timeline-reservation.first");
+            AddAlternative(run, "alternative.timeline-reservation.second");
+            RelianceCreationRequest first = CreateRequest(
+                "reliance.timeline-reservation.first",
+                "observation.timeline-reservation.first",
+                "action.timeline-reservation.first",
+                "alternative.timeline-reservation.first");
+            first.PublicObservationCycle = 4;
+            Assert.IsTrue(InstitutionalRelianceService.TryCreate(run, first).Created);
+
+            string reservedTimelineId =
+                InstitutionalScenarioDerivedIds.DeferredRelianceTimeline(
+                    first.PublicObservationCycle,
+                    first.RelianceEventId);
+            RelianceCreationRequest second = CreateRequest(
+                "reliance.timeline-reservation.second",
+                reservedTimelineId,
+                "action.timeline-reservation.second",
+                "alternative.timeline-reservation.second");
+            second.PublicObservationCycle = 5;
+            int creditsBefore = FindAccount(run, ActorId).AvailableCredits;
+
+            RelianceCreationResult result =
+                InstitutionalRelianceService.TryCreate(run, second);
+
+            Assert.IsFalse(result.Created);
+            Assert.AreEqual(
+                RelianceFailureReason.DuplicateObservation,
+                result.FailureReason);
+            Assert.AreEqual(creditsBefore, FindAccount(run, ActorId).AvailableCredits);
+            Assert.IsTrue(run.AlternativeOptions.Single(value =>
+                value.OptionId == second.AbandonedAlternativeId).Available);
+            Assert.That(run.RelianceLedger, Has.Count.EqualTo(1));
+            Assert.That(run.PendingReliancePublicProjections, Has.Count.EqualTo(1));
+            Assert.IsEmpty(run.Report.RelianceObservations);
+            Assert.IsEmpty(run.Report.MaterialConsequences);
         }
 
         [Test]

@@ -108,6 +108,131 @@ namespace Desk42.Tests.EditMode
                 InstitutionalScenarioDefinitionValidator.Validate(sameCycleRecovery));
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Validator_ReservesDelayedReliancePublicIdsBeforeExecution(
+            bool collideWithDeferredMaterial)
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            ScenarioIrreversibleRelianceDefinition reliance =
+                definition.RelianceDefinitions[0];
+            reliance.PublicObservationCycle = 9;
+            definition.RelianceRecoveries.Clear();
+            string collidingId = collideWithDeferredMaterial
+                ? InstitutionalScenarioDerivedIds.DeferredRelianceMaterial(
+                    reliance.PublicObservationCycle,
+                    reliance.RelianceId,
+                    reliance.Effects[0].EffectId)
+                : InstitutionalScenarioDerivedIds.RelianceObservation(
+                    reliance.RelianceId);
+            definition.Holdings[0].HoldingId = collidingId;
+            definition.Appeals[0].ResultingHoldingId = collidingId;
+            definition.HoldingCitations[0].HoldingId = collidingId;
+            definition.EntitlementTransfers[0].CauseHoldingId = collidingId;
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalScenarioDefinitionValidator.Validate(definition));
+            StringAssert.Contains("public identity plan reuses id", exception.Message);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Validator_ReservesDelayedRelianceIdAgainstFutureHoldingScope(
+            bool collideWithTimeline)
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            ScenarioIrreversibleRelianceDefinition reliance =
+                definition.RelianceDefinitions[0];
+            reliance.PublicObservationCycle = 9;
+            definition.RelianceRecoveries.Clear();
+            definition.Holdings[0].ScopeId = collideWithTimeline
+                ? InstitutionalScenarioDerivedIds.DeferredRelianceTimeline(
+                    reliance.PublicObservationCycle,
+                    reliance.RelianceId)
+                : InstitutionalScenarioDerivedIds.RelianceObservation(
+                    reliance.RelianceId);
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalScenarioDefinitionValidator.Validate(definition));
+            StringAssert.Contains("public identity plan reuses id", exception.Message);
+        }
+
+        [Test]
+        public void DerivedRecoveryCaseId_IsInjectiveAcrossDelimiterAmbiguity()
+        {
+            const string leftPrefix = "case.recovery:a";
+            const string leftReliance = "b";
+            const string rightPrefix = "case.recovery";
+            const string rightReliance = "a:b";
+            Assert.That(
+                $"{leftPrefix}:{leftReliance}",
+                Is.EqualTo($"{rightPrefix}:{rightReliance}"));
+
+            Assert.That(
+                InstitutionalScenarioDerivedIds.RelianceRecoveryCase(
+                    leftPrefix,
+                    leftReliance),
+                Is.Not.EqualTo(
+                    InstitutionalScenarioDerivedIds.RelianceRecoveryCase(
+                        rightPrefix,
+                        rightReliance)));
+        }
+
+        [Test]
+        public void Validator_RejectsDerivedRecoveryIdThatCollidesWithDeclaredCase()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            ScenarioRelianceRecoveryDefinition recovery =
+                definition.RelianceRecoveries[0];
+            string collidingCaseId =
+                InstitutionalScenarioDerivedIds.RelianceRecoveryCase(
+                    recovery.CaseIdPrefix,
+                    recovery.RelianceId);
+            ScenarioCaseDefinition renamedCase = definition.Cases.Single(
+                value => value.CaseId == "case.002");
+            renamedCase.CaseId = collidingCaseId;
+            renamedCase.InitialRulingId =
+                $"ruling:{collidingCaseId}:initial:8";
+            renamedCase.AdjudicationRulingId =
+                $"ruling:{collidingCaseId}:adjudication:10";
+            definition.Cases.Sort((left, right) =>
+                StringComparer.Ordinal.Compare(left.CaseId, right.CaseId));
+            definition.Opportunities.Single(value =>
+                value.OpportunityId == "op.003-appeal-second").CaseId =
+                    collidingCaseId;
+            definition.Opportunities.Single(value =>
+                value.OpportunityId == "op.003-appeal-second").ChallengedRulingId =
+                    renamedCase.InitialRulingId;
+            definition.EvidenceTemplates.Single(value =>
+                value.EvidenceTemplateId == "evidence.003").CaseId = collidingCaseId;
+            definition.OfficialStatusEffectRequests.Single(value =>
+                value.EffectRequestId == "effect.003").CauseCaseId = collidingCaseId;
+            definition.OfficialStatusEffectRequests.Single(value =>
+                value.EffectRequestId == "effect.003").CauseRulingId =
+                    renamedCase.InitialRulingId;
+            ScenarioAppealDefinition laterAppeal = definition.Appeals.Single(value =>
+                value.AppealId == "appeal.002");
+            laterAppeal.CaseId = collidingCaseId;
+            laterAppeal.ChallengedRulingId = renamedCase.InitialRulingId;
+            laterAppeal.ResultingRulingId = renamedCase.AdjudicationRulingId;
+            definition.HoldingCitations[0].TargetCaseId = collidingCaseId;
+            definition.HoldingCitations[0].TargetRulingId =
+                renamedCase.AdjudicationRulingId;
+            definition.DescendantCases[0].CaseId = collidingCaseId;
+            definition.EntitlementTransfers[0].CauseCaseId = collidingCaseId;
+            definition.EntitlementTransfers[0].CauseRulingId =
+                renamedCase.AdjudicationRulingId;
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalScenarioDefinitionValidator.Validate(definition));
+            StringAssert.Contains(
+                "collides with another declared case",
+                exception.Message);
+        }
+
         [Test]
         public void Validator_RejectsMultipleReliancesBoundToOneObservedAction()
         {

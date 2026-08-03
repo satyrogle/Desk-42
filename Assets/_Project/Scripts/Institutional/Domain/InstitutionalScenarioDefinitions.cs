@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Desk42.Institutional
 {
@@ -362,10 +363,70 @@ namespace Desk42.Institutional
     internal static class InstitutionalScenarioDerivedIds
     {
         internal const string ConnectedOutcomePairPrefix = "connected:";
+        internal const string RelianceObservationPrefix = "observation:";
+        internal const string DeferredRelianceMaterialPrefix = "material:";
+        internal const string DeferredRelianceTimelinePrefix = "timeline:";
+        internal const string RelianceRecoveryCasePrefix = "case-recovery:";
 
         internal static string ConnectedOutcomePair(string transferId)
         {
             return $"{ConnectedOutcomePairPrefix}{transferId}";
+        }
+
+        internal static string RelianceObservation(string relianceId)
+        {
+            return $"{RelianceObservationPrefix}{relianceId}";
+        }
+
+        internal static string DeferredRelianceMaterial(
+            long publicObservationCycle,
+            string relianceId,
+            string effectId)
+        {
+            return string.Concat(
+                DeferredRelianceMaterialPrefix,
+                publicObservationCycle.ToString(CultureInfo.InvariantCulture),
+                ":reliance:",
+                relianceId.Length.ToString(CultureInfo.InvariantCulture),
+                ":",
+                relianceId,
+                ":",
+                effectId.Length.ToString(CultureInfo.InvariantCulture),
+                ":",
+                effectId);
+        }
+
+        internal static string DeferredRelianceTimeline(
+            long publicObservationCycle,
+            string relianceId)
+        {
+            return string.Concat(
+                DeferredRelianceTimelinePrefix,
+                publicObservationCycle.ToString(CultureInfo.InvariantCulture),
+                ":reliance:",
+                relianceId.Length.ToString(CultureInfo.InvariantCulture),
+                ":",
+                relianceId);
+        }
+
+        /// <summary>
+        /// Produces an injective recovery-case identity. Length-prefixing keeps
+        /// otherwise ambiguous pairs such as ("a:b", "c") and ("a", "b:c")
+        /// distinct while preserving the authored prefix for assessor inspection.
+        /// </summary>
+        internal static string RelianceRecoveryCase(
+            string caseIdPrefix,
+            string relianceId)
+        {
+            return string.Concat(
+                RelianceRecoveryCasePrefix,
+                caseIdPrefix.Length.ToString(CultureInfo.InvariantCulture),
+                ":",
+                caseIdPrefix,
+                ":",
+                relianceId.Length.ToString(CultureInfo.InvariantCulture),
+                ":",
+                relianceId);
         }
     }
 

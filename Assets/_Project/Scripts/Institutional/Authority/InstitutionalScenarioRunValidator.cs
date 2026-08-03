@@ -249,7 +249,8 @@ namespace Desk42.Institutional
                 }
 
                 string expectedObservationId =
-                    $"observation:{declaration.RelianceId}";
+                    InstitutionalScenarioDerivedIds.RelianceObservation(
+                        declaration.RelianceId);
                 RelianceObservation observation = null;
                 int observationCount = 0;
                 for (int j = 0;
@@ -504,7 +505,8 @@ namespace Desk42.Institutional
                 {
                     if (Equal(
                             observation.ObservationId,
-                            $"observation:{declaration.RelianceId}"))
+                            InstitutionalScenarioDerivedIds.RelianceObservation(
+                                declaration.RelianceId)))
                     {
                         declared = observedDeclarationIds.Contains(
                             declaration.RelianceId);
@@ -526,7 +528,9 @@ namespace Desk42.Institutional
                 ScenarioRelianceRecoveryDefinition declaration =
                     context.Definition.RelianceRecoveries[i];
                 string expectedCaseId =
-                    $"{declaration.CaseIdPrefix}:{declaration.RelianceId}";
+                    InstitutionalScenarioDerivedIds.RelianceRecoveryCase(
+                        declaration.CaseIdPrefix,
+                        declaration.RelianceId);
                 RelianceEvent reliance = FindReliance(
                     context.Run,
                     declaration.RelianceId,

@@ -286,6 +286,24 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void Validate_RejectsRelianceRecoveryWithoutReverseAuthorityMatch()
+        {
+            Fixture fixture = BuildValidFixture();
+            ConvertDescendantToValidRelianceRecovery(fixture);
+            DescendantCase recovery = fixture.Run.Report.DescendantCases.Single(
+                value => value.Kind == DescendantCaseKind.Reliance);
+            recovery.ClaimantAgentId = "agent:b";
+            fixture.Run.RelianceLedger.Single().SurvivedReversal = false;
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    InstitutionalCausalGraphValidator.Validate(fixture.Run));
+            StringAssert.Contains(
+                "has no matching authority reliance event",
+                exception.Message);
+        }
+
+        [Test]
         public void Validate_RejectsMultipleRecoveryCasesForOneReliance()
         {
             Fixture fixture = BuildValidFixture();

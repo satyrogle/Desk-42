@@ -140,6 +140,7 @@ namespace Desk42.Institutional
             ValidateTransfers(
                 definition, roles, cases, rulingToCase, holdings, entitlements,
                 agentIds);
+            ValidatePlannedPublicIdentities(definition);
         }
 
         private static Dictionary<string, ScenarioParticipantRoleDefinition> ValidateRoles(
@@ -1323,6 +1324,184 @@ namespace Desk42.Institutional
             return definition.PublicObservationCycle < 0
                 ? definition.Cycle
                 : definition.PublicObservationCycle;
+        }
+
+        /// <summary>
+        /// Reserves authored public identities plus the delayed reliance and
+        /// recovery identities derived from scenario data before execution starts.
+        /// This is deliberately conservative: conditional nodes still reserve their
+        /// ids, preventing a delayed projection from colliding with a node created by
+        /// an earlier phase of a future cycle after state has already mutated.
+        /// </summary>
+        private static void ValidatePlannedPublicIdentities(
+            InstitutionalScenarioDefinition definition)
+        {
+            var publicIds = new HashSet<string>(StringComparer.Ordinal);
+            var caseIds = new HashSet<string>(StringComparer.Ordinal);
+
+            for (int i = 0; i < definition.Cases.Count; i++)
+            {
+                ScenarioCaseDefinition item = definition.Cases[i];
+                caseIds.Add(item.CaseId);
+                AddPlannedPublicId(
+                    publicIds,
+                    item.InitialRulingId,
+                    $"case '{item.CaseId}' initial ruling");
+                AddPlannedPublicId(
+                    publicIds,
+                    item.AdjudicationRulingId,
+                    $"case '{item.CaseId}' adjudication ruling");
+            }
+
+            for (int i = 0; i < definition.EvidenceActivatedCases.Count; i++)
+            {
+                ScenarioEvidenceActivatedCaseDefinition item =
+                    definition.EvidenceActivatedCases[i];
+                AddPlannedPublicId(
+                    publicIds,
+                    item.ActivationId,
+                    "evidence-activated case opening");
+            }
+
+            for (int i = 0; i < definition.DescendantCases.Count; i++)
+            {
+                AddPlannedPublicId(
+                    publicIds,
+                    definition.DescendantCases[i].CaseId,
+                    "action-caused descendant case");
+            }
+
+            for (int i = 0; i < definition.Appeals.Count; i++)
+            {
+                AddPlannedPublicId(
+                    publicIds,
+                    definition.Appeals[i].AppealId,
+                    "appeal");
+            }
+
+            for (int i = 0; i < definition.Holdings.Count; i++)
+            {
+                AddPlannedPublicId(
+                    publicIds,
+                    definition.Holdings[i].HoldingId,
+                    "holding");
+                AddPlannedPublicId(
+                    publicIds,
+                    definition.Holdings[i].ScopeId,
+                    "holding scope");
+            }
+
+            for (int i = 0; i < definition.ExclusiveEntitlements.Count; i++)
+            {
+                AddPlannedPublicId(
+                    publicIds,
+                    definition.ExclusiveEntitlements[i].EntitlementId,
+                    "exclusive entitlement");
+            }
+
+            for (int i = 0; i < definition.EntitlementTransfers.Count; i++)
+            {
+                string pairId = InstitutionalScenarioDerivedIds.ConnectedOutcomePair(
+                    definition.EntitlementTransfers[i].TransferId);
+                AddPlannedPublicId(publicIds, pairId, "connected outcome");
+            }
+
+            for (int i = 0; i < definition.RelianceDefinitions.Count; i++)
+            {
+                ScenarioIrreversibleRelianceDefinition item =
+                    definition.RelianceDefinitions[i];
+                string observationId =
+                    InstitutionalScenarioDerivedIds.RelianceObservation(
+                        item.RelianceId);
+                ValidateDerivedPublicId(observationId, "reliance observation");
+                AddPlannedPublicId(
+                    publicIds,
+                    observationId,
+                    "reliance observation");
+
+                long publicCycle = ResolvePublicObservationCycle(item);
+                if (publicCycle <= item.Cycle) continue;
+                string timelineId =
+                    InstitutionalScenarioDerivedIds.DeferredRelianceTimeline(
+                        publicCycle,
+                        item.RelianceId);
+                ValidateDerivedPublicId(
+                    timelineId,
+                    "deferred reliance timeline entry");
+                AddPlannedPublicId(
+                    publicIds,
+                    timelineId,
+                    "deferred reliance timeline entry");
+                for (int effectIndex = 0;
+                     effectIndex < item.Effects.Count;
+                     effectIndex++)
+                {
+                    string materialId =
+                        InstitutionalScenarioDerivedIds.DeferredRelianceMaterial(
+                            publicCycle,
+                            item.RelianceId,
+                            item.Effects[effectIndex].EffectId);
+                    ValidateDerivedPublicId(
+                        materialId,
+                        "deferred reliance material consequence");
+                    AddPlannedPublicId(
+                        publicIds,
+                        materialId,
+                        "deferred reliance material consequence");
+                }
+            }
+
+            for (int i = 0; i < definition.RelianceRecoveries.Count; i++)
+            {
+                ScenarioRelianceRecoveryDefinition item =
+                    definition.RelianceRecoveries[i];
+                string caseId =
+                    InstitutionalScenarioDerivedIds.RelianceRecoveryCase(
+                        item.CaseIdPrefix,
+                        item.RelianceId);
+                ValidateDerivedPublicId(caseId, "reliance recovery case");
+                if (!caseIds.Add(caseId))
+                {
+                    throw new InvalidOperationException(
+                        $"Derived reliance recovery case id '{caseId}' collides " +
+                        "with another declared case.");
+                }
+                AddPlannedPublicId(
+                    publicIds,
+                    caseId,
+                    "reliance recovery case");
+            }
+        }
+
+        private static void AddPlannedPublicId(
+            ISet<string> publicIds,
+            string id,
+            string context)
+        {
+            if (!publicIds.Add(id))
+            {
+                throw new InvalidOperationException(
+                    $"Scenario public identity plan reuses id '{id}' for {context}.");
+            }
+        }
+
+        private static void ValidateDerivedPublicId(string value, string context)
+        {
+            if (string.IsNullOrWhiteSpace(value) ||
+                value.Length > MaximumIdLength * 4 ||
+                !string.Equals(value, value.Trim(), StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Derived {context} requires a bounded, non-blank stable id.");
+            }
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (char.IsControl(value[i]))
+                {
+                    throw new InvalidOperationException(
+                        $"Derived {context} cannot contain control characters.");
+                }
+            }
         }
 
         private static Dictionary<string, ScenarioHoldingDefinition> ValidateHoldings(

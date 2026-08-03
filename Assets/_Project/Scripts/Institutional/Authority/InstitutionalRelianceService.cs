@@ -127,6 +127,8 @@ namespace Desk42.Institutional
     {
         internal const int MaximumEffects = 3;
         internal const int MaximumIdentifierLength = 160;
+        internal const int MaximumDerivedIdentifierLength =
+            MaximumIdentifierLength * 2 + 32;
         internal const int MaximumResourceDeltaMagnitude = 1_000_000;
         internal const int MaximumNeedDeltaMagnitude = 100;
 
@@ -470,6 +472,14 @@ namespace Desk42.Institutional
             PendingReliancePublicProjection pendingProjection = null;
             if (deferPublicProjection)
             {
+                string deferredTimelineId =
+                    InstitutionalScenarioDerivedIds.DeferredRelianceTimeline(
+                        publicObservationCycle,
+                        request.RelianceEventId);
+                EnsureTimelineIdAvailable(
+                    run.Report,
+                    deferredTimelineId,
+                    reservedPublicIds);
                 pendingProjection = new PendingReliancePublicProjection
                 {
                     RelianceEventId = request.RelianceEventId,
@@ -601,8 +611,10 @@ namespace Desk42.Institutional
                     RelianceRecoveryFailureReason.DuplicateRecoveryCase);
             }
 
-            string caseId = $"{request.CaseIdPrefix}:{reliance.RelianceEventId}";
-            if (caseId.Length > MaximumIdentifierLength * 2)
+            string caseId = InstitutionalScenarioDerivedIds.RelianceRecoveryCase(
+                request.CaseIdPrefix,
+                reliance.RelianceEventId);
+            if (caseId.Length > MaximumDerivedIdentifierLength)
                 return RecoveryFailed(RelianceRecoveryFailureReason.InvalidRequest);
             if (InstitutionalTimeline.FindDescendantCase(run.Report, caseId) != null)
                 return RecoveryFailed(
@@ -988,9 +1000,19 @@ namespace Desk42.Institutional
                 PendingReliancePublicProjection pending =
                     run.PendingReliancePublicProjections[i];
                 if (pending?.Observation == null ||
+                    string.IsNullOrWhiteSpace(pending.RelianceEventId) ||
                     string.IsNullOrWhiteSpace(pending.Observation.ObservationId) ||
                     !reservedIds.Add(pending.Observation.ObservationId) ||
                     pending.MaterialConsequences == null)
+                {
+                    throw new InvalidOperationException(
+                        "Pending reliance state contains invalid or reused public ids.");
+                }
+                string timelineId =
+                    InstitutionalScenarioDerivedIds.DeferredRelianceTimeline(
+                        pending.Observation.Cycle,
+                        pending.RelianceEventId);
+                if (!reservedIds.Add(timelineId))
                 {
                     throw new InvalidOperationException(
                         "Pending reliance state contains invalid or reused public ids.");
@@ -1132,9 +1154,10 @@ namespace Desk42.Institutional
             var material = new MaterialConsequence
             {
                 ConsequenceId = deferred
-                    ? $"material:{cycle}:reliance:" +
-                      $"{relianceEventId.Length}:{relianceEventId}:" +
-                      $"{effectId.Length}:{effectId}"
+                    ? InstitutionalScenarioDerivedIds.DeferredRelianceMaterial(
+                        cycle,
+                        relianceEventId,
+                        effectId)
                     : $"material:{cycle}:{index}:{agentId}:{kind}:{relianceEventId}",
                 Cycle = cycle,
                 CauseId = causeId,

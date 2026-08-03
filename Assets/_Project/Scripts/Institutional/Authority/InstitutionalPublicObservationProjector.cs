@@ -98,8 +98,9 @@ namespace Desk42.Institutional
                 var timeline = new InstitutionalTimelineEntry
                 {
                     EntryId =
-                        $"timeline:{cycle}:{run.Report.Timeline.Count + i}:" +
-                        $"{InstitutionalTimelineKind.RelianceCreated}",
+                        InstitutionalScenarioDerivedIds.DeferredRelianceTimeline(
+                            cycle,
+                            pending.RelianceEventId),
                     Cycle = cycle,
                     Kind = InstitutionalTimelineKind.RelianceCreated,
                     CauseId = observation.SourceActionEventId,
@@ -461,6 +462,8 @@ namespace Desk42.Institutional
                 value => value.AppealId, "appeal");
             AddIds(result, report.Holdings,
                 value => value.HoldingId, "holding");
+            AddIds(result, report.Holdings,
+                value => value.Scope?.ScopeId, "holding scope");
             AddIds(result, report.RelianceObservations,
                 value => value.ObservationId, "reliance observation");
             AddIds(result, report.MaterialConsequences,
