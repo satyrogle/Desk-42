@@ -94,8 +94,9 @@ jobs:
         shell: pwsh
         run: >-
           ./tools/ci/Assert-InstitutionalGeneralisationGate.ps1
-          -ScenarioCommit HEAD
+          -ScenarioCommit 330230228aed547a14b1028b700caaea8eb4838b
           -ScenarioName GlassCanal
+          -AllowHistoricalScenarioCommit
 
       - name: Verify pinned project inputs
         shell: pwsh

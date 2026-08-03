@@ -181,6 +181,10 @@ Assert-True ($gateText.Contains("'rev-list', '--reverse', '--no-merges'")) `
     'gate does not inspect every non-merge commit'
 Assert-True ($gateText.Contains("'rev-list', '--reverse', '--merges'")) `
     'gate does not reject merge commits'
+Assert-True ($gateText.Contains('[switch]$AllowHistoricalScenarioCommit')) `
+    'gate cannot explicitly verify a frozen scenario commit from a descendant product branch'
+Assert-True ($gateText.Contains('merge-base --is-ancestor $scenario $head')) `
+    'historical scenario verification does not require the frozen commit to be an ancestor of HEAD'
 
 $manifestPath = Join-Path $PSScriptRoot 'Get-InstitutionalEngineManifest.ps1'
 $manifestText = Get-Content -LiteralPath $manifestPath -Raw
@@ -197,6 +201,11 @@ Assert-True ($workflowText.Contains('fetch-depth: 0')) `
 Assert-True ($workflowText.Contains(
         './tools/ci/Assert-InstitutionalGeneralisationGate.ps1')) `
     'workflow does not execute the generalisation gate'
+Assert-True ($workflowText.Contains(
+        '-ScenarioCommit 330230228aed547a14b1028b700caaea8eb4838b')) `
+    'workflow does not pin the hosted Glass Canal evidence commit'
+Assert-True ($workflowText.Contains('-AllowHistoricalScenarioCommit')) `
+    'workflow does not explicitly opt into frozen historical scenario verification'
 Assert-True ($workflowText.Contains('--untracked-files=all')) `
     'workflow hygiene ignores untracked Unity assets'
 Assert-False ($workflowText.Contains('when present')) `

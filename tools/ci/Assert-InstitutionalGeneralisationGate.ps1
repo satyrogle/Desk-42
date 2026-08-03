@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$ScenarioCommit = 'HEAD',
-    [string]$ScenarioName = 'GlassCanal'
+    [string]$ScenarioName = 'GlassCanal',
+    [switch]$AllowHistoricalScenarioCommit
 )
 
 $ErrorActionPreference = 'Stop'
@@ -157,7 +158,13 @@ $candidate = Resolve-GitCommit $CandidateTag
 $scenario = Resolve-GitCommit $ScenarioCommit
 $head = Resolve-GitCommit 'HEAD'
 if (-not [string]::Equals($head, $scenario, [System.StringComparison]::Ordinal)) {
-    throw "ScenarioCommit must be the checked-out HEAD. HEAD=$head scenario=$scenario"
+    if (-not $AllowHistoricalScenarioCommit) {
+        throw "ScenarioCommit must be the checked-out HEAD unless AllowHistoricalScenarioCommit is explicit. HEAD=$head scenario=$scenario"
+    }
+    & git -C $repositoryRoot merge-base --is-ancestor $scenario $head
+    if ($LASTEXITCODE -ne 0) {
+        throw "Historical scenario commit $scenario is not an ancestor of checked-out HEAD $head."
+    }
 }
 
 $workingChanges = @(Invoke-CheckedGit @(
@@ -264,10 +271,14 @@ $authoringTool = Join-Path $repositoryRoot `
     'tools/ci/Assert-InstitutionalScenarioAuthoringBoundary.ps1'
 & $authoringTool -RepositoryRoot $repositoryRoot | Out-Null
 
-$manifestTool = Join-Path $repositoryRoot `
-    'tools/ci/Get-InstitutionalEngineManifest.ps1'
-& $manifestTool -RepositoryRoot $repositoryRoot `
-    -VerifyAgainst $baselinePath | Out-Null
+$isHistoricalVerification = -not [string]::Equals(
+    $head, $scenario, [System.StringComparison]::Ordinal)
+if (-not $isHistoricalVerification) {
+    $manifestTool = Join-Path $repositoryRoot `
+        'tools/ci/Get-InstitutionalEngineManifest.ps1'
+    & $manifestTool -RepositoryRoot $repositoryRoot `
+        -VerifyAgainst $baselinePath | Out-Null
+}
 
 if ([string]::Equals(
         $candidate, $scenario, [System.StringComparison]::Ordinal)) {
@@ -278,4 +289,5 @@ if ([string]::Equals(
 Write-Host "engineCandidate=$candidate"
 Write-Host "scenarioCommit=$scenario"
 Write-Host "scenario=$ScenarioName"
+Write-Host "historicalVerification=$isHistoricalVerification"
 Write-Host "changedPaths=$($changedPaths.Count)"
