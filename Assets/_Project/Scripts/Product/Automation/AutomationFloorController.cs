@@ -11,6 +11,7 @@ namespace Desk42.Product.Automation
         private readonly List<GameObject> _owned = new();
         private readonly List<Renderer> _flowRenderers = new();
         private readonly List<Renderer> _auxRouteRenderers = new();
+        private readonly List<Renderer> _appealRouteRenderers = new();
         private AutomationFlowRuntime _flow;
         private GameObject _auxSocket;
         private bool _placementArmed;
@@ -31,11 +32,15 @@ namespace Desk42.Product.Automation
 
         internal int ClaimsInFlight => _flow?.InFlight ?? 0;
         internal int ClaimsCompleted => _flow?.Completed ?? 0;
+        internal int AppealsReturned => _flow?.AppealsReturned ?? 0;
+        internal int AppealsResolved => _flow?.AppealsResolved ?? 0;
         internal int VerificationBacklog => _flow?.VerificationBacklog ?? 0;
         internal string Bottleneck => _flow?.Bottleneck ?? "STARTING";
         internal bool AuxVerifierPlaced => _flow?.AuxVerifierInstalled ?? false;
         internal bool PlacementArmed => _placementArmed;
         internal string RouteMode => _flow?.ParallelRouting == true ? "PARALLEL" : "PRIMARY";
+        internal bool FlowStabilised => ClaimsCompleted >= 5 &&
+            AppealsResolved >= 1 && VerificationBacklog <= 3;
 
         internal void BuildVisualFloor()
         {
@@ -74,6 +79,11 @@ namespace Desk42.Product.Automation
                 SplitterPosition, new Vector3(-3.1f, 0.42f, -3.2f),
                 AuxVerifierPosition, AdjudicatorPosition,
             }, new Color(0.24f, 0.52f, 0.48f), _auxRouteRenderers);
+            CreateRoute(new[]
+            {
+                new Vector3(13f, 0.42f, -3.2f), LegalPosition,
+                new Vector3(2.5f, 0.42f, -0.4f), VerifierPosition,
+            }, new Color(0.68f, 0.24f, 0.21f), _appealRouteRenderers);
             for (int i = 0; i < _auxRouteRenderers.Count; i++)
                 _auxRouteRenderers[i].enabled = false;
             CreateAuxVerifierSocket();
@@ -124,6 +134,9 @@ namespace Desk42.Product.Automation
             for (int i = 0; i < _auxRouteRenderers.Count; i++)
                 if (_auxRouteRenderers[i] != null)
                     _auxRouteRenderers[i].enabled = visible && AuxVerifierPlaced;
+            for (int i = 0; i < _appealRouteRenderers.Count; i++)
+                if (_appealRouteRenderers[i] != null)
+                    _appealRouteRenderers[i].enabled = visible;
         }
 
         public void Dispose()

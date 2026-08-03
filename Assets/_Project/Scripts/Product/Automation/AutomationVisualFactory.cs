@@ -88,7 +88,7 @@ namespace Desk42.Product.Automation
             CreateBlock(root.transform, "Urgency Tab", new Vector3(0.29f, 0.18f, 0.38f),
                 new Vector3(0.18f, 0.09f, 0.25f), new Color(0.68f, 0.23f, 0.20f));
             CreateWorldLabel(root.transform, label, new Vector3(0f, 0.65f, 0f),
-                0.075f, new Color(0.95f, 0.90f, 0.73f), TextAnchor.MiddleCenter);
+                0.045f, new Color(0.95f, 0.90f, 0.73f), TextAnchor.MiddleCenter);
             return root;
         }
 

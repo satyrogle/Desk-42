@@ -27,6 +27,7 @@ namespace Desk42.Product.Automation
         private AutomationStationRuntime _auxVerifier;
         private AutomationStationRuntime _adjudicator;
         private AutomationStationRuntime _output;
+        private AutomationStationRuntime _legal;
         private float _spawnClock = 0.4f;
         private int _routeOrdinal;
 
@@ -41,6 +42,8 @@ namespace Desk42.Product.Automation
 
         internal int Spawned { get; private set; }
         internal int Completed { get; private set; }
+        internal int AppealsReturned { get; private set; }
+        internal int AppealsResolved { get; private set; }
         internal int InFlight => _items.Count;
         internal int VerificationBacklog =>
             (_primaryVerifier?.Workload ?? 0) + (_auxVerifier?.Workload ?? 0);
@@ -77,6 +80,7 @@ namespace Desk42.Product.Automation
                 case AutomationStationKind.Verification: _primaryVerifier = station; break;
                 case AutomationStationKind.Adjudication: _adjudicator = station; break;
                 case AutomationStationKind.Output: _output = station; break;
+                case AutomationStationKind.Legal: _legal = station; break;
             }
         }
 
@@ -147,19 +151,48 @@ namespace Desk42.Product.Automation
                     _adjudicator.Enqueue(item);
                     break;
                 case AutomationStationKind.Adjudication:
-                    AutomationRulingResult ruling = _institution.Commit(
-                        item.Claim.AutomationClaimId,
-                        PlayerScopeChoice.Broad,
-                        PlayerRulingDisposition.Recognised);
-                    item.ApplyRuling(ruling);
+                    if (item.IsAppeal)
+                    {
+                        item.ApplyAppealResolution();
+                    }
+                    else
+                    {
+                        AutomationRulingResult ruling = _institution.Commit(
+                            item.Claim.AutomationClaimId,
+                            PlayerScopeChoice.Broad,
+                            PlayerRulingDisposition.Recognised);
+                        item.ApplyRuling(ruling);
+                    }
                     _output.Enqueue(item);
                     break;
                 case AutomationStationKind.Output:
+                    AutomationAppealPacket appeal = item.Ruling?.Appeal;
+                    bool wasAppeal = item.IsAppeal;
                     _items.Remove(item);
                     item.Dispose();
-                    Completed++;
+                    if (wasAppeal) AppealsResolved++;
+                    else Completed++;
+                    if (appeal != null) SpawnAppeal(appeal);
+                    break;
+                case AutomationStationKind.Legal:
+                    _primaryVerifier.Enqueue(item);
                     break;
             }
+        }
+
+        private void SpawnAppeal(AutomationAppealPacket appeal)
+        {
+            if (appeal == null || _legal == null) return;
+            AppealsReturned++;
+            string label = "APPEAL 42-" + AppealsReturned.ToString("D2");
+            GameObject token = AutomationVisualFactory.CreateFolderToken(
+                _root, label, new Color(0.68f, 0.22f, 0.18f));
+            token.transform.position = new Vector3(13f, 0.42f, -3.2f);
+            var view = token.AddComponent<AutomationDossierView>();
+            view.MarkAppeal();
+            var item = new AutomationFlowItem(appeal, token, view);
+            _items.Add(item);
+            _legal.Enqueue(item);
         }
 
         private AutomationStationRuntime SelectVerifier()
@@ -285,9 +318,21 @@ namespace Desk42.Product.Automation
             _view = view;
         }
 
+        internal AutomationFlowItem(
+            AutomationAppealPacket appeal,
+            GameObject root,
+            AutomationDossierView view)
+        {
+            Appeal = appeal ?? throw new ArgumentNullException(nameof(appeal));
+            _root = root;
+            _view = view;
+        }
+
         internal AutomationPublicClaim Claim { get; }
+        internal AutomationAppealPacket Appeal { get; }
         internal AutomationRulingResult Ruling { get; private set; }
-        internal string ClaimId => Claim.DisplayId;
+        internal bool IsAppeal => Appeal != null;
+        internal string ClaimId => IsAppeal ? Appeal.AppealId : Claim.DisplayId;
         internal bool AtTarget => _view.AtTarget;
 
         internal void RevealEvidencePacket()
@@ -302,6 +347,11 @@ namespace Desk42.Product.Automation
         {
             Ruling = result ?? throw new ArgumentNullException(nameof(result));
             _view.ApplyRuling(result.Disposition);
+        }
+
+        internal void ApplyAppealResolution()
+        {
+            _view.ApplyAppealResolution();
         }
 
         internal void BeginTransit(AutomationStationRuntime station)
@@ -345,6 +395,7 @@ namespace Desk42.Product.Automation
         private bool _processing;
         private bool _evidenceVisible;
         private bool _rulingVisible;
+        private bool _appealVisible;
 
         internal bool AtTarget => (transform.position - _target).sqrMagnitude < 0.003f;
 
@@ -370,6 +421,7 @@ namespace Desk42.Product.Automation
         internal void SetStage(string stage, bool processing)
         {
             _processing = processing;
+            if (_label != null) _label.gameObject.SetActive(processing);
             if (_label != null && processing) _label.color = new Color(1f, 0.80f, 0.35f);
             else if (_label != null) _label.color = new Color(0.95f, 0.90f, 0.73f);
         }
@@ -418,6 +470,28 @@ namespace Desk42.Product.Automation
             if (_label != null) _label.color = recognised
                 ? new Color(0.55f, 0.88f, 0.48f)
                 : new Color(0.95f, 0.43f, 0.34f);
+        }
+
+        internal void MarkAppeal()
+        {
+            if (_appealVisible) return;
+            _appealVisible = true;
+            AutomationVisualFactory.CreateBlock(transform, "Appeal Band",
+                new Vector3(0f, 0.22f, -0.08f),
+                new Vector3(0.76f, 0.08f, 0.20f),
+                new Color(0.18f, 0.055f, 0.045f));
+            if (_label != null) _label.color = new Color(1f, 0.45f, 0.34f);
+        }
+
+        internal void ApplyAppealResolution()
+        {
+            if (_rulingVisible) return;
+            _rulingVisible = true;
+            AutomationVisualFactory.CreateBlock(transform, "Appeal Resolution Seal",
+                new Vector3(0f, 0.28f, 0.18f),
+                new Vector3(0.50f, 0.09f, 0.50f),
+                new Color(0.50f, 0.42f, 0.72f));
+            if (_label != null) _label.color = new Color(0.74f, 0.66f, 0.96f);
         }
     }
 }

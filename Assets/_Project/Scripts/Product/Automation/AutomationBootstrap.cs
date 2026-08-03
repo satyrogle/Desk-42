@@ -101,11 +101,18 @@ namespace Desk42.Product.Automation
             Metric("IN FLIGHT", ClaimsInFlight.ToString("00"));
             Metric("COMPLETED", (_floor?.ClaimsCompleted ?? 0).ToString("00"));
             Metric("BACKLOG", (_floor?.VerificationBacklog ?? 0).ToString("00"));
-            Metric("ROUTE", "INTAKE → OUTPUT");
-            Metric("POLICY", "RUBBER-STAMP MILL");
+            Metric("APPEALS", (_floor?.AppealsReturned ?? 0).ToString("00") +
+                "/" + (_floor?.AppealsResolved ?? 0).ToString("00"));
+            Metric("ROUTE", _floor?.RouteMode ?? "PRIMARY");
+            Metric("POLICY", "RUBBER MILL");
             GUILayout.FlexibleSpace();
-            GUILayout.Label(_paused ? "PAUSED" : "OPERATING", _pill,
-                GUILayout.Width(92f), GUILayout.Height(28f));
+            string status = _paused
+                ? "PAUSED"
+                : _floor?.FlowStabilised == true
+                    ? "FLOW STABILISED"
+                    : "OPERATING";
+            GUILayout.Label(status, _pill,
+                GUILayout.Width(118f), GUILayout.Height(28f));
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
 
@@ -136,7 +143,7 @@ namespace Desk42.Product.Automation
 
         private void Metric(string label, string value)
         {
-            GUILayout.BeginVertical(GUILayout.Width(130f));
+            GUILayout.BeginVertical(GUILayout.Width(112f));
             GUILayout.Label(label, _small);
             GUILayout.Label(value, _metric);
             GUILayout.EndVertical();
