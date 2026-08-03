@@ -639,6 +639,20 @@ namespace Desk42.Institutional.Player
                 missing.Add("No consent or authorised-transfer record is available.");
                 missing.Add("Intent remains undiscoverable from the official record.");
             }
+            else if (string.Equals(issueId,
+                         EndogenousIssueKindIds.IdentityContinuity,
+                         StringComparison.Ordinal))
+            {
+                missing.Add("No complete supersession chain is in the record.");
+                missing.Add("Biometric continuity remains contested.");
+            }
+            else if (string.Equals(issueId,
+                         EndogenousIssueKindIds.DependencyEmergencySupport,
+                         StringComparison.Ordinal))
+            {
+                missing.Add("Dependency status is not independently verified.");
+                missing.Add("Delay harm cannot be measured from the official record.");
+            }
             return missing;
         }
 
@@ -654,6 +668,14 @@ namespace Desk42.Institutional.Player
                     EndogenousIssueKindIds.AccessWithdrawal,
                     StringComparison.Ordinal))
                 return new List<string> { "Restore access", "No change" };
+            if (string.Equals(issueId,
+                    EndogenousIssueKindIds.IdentityContinuity,
+                    StringComparison.Ordinal))
+                return new List<string> { "Restore identity continuity", "No change" };
+            if (string.Equals(issueId,
+                    EndogenousIssueKindIds.DependencyEmergencySupport,
+                    StringComparison.Ordinal))
+                return new List<string> { "Grant emergency support", "No change" };
             return new List<string> { "Recognise collective", "No change" };
         }
 

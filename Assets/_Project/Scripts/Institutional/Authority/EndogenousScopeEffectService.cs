@@ -28,6 +28,10 @@ namespace Desk42.Institutional
     {
         internal const string ProtectedPossessionStatusId =
             "status.holding-protected-possession";
+        internal const string ProtectedIdentityStatusId =
+            "status.holding-protected-identity-continuity";
+        internal const string ProtectedDependencyStatusId =
+            "status.holding-protected-dependency-support";
 
         internal static List<EndogenousScopeApplicationTrace> Apply(
             SocietyState society,
@@ -74,16 +78,13 @@ namespace Desk42.Institutional
                 if (existing != null && !string.IsNullOrWhiteSpace(existing.TraceId))
                     traceById[existing.TraceId] = existing;
             }
-            var possessionRulings = new List<CommittedPlayerRuling>();
+            var materialRulings = new List<CommittedPlayerRuling>();
             for (int i = 0; i < state.Rulings.Count; i++)
             {
                 CommittedPlayerRuling ruling = state.Rulings[i];
-                if (string.Equals(
-                        ruling.HoldingRuleId,
-                        EndogenousPlayerRulingService.PossessionHoldingRule,
-                        StringComparison.Ordinal) &&
+                if (IsMaterialHolding(ruling.HoldingRuleId) &&
                     EstablishesHolding(ruling.Disposition))
-                    possessionRulings.Add(ruling);
+                    materialRulings.Add(ruling);
             }
 
             for (int opportunityIndex = 0;
@@ -92,7 +93,11 @@ namespace Desk42.Institutional
             {
                 StealOpportunity opportunity = input.StealOpportunities[opportunityIndex];
                 if (opportunity == null) continue;
-                opportunity.ProtectionStatusId = ProtectedPossessionStatusId;
+                string issueId = string.IsNullOrWhiteSpace(opportunity.IssueId)
+                    ? EndogenousIssueKindIds.PossessionDispute
+                    : opportunity.IssueId;
+                string protectionStatusId = ProtectionStatusIdForIssue(issueId);
+                opportunity.ProtectionStatusId = protectionStatusId;
                 if (opportunity.RecognisedProtectionUtilityBonus <= 0)
                     opportunity.RecognisedProtectionUtilityBonus = 80;
                 if (opportunity.UnrecognisedExposureUtilityPenalty <= 0)
@@ -106,16 +111,18 @@ namespace Desk42.Institutional
                         opportunity.EligibleActorIds[actorIndex]);
                     if (actor == null) continue;
                     for (int rulingIndex = 0;
-                         rulingIndex < possessionRulings.Count;
+                     rulingIndex < materialRulings.Count;
                          rulingIndex++)
                     {
                         CommittedPlayerRuling ruling =
-                            possessionRulings[rulingIndex];
+                            materialRulings[rulingIndex];
+                        if (!HoldingMatchesIssue(ruling.HoldingRuleId, issueId))
+                            continue;
 
                         var context = new ScopeMatchContext
                         {
                             AgentId = actor.StableId,
-                            IssueId = EndogenousIssueKindIds.PossessionDispute,
+                            IssueId = issueId,
                             JurisdictionId = jurisdictionId,
                             ActivityId = "physical-possession-transfer",
                         };
@@ -135,18 +142,18 @@ namespace Desk42.Institutional
                             continue;
                         }
                         bool before = actor.Standing.IsRecognised(
-                            ProtectedPossessionStatusId);
+                            protectionStatusId);
                         bool matched = ScopeExpressionEvaluator.Matches(
                             ruling.Scope, context);
                         if (matched)
                         {
                             actor.Standing.SetRecognised(
-                                ProtectedPossessionStatusId, true);
+                                protectionStatusId, true);
                             opportunity.EnablingRulingId = ruling.RulingId;
                             opportunity.ParentCaseId = ruling.CaseId;
                         }
                         bool after = actor.Standing.IsRecognised(
-                            ProtectedPossessionStatusId);
+                            protectionStatusId);
                         var trace = new EndogenousScopeApplicationTrace
                         {
                             TraceId = traceId,
@@ -154,11 +161,11 @@ namespace Desk42.Institutional
                             HoldingRuleId = ruling.HoldingRuleId,
                             ActorId = actor.StableId,
                             OpportunityId = opportunity.OpportunityId,
-                            IssueId = EndogenousIssueKindIds.PossessionDispute,
+                            IssueId = issueId,
                             JurisdictionId = jurisdictionId,
                             AppliedTick = society.CurrentTick,
                             ScopeMatched = matched,
-                            AffectedOfficialStatusId = ProtectedPossessionStatusId,
+                            AffectedOfficialStatusId = protectionStatusId,
                             StatusBefore = before,
                             StatusAfter = after,
                         };
@@ -182,6 +189,48 @@ namespace Desk42.Institutional
                    disposition == RulingDisposition.Recognised ||
                    disposition == RulingDisposition.Affirmed ||
                    disposition == RulingDisposition.ReversedAndRecognised;
+        }
+
+        private static bool IsMaterialHolding(string holdingRuleId)
+        {
+            return string.Equals(holdingRuleId,
+                       EndogenousPlayerRulingService.PossessionHoldingRule,
+                       StringComparison.Ordinal) ||
+                   string.Equals(holdingRuleId,
+                       EndogenousPlayerRulingService.IdentityHoldingRule,
+                       StringComparison.Ordinal) ||
+                   string.Equals(holdingRuleId,
+                       EndogenousPlayerRulingService.DependencyHoldingRule,
+                       StringComparison.Ordinal);
+        }
+
+        private static bool HoldingMatchesIssue(string holdingRuleId, string issueId)
+        {
+            return (string.Equals(issueId, EndogenousIssueKindIds.PossessionDispute,
+                        StringComparison.Ordinal) && string.Equals(holdingRuleId,
+                        EndogenousPlayerRulingService.PossessionHoldingRule,
+                        StringComparison.Ordinal)) ||
+                   (string.Equals(issueId, EndogenousIssueKindIds.IdentityContinuity,
+                        StringComparison.Ordinal) && string.Equals(holdingRuleId,
+                        EndogenousPlayerRulingService.IdentityHoldingRule,
+                        StringComparison.Ordinal)) ||
+                   (string.Equals(issueId,
+                        EndogenousIssueKindIds.DependencyEmergencySupport,
+                        StringComparison.Ordinal) && string.Equals(holdingRuleId,
+                        EndogenousPlayerRulingService.DependencyHoldingRule,
+                        StringComparison.Ordinal));
+        }
+
+        internal static string ProtectionStatusIdForIssue(string issueId)
+        {
+            if (string.Equals(issueId, EndogenousIssueKindIds.IdentityContinuity,
+                    StringComparison.Ordinal))
+                return ProtectedIdentityStatusId;
+            if (string.Equals(issueId,
+                    EndogenousIssueKindIds.DependencyEmergencySupport,
+                    StringComparison.Ordinal))
+                return ProtectedDependencyStatusId;
+            return ProtectedPossessionStatusId;
         }
 
     }

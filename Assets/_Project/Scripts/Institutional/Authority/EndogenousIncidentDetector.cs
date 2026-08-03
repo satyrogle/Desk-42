@@ -76,8 +76,10 @@ namespace Desk42.Institutional
                     }
                     return NewCandidate(
                         materialEvent,
-                        EndogenousIssueKindIds.PossessionDispute,
-                        60,
+                        string.IsNullOrWhiteSpace(materialEvent.IssueId)
+                            ? EndogenousIssueKindIds.PossessionDispute
+                            : materialEvent.IssueId,
+                        HarmForPossessionIssue(materialEvent.IssueId),
                         materialEvent.ResourceId,
                         causalAction,
                         materialEvent.ActorAgentId);
@@ -106,6 +108,16 @@ namespace Desk42.Institutional
                 default:
                     return null;
             }
+        }
+
+        private static int HarmForPossessionIssue(string issueId)
+        {
+            if (string.Equals(issueId, EndogenousIssueKindIds.IdentityContinuity,
+                    StringComparison.Ordinal)) return 85;
+            if (string.Equals(issueId,
+                    EndogenousIssueKindIds.DependencyEmergencySupport,
+                    StringComparison.Ordinal)) return 95;
+            return 60;
         }
 
         private static IncidentCandidate NewCandidate(

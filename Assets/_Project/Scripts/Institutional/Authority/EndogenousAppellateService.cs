@@ -269,6 +269,13 @@ namespace Desk42.Institutional
             if (string.Equals(issueId, EndogenousIssueKindIds.AccessWithdrawal,
                     StringComparison.Ordinal))
                 return EndogenousPlayerRulingService.RestoreAccessRemedy;
+            if (string.Equals(issueId, EndogenousIssueKindIds.IdentityContinuity,
+                    StringComparison.Ordinal))
+                return EndogenousPlayerRulingService.RestoreIdentityContinuityRemedy;
+            if (string.Equals(issueId,
+                    EndogenousIssueKindIds.DependencyEmergencySupport,
+                    StringComparison.Ordinal))
+                return EndogenousPlayerRulingService.GrantEmergencySupportRemedy;
             return EndogenousPlayerRulingService.RecogniseCollectiveRemedy;
         }
 

@@ -49,22 +49,19 @@ namespace Desk42.Institutional
             InstitutionalMaterialWorldValidator.Validate(world, society);
             EndogenousDocketValidator.Validate(state, society);
 
+            string materialRemedy = MaterialRemedy(ruling.RemedyDefinitionIds);
             if (ruling.Disposition == RulingDisposition.Denied ||
-                !Contains(
-                    ruling.RemedyDefinitionIds,
-                    EndogenousPlayerRulingService.RestorePossessionRemedy))
+                ruling.Disposition == RulingDisposition.ReversedAndDenied ||
+                materialRemedy == null)
             {
                 return null;
             }
 
             EndogenousInstitutionalCase opened = state.GetCase(ruling.CaseId);
-            if (opened == null || !string.Equals(
-                    opened.IssueId,
-                    EndogenousIssueKindIds.PossessionDispute,
-                    StringComparison.Ordinal))
+            if (opened == null || !SupportsMaterialRemedy(opened.IssueId, materialRemedy))
             {
                 throw new InvalidOperationException(
-                    "Restore-possession requires a committed possession dispute.");
+                    "The material remedy does not match the committed issue family.");
             }
 
             string resourceId = ResolveSingleResourceId(state, opened);
@@ -107,8 +104,7 @@ namespace Desk42.Institutional
                 TraceId = traceId,
                 RulingId = ruling.RulingId,
                 CaseId = ruling.CaseId,
-                RemedyDefinitionId =
-                    EndogenousPlayerRulingService.RestorePossessionRemedy,
+                RemedyDefinitionId = materialRemedy,
                 AppliedTick = society.CurrentTick,
                 ResourceId = resourceId,
                 DestinationRuleId = RegisteredOwnerDestinationRule,
@@ -133,6 +129,7 @@ namespace Desk42.Institutional
                         new PossessionTransferRequest
                         {
                             EventId = eventId,
+                            IssueId = opened.IssueId,
                             CauseDecisionId = ruling.RulingId,
                             Tick = society.CurrentTick,
                             ActorAgentId = previousHolder,
@@ -168,6 +165,36 @@ namespace Desk42.Institutional
             }
 
             return trace;
+        }
+
+        private static string MaterialRemedy(IReadOnlyList<string> remedies)
+        {
+            if (Contains(remedies, EndogenousPlayerRulingService.RestorePossessionRemedy))
+                return EndogenousPlayerRulingService.RestorePossessionRemedy;
+            if (Contains(remedies,
+                    EndogenousPlayerRulingService.RestoreIdentityContinuityRemedy))
+                return EndogenousPlayerRulingService.RestoreIdentityContinuityRemedy;
+            if (Contains(remedies,
+                    EndogenousPlayerRulingService.GrantEmergencySupportRemedy))
+                return EndogenousPlayerRulingService.GrantEmergencySupportRemedy;
+            return null;
+        }
+
+        private static bool SupportsMaterialRemedy(string issueId, string remedyId)
+        {
+            return (string.Equals(issueId, EndogenousIssueKindIds.PossessionDispute,
+                        StringComparison.Ordinal) && string.Equals(remedyId,
+                        EndogenousPlayerRulingService.RestorePossessionRemedy,
+                        StringComparison.Ordinal)) ||
+                   (string.Equals(issueId, EndogenousIssueKindIds.IdentityContinuity,
+                        StringComparison.Ordinal) && string.Equals(remedyId,
+                        EndogenousPlayerRulingService.RestoreIdentityContinuityRemedy,
+                        StringComparison.Ordinal)) ||
+                   (string.Equals(issueId,
+                        EndogenousIssueKindIds.DependencyEmergencySupport,
+                        StringComparison.Ordinal) && string.Equals(remedyId,
+                        EndogenousPlayerRulingService.GrantEmergencySupportRemedy,
+                        StringComparison.Ordinal));
         }
 
         private static string ResolveSingleResourceId(

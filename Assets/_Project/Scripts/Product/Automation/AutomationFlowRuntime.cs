@@ -20,6 +20,7 @@ namespace Desk42.Product.Automation
         ProofFortress = 1,
         RubberStampMill = 2,
         AppealRefinery = 3,
+        ProvisionalWelfareOffice = 4,
     }
 
     internal enum AutomationFeedbackKind
@@ -46,6 +47,8 @@ namespace Desk42.Product.Automation
         BranchReviewed,
         RunSaved,
         RunLoaded,
+        ReliefGranted,
+        RetrospectiveReview,
     }
 
     internal sealed class AutomationFlowRuntime : IDisposable
@@ -111,6 +114,11 @@ namespace Desk42.Product.Automation
         internal int PossessionCompleted { get; private set; }
         internal int AccessCompleted { get; private set; }
         internal int CollectiveCompleted { get; private set; }
+        internal int IdentityCompleted { get; private set; }
+        internal int DependencyCompleted { get; private set; }
+        internal int ProvisionalReliefGranted { get; private set; }
+        internal int ReliefReserve { get; private set; } = 100;
+        internal int RelianceExposure { get; private set; }
         internal int Credits { get; private set; } = 5;
         internal int ShiftOrdinal => _shiftOrdinal;
         internal long SocietyTick => _activeInstitution?.SocietyTick ?? 0;
@@ -155,6 +163,17 @@ namespace Desk42.Product.Automation
                 return count;
             }
         }
+        internal float AverageMachineHeat
+        {
+            get
+            {
+                if (_stations.Count == 0) return 0f;
+                float total = 0f;
+                for (int i = 0; i < _stations.Count; i++)
+                    total += _stations[i].Heat;
+                return total / _stations.Count;
+            }
+        }
         internal string Bottleneck
         {
             get
@@ -197,6 +216,8 @@ namespace Desk42.Product.Automation
             AutomationPolicyKind.ProofFortress => "PROOF FORTRESS",
             AutomationPolicyKind.RubberStampMill => "RUBBER MILL",
             AutomationPolicyKind.AppealRefinery => "APPEAL REFINERY",
+            AutomationPolicyKind.ProvisionalWelfareOffice =>
+                "PROVISIONAL WELFARE OFFICE",
             _ => "UNKNOWN",
         };
         internal string PolicyDescription => Policy switch
@@ -207,6 +228,8 @@ namespace Desk42.Product.Automation
                 "Presume valid. Broad recognition turns later appeals into load.",
             AutomationPolicyKind.AppealRefinery =>
                 "Moderate threshold. Ambiguous files feed a specialised appeal line.",
+            AutomationPolicyKind.ProvisionalWelfareOffice =>
+                "Urgent ambiguous claims receive immediate relief; reversals create reliance debt.",
             _ => string.Empty,
         };
 
@@ -467,6 +490,9 @@ namespace Desk42.Product.Automation
                 case AutomationPolicyKind.AppealRefinery:
                     _spawnInterval = 4.7f;
                     break;
+                case AutomationPolicyKind.ProvisionalWelfareOffice:
+                    _spawnInterval = 4.35f;
+                    break;
             }
             ApplyPolicyTuning();
             CaptureShiftBaseline();
@@ -574,7 +600,7 @@ namespace Desk42.Product.Automation
         private void GenerateProcedureDraft()
         {
             var eligible = new List<AutomationProcedureKind>();
-            for (int number = 1; number <= 6; number++)
+            for (int number = 1; number <= 13; number++)
             {
                 var kind = (AutomationProcedureKind)number;
                 int tier = ProcedureTier(kind);
@@ -723,6 +749,11 @@ namespace Desk42.Product.Automation
                 PossessionCompleted = PossessionCompleted,
                 AccessCompleted = AccessCompleted,
                 CollectiveCompleted = CollectiveCompleted,
+                IdentityCompleted = IdentityCompleted,
+                DependencyCompleted = DependencyCompleted,
+                ProvisionalReliefGranted = ProvisionalReliefGranted,
+                ReliefReserve = ReliefReserve,
+                RelianceExposure = RelianceExposure,
                 Credits = Credits,
                 Elapsed = _elapsed,
                 SpawnClock = _spawnClock,
@@ -807,6 +838,11 @@ namespace Desk42.Product.Automation
             PossessionCompleted = saved.PossessionCompleted;
             AccessCompleted = saved.AccessCompleted;
             CollectiveCompleted = saved.CollectiveCompleted;
+            IdentityCompleted = saved.IdentityCompleted;
+            DependencyCompleted = saved.DependencyCompleted;
+            ProvisionalReliefGranted = saved.ProvisionalReliefGranted;
+            ReliefReserve = saved.ReliefReserve;
+            RelianceExposure = saved.RelianceExposure;
             Credits = saved.Credits;
             _elapsed = saved.Elapsed;
             _spawnClock = saved.SpawnClock;
@@ -922,13 +958,7 @@ namespace Desk42.Product.Automation
                 AutomationPublicClaim claim = _activeInstitution.FindClaim(
                     saved.AutomationClaimId) ?? throw new InvalidOperationException(
                     "Run save claim is missing from the current docket batch.");
-                Color colour = claim.Issue.IndexOf(
-                    "Collective", StringComparison.OrdinalIgnoreCase) >= 0
-                    ? new Color(0.50f, 0.26f, 0.48f)
-                    : claim.Issue.IndexOf(
-                        "Access", StringComparison.OrdinalIgnoreCase) >= 0
-                        ? new Color(0.30f, 0.50f, 0.66f)
-                        : new Color(0.82f, 0.70f, 0.43f);
+                Color colour = AutomationVisualFactory.IssueColour(claim.Issue);
                 GameObject token = AutomationVisualFactory.CreateFolderToken(
                     _root, saved.DisplayId, colour);
                 token.transform.position = new Vector3(-13f, 0.42f, 2.6f);
@@ -994,20 +1024,7 @@ namespace Desk42.Product.Automation
         {
             Spawned++;
             AutomationPublicClaim claim = _activeInstitution.Claims[_batchSpawned++];
-            Color[] folders =
-            {
-                new(0.82f, 0.70f, 0.43f),
-                new(0.48f, 0.64f, 0.57f),
-                new(0.66f, 0.47f, 0.38f),
-                new(0.48f, 0.55f, 0.67f),
-            };
-            Color folderColour = claim.Issue.IndexOf(
-                "Collective", StringComparison.OrdinalIgnoreCase) >= 0
-                ? new Color(0.50f, 0.26f, 0.48f)
-                : claim.Issue.IndexOf(
-                    "Access", StringComparison.OrdinalIgnoreCase) >= 0
-                    ? new Color(0.30f, 0.50f, 0.66f)
-                    : folders[(Spawned - 1) % folders.Length];
+            Color folderColour = AutomationVisualFactory.IssueColour(claim.Issue);
             GameObject token = AutomationVisualFactory.CreateFolderToken(
                 _root, "S" + _shiftOrdinal + "-" + claim.DisplayId,
                 folderColour);
@@ -1058,22 +1075,30 @@ namespace Desk42.Product.Automation
                         break;
                     }
                     if (IsProcedureBound(
-                            AutomationProcedureKind.MandatorySecondaryVerification) &&
-                        item.VerificationPasses < 2)
+                            AutomationProcedureKind.MandatorySecondaryVerification) ||
+                        IsProcedureBound(
+                            AutomationProcedureKind.IndependentVerification))
                     {
-                        SecondaryChecks++;
-                        if (item.IsUrgent && ProcedureTier(
-                                AutomationProcedureKind.
-                                    MandatorySecondaryVerification) >= 2)
-                            item.GrantDeadlineGrace(8f);
-                        AutomationStationRuntime secondary =
-                            station == _primaryVerifier && _auxVerifier != null
-                                ? _auxVerifier
-                                : _primaryVerifier;
-                        secondary.Enqueue(item);
-                        Emit(AutomationFeedbackKind.EvidenceSplit,
-                            item.ClaimId + " / MANDATORY SECOND CHECK");
-                        break;
+                        if (item.VerificationPasses < 2)
+                        {
+                            SecondaryChecks++;
+                            if (item.IsUrgent && ProcedureTier(
+                                    AutomationProcedureKind.
+                                        MandatorySecondaryVerification) >= 2)
+                                item.GrantDeadlineGrace(8f);
+                            AutomationStationRuntime secondary =
+                                station == _primaryVerifier && _auxVerifier != null
+                                    ? _auxVerifier
+                                    : _primaryVerifier;
+                            secondary.Enqueue(item);
+                            Emit(AutomationFeedbackKind.EvidenceSplit,
+                                item.ClaimId + " / " +
+                                (IsProcedureBound(
+                                     AutomationProcedureKind.IndependentVerification)
+                                    ? "INDEPENDENT CHECK"
+                                    : "MANDATORY SECOND CHECK"));
+                            break;
+                        }
                     }
                     if (IsProcedureBound(
                             AutomationProcedureKind.AutomaticAdverseReview) &&
@@ -1096,6 +1121,11 @@ namespace Desk42.Product.Automation
                     }
                     else
                     {
+                        if (item.Ruling != null)
+                        {
+                            _output.Enqueue(item);
+                            break;
+                        }
                         if (ProcedureTier(
                                 AutomationProcedureKind.ProtectedEvidenceChannel) >= 3 &&
                             item.Claim.Issue.IndexOf(
@@ -1128,17 +1158,30 @@ namespace Desk42.Product.Automation
                                 item.ClaimId + " / EVIDENCE HOLD / LEGAL REVIEW");
                             break;
                         }
-                        PlayerRulingDisposition disposition =
+                        AutomationInitialDisposition disposition =
                             SelectAutomaticDisposition(item);
+                        PlayerScopeChoice rulingScope =
+                            Policy == AutomationPolicyKind.ProofFortress ||
+                            IsProcedureBound(AutomationProcedureKind.NarrowPrecedent)
+                                ? PlayerScopeChoice.Narrow
+                                : PlayerScopeChoice.Broad;
                         AutomationRulingResult ruling = item.Institution.Commit(
                             item.Claim.AutomationClaimId,
-                            Policy == AutomationPolicyKind.ProofFortress
-                                ? PlayerScopeChoice.Narrow
-                                : PlayerScopeChoice.Broad,
+                            rulingScope,
                             disposition,
                             InstitutionalProcedures(),
                             item.AdverseReviewCompleted);
                         item.ApplyRuling(ruling);
+                        if (disposition ==
+                            AutomationInitialDisposition.ProvisionallyRecognised)
+                        {
+                            ProvisionalReliefGranted++;
+                            ReliefReserve = Mathf.Max(0, ReliefReserve - 10);
+                            RelianceExposure += 12;
+                            Emit(AutomationFeedbackKind.ReliefGranted,
+                                item.Claim.DisplayId +
+                                " / RELIEF RELEASED / RELIANCE +12");
+                        }
                         if (ruling.CitedHoldingCount > 0)
                             Emit(AutomationFeedbackKind.PrecedentCited,
                                 item.Claim.DisplayId + " / " +
@@ -1151,6 +1194,18 @@ namespace Desk42.Product.Automation
                     _output.Enqueue(item);
                     break;
                 case AutomationStationKind.Output:
+                    if (!item.IsAppeal && item.Ruling != null &&
+                        IsProcedureBound(
+                            AutomationProcedureKind.RetrospectiveReview) &&
+                        item.Claim.EvidenceSupportMinimum < 45 &&
+                        !item.AdverseReviewCompleted && item.BeginAdverseReview())
+                    {
+                        _legal.Enqueue(item);
+                        RelianceExposure = Mathf.Max(0, RelianceExposure - 3);
+                        Emit(AutomationFeedbackKind.RetrospectiveReview,
+                            item.ClaimId + " / POST-RULING AUDIT RETURN");
+                        break;
+                    }
                     AutomationAppealPacket appeal = item.Ruling?.Appeal;
                     bool wasAppeal = item.IsAppeal;
                     _items.Remove(item);
@@ -1291,6 +1346,20 @@ namespace Desk42.Product.Automation
                         AutomationInstitutionalProcedure.AppealFastTrack,
                     AutomationProcedureKind.PrecedentReuse =>
                         AutomationInstitutionalProcedure.PrecedentReuse,
+                    AutomationProcedureKind.BurdenShift =>
+                        AutomationInstitutionalProcedure.BurdenShift,
+                    AutomationProcedureKind.AnonymousDisclosure =>
+                        AutomationInstitutionalProcedure.AnonymousDisclosure,
+                    AutomationProcedureKind.EmergencyRelief =>
+                        AutomationInstitutionalProcedure.EmergencyRelief,
+                    AutomationProcedureKind.EmployerSelfCertification =>
+                        AutomationInstitutionalProcedure.EmployerSelfCertification,
+                    AutomationProcedureKind.IndependentVerification =>
+                        AutomationInstitutionalProcedure.IndependentVerification,
+                    AutomationProcedureKind.NarrowPrecedent =>
+                        AutomationInstitutionalProcedure.NarrowPrecedent,
+                    AutomationProcedureKind.RetrospectiveReview =>
+                        AutomationInstitutionalProcedure.RetrospectiveReview,
                     _ => throw new ArgumentOutOfRangeException(),
                 });
             }
@@ -1302,13 +1371,15 @@ namespace Desk42.Product.Automation
         {
             if (item?.Claim == null || item.AdverseReviewCompleted) return false;
             int requiredPasses = IsProcedureBound(
-                AutomationProcedureKind.MandatorySecondaryVerification) ? 2 : 1;
+                AutomationProcedureKind.MandatorySecondaryVerification) ||
+                IsProcedureBound(AutomationProcedureKind.IndependentVerification)
+                    ? 2 : 1;
             return item.VerificationPasses < requiredPasses ||
                    item.Claim.CitableEvidenceCount == 0 ||
                    item.Claim.EvidenceSupportMinimum < 52;
         }
 
-        private PlayerRulingDisposition SelectAutomaticDisposition(
+        private AutomationInitialDisposition SelectAutomaticDisposition(
             AutomationFlowItem item)
         {
             AutomationPublicClaim claim = item?.Claim ??
@@ -1316,6 +1387,19 @@ namespace Desk42.Product.Automation
                     "Only a public claim envelope can receive an initial ruling.");
             int presumptionBonus = IsProcedureBound(
                 AutomationProcedureKind.PresumptionOfValidity) ? 15 : 0;
+            if (IsProcedureBound(AutomationProcedureKind.BurdenShift))
+                presumptionBonus += 12;
+            if (IsProcedureBound(
+                    AutomationProcedureKind.EmployerSelfCertification))
+                presumptionBonus += 8;
+            bool welfareRelief =
+                (Policy == AutomationPolicyKind.ProvisionalWelfareOffice ||
+                 IsProcedureBound(AutomationProcedureKind.EmergencyRelief)) &&
+                item.IsUrgent && ReliefReserve >= 10 &&
+                claim.EvidenceSupportMaximum + presumptionBonus >= 28;
+            if (welfareRelief &&
+                claim.EvidenceSupportMinimum + presumptionBonus < 62)
+                return AutomationInitialDisposition.ProvisionallyRecognised;
             bool recognise = Policy switch
             {
                 AutomationPolicyKind.ProofFortress =>
@@ -1325,11 +1409,13 @@ namespace Desk42.Product.Automation
                     claim.EvidenceSupportMaximum + presumptionBonus >= 45,
                 AutomationPolicyKind.AppealRefinery =>
                     claim.EvidenceSupportMaximum + presumptionBonus >= 65,
+                AutomationPolicyKind.ProvisionalWelfareOffice =>
+                    claim.EvidenceSupportMinimum + presumptionBonus >= 62,
                 _ => false,
             };
             return recognise
-                ? PlayerRulingDisposition.Recognised
-                : PlayerRulingDisposition.Denied;
+                ? AutomationInitialDisposition.Recognised
+                : AutomationInitialDisposition.Denied;
         }
 
         private void ApplyPolicyTuning()
@@ -1358,6 +1444,12 @@ namespace Desk42.Product.Automation
                     legalMultiplier = 0.36f;
                     reliabilityModifier = 0.92f;
                     heatModifier = 1.05f;
+                    break;
+                case AutomationPolicyKind.ProvisionalWelfareOffice:
+                    verificationMultiplier = 0.94f;
+                    legalMultiplier = 0.78f;
+                    reliabilityModifier = 1.04f;
+                    heatModifier = 1.14f;
                     break;
                 default:
                     verificationMultiplier = 1f;
@@ -1390,6 +1482,24 @@ namespace Desk42.Product.Automation
                 reliabilityModifier *= 1.12f;
                 heatModifier *= 1.18f;
             }
+            if (IsProcedureBound(
+                    AutomationProcedureKind.EmployerSelfCertification))
+            {
+                verificationMultiplier *= 0.72f;
+                reliabilityModifier *= 1.42f;
+                legalMultiplier *= 1.18f;
+            }
+            if (IsProcedureBound(AutomationProcedureKind.IndependentVerification))
+            {
+                verificationMultiplier *= 1.18f;
+                reliabilityModifier *= 0.62f;
+                heatModifier *= 1.22f;
+            }
+            if (IsProcedureBound(AutomationProcedureKind.AnonymousDisclosure))
+            {
+                verificationMultiplier *= 0.90f;
+                legalMultiplier *= 1.16f;
+            }
             for (int i = 0; i < _stations.Count; i++)
             {
                 AutomationStationRuntime station = _stations[i];
@@ -1416,8 +1526,11 @@ namespace Desk42.Product.Automation
         private AutomationStationRuntime SelectVerifier(AutomationFlowItem item)
         {
             if (item != null && _auxVerifier != null &&
-                IsProcedureBound(AutomationProcedureKind.ProtectedEvidenceChannel) &&
-                item.NeedsProtectedChannel)
+                ((IsProcedureBound(
+                      AutomationProcedureKind.ProtectedEvidenceChannel) &&
+                  item.NeedsProtectedChannel) ||
+                 (IsProcedureBound(AutomationProcedureKind.AnonymousDisclosure) &&
+                  item.NeedsWitnessChannel)))
                 return _auxVerifier;
             if (!ParallelRouting || _auxVerifier == null) return _primaryVerifier;
             _routeOrdinal++;
@@ -1462,6 +1575,12 @@ namespace Desk42.Product.Automation
             if (issue.IndexOf(
                     "Collective", StringComparison.OrdinalIgnoreCase) >= 0)
                 CollectiveCompleted++;
+            else if (issue.IndexOf(
+                         "Identity", StringComparison.OrdinalIgnoreCase) >= 0)
+                IdentityCompleted++;
+            else if (issue.IndexOf(
+                         "Dependency", StringComparison.OrdinalIgnoreCase) >= 0)
+                DependencyCompleted++;
             else if (issue.IndexOf(
                          "Access", StringComparison.OrdinalIgnoreCase) >= 0)
                 AccessCompleted++;
@@ -1893,6 +2012,8 @@ namespace Desk42.Product.Automation
         internal bool AdverseReviewCompleted => _adverseReviewCompleted;
         internal bool NeedsProtectedChannel =>
             (Profile.EvidenceNeeds & AutomationEvidenceNeed.ChainOfCustody) != 0;
+        internal bool NeedsWitnessChannel =>
+            (Profile.EvidenceNeeds & AutomationEvidenceNeed.Witness) != 0;
         internal float MisclassificationRiskMultiplier =>
             (_presumptionOfValidity
                 ? _presumptionTier >= 3 ? 1.90f : 1.65f
@@ -2174,6 +2295,8 @@ namespace Desk42.Product.Automation
                 AutomationEvidenceNeed.OfficialRecord,
                 AutomationEvidenceNeed.Witness,
                 AutomationEvidenceNeed.ChainOfCustody,
+                AutomationEvidenceNeed.BiometricContinuity,
+                AutomationEvidenceNeed.DependencyProof,
             };
             Color[] colours =
             {
@@ -2181,6 +2304,8 @@ namespace Desk42.Product.Automation
                 new(0.35f, 0.72f, 0.57f),
                 new(0.84f, 0.58f, 0.20f),
                 new(0.67f, 0.38f, 0.72f),
+                new(0.55f, 0.38f, 0.86f),
+                new(0.91f, 0.38f, 0.27f),
             };
             int visible = 0;
             for (int i = 0; i < needs.Length; i++)
@@ -2188,8 +2313,8 @@ namespace Desk42.Product.Automation
                 if ((profile.EvidenceNeeds & needs[i]) == 0) continue;
                 AutomationVisualFactory.CreateBlock(transform,
                     "Verification Need " + needs[i],
-                    new Vector3(-0.27f + visible * 0.18f, 0.20f, -0.49f),
-                    new Vector3(0.13f, 0.07f, 0.12f), colours[i]);
+                    new Vector3(-0.31f + visible * 0.125f, 0.20f, -0.49f),
+                    new Vector3(0.09f, 0.07f, 0.12f), colours[i]);
                 visible++;
             }
         }
@@ -2200,13 +2325,9 @@ namespace Desk42.Product.Automation
         {
             ConfigureProfile(profile);
             if (claim == null || profile == null) return;
-            Color issueColour = claim.Issue.IndexOf(
-                "Collective", StringComparison.OrdinalIgnoreCase) >= 0
-                ? new Color(0.82f, 0.30f, 0.70f)
-                : claim.Issue.IndexOf(
-                    "Access", StringComparison.OrdinalIgnoreCase) >= 0
-                    ? new Color(0.24f, 0.64f, 0.90f)
-                    : new Color(0.88f, 0.66f, 0.24f);
+            Color issueColour = AutomationVisualFactory.IssueColour(claim.Issue);
+            AutomationVisualFactory.CreateIssueGlyph(
+                transform, claim.Issue, issueColour);
             AutomationVisualFactory.CreateBlock(transform, "Issue Family Band",
                 new Vector3(0f, 0.22f, 0.42f),
                 new Vector3(0.72f, 0.055f, 0.08f), issueColour);
@@ -2373,6 +2494,10 @@ namespace Desk42.Product.Automation
                 return "COLLECTIVE";
             if (issue.IndexOf("Access", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "ACCESS";
+            if (issue.IndexOf("Identity", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "IDENTITY";
+            if (issue.IndexOf("Dependency", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "DEPENDENCY";
             return "POSSESSION";
         }
 

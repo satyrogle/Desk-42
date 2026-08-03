@@ -55,17 +55,33 @@ namespace Desk42.Institutional.Player
         public IReadOnlyList<AutomationPublicClaim> ReleaseNextShift(int claimCount)
         {
             ValidateClaimCount(claimCount);
+            // A shift boundary advances the continuing society even when an old
+            // docket backlog is already large enough to fill the factory. Without
+            // this pulse, retained rulings can affect private behaviour while their
+            // resulting disputes remain starved behind pre-existing primary work.
+            if (_nextClaimOrdinal > 0)
+            {
+                CausalLegibilitySliceSeed.AdvanceAutomationPulse(
+                    _current.Society,
+                    _current.MaterialWorld,
+                    _current.Docket,
+                    "automation-shift-pulse:" + (_pulseOrdinal++).ToString("D3"));
+                CausalLegibilitySliceSeed.AdmitAllCases(
+                    _current.Society, _current.Docket);
+                CaptureCurrent("persistent-automation.shift-release");
+            }
             EnsureAvailableCases(claimCount);
             PlayerInstitutionView view = CurrentView();
             var selected = new List<PublicCaseRecord>(claimCount);
-            for (int i = 0; i < view.Cases.Count && selected.Count < claimCount; i++)
-            {
-                PublicCaseRecord record = view.Cases[i];
-                if (record.RulingCommitted ||
-                    _releasedCaseIds.Contains(record.CaseId) ||
-                    _reservedAppealCaseIds.Contains(record.CaseId)) continue;
-                selected.Add(record);
-            }
+            // Give each available issue family one lane before filling the rest of
+            // the shift. This prevents a large possession backlog from making new
+            // identity, dependency, access or collective work mechanically invisible.
+            SelectIssueFamilyCoverage(view, selected, claimCount);
+            // Consequence work is operationally urgent: surface cases caused by an
+            // earlier ruling before untouched primary backlog, while preserving the
+            // projector's deterministic order inside each group.
+            SelectAvailableCases(view, selected, claimCount, descendantsOnly: true);
+            SelectAvailableCases(view, selected, claimCount, descendantsOnly: false);
             if (selected.Count != claimCount)
                 throw new InvalidOperationException(
                     "The continuing society could not release the requested docket batch.");
@@ -85,6 +101,53 @@ namespace Desk42.Institutional.Player
             }
             _claims = new ReadOnlyCollection<AutomationPublicClaim>(claims);
             return _claims;
+        }
+
+        private void SelectAvailableCases(
+            PlayerInstitutionView view,
+            List<PublicCaseRecord> selected,
+            int claimCount,
+            bool descendantsOnly)
+        {
+            for (int i = 0; i < view.Cases.Count && selected.Count < claimCount; i++)
+            {
+                PublicCaseRecord record = view.Cases[i];
+                bool isDescendant = !string.IsNullOrWhiteSpace(record.OriginatingRulingId);
+                if (isDescendant != descendantsOnly ||
+                    ContainsSelected(selected, record.CaseId) ||
+                    record.RulingCommitted ||
+                    _releasedCaseIds.Contains(record.CaseId) ||
+                    _reservedAppealCaseIds.Contains(record.CaseId)) continue;
+                selected.Add(record);
+            }
+        }
+
+        private void SelectIssueFamilyCoverage(
+            PlayerInstitutionView view,
+            List<PublicCaseRecord> selected,
+            int claimCount)
+        {
+            var selectedIssues = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < view.Cases.Count && selected.Count < claimCount; i++)
+            {
+                PublicCaseRecord record = view.Cases[i];
+                if (selectedIssues.Contains(record.Issue) ||
+                    record.RulingCommitted ||
+                    _releasedCaseIds.Contains(record.CaseId) ||
+                    _reservedAppealCaseIds.Contains(record.CaseId)) continue;
+                selectedIssues.Add(record.Issue);
+                selected.Add(record);
+            }
+        }
+
+        private static bool ContainsSelected(
+            IReadOnlyList<PublicCaseRecord> selected,
+            string caseId)
+        {
+            for (int i = 0; i < selected.Count; i++)
+                if (string.Equals(selected[i].CaseId, caseId,
+                        StringComparison.Ordinal)) return true;
+            return false;
         }
 
         public AutomationRulingResult Commit(
@@ -129,6 +192,35 @@ namespace Desk42.Institutional.Player
             string automationClaimId,
             PlayerScopeChoice scope,
             PlayerRulingDisposition disposition,
+            IReadOnlyList<AutomationInstitutionalProcedure> procedures,
+            bool humanPrecedentReviewCompleted)
+        {
+            return Commit(
+                automationClaimId,
+                scope,
+                ToAutomationDisposition(disposition),
+                procedures,
+                humanPrecedentReviewCompleted);
+        }
+
+        public AutomationRulingResult Commit(
+            string automationClaimId,
+            PlayerScopeChoice scope,
+            AutomationInitialDisposition disposition,
+            IReadOnlyList<AutomationInstitutionalProcedure> procedures)
+        {
+            return Commit(
+                automationClaimId,
+                scope,
+                disposition,
+                procedures,
+                humanPrecedentReviewCompleted: false);
+        }
+
+        public AutomationRulingResult Commit(
+            string automationClaimId,
+            PlayerScopeChoice scope,
+            AutomationInitialDisposition disposition,
             IReadOnlyList<AutomationInstitutionalProcedure> procedures,
             bool humanPrecedentReviewCompleted)
         {
@@ -181,10 +273,8 @@ namespace Desk42.Institutional.Player
 
             SimulationInput input = CausalLegibilitySliceSeed.QuietInput();
             input.IncidentId = "automation-ruling-pulse:" + committed.RulingId;
-            if (disposition != PlayerRulingDisposition.Denied && string.Equals(
-                    opened.IssueId,
-                    EndogenousIssueKindIds.PossessionDispute,
-                    StringComparison.Ordinal))
+            if (disposition != AutomationInitialDisposition.Denied &&
+                IsMaterialIssue(opened.IssueId))
             {
                 EndogenousRemedyEffectService.Execute(
                     _current.Society,
@@ -192,7 +282,7 @@ namespace Desk42.Institutional.Player
                     _current.Docket,
                     committed);
             }
-            else if (disposition != PlayerRulingDisposition.Denied && string.Equals(
+            else if (disposition != AutomationInitialDisposition.Denied && string.Equals(
                          opened.IssueId,
                          EndogenousIssueKindIds.AccessWithdrawal,
                          StringComparison.Ordinal))
@@ -203,7 +293,7 @@ namespace Desk42.Institutional.Player
                     _current.Docket,
                     committed);
             }
-            else if (disposition != PlayerRulingDisposition.Denied && string.Equals(
+            else if (disposition != AutomationInitialDisposition.Denied && string.Equals(
                          opened.IssueId,
                          EndogenousIssueKindIds.CollectiveGrievance,
                          StringComparison.Ordinal))
@@ -229,7 +319,7 @@ namespace Desk42.Institutional.Player
                 _current.Society, _current.Docket);
             EndogenousInstitutionalCase internalDescendant =
                 scope == PlayerScopeChoice.Broad &&
-                disposition == PlayerRulingDisposition.Recognised
+                disposition != AutomationInitialDisposition.Denied
                     ? FindDescendant(opened.CaseId, committed.RulingId)
                     : null;
             string appealId = null;
@@ -309,10 +399,7 @@ namespace Desk42.Institutional.Player
                     outcome,
                     establishHolding && procedure != AutomationAppealProcedure.Settlement);
             EndogenousInstitutionalCase opened = _current.Docket.GetCase(appeal.CaseId);
-            if (string.Equals(
-                    opened.IssueId,
-                    EndogenousIssueKindIds.PossessionDispute,
-                    StringComparison.Ordinal))
+            if (IsMaterialIssue(opened.IssueId))
             {
                 EndogenousRemedyEffectService.Execute(
                     _current.Society,
@@ -525,15 +612,22 @@ namespace Desk42.Institutional.Player
             if (string.Equals(issueId, EndogenousIssueKindIds.CollectiveGrievance,
                     StringComparison.Ordinal))
                 return EndogenousPlayerRulingService.CollectiveHoldingRule;
+            if (string.Equals(issueId, EndogenousIssueKindIds.IdentityContinuity,
+                    StringComparison.Ordinal))
+                return EndogenousPlayerRulingService.IdentityHoldingRule;
+            if (string.Equals(issueId,
+                    EndogenousIssueKindIds.DependencyEmergencySupport,
+                    StringComparison.Ordinal))
+                return EndogenousPlayerRulingService.DependencyHoldingRule;
             throw new InvalidOperationException(
                 "The automation feed encountered an unsupported institutional issue.");
         }
 
         private static string RemedyFor(
             string issueId,
-            PlayerRulingDisposition disposition)
+            AutomationInitialDisposition disposition)
         {
-            if (disposition == PlayerRulingDisposition.Denied)
+            if (disposition == AutomationInitialDisposition.Denied)
                 return EndogenousPlayerRulingService.NoChangeRemedy;
             if (string.Equals(issueId, EndogenousIssueKindIds.PossessionDispute,
                     StringComparison.Ordinal))
@@ -541,18 +635,50 @@ namespace Desk42.Institutional.Player
             if (string.Equals(issueId, EndogenousIssueKindIds.AccessWithdrawal,
                     StringComparison.Ordinal))
                 return EndogenousPlayerRulingService.RestoreAccessRemedy;
+            if (string.Equals(issueId, EndogenousIssueKindIds.IdentityContinuity,
+                    StringComparison.Ordinal))
+                return EndogenousPlayerRulingService.RestoreIdentityContinuityRemedy;
+            if (string.Equals(issueId,
+                    EndogenousIssueKindIds.DependencyEmergencySupport,
+                    StringComparison.Ordinal))
+                return EndogenousPlayerRulingService.GrantEmergencySupportRemedy;
             return EndogenousPlayerRulingService.RecogniseCollectiveRemedy;
         }
 
         private static RulingDisposition ToDomainDisposition(
+            AutomationInitialDisposition disposition)
+        {
+            return disposition switch
+            {
+                AutomationInitialDisposition.Recognised => RulingDisposition.Recognised,
+                AutomationInitialDisposition.ProvisionallyRecognised =>
+                    RulingDisposition.ProvisionallyRecognised,
+                AutomationInitialDisposition.Denied => RulingDisposition.Denied,
+                _ => throw new ArgumentOutOfRangeException(nameof(disposition)),
+            };
+        }
+
+        private static AutomationInitialDisposition ToAutomationDisposition(
             PlayerRulingDisposition disposition)
         {
             return disposition switch
             {
-                PlayerRulingDisposition.Recognised => RulingDisposition.Recognised,
-                PlayerRulingDisposition.Denied => RulingDisposition.Denied,
+                PlayerRulingDisposition.Recognised =>
+                    AutomationInitialDisposition.Recognised,
+                PlayerRulingDisposition.Denied => AutomationInitialDisposition.Denied,
                 _ => throw new ArgumentOutOfRangeException(nameof(disposition)),
             };
+        }
+
+        private static bool IsMaterialIssue(string issueId)
+        {
+            return string.Equals(issueId, EndogenousIssueKindIds.PossessionDispute,
+                       StringComparison.Ordinal) ||
+                   string.Equals(issueId, EndogenousIssueKindIds.IdentityContinuity,
+                       StringComparison.Ordinal) ||
+                   string.Equals(issueId,
+                       EndogenousIssueKindIds.DependencyEmergencySupport,
+                       StringComparison.Ordinal);
         }
 
         private static List<string> Copy(IReadOnlyList<string> source)
@@ -597,6 +723,20 @@ namespace Desk42.Institutional.Player
                         "procedure.appeal-fast-track",
                     AutomationInstitutionalProcedure.PrecedentReuse =>
                         "procedure.precedent-reuse",
+                    AutomationInstitutionalProcedure.BurdenShift =>
+                        "procedure.burden-shift",
+                    AutomationInstitutionalProcedure.AnonymousDisclosure =>
+                        "procedure.anonymous-disclosure",
+                    AutomationInstitutionalProcedure.EmergencyRelief =>
+                        "procedure.emergency-relief",
+                    AutomationInstitutionalProcedure.EmployerSelfCertification =>
+                        "procedure.employer-self-certification",
+                    AutomationInstitutionalProcedure.IndependentVerification =>
+                        "procedure.independent-verification",
+                    AutomationInstitutionalProcedure.NarrowPrecedent =>
+                        "procedure.narrow-precedent",
+                    AutomationInstitutionalProcedure.RetrospectiveReview =>
+                        "procedure.retrospective-review",
                     _ => throw new ArgumentOutOfRangeException(
                         nameof(procedures), procedures[i], "Unsupported procedure."),
                 };
@@ -628,6 +768,20 @@ namespace Desk42.Institutional.Player
         ProtectedEvidenceChannel,
         AppealFastTrack,
         PrecedentReuse,
+        BurdenShift,
+        AnonymousDisclosure,
+        EmergencyRelief,
+        EmployerSelfCertification,
+        IndependentVerification,
+        NarrowPrecedent,
+        RetrospectiveReview,
+    }
+
+    public enum AutomationInitialDisposition
+    {
+        Recognised,
+        ProvisionallyRecognised,
+        Denied,
     }
 
     public sealed class AutomationPublicClaim

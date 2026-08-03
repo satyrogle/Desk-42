@@ -535,10 +535,7 @@ namespace Desk42.Institutional
                         trace.CaseId, ruling.CaseId, StringComparison.Ordinal) ||
                     trace.AppliedTick < ruling.CommittedTick ||
                     trace.AppliedTick > currentTick || !Stable(trace.ResourceId) ||
-                    !string.Equals(
-                        trace.RemedyDefinitionId,
-                        EndogenousPlayerRulingService.RestorePossessionRemedy,
-                        StringComparison.Ordinal) ||
+                    !IsMaterialRemedy(trace.RemedyDefinitionId) ||
                     !string.Equals(
                         trace.DestinationRuleId,
                         EndogenousRemedyEffectService.RegisteredOwnerDestinationRule,
@@ -558,6 +555,19 @@ namespace Desk42.Institutional
                         "Every remedy trace requires a unique executable material transition.");
                 }
             }
+        }
+
+        private static bool IsMaterialRemedy(string remedyId)
+        {
+            return string.Equals(remedyId,
+                       EndogenousPlayerRulingService.RestorePossessionRemedy,
+                       StringComparison.Ordinal) ||
+                   string.Equals(remedyId,
+                       EndogenousPlayerRulingService.RestoreIdentityContinuityRemedy,
+                       StringComparison.Ordinal) ||
+                   string.Equals(remedyId,
+                       EndogenousPlayerRulingService.GrantEmergencySupportRemedy,
+                       StringComparison.Ordinal);
         }
 
         private static void ValidateLineageTuple(

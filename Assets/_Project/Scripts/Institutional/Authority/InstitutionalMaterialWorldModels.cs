@@ -162,6 +162,7 @@ namespace Desk42.Institutional
     internal sealed class MaterialWorldEvent
     {
         internal string EventId;
+        internal string IssueId;
         internal string CauseDecisionId;
         internal long Tick;
         internal MaterialWorldEventKind Kind;
@@ -185,6 +186,7 @@ namespace Desk42.Institutional
     internal sealed class PossessionTransferRequest
     {
         internal string EventId;
+        internal string IssueId;
         internal string CauseDecisionId;
         internal long Tick;
         internal string ActorAgentId;

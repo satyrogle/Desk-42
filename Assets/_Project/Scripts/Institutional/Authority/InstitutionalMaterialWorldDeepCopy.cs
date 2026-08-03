@@ -98,6 +98,7 @@ namespace Desk42.Institutional
                 copy.EventLedger.Add(new MaterialWorldEvent
                 {
                     EventId = value.EventId,
+                    IssueId = value.IssueId,
                     CauseDecisionId = value.CauseDecisionId,
                     Tick = value.Tick,
                     Kind = value.Kind,

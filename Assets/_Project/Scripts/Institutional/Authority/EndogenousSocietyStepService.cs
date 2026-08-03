@@ -109,6 +109,7 @@ namespace Desk42.Institutional
                         new PossessionTransferRequest
                         {
                             EventId = $"material:{actionEvent.EventId}",
+                            IssueId = opportunity.IssueId,
                             CauseDecisionId = actionEvent.CauseDecisionId,
                             Tick = actionEvent.Tick,
                             ActorAgentId = actionEvent.ActorId,

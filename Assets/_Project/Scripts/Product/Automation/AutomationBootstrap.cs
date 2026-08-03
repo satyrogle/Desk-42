@@ -46,6 +46,12 @@ namespace Desk42.Product.Automation
         public int SecondaryVerificationChecks => _floor?.SecondaryChecks ?? 0;
         public int CollectiveGrievancesProcessed =>
             _floor?.CollectiveCompleted ?? 0;
+        public int IdentityCasesProcessed => _floor?.IdentityCompleted ?? 0;
+        public int DependencyCasesProcessed => _floor?.DependencyCompleted ?? 0;
+        public int ProvisionalReliefGranted =>
+            _floor?.ProvisionalReliefGranted ?? 0;
+        public int ReliefReserve => _floor?.ReliefReserve ?? 0;
+        public int RelianceExposure => _floor?.RelianceExposure ?? 0;
         public int UpgradeCredits => _floor?.Credits ?? 0;
         public string RoutePriority => _floor?.PriorityName ?? "BALANCED";
         public string AppealHandling => _floor?.AppealModeName ?? "FULL REHEARING";
@@ -233,6 +239,7 @@ namespace Desk42.Product.Automation
                 if (Input.GetKeyDown(KeyCode.Alpha1)) _floor.SetPolicy(1);
                 if (Input.GetKeyDown(KeyCode.Alpha2)) _floor.SetPolicy(2);
                 if (Input.GetKeyDown(KeyCode.Alpha3)) _floor.SetPolicy(3);
+                if (Input.GetKeyDown(KeyCode.Alpha4)) _floor.SetPolicy(4);
             }
             else if (_floor?.RunPhase == AutomationRunPhase.ShiftClose)
             {
@@ -291,6 +298,17 @@ namespace Desk42.Product.Automation
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
 
+            if (_floor?.RunPhase == AutomationRunPhase.ActiveProcessing)
+            {
+                float objectiveWidth = Mathf.Min(Screen.width - 40f, 760f);
+                GUILayout.BeginArea(new Rect(
+                    (Screen.width - objectiveWidth) * 0.5f,
+                    104f, objectiveWidth, 36f), GUI.skin.box);
+                GUILayout.Label("CURRENT DIRECTIVE  /  " +
+                    (_floor?.OnboardingObjective ?? string.Empty), _small);
+                GUILayout.EndArea();
+            }
+
             GUILayout.BeginArea(new Rect(16f, Screen.height - 214f,
                     Mathf.Min(Screen.width - 32f, 1080f), 44f), GUI.skin.box);
             GUILayout.BeginHorizontal();
@@ -298,7 +316,7 @@ namespace Desk42.Product.Automation
                 (_floor?.ProceduresBound ?? 0) + "/2",
                 _small, GUILayout.Width(135f));
             int shownProcedures = 0;
-            for (int number = 1; number <= 6; number++)
+            for (int number = 1; number <= 13; number++)
             {
                 int tier = _floor?.ProcedureTier(number) ?? 0;
                 if (tier <= 0) continue;
@@ -334,6 +352,7 @@ namespace Desk42.Product.Automation
             PolicyButton(1, "1  PROOF FORTRESS");
             PolicyButton(2, "2  RUBBER MILL");
             PolicyButton(3, "3  APPEAL REFINERY");
+            PolicyButton(4, "4  WELFARE OFFICE");
             string eventText = _floor?.LastEvent;
             string hoverText = GUI.tooltip;
             string readout = !string.IsNullOrEmpty(hoverText)
@@ -346,6 +365,10 @@ namespace Desk42.Product.Automation
                 _small, GUILayout.Width(105f));
             GUILayout.Label("CREDITS " + (_floor?.Credits ?? 0).ToString("D2"),
                 _small, GUILayout.Width(82f));
+            if ((_floor?.PolicyNumber ?? 0) == 4)
+                GUILayout.Label("RELIEF " + (_floor?.ReliefReserve ?? 0) +
+                    " / RELIANCE " + (_floor?.RelianceExposure ?? 0),
+                    _small, GUILayout.Width(150f));
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
 
@@ -432,7 +455,9 @@ namespace Desk42.Product.Automation
                 AutomationRunPhase.DoctrineSelection;
             if (phase == AutomationRunPhase.ActiveProcessing) return;
             float width = Mathf.Min(780f, Screen.width - 60f);
-            float height = phase == AutomationRunPhase.BranchReview ? 440f : 380f;
+            float height = phase == AutomationRunPhase.BranchReview
+                ? 440f
+                : phase == AutomationRunPhase.DoctrineSelection ? 520f : 380f;
             var rect = new Rect(
                 (Screen.width - width) * 0.5f,
                 (Screen.height - height) * 0.5f,
@@ -457,6 +482,9 @@ namespace Desk42.Product.Automation
                 DoctrineChoice(3, "3  APPEAL REFINERY",
                     "Moderate threshold / powerful Legal line / weak opening / " +
                     "real holdings accelerate the late run");
+                DoctrineChoice(4, "4  PROVISIONAL WELFARE OFFICE",
+                    "Urgent ambiguous claims receive material relief now / reserve drains / " +
+                    "reversals create reliance exposure and Legal work");
             }
             else if (phase == AutomationRunPhase.ShiftClose)
             {

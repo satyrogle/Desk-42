@@ -29,7 +29,7 @@ namespace Desk42.Product.Automation
     [Serializable]
     internal sealed class AutomationRunCheckpoint
     {
-        internal const int CurrentSchemaVersion = 1;
+        internal const int CurrentSchemaVersion = 2;
 
         public int SchemaVersion = CurrentSchemaVersion;
         public InstitutionalAutomationCheckpoint Institution;
@@ -54,6 +54,11 @@ namespace Desk42.Product.Automation
         public int PossessionCompleted;
         public int AccessCompleted;
         public int CollectiveCompleted;
+        public int IdentityCompleted;
+        public int DependencyCompleted;
+        public int ProvisionalReliefGranted;
+        public int ReliefReserve;
+        public int RelianceExposure;
         public int Credits;
         public float Elapsed;
         public float SpawnClock;

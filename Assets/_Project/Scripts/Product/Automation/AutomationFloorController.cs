@@ -53,6 +53,7 @@ namespace Desk42.Product.Automation
             1 => "PROOF",
             2 => "RUBBER",
             3 => "REFINERY",
+            4 => "WELFARE",
             _ => "SELECT",
         };
         internal string PolicyDescription => _flow?.PolicyDescription ?? string.Empty;
@@ -63,6 +64,12 @@ namespace Desk42.Product.Automation
         internal int ActiveJamCount => _flow?.ActiveJamCount ?? 0;
         internal int SecondaryChecks => _flow?.SecondaryChecks ?? 0;
         internal int CollectiveCompleted => _flow?.CollectiveCompleted ?? 0;
+        internal int IdentityCompleted => _flow?.IdentityCompleted ?? 0;
+        internal int DependencyCompleted => _flow?.DependencyCompleted ?? 0;
+        internal int ProvisionalReliefGranted =>
+            _flow?.ProvisionalReliefGranted ?? 0;
+        internal int ReliefReserve => _flow?.ReliefReserve ?? 0;
+        internal int RelianceExposure => _flow?.RelianceExposure ?? 0;
         internal int Credits => _flow?.Credits ?? 0;
         internal int ShiftOrdinal => _flow?.ShiftOrdinal ?? 1;
         internal long SocietyTick => _flow?.SocietyTick ?? 0;
@@ -99,6 +106,25 @@ namespace Desk42.Product.Automation
         internal bool FlowStabilised => ClaimsCompleted >= 5 &&
             VerificationBacklog <= 3 &&
             (PolicyNumber == 1 || AppealsResolved >= 1);
+        internal string OnboardingObjective
+        {
+            get
+            {
+                if (!DoctrineLocked)
+                    return "CHOOSE A BINDING DOCTRINE / KEYS 1-4";
+                if (ShiftOrdinal == 1 && ClaimsCompleted < 2)
+                    return "FOLLOW ONE DOSSIER / WATCH INTAKE > EVIDENCE > VERIFY > RULE";
+                if (ShiftOrdinal == 1 && !AuxVerifierPlaced)
+                    return "FIRST BOTTLENECK / BUILD THE AUX VERIFIER [B], THEN CLICK ITS BAY";
+                if (ShiftOrdinal == 1)
+                    return "SELECT A MACHINE / TRADE SPEED, CAPACITY OR RELIABILITY FOR FLOW";
+                if (ShiftOrdinal == 2)
+                    return "URGENT FILES ARE ARRIVING / CHANGE PRIORITY [Q] BEFORE SLA FAILURE";
+                if (ShiftOrdinal <= 4)
+                    return "YOUR PROCEDURES NOW CHANGE PHYSICAL ROUTES / READ THE QUEUES";
+                return "THE SAME SOCIETY IS RETURNING / COMPOUND HOLDINGS WITHOUT COLLAPSE";
+            }
+        }
 
         internal void BuildVisualFloor()
         {
@@ -152,6 +178,12 @@ namespace Desk42.Product.Automation
         internal void Tick(float deltaTime)
         {
             _flow?.Tick(deltaTime);
+            if (_flow != null)
+                _audio?.SetOperationalState(
+                    _flow.VerificationBacklog,
+                    _flow.AverageMachineHeat,
+                    _flow.PendingAppeals,
+                    _flow.ShiftOrdinal);
         }
 
         internal void TogglePlacementMode()
@@ -205,28 +237,28 @@ namespace Desk42.Product.Automation
 
         internal bool BindProcedure(int procedureNumber)
         {
-            if (procedureNumber < 1 || procedureNumber > 6) return false;
+            if (procedureNumber < 1 || procedureNumber > 13) return false;
             return _flow?.ForceBindProcedureForTest(
                 (AutomationProcedureKind)procedureNumber) == true;
         }
 
         internal bool IsProcedureBound(int procedureNumber)
         {
-            if (procedureNumber < 1 || procedureNumber > 6) return false;
+            if (procedureNumber < 1 || procedureNumber > 13) return false;
             return _flow?.IsProcedureBound(
                 (AutomationProcedureKind)procedureNumber) == true;
         }
 
         internal int ProcedureTier(int procedureNumber)
         {
-            if (procedureNumber < 1 || procedureNumber > 6) return 0;
+            if (procedureNumber < 1 || procedureNumber > 13) return 0;
             return _flow?.ProcedureTier(
                 (AutomationProcedureKind)procedureNumber) ?? 0;
         }
 
         internal bool SetPolicy(int policyNumber)
         {
-            if (policyNumber < 1 || policyNumber > 3) return false;
+            if (policyNumber < 1 || policyNumber > 4) return false;
             return _flow?.ChooseDoctrine(
                 (AutomationPolicyKind)policyNumber) == true;
         }
@@ -383,10 +415,54 @@ namespace Desk42.Product.Automation
             _owned.Add(AutomationVisualFactory.CreateBlock(
                 _root, "Back Wall", new Vector3(0f, 1.4f, 6.8f),
                 new Vector3(28f, 2.8f, 0.4f), new Color(0.15f, 0.19f, 0.18f)));
+            _owned.Add(AutomationVisualFactory.CreateBlock(
+                _root, "Left Wall", new Vector3(-14f, 1.15f, 0f),
+                new Vector3(0.35f, 2.3f, 14f), new Color(0.12f, 0.15f, 0.145f)));
+            _owned.Add(AutomationVisualFactory.CreateBlock(
+                _root, "Right Wall", new Vector3(14f, 1.15f, 0f),
+                new Vector3(0.35f, 2.3f, 14f), new Color(0.12f, 0.15f, 0.145f)));
+            for (int bay = -2; bay <= 2; bay++)
+            {
+                float x = bay * 5.2f;
+                _owned.Add(AutomationVisualFactory.CreateBlock(
+                    _root, "Ceiling Rail " + bay, new Vector3(x, 4.65f, 0f),
+                    new Vector3(0.18f, 0.18f, 13.2f),
+                    new Color(0.075f, 0.09f, 0.085f)));
+                _owned.Add(AutomationVisualFactory.CreateBlock(
+                    _root, "Fluorescent Housing " + bay,
+                    new Vector3(x, 4.48f, 1.2f),
+                    new Vector3(2.4f, 0.12f, 0.55f),
+                    new Color(0.20f, 0.22f, 0.19f)));
+                _owned.Add(AutomationVisualFactory.CreateBlock(
+                    _root, "Fluorescent Tube " + bay,
+                    new Vector3(x, 4.39f, 1.2f),
+                    new Vector3(2.1f, 0.05f, 0.35f),
+                    new Color(0.72f, 0.83f, 0.65f)));
+            }
+            for (int stripe = -6; stripe <= 6; stripe += 2)
+            {
+                GameObject warning = AutomationVisualFactory.CreateBlock(
+                    _root, "Intake Warning " + stripe,
+                    new Vector3(-12.5f, 0.025f, stripe * 0.5f),
+                    new Vector3(0.16f, 0.025f, 0.80f),
+                    stripe % 4 == 0
+                        ? new Color(0.80f, 0.55f, 0.14f)
+                        : new Color(0.075f, 0.085f, 0.08f));
+                warning.transform.localRotation = Quaternion.Euler(0f, 28f, 0f);
+                _owned.Add(warning);
+            }
+            _owned.Add(AutomationVisualFactory.CreateCylinder(
+                _root, "Pneumatic Archive Main", new Vector3(0f, 3.65f, 6.15f),
+                new Vector3(0.22f, 6.5f, 0.22f),
+                new Color(0.21f, 0.25f, 0.23f), new Vector3(0f, 0f, 90f)));
             _owned.Add(AutomationVisualFactory.CreateWorldLabel(
                 _root, "BRANCH 42 / AUTOMATED CLAIMS DIVISION",
                 new Vector3(0f, 2.1f, 6.55f), 0.115f,
                 new Color(0.73f, 0.74f, 0.59f), TextAnchor.MiddleCenter));
+            _owned.Add(AutomationVisualFactory.CreateWorldLabel(
+                _root, "LIVED EVENTS ARE NOT OFFICIAL FACTS",
+                new Vector3(0f, 1.45f, 6.53f), 0.066f,
+                new Color(0.43f, 0.54f, 0.46f), TextAnchor.MiddleCenter));
         }
 
         private AutomationStationRuntime CreateStation(

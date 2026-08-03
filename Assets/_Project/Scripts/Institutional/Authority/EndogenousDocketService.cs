@@ -290,6 +290,10 @@ namespace Desk42.Institutional
                     return "observable-access-withdrawal-v1";
                 case EndogenousIssueKindIds.CollectiveGrievance:
                     return "observable-collective-grievance-v1";
+                case EndogenousIssueKindIds.IdentityContinuity:
+                    return "observable-identity-continuity-v1";
+                case EndogenousIssueKindIds.DependencyEmergencySupport:
+                    return "observable-dependency-emergency-support-v1";
                 default:
                     throw new InvalidOperationException(
                         $"No docket grammar exists for conflict kind {conflictKindId}.");

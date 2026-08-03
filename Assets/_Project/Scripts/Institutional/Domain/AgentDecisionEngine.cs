@@ -265,6 +265,7 @@ namespace Desk42.Institutional
                 clone.Add(opportunity == null ? null : new StealOpportunity
                 {
                     OpportunityId = opportunity.OpportunityId,
+                    IssueId = opportunity.IssueId,
                     ResourceId = opportunity.ResourceId,
                     ExpectedPhysicalHolderId = opportunity.ExpectedPhysicalHolderId,
                     NewLocationContextId = opportunity.NewLocationContextId,

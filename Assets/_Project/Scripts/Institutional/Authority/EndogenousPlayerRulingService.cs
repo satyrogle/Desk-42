@@ -13,10 +13,18 @@ namespace Desk42.Institutional
             "holding.adverse-access-action-requires-protection";
         internal const string CollectiveHoldingRule =
             "holding.collective-action-protected";
+        internal const string IdentityHoldingRule =
+            "holding.superseded-identity-remains-continuous";
+        internal const string DependencyHoldingRule =
+            "holding.dependent-support-survives-contested-status";
         internal const string NoChangeRemedy = "remedy.no-change";
         internal const string RestorePossessionRemedy = "remedy.restore-possession";
         internal const string RestoreAccessRemedy = "remedy.restore-access";
         internal const string RecogniseCollectiveRemedy = "remedy.recognise-collective";
+        internal const string RestoreIdentityContinuityRemedy =
+            "remedy.restore-identity-continuity";
+        internal const string GrantEmergencySupportRemedy =
+            "remedy.grant-emergency-support";
 
         internal static CommittedPlayerRuling Commit(
             SocietyState society,
@@ -171,6 +179,20 @@ namespace Desk42.Institutional
                        StringComparison.Ordinal) ||
                    string.Equals(procedureId, "procedure.precedent-reuse",
                        StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.burden-shift",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.anonymous-disclosure",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.emergency-relief",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.employer-self-certification",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.independent-verification",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.narrow-precedent",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.retrospective-review",
+                       StringComparison.Ordinal) ||
                    string.Equals(procedureId, "procedure.full-rehearing",
                        StringComparison.Ordinal) ||
                    string.Equals(procedureId, "procedure.fast-track",
@@ -204,6 +226,12 @@ namespace Desk42.Institutional
                 case EndogenousIssueKindIds.CollectiveGrievance:
                     expected = CollectiveHoldingRule;
                     break;
+                case EndogenousIssueKindIds.IdentityContinuity:
+                    expected = IdentityHoldingRule;
+                    break;
+                case EndogenousIssueKindIds.DependencyEmergencySupport:
+                    expected = DependencyHoldingRule;
+                    break;
                 default:
                     throw new InvalidOperationException(
                         $"Issue {issueId} has no supported holding grammar.");
@@ -231,6 +259,12 @@ namespace Desk42.Institutional
                         break;
                     case EndogenousIssueKindIds.CollectiveGrievance:
                         expected = RecogniseCollectiveRemedy;
+                        break;
+                    case EndogenousIssueKindIds.IdentityContinuity:
+                        expected = RestoreIdentityContinuityRemedy;
+                        break;
+                    case EndogenousIssueKindIds.DependencyEmergencySupport:
+                        expected = GrantEmergencySupportRemedy;
                         break;
                 }
             }

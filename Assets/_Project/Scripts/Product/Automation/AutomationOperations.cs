@@ -18,6 +18,8 @@ namespace Desk42.Product.Automation
         OfficialRecord = 1 << 1,
         Witness = 1 << 2,
         ChainOfCustody = 1 << 3,
+        BiometricContinuity = 1 << 4,
+        DependencyProof = 1 << 5,
     }
 
     internal enum AutomationRoutePriority
@@ -49,6 +51,13 @@ namespace Desk42.Product.Automation
         ProtectedEvidenceChannel = 4,
         AppealFastTrack = 5,
         PrecedentReuse = 6,
+        BurdenShift = 7,
+        AnonymousDisclosure = 8,
+        EmergencyRelief = 9,
+        EmployerSelfCertification = 10,
+        IndependentVerification = 11,
+        NarrowPrecedent = 12,
+        RetrospectiveReview = 13,
     }
 
     internal static class AutomationProcedureNames
@@ -63,6 +72,13 @@ namespace Desk42.Product.Automation
                 AutomationProcedureKind.ProtectedEvidenceChannel => "PROTECTED LANE",
                 AutomationProcedureKind.AppealFastTrack => "APPEAL FAST TRACK",
                 AutomationProcedureKind.PrecedentReuse => "PRECEDENT REUSE",
+                AutomationProcedureKind.BurdenShift => "BURDEN SHIFT",
+                AutomationProcedureKind.AnonymousDisclosure => "ANON DISCLOSURE",
+                AutomationProcedureKind.EmergencyRelief => "EMERGENCY RELIEF",
+                AutomationProcedureKind.EmployerSelfCertification => "SELF CERTIFY",
+                AutomationProcedureKind.IndependentVerification => "INDEPENDENT CHECK",
+                AutomationProcedureKind.NarrowPrecedent => "NARROW PRECEDENT",
+                AutomationProcedureKind.RetrospectiveReview => "RETRO REVIEW",
                 _ => "UNKNOWN",
             };
         }
@@ -113,6 +129,20 @@ namespace Desk42.Product.Automation
                         : tier == 2
                             ? "Matching holdings also reduce evidence work and increase citation exposure."
                             : "Compatible holdings synthesise broader automation with conflict risk.",
+                AutomationProcedureKind.BurdenShift =>
+                    "Lower claimant evidence burden; more weak files reach Legal and appeal.",
+                AutomationProcedureKind.AnonymousDisclosure =>
+                    "Witness packets gain protection and speed; source confidence and review load fall apart.",
+                AutomationProcedureKind.EmergencyRelief =>
+                    "Urgent dependency files receive provisional relief before final review; creates reliance exposure.",
+                AutomationProcedureKind.EmployerSelfCertification =>
+                    "Official-record work is bypassed; throughput rises with rework and appeal risk.",
+                AutomationProcedureKind.IndependentVerification =>
+                    "A separate physical check reduces fault risk while adding heat and queue load.",
+                AutomationProcedureKind.NarrowPrecedent =>
+                    "Holdings bind the claimant only; conflicts fall and reuse opportunities shrink.",
+                AutomationProcedureKind.RetrospectiveReview =>
+                    "Weak completed rulings return through Legal; liability falls while the floor floods with rework.",
                 _ => string.Empty,
             };
         }
@@ -160,6 +190,12 @@ namespace Desk42.Product.Automation
             int pressureKey = claim.BatchOrdinal + shiftOrdinal * 3;
             bool collective = claim.Issue.IndexOf(
                 "Collective", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool access = claim.Issue.IndexOf(
+                "Access", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool identity = claim.Issue.IndexOf(
+                "Identity", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool dependency = claim.Issue.IndexOf(
+                "Dependency", StringComparison.OrdinalIgnoreCase) >= 0;
             AutomationEvidenceNeed needs = AutomationEvidenceNeed.Identity;
             if ((claim.OfficialFactCount > 0 || claim.EvidencePacketCount > 1) &&
                 pressureKey % 2 == 0)
@@ -173,14 +209,28 @@ namespace Desk42.Product.Automation
                 needs |= AutomationEvidenceNeed.OfficialRecord |
                     AutomationEvidenceNeed.Witness |
                     AutomationEvidenceNeed.ChainOfCustody;
+            if (access)
+                needs |= AutomationEvidenceNeed.OfficialRecord |
+                    AutomationEvidenceNeed.Witness;
+            if (identity)
+                needs |= AutomationEvidenceNeed.OfficialRecord |
+                    AutomationEvidenceNeed.ChainOfCustody |
+                    AutomationEvidenceNeed.BiometricContinuity;
+            if (dependency)
+                needs |= AutomationEvidenceNeed.Witness |
+                    AutomationEvidenceNeed.ChainOfCustody |
+                    AutomationEvidenceNeed.DependencyProof;
 
-            bool urgent = claim.EvidenceSupportMinimum < 25 || pressureKey % 5 == 0;
+            bool urgent = dependency || claim.EvidenceSupportMinimum < 25 ||
+                pressureKey % 5 == 0;
             float deadline = urgent
                 ? 42f + pressureKey % 4 * 4f
                 : 88f + pressureKey % 5 * 7f;
             float verificationWork = 0.72f + CountFlags(needs) * 0.28f +
                 Mathf.Clamp(claim.EvidencePacketCount - 1, 0, 4) * 0.09f;
             if (collective) verificationWork += 0.55f;
+            if (identity) verificationWork += 0.38f;
+            if (dependency) verificationWork += 0.46f;
 
             return new AutomationClaimProfile(
                 urgent ? AutomationUrgency.Urgent : AutomationUrgency.Routine,

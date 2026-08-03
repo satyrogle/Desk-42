@@ -115,15 +115,17 @@ namespace Desk42.Institutional
                 }
                 if (eligible.Count == 0) continue;
 
+                string issueId = IssueForResource(resource.ResourceKindId);
                 var opportunity = new StealOpportunity
                 {
                     OpportunityId = $"possession:{resource.ResourceId}:{tick}",
+                    IssueId = issueId,
                     ResourceId = resource.ResourceId,
                     ExpectedPhysicalHolderId = resource.PhysicalHolderId,
                     NewLocationContextId = "actor-controlled",
                     AccessGrantId = $"projected-access:{resource.ResourceId}:{tick}",
                     ProtectionStatusId =
-                        EndogenousScopeEffectService.ProtectedPossessionStatusId,
+                        EndogenousScopeEffectService.ProtectionStatusIdForIssue(issueId),
                     RecognisedProtectionUtilityBonus = 80,
                     UnrecognisedExposureUtilityPenalty = 20,
                     ReliefNeed = NeedKind.Health,
@@ -142,6 +144,17 @@ namespace Desk42.Institutional
                     opportunity.Visibility = EvidenceVisibility.Observable;
                 input.StealOpportunities.Add(opportunity);
             }
+        }
+
+        private static string IssueForResource(string resourceKindId)
+        {
+            if (string.Equals(resourceKindId, "identity-continuity-record",
+                    StringComparison.Ordinal))
+                return EndogenousIssueKindIds.IdentityContinuity;
+            if (string.Equals(resourceKindId, "dependency-emergency-support",
+                    StringComparison.Ordinal))
+                return EndogenousIssueKindIds.DependencyEmergencySupport;
+            return EndogenousIssueKindIds.PossessionDispute;
         }
 
         private static void PopulateRetaliationOpportunities(

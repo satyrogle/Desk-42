@@ -221,6 +221,10 @@ namespace Desk42.Institutional
                     return 75;
                 case EndogenousIssueKindIds.CollectiveGrievance:
                     return 40;
+                case EndogenousIssueKindIds.IdentityContinuity:
+                    return 85;
+                case EndogenousIssueKindIds.DependencyEmergencySupport:
+                    return 95;
                 default:
                     return 0;
             }

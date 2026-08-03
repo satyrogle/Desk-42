@@ -340,6 +340,7 @@ namespace Desk42.Institutional
     public sealed class StealOpportunity
     {
         public string OpportunityId;
+        public string IssueId = EndogenousIssueKindIds.PossessionDispute;
         public string ResourceId;
         public string ExpectedPhysicalHolderId;
         public string NewLocationContextId;

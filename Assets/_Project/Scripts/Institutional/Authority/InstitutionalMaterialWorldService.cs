@@ -56,6 +56,9 @@ namespace Desk42.Institutional
             var materialEvent = new MaterialWorldEvent
             {
                 EventId = request.EventId,
+                IssueId = string.IsNullOrWhiteSpace(request.IssueId)
+                    ? EndogenousIssueKindIds.PossessionDispute
+                    : request.IssueId,
                 CauseDecisionId = request.CauseDecisionId,
                 Tick = request.Tick,
                 Kind = MaterialWorldEventKind.PossessionTransferred,
@@ -449,6 +452,11 @@ namespace Desk42.Institutional
             PossessionTransferRequest request)
         {
             if (existing.Kind != MaterialWorldEventKind.PossessionTransferred ||
+                !string.Equals(existing.IssueId,
+                    string.IsNullOrWhiteSpace(request.IssueId)
+                        ? EndogenousIssueKindIds.PossessionDispute
+                        : request.IssueId,
+                    StringComparison.Ordinal) ||
                 !string.Equals(existing.CauseDecisionId, request.CauseDecisionId, StringComparison.Ordinal) ||
                 existing.Tick != request.Tick ||
                 !string.Equals(existing.ActorAgentId, request.ActorAgentId, StringComparison.Ordinal) ||

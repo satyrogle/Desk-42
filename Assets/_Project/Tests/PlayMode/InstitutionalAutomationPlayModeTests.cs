@@ -142,6 +142,42 @@ namespace Desk42.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator WelfareDoctrineConvertsUrgencyIntoReliefAndReliance()
+        {
+            float originalTimeScale = Time.timeScale;
+            try
+            {
+                yield return LoadAutomationScene();
+                AutomationBootstrap bootstrap =
+                    Object.FindObjectOfType<AutomationBootstrap>();
+                Assert.That(bootstrap, Is.Not.Null);
+                bootstrap.SelectPolicy(4);
+                bootstrap.InstallAuxVerifier();
+                Time.timeScale = 18f;
+
+                float timeout = Time.realtimeSinceStartup + 18f;
+                while (bootstrap.ProvisionalReliefGranted < 1 &&
+                       Time.realtimeSinceStartup < timeout)
+                {
+                    if (bootstrap.SelectFirstJammedStation())
+                        bootstrap.RepairSelectedStation();
+                    yield return null;
+                }
+
+                Assert.That(bootstrap.CurrentPolicyNumber, Is.EqualTo(4));
+                Assert.That(bootstrap.ProvisionalReliefGranted,
+                    Is.GreaterThanOrEqualTo(1));
+                Assert.That(bootstrap.ReliefReserve, Is.LessThan(100));
+                Assert.That(bootstrap.RelianceExposure, Is.GreaterThan(0));
+                LogAssert.NoUnexpectedReceived();
+            }
+            finally
+            {
+                Time.timeScale = originalTimeScale;
+            }
+        }
+
+        [UnityTest]
         public IEnumerator ShiftCloseDraftCreatesCompoundingProcedureBuild()
         {
             float originalTimeScale = Time.timeScale;
@@ -325,6 +361,12 @@ namespace Desk42.Tests.PlayMode
                 Assert.That(bootstrap.ClaimsCompleted, Is.GreaterThanOrEqualTo(96));
                 Assert.That(bootstrap.InstitutionalRulings,
                     Is.GreaterThanOrEqualTo(96));
+                Assert.That(bootstrap.CollectiveGrievancesProcessed,
+                    Is.GreaterThanOrEqualTo(1));
+                Assert.That(bootstrap.IdentityCasesProcessed,
+                    Is.GreaterThanOrEqualTo(1));
+                Assert.That(bootstrap.DependencyCasesProcessed,
+                    Is.GreaterThanOrEqualTo(1));
                 Assert.That(bootstrap.BranchOutcome, Is.Not.Empty);
                 LogAssert.NoUnexpectedReceived();
             }

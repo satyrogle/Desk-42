@@ -66,11 +66,14 @@ namespace Desk42.Institutional.Player
                     agent, "phase-instability", "observable.phase-pressure"));
             }
 
-            const int resourceCount = 24;
+            // The production run can adjudicate ninety-six dossiers. Keep a bounded
+            // but comfortably larger stock so one-accessor material opportunities do
+            // not need to recycle ownership merely to sustain eight shifts.
+            const int resourceCount = 128;
             for (int resourceIndex = 0; resourceIndex < resourceCount; resourceIndex++)
             {
                 string resourceId =
-                    "resource.branch42-supply-" + (resourceIndex + 1).ToString("D2");
+                    "resource.branch42-supply-" + (resourceIndex + 1).ToString("D3");
                 string recordPrefix = resourceIndex % 3 == 0
                     ? "record.camera"
                     : resourceIndex % 3 == 1
@@ -80,7 +83,9 @@ namespace Desk42.Institutional.Player
                     society,
                     world,
                     resourceId,
-                    recordPrefix + "." + (resourceIndex + 1).ToString("D2"));
+                    recordPrefix + "." + (resourceIndex + 1).ToString("D3"),
+                    resourceIndex + 1,
+                    ResourceKindForIndex(resourceIndex));
             }
             AddRetaliatoryAuthorityPressure(society, world);
             AddCollectiveGrievancePressure(society, world);
@@ -298,12 +303,14 @@ namespace Desk42.Institutional.Player
             SocietyState society,
             InstitutionalMaterialWorld world,
             string resourceId,
-            string recordSourceId)
+            string recordSourceId,
+            int resourceOrdinal,
+            string resourceKindId = "regulated-medical-supply")
         {
             world.Resources.Add(new MaterialResourceState
             {
                 ResourceId = resourceId,
-                ResourceKindId = "regulated-medical-supply",
+                ResourceKindId = resourceKindId,
                 Quantity = 1,
                 PhysicalHolderId = "clinic",
                 LocationContextId = "clinic.secure-store",
@@ -316,20 +323,18 @@ namespace Desk42.Institutional.Player
                 OwnershipSourceId = "record.clinic-inventory",
                 RecognitionTick = 0,
             });
-            for (int agentIndex = 0; agentIndex < society.Agents.Count; agentIndex++)
+            AgentState assigned = society.Agents[
+                (resourceOrdinal - 1) % society.Agents.Count];
+            world.AccessGrants.Add(new MaterialAccessGrantState
             {
-                AgentState agent = society.Agents[agentIndex];
-                world.AccessGrants.Add(new MaterialAccessGrantState
-                {
-                    GrantId = "access:" + agent.StableId + ":" + resourceId,
-                    AgentId = agent.StableId,
-                    AccessKindId =
-                        EndogenousActionOpportunityBuilder.MaterialPossessionAccessKind,
-                    TargetId = resourceId,
-                    SourceRecordId = "record.branch42-shift-roster",
-                    ValidFromTick = 0,
-                });
-            }
+                GrantId = "access:" + assigned.StableId + ":" + resourceId,
+                AgentId = assigned.StableId,
+                AccessKindId =
+                    EndogenousActionOpportunityBuilder.MaterialPossessionAccessKind,
+                TargetId = resourceId,
+                SourceRecordId = "record.branch42-shift-roster",
+                ValidFromTick = 0,
+            });
             world.AccessGrants.Add(new MaterialAccessGrantState
             {
                 GrantId = "recording:" + resourceId,
@@ -339,6 +344,16 @@ namespace Desk42.Institutional.Player
                 SourceRecordId = recordSourceId,
                 ValidFromTick = 0,
             });
+        }
+
+        private static string ResourceKindForIndex(int resourceIndex)
+        {
+            int cycleIndex = resourceIndex % 24;
+            if (cycleIndex >= 16 && cycleIndex < 20)
+                return "identity-continuity-record";
+            if (cycleIndex >= 20)
+                return "dependency-emergency-support";
+            return "regulated-medical-supply";
         }
 
         private static void AddRetaliatoryAuthorityPressure(

@@ -183,7 +183,9 @@ namespace Desk42.Tests.EditMode
                     foundDescendant = true;
 
             Assert.That(foundDescendant, Is.True,
-                "A later operating batch should contain work caused by the retained ruling.");
+                "A later operating batch should contain work caused by the retained ruling. " +
+                "Appeal=" + (first.Appeal?.AppealId ?? "none") + "; later=" +
+                string.Join(" | ", MapLineage(later)));
         }
 
         [Test]
@@ -251,6 +253,80 @@ namespace Desk42.Tests.EditMode
                 Has.Some.Contains("collective standing"));
             Assert.GreaterOrEqual(
                 session.SocietyMetrics.RecognisedCollectiveMembers, 2);
+        }
+
+        [Test]
+        public void IdentityAndDependencyFamiliesUseTheSamePersistentDocketAndRemedyPath()
+        {
+            InstitutionalAutomationSession session =
+                InstitutionalAutomationSession.Create(12);
+            AutomationPublicClaim identity = null;
+            AutomationPublicClaim dependency = null;
+            for (int shift = 1; shift <= 4 &&
+                 (identity == null || dependency == null); shift++)
+            {
+                for (int i = 0; i < session.Claims.Count; i++)
+                {
+                    AutomationPublicClaim claim = session.Claims[i];
+                    if (claim.Issue.Contains("Identity")) identity = claim;
+                    if (claim.Issue.Contains("Dependency")) dependency = claim;
+                }
+                if (identity == null || dependency == null)
+                    session.ReleaseNextShift(12);
+            }
+
+            Assert.IsNotNull(identity,
+                "Identity continuity should emerge from the shared material feed.");
+            Assert.IsNotNull(dependency,
+                "Dependency support should emerge from the shared material feed.");
+            AutomationRulingResult identityResult = session.Commit(
+                identity.AutomationClaimId,
+                PlayerScopeChoice.Narrow,
+                PlayerRulingDisposition.Recognised);
+            AutomationRulingResult dependencyResult = session.Commit(
+                dependency.AutomationClaimId,
+                PlayerScopeChoice.Narrow,
+                AutomationInitialDisposition.ProvisionallyRecognised,
+                new[] { AutomationInstitutionalProcedure.EmergencyRelief });
+
+            Assert.That(identityResult.Remedies,
+                Has.Some.Contains("Restore identity continuity"));
+            Assert.That(identityResult.DirectInstitutionalChanges,
+                Has.Some.Contains("Execute remedy"));
+            Assert.That(dependencyResult.Remedies,
+                Has.Some.Contains("Grant emergency support"));
+            Assert.That(dependencyResult.Disposition,
+                Does.Contain("Provisionally"));
+            Assert.That(dependencyResult.DirectInstitutionalChanges,
+                Has.Some.Contains("Emergency relief"));
+            session.ValidateCurrentState();
+        }
+
+        [Test]
+        public void ExpandedProcedureVocabularyIsRecordedWithoutScenarioBranching()
+        {
+            InstitutionalAutomationSession session =
+                InstitutionalAutomationSession.Create(1);
+            var procedures = new[]
+            {
+                AutomationInstitutionalProcedure.BurdenShift,
+                AutomationInstitutionalProcedure.AnonymousDisclosure,
+                AutomationInstitutionalProcedure.EmergencyRelief,
+                AutomationInstitutionalProcedure.EmployerSelfCertification,
+                AutomationInstitutionalProcedure.IndependentVerification,
+                AutomationInstitutionalProcedure.NarrowPrecedent,
+                AutomationInstitutionalProcedure.RetrospectiveReview,
+            };
+            AutomationRulingResult result = session.Commit(
+                session.Claims[0].AutomationClaimId,
+                PlayerScopeChoice.Narrow,
+                PlayerRulingDisposition.Recognised,
+                procedures);
+
+            Assert.That(result.DirectInstitutionalChanges,
+                Has.Some.Contains("Burden shift"));
+            Assert.That(result.DirectInstitutionalChanges,
+                Has.Some.Contains("Retrospective review"));
         }
 
         [Test]
@@ -322,6 +398,14 @@ namespace Desk42.Tests.EditMode
             for (int i = 0; i < claims.Count; i++)
                 if (claims[i].Issue.Contains("Possession")) return claims[i];
             throw new AssertionException("The persistent feed has no possession case.");
+        }
+
+        private static IEnumerable<string> MapLineage(
+            IReadOnlyList<AutomationPublicClaim> claims)
+        {
+            for (int i = 0; i < claims.Count; i++)
+                yield return claims[i].Issue + ":" +
+                    (claims[i].OriginatingRulingId ?? "primary");
         }
     }
 }

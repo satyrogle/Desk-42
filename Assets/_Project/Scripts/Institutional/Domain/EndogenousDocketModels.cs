@@ -8,6 +8,9 @@ namespace Desk42.Institutional
         public const string PossessionDispute = "possession-dispute";
         public const string AccessWithdrawal = "access-withdrawal";
         public const string CollectiveGrievance = "collective-grievance";
+        public const string IdentityContinuity = "identity-continuity";
+        public const string DependencyEmergencySupport =
+            "dependency-emergency-support";
     }
 
     /// <summary>
