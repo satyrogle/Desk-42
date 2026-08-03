@@ -291,7 +291,7 @@ namespace Desk42.Institutional
                     ApplyLie(state, actor, input, decision, events);
                     break;
                 case SocietyActionKind.Steal:
-                    ApplySteal(actor, input, decision, events);
+                    ApplySteal(state, actor, input, decision, events);
                     break;
                 case SocietyActionKind.Retaliate:
                     ApplyRetaliate(state, actor, input, decision, events);
@@ -629,6 +629,7 @@ namespace Desk42.Institutional
         }
 
         private static void ApplySteal(
+            SocietyState state,
             AgentState actor,
             SimulationInput input,
             AgentDecision decision,
@@ -659,6 +660,16 @@ namespace Desk42.Institutional
                 opportunity.DirectWitnessAgentIds);
             societyEvent.PotentialRecordSourceIds = CloneStrings(
                 opportunity.PotentialRecordSourceIds);
+            AgentState previousHolder = state.GetAgent(
+                opportunity.ExpectedPhysicalHolderId);
+            if (previousHolder != null &&
+                opportunity.Visibility != EvidenceVisibility.Private)
+            {
+                ChangeRelationshipField(
+                    previousHolder, actor.StableId, "trust", -6, societyEvent.Deltas);
+                ChangeRelationshipField(
+                    previousHolder, actor.StableId, "fear", 4, societyEvent.Deltas);
+            }
             events.Add(societyEvent);
         }
 

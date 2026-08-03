@@ -55,6 +55,7 @@ namespace Desk42.Institutional
                 Scope = ScopeExpressionEvaluator.Copy(command.Scope),
                 TemporalReach = command.TemporalReach,
                 RemedyDefinitionIds = SortedCopy(command.RemedyDefinitionIds),
+                AppliedProcedureIds = SortedCopy(command.AppliedProcedureIds),
                 RulesetVersion = CurrentRulesetVersion,
             };
             state.Rulings.Add(committed);
@@ -92,7 +93,8 @@ namespace Desk42.Institutional
                 command.CitedEvidenceArtifactIds == null ||
                 command.CitedEvidenceArtifactIds.Count == 0 ||
                 command.RemedyDefinitionIds == null ||
-                command.RemedyDefinitionIds.Count == 0)
+                command.RemedyDefinitionIds.Count == 0 ||
+                command.AppliedProcedureIds == null)
             {
                 throw new InvalidOperationException(
                     "Player ruling command requires facts, cited evidence and a remedy.");
@@ -111,6 +113,7 @@ namespace Desk42.Institutional
                 opened.IssueId,
                 command.Disposition,
                 command.RemedyDefinitionIds);
+            ValidateProcedures(command.AppliedProcedureIds);
             if (command.TemporalReach != TemporalReach.Prospective)
                 throw new InvalidOperationException(
                     "Retrospective player rulings are rejected until causal replay is implemented.");
@@ -119,6 +122,40 @@ namespace Desk42.Institutional
             if (!MatchesCurrentOfficialCase(opened, command.Scope))
                 throw new InvalidOperationException(
                     "The holding scope does not apply to the official case being decided.");
+        }
+
+        private static void ValidateProcedures(IReadOnlyList<string> procedureIds)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < procedureIds.Count; i++)
+            {
+                string procedureId = procedureIds[i];
+                if (!IsSupportedProcedure(procedureId) || !seen.Add(procedureId))
+                    throw new InvalidOperationException(
+                        "A ruling references an unsupported or duplicate procedure.");
+            }
+        }
+
+        private static bool IsSupportedProcedure(string procedureId)
+        {
+            return string.Equals(procedureId, "procedure.secondary-verification",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.presumption-validity",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.automatic-adverse-review",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.protected-evidence-channel",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.appeal-fast-track",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.precedent-reuse",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.full-rehearing",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.fast-track",
+                       StringComparison.Ordinal) ||
+                   string.Equals(procedureId, "procedure.settlement",
+                       StringComparison.Ordinal);
         }
 
         private static void ValidateDisposition(RulingDisposition disposition)
@@ -295,6 +332,9 @@ namespace Desk42.Institutional
                    SequenceEqual(
                        committed.RemedyDefinitionIds,
                        SortedCopy(command.RemedyDefinitionIds)) &&
+                   SequenceEqual(
+                       committed.AppliedProcedureIds,
+                       SortedCopy(command.AppliedProcedureIds)) &&
                    string.Equals(
                        CanonicalScope(committed.Scope),
                        CanonicalScope(command.Scope),

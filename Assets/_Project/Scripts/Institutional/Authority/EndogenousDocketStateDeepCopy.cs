@@ -114,6 +114,7 @@ namespace Desk42.Institutional
                     Scope = ScopeExpressionEvaluator.Copy(value.Scope),
                     TemporalReach = value.TemporalReach,
                     RemedyDefinitionIds = Strings(value.RemedyDefinitionIds),
+                    AppliedProcedureIds = Strings(value.AppliedProcedureIds),
                     RulesetVersion = value.RulesetVersion,
                 });
             }
@@ -155,6 +156,58 @@ namespace Desk42.Institutional
                     AffectedOfficialStatusId = value.AffectedOfficialStatusId,
                     StatusBefore = value.StatusBefore,
                     StatusAfter = value.StatusAfter,
+                });
+            }
+            for (int i = 0; i < source.AccessRemedyApplicationTraces.Count; i++)
+            {
+                EndogenousAccessRemedyApplicationTrace value =
+                    source.AccessRemedyApplicationTraces[i];
+                copy.AccessRemedyApplicationTraces.Add(
+                    new EndogenousAccessRemedyApplicationTrace
+                    {
+                        TraceId = value.TraceId,
+                        RulingId = value.RulingId,
+                        CaseId = value.CaseId,
+                        AppliedTick = value.AppliedTick,
+                        AccessGrantId = value.AccessGrantId,
+                        BeneficiaryAgentId = value.BeneficiaryAgentId,
+                        StateBefore = value.StateBefore,
+                        StateAfter = value.StateAfter,
+                        MaterialEventId = value.MaterialEventId,
+                        MaterialStateChanged = value.MaterialStateChanged,
+                    });
+            }
+            for (int i = 0; i < source.Appeals.Count; i++)
+            {
+                EndogenousAppealRecord value = source.Appeals[i];
+                copy.Appeals.Add(new EndogenousAppealRecord
+                {
+                    AppealId = value.AppealId,
+                    CaseId = value.CaseId,
+                    ChallengedRulingId = value.ChallengedRulingId,
+                    FiledTick = value.FiledTick,
+                    ProcedureId = value.ProcedureId,
+                    GroundsEvidenceIds = Strings(value.GroundsEvidenceIds),
+                    Resolved = value.Resolved,
+                    ResolvedTick = value.ResolvedTick,
+                    ResultingRulingId = value.ResultingRulingId,
+                    ResultingHoldingId = value.ResultingHoldingId,
+                });
+            }
+            for (int i = 0; i < source.Holdings.Count; i++)
+            {
+                EndogenousHoldingRecord value = source.Holdings[i];
+                copy.Holdings.Add(new EndogenousHoldingRecord
+                {
+                    HoldingId = value.HoldingId,
+                    SourceAppealId = value.SourceAppealId,
+                    SourceRulingId = value.SourceRulingId,
+                    RuleId = value.RuleId,
+                    IssueId = value.IssueId,
+                    EstablishedTick = value.EstablishedTick,
+                    Scope = ScopeExpressionEvaluator.Copy(value.Scope),
+                    SupportingEvidenceIds = Strings(value.SupportingEvidenceIds),
+                    AppliedCaseIds = Strings(value.AppliedCaseIds),
                 });
             }
             return copy;

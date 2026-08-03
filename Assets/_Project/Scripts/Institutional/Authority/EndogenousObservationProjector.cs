@@ -122,7 +122,7 @@ namespace Desk42.Institutional
                 AllegedSubjectAgentId = subject,
                 OfficialResourceId = incident.SubjectResourceId,
                 SourceRecordId = sourceRecordId,
-                Reliability = 90,
+                Reliability = DocumentaryReliability(sourceRecordId),
                 ObservedMaterialHarm = ObservedHarm(incident.ConflictKindId),
                 OfficiallySubmitted = true,
                 AuthorityIncidentCandidateId = incident.CandidateId,
@@ -130,6 +130,18 @@ namespace Desk42.Institutional
                 OriginatingRulingId = incident.OriginatingRulingId,
                 CausalAgentActionId = incident.CausalAgentActionId,
             };
+        }
+
+        private static int DocumentaryReliability(string sourceRecordId)
+        {
+            if (string.IsNullOrWhiteSpace(sourceRecordId)) return 50;
+            if (sourceRecordId.StartsWith(
+                    "record.camera", StringComparison.Ordinal)) return 90;
+            if (sourceRecordId.StartsWith(
+                    "record.access-log", StringComparison.Ordinal)) return 72;
+            if (sourceRecordId.StartsWith(
+                    "record.damaged-sensor", StringComparison.Ordinal)) return 54;
+            return 80;
         }
 
         private static IncidentCandidate IncidentForMaterialEvent(

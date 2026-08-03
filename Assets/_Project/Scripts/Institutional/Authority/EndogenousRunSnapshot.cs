@@ -66,6 +66,7 @@ namespace Desk42.Institutional
             snapshot.AppliedCommandIds = AppliedCommandIds(snapshot.Docket);
             snapshot.AppliedTransitionIds = AppliedTransitionIds(
                 snapshot.Society, snapshot.MaterialWorld, snapshot.Docket);
+            snapshot.PendingAppealIds = PendingAppealIds(snapshot.Docket);
             EndogenousRunSnapshotValidator.Validate(snapshot);
             return snapshot;
         }
@@ -101,8 +102,25 @@ namespace Desk42.Institutional
                 result.Add($"ruling:{docket.Rulings[i].RulingId}");
             for (int i = 0; i < docket.RemedyApplicationTraces.Count; i++)
                 result.Add($"remedy:{docket.RemedyApplicationTraces[i].TraceId}");
+            for (int i = 0; i < docket.AccessRemedyApplicationTraces.Count; i++)
+                result.Add(
+                    $"access-remedy:{docket.AccessRemedyApplicationTraces[i].TraceId}");
             for (int i = 0; i < docket.ScopeApplicationTraces.Count; i++)
                 result.Add($"scope:{docket.ScopeApplicationTraces[i].TraceId}");
+            for (int i = 0; i < docket.Appeals.Count; i++)
+                result.Add($"appeal:{docket.Appeals[i].AppealId}");
+            for (int i = 0; i < docket.Holdings.Count; i++)
+                result.Add($"holding:{docket.Holdings[i].HoldingId}");
+            result.Sort(StringComparer.Ordinal);
+            return result;
+        }
+
+        internal static List<string> PendingAppealIds(EndogenousDocketState docket)
+        {
+            var result = new List<string>();
+            for (int i = 0; i < docket.Appeals.Count; i++)
+                if (!docket.Appeals[i].Resolved)
+                    result.Add(docket.Appeals[i].AppealId);
             result.Sort(StringComparer.Ordinal);
             return result;
         }
@@ -152,7 +170,10 @@ namespace Desk42.Institutional
                 EndogenousRunSnapshotService.AppliedTransitionIds(
                     snapshot.Society, snapshot.MaterialWorld, snapshot.Docket),
                 "applied transition");
-            UniqueStable(snapshot.PendingAppealIds, "pending appeal");
+            RequireExact(
+                snapshot.PendingAppealIds,
+                EndogenousRunSnapshotService.PendingAppealIds(snapshot.Docket),
+                "pending appeal");
             UniqueStable(snapshot.RelianceEventIds, "reliance event");
             UniqueStable(
                 snapshot.PendingPublicObservationIds,
@@ -206,6 +227,39 @@ namespace Desk42.Institutional
                 {
                     throw new InvalidOperationException(
                         $"Remedy {trace.TraceId} lacks its exact material transition.");
+                }
+            }
+            for (int i = 0;
+                 i < snapshot.Docket.AccessRemedyApplicationTraces.Count;
+                 i++)
+            {
+                EndogenousAccessRemedyApplicationTrace trace =
+                    snapshot.Docket.AccessRemedyApplicationTraces[i];
+                MaterialAccessGrantState grant =
+                    snapshot.MaterialWorld.GetAccessGrant(trace.AccessGrantId);
+                if (grant == null || !string.Equals(
+                        grant.AgentId,
+                        trace.BeneficiaryAgentId,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Access remedy {trace.TraceId} lost its beneficiary grant.");
+                }
+                if (!trace.MaterialStateChanged) continue;
+                MaterialWorldEvent materialEvent = snapshot.MaterialWorld.GetEvent(
+                    trace.MaterialEventId);
+                if (materialEvent == null ||
+                    materialEvent.Kind != MaterialWorldEventKind.AccessChanged ||
+                    materialEvent.Tick != trace.AppliedTick ||
+                    !string.Equals(materialEvent.CauseDecisionId, trace.RulingId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(materialEvent.StateRecordId, trace.AccessGrantId,
+                        StringComparison.Ordinal) ||
+                    materialEvent.StateBefore != trace.StateBefore ||
+                    materialEvent.StateAfter != trace.StateAfter)
+                {
+                    throw new InvalidOperationException(
+                        $"Access remedy {trace.TraceId} lacks its exact material transition.");
                 }
             }
         }

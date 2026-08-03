@@ -24,7 +24,9 @@ namespace Desk42.Institutional
             if (state.IncidentCandidates == null || state.Observations == null ||
                 state.DocketCandidates == null || state.OpenCases == null ||
                 state.Rulings == null || state.RemedyApplicationTraces == null ||
-                state.ScopeApplicationTraces == null)
+                state.AccessRemedyApplicationTraces == null ||
+                state.ScopeApplicationTraces == null || state.Appeals == null ||
+                state.Holdings == null)
             {
                 throw new InvalidOperationException(
                     "Endogenous docket state requires every committed collection.");
@@ -39,9 +41,150 @@ namespace Desk42.Institutional
             HashSet<string> caseIds = ValidateCases(
                 state, agentIds, docketIds, observationIds);
             ValidateRulings(state, caseIds);
+            ValidateAppealsAndHoldings(state, caseIds, society.CurrentTick);
             ValidateRemedyApplicationTraces(state, society.CurrentTick);
+            ValidateAccessRemedyApplicationTraces(
+                state, agentIds, society.CurrentTick);
             ValidateScopeApplicationTraces(state, agentIds, society.CurrentTick);
             ValidateLineage(state);
+        }
+
+        private static void ValidateAccessRemedyApplicationTraces(
+            EndogenousDocketState state,
+            HashSet<string> agentIds,
+            long currentTick)
+        {
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < state.AccessRemedyApplicationTraces.Count; i++)
+            {
+                EndogenousAccessRemedyApplicationTrace trace =
+                    state.AccessRemedyApplicationTraces[i];
+                CommittedPlayerRuling ruling = trace == null
+                    ? null
+                    : FindRuling(state, trace.RulingId);
+                if (trace == null || !Stable(trace.TraceId) ||
+                    !ids.Add(trace.TraceId) || ruling == null ||
+                    !string.Equals(trace.CaseId, ruling.CaseId,
+                        StringComparison.Ordinal) ||
+                    trace.AppliedTick < ruling.CommittedTick ||
+                    trace.AppliedTick > currentTick ||
+                    !Stable(trace.AccessGrantId) ||
+                    !agentIds.Contains(trace.BeneficiaryAgentId) ||
+                    trace.StateAfter != true ||
+                    trace.MaterialStateChanged == trace.StateBefore ||
+                    trace.MaterialStateChanged ==
+                    string.IsNullOrWhiteSpace(trace.MaterialEventId))
+                {
+                    throw new InvalidOperationException(
+                        "Every access remedy trace requires an exact restored grant.");
+                }
+            }
+        }
+
+        private static void ValidateAppealsAndHoldings(
+            EndogenousDocketState state,
+            HashSet<string> caseIds,
+            long currentTick)
+        {
+            var appealIds = new HashSet<string>(StringComparer.Ordinal);
+            var holdingIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < state.Appeals.Count; i++)
+            {
+                EndogenousAppealRecord appeal = state.Appeals[i];
+                CommittedPlayerRuling challenged = appeal == null
+                    ? null
+                    : FindRuling(state, appeal.ChallengedRulingId);
+                EndogenousInstitutionalCase opened = appeal == null
+                    ? null
+                    : state.GetCase(appeal.CaseId);
+                if (appeal == null || !Stable(appeal.AppealId) ||
+                    !appealIds.Add(appeal.AppealId) || opened == null ||
+                    challenged == null || !Stable(appeal.ProcedureId) ||
+                    appeal.FiledTick < challenged.CommittedTick ||
+                    appeal.FiledTick > currentTick ||
+                    appeal.GroundsEvidenceIds == null)
+                {
+                    throw new InvalidOperationException(
+                        "Every endogenous appeal requires a unique public-safe source.");
+                }
+                UniqueSubset(
+                    appeal.GroundsEvidenceIds,
+                    opened.ObservationIds,
+                    appeal.AppealId + ".grounds");
+                bool hasResolution = Stable(appeal.ResultingRulingId);
+                if (appeal.Resolved != hasResolution ||
+                    (appeal.Resolved &&
+                     (appeal.ResolvedTick < appeal.FiledTick ||
+                      appeal.ResolvedTick > currentTick ||
+                      FindRuling(state, appeal.ResultingRulingId)?.CaseId != appeal.CaseId)) ||
+                    (!appeal.Resolved &&
+                     (appeal.ResolvedTick != -1 || appeal.ResultingHoldingId != null)))
+                {
+                    throw new InvalidOperationException(
+                        $"Appeal {appeal.AppealId} has an incoherent resolution state.");
+                }
+            }
+
+            for (int i = 0; i < state.Holdings.Count; i++)
+            {
+                EndogenousHoldingRecord holding = state.Holdings[i];
+                EndogenousAppealRecord appeal = holding == null
+                    ? null
+                    : state.GetAppeal(holding.SourceAppealId);
+                CommittedPlayerRuling ruling = holding == null
+                    ? null
+                    : FindRuling(state, holding.SourceRulingId);
+                EndogenousInstitutionalCase opened = appeal == null
+                    ? null
+                    : state.GetCase(appeal.CaseId);
+                if (holding == null || !Stable(holding.HoldingId) ||
+                    !holdingIds.Add(holding.HoldingId) || appeal == null ||
+                    !appeal.Resolved || ruling == null || opened == null ||
+                    !string.Equals(
+                        appeal.ResultingRulingId,
+                        holding.SourceRulingId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        holding.IssueId,
+                        opened.IssueId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        holding.RuleId,
+                        ruling.HoldingRuleId,
+                        StringComparison.Ordinal) ||
+                    holding.EstablishedTick != appeal.ResolvedTick ||
+                    holding.SupportingEvidenceIds == null ||
+                    holding.AppliedCaseIds == null || holding.Scope == null)
+                {
+                    throw new InvalidOperationException(
+                        "Every endogenous holding requires a resolved appellate source.");
+                }
+                ScopeExpressionEvaluator.Validate(holding.Scope);
+                UniqueSubset(
+                    holding.SupportingEvidenceIds,
+                    opened.ObservationIds,
+                    holding.HoldingId + ".support");
+                UniqueSubset(
+                    holding.AppliedCaseIds,
+                    new List<string>(caseIds),
+                    holding.HoldingId + ".applied-case");
+            }
+
+            for (int i = 0; i < state.Appeals.Count; i++)
+            {
+                EndogenousAppealRecord appeal = state.Appeals[i];
+                if (appeal.ResultingHoldingId == null) continue;
+                EndogenousHoldingRecord holding = state.GetHolding(
+                    appeal.ResultingHoldingId);
+                if (holding == null || !string.Equals(
+                        holding.SourceAppealId,
+                        appeal.AppealId,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Appeal {appeal.AppealId} references a missing holding.");
+                }
+            }
         }
 
         private static HashSet<string> AgentIds(SocietyState society)
@@ -222,6 +365,7 @@ namespace Desk42.Institutional
                     ruling.RecognisedFactIds == null ||
                     ruling.CitedEvidenceArtifactIds == null ||
                     !Stable(ruling.HoldingRuleId) || ruling.RemedyDefinitionIds == null ||
+                    ruling.AppliedProcedureIds == null ||
                     !Enum.IsDefined(typeof(RulingDisposition), ruling.Disposition) ||
                     !Enum.IsDefined(typeof(TemporalReach), ruling.TemporalReach) ||
                     ruling.TemporalReach != TemporalReach.Prospective ||
@@ -253,6 +397,9 @@ namespace Desk42.Institutional
                 UniqueStable(
                     ruling.RemedyDefinitionIds,
                     $"{ruling.RulingId}.remedy");
+                UniqueStable(
+                    ruling.AppliedProcedureIds,
+                    $"{ruling.RulingId}.procedure");
                 ScopeExpressionEvaluator.Validate(ruling.Scope);
             }
         }

@@ -306,11 +306,11 @@ namespace Desk42.Institutional.Player
                     ruling.CaseId,
                     ruling.CommittedTick,
                     Humanise(ruling.Disposition.ToString()),
-                    ruling.Disposition == RulingDisposition.Denied
+                    IsDenial(ruling.Disposition)
                         ? "Proposed but not established: " +
                           Humanise(ruling.HoldingRuleId)
                         : Humanise(ruling.HoldingRuleId),
-                    ruling.Disposition == RulingDisposition.Denied
+                    IsDenial(ruling.Disposition)
                         ? "Not applied; proposed " + ScopeLabel(ruling.Scope)
                         : ScopeLabel(ruling.Scope),
                     Humanise(ruling.TemporalReach.ToString()),
@@ -414,6 +414,26 @@ namespace Desk42.Institutional.Player
                     trace.RulingId,
                     trace.RulingId,
                     EndogenousPlayerRulingService.PossessionHoldingRule,
+                    string.Empty,
+                    trace.MaterialEventId)));
+            }
+            for (int i = 0; i < docket.AccessRemedyApplicationTraces.Count; i++)
+            {
+                EndogenousAccessRemedyApplicationTrace trace =
+                    docket.AccessRemedyApplicationTraces[i];
+                rows.Add(new OrderedTimelineEntry(4, new PublicTimelineEntry(
+                    $"timeline:{trace.TraceId}",
+                    trace.AppliedTick,
+                    PublicTimelineKind.RulingEffect,
+                    trace.MaterialStateChanged
+                        ? "Access remedy executed"
+                        : "Access remedy already satisfied",
+                    trace.MaterialStateChanged
+                        ? $"Access restored for {DisplayName(society, trace.BeneficiaryAgentId)}."
+                        : "The official access grant was already active.",
+                    trace.RulingId,
+                    trace.RulingId,
+                    EndogenousPlayerRulingService.AccessHoldingRule,
                     string.Empty,
                     trace.MaterialEventId)));
             }
@@ -628,7 +648,10 @@ namespace Desk42.Institutional.Player
             {
                 $"Record disposition: {Humanise(ruling.Disposition.ToString())}",
             };
-            if (ruling.Disposition == RulingDisposition.Denied)
+            for (int i = 0; i < ruling.AppliedProcedureIds.Count; i++)
+                result.Add(
+                    "Apply procedure: " + Humanise(ruling.AppliedProcedureIds[i]));
+            if (IsDenial(ruling.Disposition))
             {
                 result.Add($"Do not establish proposed holding: " +
                            Humanise(ruling.HoldingRuleId));
@@ -637,13 +660,44 @@ namespace Desk42.Institutional.Player
             }
             result.Add($"Establish holding: {Humanise(ruling.HoldingRuleId)}");
             result.Add($"Apply scope: {ScopeLabel(ruling.Scope)}");
-            EndogenousRemedyApplicationTrace trace = RemedyTraceForRuling(
-                docket, ruling.RulingId);
-            result.Add(trace == null
-                ? "Required remedy has no recorded execution"
-                : $"Execute remedy: {Humanise(trace.ResourceId)} to " +
-                  Humanise(trace.NewPhysicalHolderId));
+            EndogenousAccessRemedyApplicationTrace accessTrace =
+                AccessRemedyTraceForRuling(docket, ruling.RulingId);
+            if (accessTrace != null)
+            {
+                result.Add(
+                    "Execute remedy: restore access for " +
+                    Humanise(accessTrace.BeneficiaryAgentId));
+            }
+            else
+            {
+                EndogenousRemedyApplicationTrace trace = RemedyTraceForRuling(
+                    docket, ruling.RulingId);
+                result.Add(trace == null
+                    ? "Required remedy has no recorded execution"
+                    : $"Execute remedy: {Humanise(trace.ResourceId)} to " +
+                      Humanise(trace.NewPhysicalHolderId));
+            }
             return result;
+        }
+
+        private static EndogenousAccessRemedyApplicationTrace
+            AccessRemedyTraceForRuling(
+                EndogenousDocketState docket,
+                string rulingId)
+        {
+            for (int i = 0; i < docket.AccessRemedyApplicationTraces.Count; i++)
+                if (string.Equals(
+                        docket.AccessRemedyApplicationTraces[i].RulingId,
+                        rulingId,
+                        StringComparison.Ordinal))
+                    return docket.AccessRemedyApplicationTraces[i];
+            return null;
+        }
+
+        private static bool IsDenial(RulingDisposition disposition)
+        {
+            return disposition == RulingDisposition.Denied ||
+                   disposition == RulingDisposition.ReversedAndDenied;
         }
 
         private static EndogenousRemedyApplicationTrace RemedyTraceForRuling(

@@ -68,7 +68,7 @@ namespace Desk42.Institutional
                                 ruling.HoldingRuleId,
                                 EndogenousPlayerRulingService.PossessionHoldingRule,
                                 StringComparison.Ordinal) ||
-                            ruling.Disposition == RulingDisposition.Denied)
+                            !EstablishesHolding(ruling.Disposition))
                         {
                             continue;
                         }
@@ -130,6 +130,14 @@ namespace Desk42.Institutional
             SocietyStateValidator.Validate(society);
             EndogenousDocketValidator.Validate(state, society);
             return traces;
+        }
+
+        private static bool EstablishesHolding(RulingDisposition disposition)
+        {
+            return disposition == RulingDisposition.ProvisionallyRecognised ||
+                   disposition == RulingDisposition.Recognised ||
+                   disposition == RulingDisposition.Affirmed ||
+                   disposition == RulingDisposition.ReversedAndRecognised;
         }
 
         private static EndogenousScopeApplicationTrace FindTrace(

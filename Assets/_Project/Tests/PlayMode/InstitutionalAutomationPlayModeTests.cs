@@ -131,6 +131,7 @@ namespace Desk42.Tests.PlayMode
                 Assert.That(bootstrap, Is.Not.Null);
                 bootstrap.InstallAuxVerifier();
                 bootstrap.SelectPolicy(3);
+                bootstrap.CycleAppealHandling();
                 Time.timeScale = 12f;
 
                 float timeout = Time.realtimeSinceStartup + 12f;
@@ -141,6 +142,10 @@ namespace Desk42.Tests.PlayMode
                 Assert.That(bootstrap.ClaimsCompleted, Is.GreaterThanOrEqualTo(1));
                 Assert.That(bootstrap.AppealsReturned, Is.GreaterThanOrEqualTo(1));
                 Assert.That(bootstrap.AppealsResolved, Is.GreaterThanOrEqualTo(1));
+                Assert.That(bootstrap.PrecedentsInstalled, Is.GreaterThanOrEqualTo(1),
+                    "The physical Legal route should install a backend holding.");
+                Assert.That(bootstrap.InstitutionalRulings, Is.GreaterThanOrEqualTo(2));
+                Assert.That(bootstrap.SocietyTick, Is.GreaterThan(1));
                 LogAssert.NoUnexpectedReceived();
             }
             finally

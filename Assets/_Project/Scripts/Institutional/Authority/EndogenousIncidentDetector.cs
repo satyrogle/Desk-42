@@ -61,7 +61,7 @@ namespace Desk42.Institutional
                         causalAction,
                         materialEvent.ActorAgentId);
                 case MaterialWorldEventKind.AccessChanged:
-                    if (materialEvent.StateBefore == materialEvent.StateAfter) return null;
+                    if (!materialEvent.StateBefore || materialEvent.StateAfter) return null;
                     return NewCandidate(
                         materialEvent,
                         EndogenousIssueKindIds.AccessWithdrawal,

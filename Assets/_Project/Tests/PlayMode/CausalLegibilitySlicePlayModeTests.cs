@@ -10,6 +10,7 @@ using UnityEngine.TestTools;
 
 namespace Desk42.Tests.PlayMode
 {
+    [Category("ArchivedCausalLegibility")]
     public sealed class CausalLegibilitySlicePlayModeTests
     {
         private const string SceneName = "InstitutionalProduct";

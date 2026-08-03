@@ -26,8 +26,8 @@ namespace Desk42.Institutional
     [Serializable]
     internal sealed class EndogenousDocketState
     {
-        internal const int CurrentSchemaVersion = 2;
-        internal const string CurrentRulesetVersion = "endogenous-docket-v2";
+        internal const int CurrentSchemaVersion = 3;
+        internal const string CurrentRulesetVersion = "endogenous-docket-v3";
 
         internal int SchemaVersion = CurrentSchemaVersion;
         internal string RulesetVersion = CurrentRulesetVersion;
@@ -38,7 +38,11 @@ namespace Desk42.Institutional
         internal List<EndogenousInstitutionalCase> OpenCases = new();
         internal List<CommittedPlayerRuling> Rulings = new();
         internal List<EndogenousRemedyApplicationTrace> RemedyApplicationTraces = new();
+        internal List<EndogenousAccessRemedyApplicationTrace>
+            AccessRemedyApplicationTraces = new();
         internal List<EndogenousScopeApplicationTrace> ScopeApplicationTraces = new();
+        internal List<EndogenousAppealRecord> Appeals = new();
+        internal List<EndogenousHoldingRecord> Holdings = new();
 
         internal IncidentCandidate GetIncident(string candidateId)
             => Find(IncidentCandidates, value => value.CandidateId, candidateId);
@@ -52,6 +56,12 @@ namespace Desk42.Institutional
         internal EndogenousInstitutionalCase GetCase(string caseId)
             => Find(OpenCases, value => value.CaseId, caseId);
 
+        internal EndogenousAppealRecord GetAppeal(string appealId)
+            => Find(Appeals, value => value.AppealId, appealId);
+
+        internal EndogenousHoldingRecord GetHolding(string holdingId)
+            => Find(Holdings, value => value.HoldingId, holdingId);
+
         private static T Find<T>(IReadOnlyList<T> values, Func<T, string> id, string expected)
             where T : class
         {
@@ -64,5 +74,49 @@ namespace Desk42.Institutional
             }
             return null;
         }
+    }
+
+    [Serializable]
+    internal sealed class EndogenousAccessRemedyApplicationTrace
+    {
+        internal string TraceId;
+        internal string RulingId;
+        internal string CaseId;
+        internal long AppliedTick;
+        internal string AccessGrantId;
+        internal string BeneficiaryAgentId;
+        internal bool StateBefore;
+        internal bool StateAfter;
+        internal string MaterialEventId;
+        internal bool MaterialStateChanged;
+    }
+
+    [Serializable]
+    internal sealed class EndogenousAppealRecord
+    {
+        internal string AppealId;
+        internal string CaseId;
+        internal string ChallengedRulingId;
+        internal long FiledTick;
+        internal string ProcedureId;
+        internal List<string> GroundsEvidenceIds = new();
+        internal bool Resolved;
+        internal long ResolvedTick = -1;
+        internal string ResultingRulingId;
+        internal string ResultingHoldingId;
+    }
+
+    [Serializable]
+    internal sealed class EndogenousHoldingRecord
+    {
+        internal string HoldingId;
+        internal string SourceAppealId;
+        internal string SourceRulingId;
+        internal string RuleId;
+        internal string IssueId;
+        internal long EstablishedTick;
+        internal ScopeExpression Scope;
+        internal List<string> SupportingEvidenceIds = new();
+        internal List<string> AppliedCaseIds = new();
     }
 }

@@ -26,6 +26,9 @@ namespace Desk42.Product.Automation
         public bool Ready => _floor != null;
         public int ClaimsInFlight => _floor?.ClaimsInFlight ?? 0;
         public int ClaimsCompleted => _floor?.ClaimsCompleted ?? 0;
+        public long SocietyTick => _floor?.SocietyTick ?? 0;
+        public int InstitutionalRulings => _floor?.InstitutionalRulings ?? 0;
+        public int PrecedentsInstalled => _floor?.PrecedentsInstalled ?? 0;
         public int AppealsReturned => _floor?.AppealsReturned ?? 0;
         public int AppealsResolved => _floor?.AppealsResolved ?? 0;
         public int OverdueClaims => _floor?.OverdueCount ?? 0;
@@ -187,7 +190,9 @@ namespace Desk42.Product.Automation
             GUILayout.BeginVertical(GUILayout.Width(250f));
             GUILayout.Label("DESK42 / BRANCH AUTOMATION", _title);
             GUILayout.Label("SHIFT " + (_floor?.ShiftOrdinal ?? 1).ToString("D2") +
-                " / PROCESSING FLOOR / LIVE", _small);
+                " / WORLD T" + (_floor?.SocietyTick ?? 0).ToString("D2") +
+                " / " + (_floor?.InstitutionalRulings ?? 0).ToString("D2") +
+                " RULINGS / LIVE", _small);
             GUILayout.EndVertical();
             Metric("IN FLIGHT", ClaimsInFlight.ToString("00"));
             Metric("DONE / RATE", (_floor?.ClaimsCompleted ?? 0).ToString("00") + "/" +

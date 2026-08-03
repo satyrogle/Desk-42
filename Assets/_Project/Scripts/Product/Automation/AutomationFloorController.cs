@@ -62,6 +62,8 @@ namespace Desk42.Product.Automation
         internal int SecondaryChecks => _flow?.SecondaryChecks ?? 0;
         internal int Credits => _flow?.Credits ?? 0;
         internal int ShiftOrdinal => _flow?.ShiftOrdinal ?? 1;
+        internal long SocietyTick => _flow?.SocietyTick ?? 0;
+        internal int InstitutionalRulings => _flow?.InstitutionalRulings ?? 0;
         internal float ClaimsPerMinute => _flow?.ClaimsPerMinute ?? 0f;
         internal string PriorityName => _flow?.RoutePriorityName ?? "BALANCED";
         internal string AppealModeName => _flow?.AppealModeName ?? "FULL REHEARING";

@@ -84,6 +84,9 @@ namespace Desk42.Product.Automation
         internal int SecondaryChecks { get; private set; }
         internal int Credits { get; private set; } = 5;
         internal int ShiftOrdinal => _shiftOrdinal;
+        internal long SocietyTick => _activeInstitution?.SocietyTick ?? 0;
+        internal int InstitutionalRulings =>
+            _activeInstitution?.CommittedRulingCount ?? 0;
         internal float ClaimsPerMinute => _elapsed <= 0.01f
             ? 0f
             : Completed / _elapsed * 60f;
@@ -148,11 +151,11 @@ namespace Desk42.Product.Automation
         internal string PolicyDescription => Policy switch
         {
             AutomationPolicyKind.ProofFortress =>
-                "Narrow holdings. Slow verification. No new scope appeals.",
+                "High public-evidence threshold. Weak files hold for Legal or deny.",
             AutomationPolicyKind.RubberStampMill =>
-                "Broad holdings. Fast intake. Appeals become the bottleneck.",
+                "Presume valid. Broad recognition turns later appeals into load.",
             AutomationPolicyKind.AppealRefinery =>
-                "Broad holdings. Fast Legal. Resolved appeals accelerate verification.",
+                "Moderate threshold. Ambiguous files feed a specialised appeal line.",
             _ => string.Empty,
         };
 
@@ -391,13 +394,12 @@ namespace Desk42.Product.Automation
                     _shiftOrdinal++;
                     if (_shiftOrdinal <= MaximumShifts)
                     {
-                        _activeInstitution = InstitutionalAutomationSession.Create(
-                            ClaimsPerShift);
+                        _activeInstitution.ReleaseNextShift(ClaimsPerShift);
                         _batchSpawned = 0;
                         _spawnClock = 8f;
                         Emit(AutomationFeedbackKind.PolicyChanged,
                             "SHIFT " + _shiftOrdinal.ToString("D2") +
-                            " DOCKET RELEASED");
+                            " / SAME SOCIETY / DOCKET RELEASED");
                     }
                 }
                 else
@@ -506,19 +508,31 @@ namespace Desk42.Product.Automation
                 case AutomationStationKind.Adjudication:
                     if (item.IsAppeal)
                     {
-                        item.ApplyAppealResolution();
+                        ResolveAppeal(item);
                     }
                     else
                     {
+                        if (Policy == AutomationPolicyKind.ProofFortress &&
+                            NeedsLegalHold(item) && item.BeginAdverseReview())
+                        {
+                            _legal.Enqueue(item);
+                            Emit(AutomationFeedbackKind.AppealReturned,
+                                item.ClaimId + " / EVIDENCE HOLD / LEGAL REVIEW");
+                            break;
+                        }
+                        PlayerRulingDisposition disposition =
+                            SelectAutomaticDisposition(item);
                         AutomationRulingResult ruling = item.Institution.Commit(
                             item.Claim.AutomationClaimId,
                             Policy == AutomationPolicyKind.ProofFortress
                                 ? PlayerScopeChoice.Narrow
                                 : PlayerScopeChoice.Broad,
-                            PlayerRulingDisposition.Recognised);
+                            disposition,
+                            InstitutionalProcedures());
                         item.ApplyRuling(ruling);
                         Emit(AutomationFeedbackKind.RulingStamped,
-                            item.Claim.DisplayId + " / " + PolicyName + " RULING");
+                            item.Claim.DisplayId + " / " + PolicyName + " / " +
+                            disposition.ToString().ToUpperInvariant());
                     }
                     _output.Enqueue(item);
                     break;
@@ -531,12 +545,9 @@ namespace Desk42.Product.Automation
                     {
                         AppealsResolved++;
                         Credits++;
-                        if (Policy == AutomationPolicyKind.AppealRefinery &&
-                            AppealMode != AutomationAppealMode.Settlement)
-                        {
-                            PrecedentsInstalled++;
-                            ApplyPolicyTuning();
-                        }
+                        PrecedentsInstalled = item.Institution?.HoldingCount ??
+                            PrecedentsInstalled;
+                        ApplyPolicyTuning();
                         Emit(AutomationFeedbackKind.AppealResolved,
                             "APPEAL RESOLVED / PRECEDENT " +
                             PrecedentsInstalled.ToString("D2"));
@@ -563,7 +574,7 @@ namespace Desk42.Product.Automation
                     }
                     else if (AppealMode == AutomationAppealMode.Settlement)
                     {
-                        item.ApplyAppealResolution();
+                        ResolveAppeal(item);
                         _output.Enqueue(item);
                     }
                     else if (AppealMode == AutomationAppealMode.FastTrack)
@@ -594,12 +605,102 @@ namespace Desk42.Product.Automation
             var view = token.AddComponent<AutomationDossierView>();
             view.MarkAppeal();
             var item = new AutomationFlowItem(
-                appeal, AutomationClaimProfile.ForAppeal(appeal), token, view, label);
+                _activeInstitution,
+                appeal,
+                AutomationClaimProfile.ForAppeal(appeal),
+                token,
+                view,
+                label);
             ConfigureItemProcedures(item);
             _items.Add(item);
             _legal.Enqueue(item);
             Emit(AutomationFeedbackKind.AppealReturned,
                 label + " RETURNED THROUGH LEGAL");
+        }
+
+        private void ResolveAppeal(AutomationFlowItem item)
+        {
+            if (item == null || !item.IsAppeal || item.Institution == null)
+                throw new InvalidOperationException(
+                    "A returned appeal requires its continuing institution.");
+            AutomationAppealProcedure procedure = AppealMode switch
+            {
+                AutomationAppealMode.FastTrack =>
+                    AutomationAppealProcedure.FastTrack,
+                AutomationAppealMode.Settlement =>
+                    AutomationAppealProcedure.Settlement,
+                _ => AutomationAppealProcedure.FullRehearing,
+            };
+            AutomationAppealResolutionResult resolution =
+                item.Institution.ResolveAppeal(
+                    item.Appeal,
+                    procedure,
+                    establishHolding:
+                        Policy == AutomationPolicyKind.AppealRefinery);
+            item.ApplyAppealResolution(resolution);
+            PrecedentsInstalled = item.Institution.HoldingCount;
+            ApplyPolicyTuning();
+        }
+
+        private IReadOnlyList<AutomationInstitutionalProcedure>
+            InstitutionalProcedures()
+        {
+            var result = new List<AutomationInstitutionalProcedure>();
+            foreach (AutomationProcedureKind procedure in _procedures)
+            {
+                result.Add(procedure switch
+                {
+                    AutomationProcedureKind.MandatorySecondaryVerification =>
+                        AutomationInstitutionalProcedure.MandatorySecondaryVerification,
+                    AutomationProcedureKind.PresumptionOfValidity =>
+                        AutomationInstitutionalProcedure.PresumptionOfValidity,
+                    AutomationProcedureKind.AutomaticAdverseReview =>
+                        AutomationInstitutionalProcedure.AutomaticAdverseReview,
+                    AutomationProcedureKind.ProtectedEvidenceChannel =>
+                        AutomationInstitutionalProcedure.ProtectedEvidenceChannel,
+                    AutomationProcedureKind.AppealFastTrack =>
+                        AutomationInstitutionalProcedure.AppealFastTrack,
+                    AutomationProcedureKind.PrecedentReuse =>
+                        AutomationInstitutionalProcedure.PrecedentReuse,
+                    _ => throw new ArgumentOutOfRangeException(),
+                });
+            }
+            result.Sort();
+            return result;
+        }
+
+        private bool NeedsLegalHold(AutomationFlowItem item)
+        {
+            if (item?.Claim == null || item.AdverseReviewCompleted) return false;
+            int requiredPasses = IsProcedureBound(
+                AutomationProcedureKind.MandatorySecondaryVerification) ? 2 : 1;
+            return item.VerificationPasses < requiredPasses ||
+                   item.Claim.CitableEvidenceCount == 0 ||
+                   item.Claim.EvidenceSupportMinimum < 52;
+        }
+
+        private PlayerRulingDisposition SelectAutomaticDisposition(
+            AutomationFlowItem item)
+        {
+            AutomationPublicClaim claim = item?.Claim ??
+                throw new InvalidOperationException(
+                    "Only a public claim envelope can receive an initial ruling.");
+            int presumptionBonus = IsProcedureBound(
+                AutomationProcedureKind.PresumptionOfValidity) ? 15 : 0;
+            bool recognise = Policy switch
+            {
+                AutomationPolicyKind.ProofFortress =>
+                    claim.CitableEvidenceCount > 0 &&
+                    claim.EvidenceSupportMinimum + presumptionBonus >= 52,
+                AutomationPolicyKind.RubberStampMill =>
+                    claim.EvidenceSupportMaximum + presumptionBonus >= 45,
+                AutomationPolicyKind.AppealRefinery =>
+                    claim.EvidenceSupportMaximum + presumptionBonus >= 65,
+                _ => false,
+            };
+            return recognise
+                ? PlayerRulingDisposition.Recognised
+                : PlayerRulingDisposition.Denied;
         }
 
         private void ApplyPolicyTuning()
@@ -995,12 +1096,14 @@ namespace Desk42.Product.Automation
         }
 
         internal AutomationFlowItem(
+            InstitutionalAutomationSession institution,
             AutomationAppealPacket appeal,
             AutomationClaimProfile profile,
             GameObject root,
             AutomationDossierView view,
             string displayId)
         {
+            Institution = institution ?? throw new ArgumentNullException(nameof(institution));
             Appeal = appeal ?? throw new ArgumentNullException(nameof(appeal));
             Profile = profile ?? throw new ArgumentNullException(nameof(profile));
             _root = root;
@@ -1015,6 +1118,7 @@ namespace Desk42.Product.Automation
         internal AutomationAppealPacket Appeal { get; }
         internal AutomationClaimProfile Profile { get; }
         internal AutomationRulingResult Ruling { get; private set; }
+        internal AutomationAppealResolutionResult AppealResolution { get; private set; }
         internal bool IsAppeal => Appeal != null;
         internal string DisplayId { get; }
         internal string ClaimId => DisplayId;
@@ -1026,6 +1130,7 @@ namespace Desk42.Product.Automation
         internal int Sequence { get; }
         internal int VerificationPasses { get; private set; }
         internal bool AdverseReviewPending { get; private set; }
+        internal bool AdverseReviewCompleted => _adverseReviewCompleted;
         internal bool NeedsProtectedChannel =>
             (Profile.EvidenceNeeds & AutomationEvidenceNeed.ChainOfCustody) != 0;
         internal float MisclassificationRiskMultiplier =>
@@ -1113,9 +1218,14 @@ namespace Desk42.Product.Automation
             _view.ApplyRuling(result.Disposition);
         }
 
-        internal void ApplyAppealResolution()
+        internal void ApplyAppealResolution(
+            AutomationAppealResolutionResult resolution)
         {
-            _view.ApplyAppealResolution();
+            AppealResolution = resolution ??
+                throw new ArgumentNullException(nameof(resolution));
+            _view.ApplyAppealResolution(
+                resolution.Disposition,
+                resolution.EstablishedHolding);
         }
 
         internal void BeginTransit(AutomationStationRuntime station)
@@ -1308,15 +1418,23 @@ namespace Desk42.Product.Automation
             if (_label != null) _label.color = new Color(1f, 0.45f, 0.34f);
         }
 
-        internal void ApplyAppealResolution()
+        internal void ApplyAppealResolution(
+            string disposition,
+            bool establishedHolding)
         {
             if (_rulingVisible) return;
             _rulingVisible = true;
             AutomationVisualFactory.CreateBlock(transform, "Appeal Resolution Seal",
                 new Vector3(0f, 0.28f, 0.18f),
                 new Vector3(0.50f, 0.09f, 0.50f),
-                new Color(0.50f, 0.42f, 0.72f));
-            if (_label != null) _label.color = new Color(0.74f, 0.66f, 0.96f);
+                establishedHolding
+                    ? new Color(0.80f, 0.62f, 0.18f)
+                    : new Color(0.50f, 0.42f, 0.72f));
+            if (_label != null) _label.color = establishedHolding
+                ? new Color(1f, 0.82f, 0.30f)
+                : new Color(0.74f, 0.66f, 0.96f);
+            if (_label != null && !string.IsNullOrWhiteSpace(disposition))
+                _label.text += "\n" + disposition.ToUpperInvariant();
         }
 
         internal void MarkRework(int attempt)

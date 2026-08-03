@@ -129,7 +129,7 @@ namespace Desk42.Product.Automation
                 claim.CitableEvidenceCount == 0)
                 needs |= AutomationEvidenceNeed.ChainOfCustody;
 
-            bool urgent = claim.MissingEvidenceCount > 1 || pressureKey % 5 == 0;
+            bool urgent = claim.EvidenceSupportMinimum < 25 || pressureKey % 5 == 0;
             float deadline = urgent
                 ? 42f + pressureKey % 4 * 4f
                 : 88f + pressureKey % 5 * 7f;

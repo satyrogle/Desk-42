@@ -185,6 +185,9 @@ namespace Desk42.Institutional
                     };
                     opportunity.EligibleActorIds.Add(actor.StableId);
                     opportunity.DirectWitnessAgentIds.Add(belief.SubjectId);
+                    if (!string.IsNullOrWhiteSpace(authority.SourceRecordId))
+                        opportunity.PotentialRecordSourceIds.Add(
+                            authority.SourceRecordId);
                     input.RetaliationOpportunities.Add(opportunity);
                 }
             }

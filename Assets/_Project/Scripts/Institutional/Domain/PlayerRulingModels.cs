@@ -205,6 +205,7 @@ namespace Desk42.Institutional
         public ScopeExpression Scope;
         public TemporalReach TemporalReach;
         public List<string> RemedyDefinitionIds = new();
+        public List<string> AppliedProcedureIds = new();
     }
 
     [Serializable]
@@ -223,6 +224,7 @@ namespace Desk42.Institutional
         public ScopeExpression Scope;
         public TemporalReach TemporalReach;
         public List<string> RemedyDefinitionIds = new();
+        public List<string> AppliedProcedureIds = new();
         public string RulesetVersion;
     }
 }
