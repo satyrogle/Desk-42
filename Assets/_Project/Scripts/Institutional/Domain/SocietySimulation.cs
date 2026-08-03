@@ -240,13 +240,17 @@ namespace Desk42.Institutional
             {
                 case SocietyActionKind.Disclose:
                 case SocietyActionKind.Withhold:
+                case SocietyActionKind.Lie:
                     return 0;
                 case SocietyActionKind.Appeal:
                 case SocietyActionKind.SeekAid:
+                case SocietyActionKind.Retaliate:
                     return 1;
                 case SocietyActionKind.Help:
+                case SocietyActionKind.Organise:
                     return 2;
                 case SocietyActionKind.Work:
+                case SocietyActionKind.Steal:
                     return 3;
                 default:
                     return 4;
@@ -282,6 +286,18 @@ namespace Desk42.Institutional
                     break;
                 case SocietyActionKind.Appeal:
                     ApplyAppeal(actor, input, decision, events);
+                    break;
+                case SocietyActionKind.Lie:
+                    ApplyLie(state, actor, input, decision, events);
+                    break;
+                case SocietyActionKind.Steal:
+                    ApplySteal(actor, input, decision, events);
+                    break;
+                case SocietyActionKind.Retaliate:
+                    ApplyRetaliate(state, actor, input, decision, events);
+                    break;
+                case SocietyActionKind.Organise:
+                    ApplyOrganise(actor, input, decision, events);
                     break;
                 default:
                     events.Add(NewEvent(
@@ -466,6 +482,299 @@ namespace Desk42.Institutional
             events.Add(societyEvent);
         }
 
+        private static void ApplyLie(
+            SocietyState state,
+            AgentState actor,
+            SimulationInput input,
+            AgentDecision decision,
+            List<SocietyEvent> events)
+        {
+            LieOpportunity opportunity = FindByOpportunityId(
+                input.LieOpportunities,
+                decision.OpportunityId,
+                value => value.OpportunityId);
+            BeliefState concealedBelief = actor.GetBelief(decision.SubjectBeliefId);
+            if (opportunity == null || concealedBelief == null) return;
+
+            SocietyEvent societyEvent = NewEvent(
+                decision.Tick,
+                input.IncidentId,
+                SocietyEventKind.AssertionMade,
+                actor.StableId,
+                opportunity.ContextId,
+                opportunity.Visibility == EvidenceVisibility.OfficialRecord
+                    ? $"record:assertion:{decision.Tick}:{actor.StableId}:{opportunity.OpportunityId}"
+                    : null,
+                opportunity.Visibility,
+                decision.DecisionId);
+            societyEvent.OpportunityId = opportunity.OpportunityId;
+            societyEvent.EvidencePropositionId = opportunity.AssertionPropositionId;
+            societyEvent.EvidenceSubjectId = opportunity.AssertionSubjectId;
+            societyEvent.EvidenceObjectId = opportunity.AssertionObjectId;
+            societyEvent.EvidenceSourceId = actor.StableId;
+            societyEvent.EvidenceBeliefId = concealedBelief.BeliefId;
+            societyEvent.ActionContextId = opportunity.ContextId;
+            societyEvent.PotentialRecordSourceIds = StableSingleton(
+                opportunity.PotentialRecordSourceId);
+
+            if (opportunity.AudienceAgentIds != null)
+            {
+                for (int i = 0; i < opportunity.AudienceAgentIds.Count; i++)
+                {
+                    AgentState listener = state.GetAgent(opportunity.AudienceAgentIds[i]);
+                    if (listener == null || string.Equals(
+                            listener.StableId,
+                            actor.StableId,
+                            StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    int evaluatedConfidence = EvaluateAssertionConfidence(
+                        listener,
+                        actor.StableId,
+                        opportunity,
+                        concealedBelief);
+                    if (evaluatedConfidence <= 0) continue;
+
+                    string beliefId =
+                        $"belief:assertion:{decision.Tick}:{listener.StableId}:" +
+                        $"{actor.StableId}:{opportunity.OpportunityId}";
+                    BeliefState received = listener.GetBelief(beliefId);
+                    int before = received?.Confidence ?? 0;
+                    if (received == null)
+                    {
+                        received = new BeliefState
+                        {
+                            BeliefId = beliefId,
+                            PropositionId = opportunity.AssertionPropositionId,
+                            SubjectId = opportunity.AssertionSubjectId,
+                            ObjectId = opportunity.AssertionObjectId,
+                            SourceId = actor.StableId,
+                            Confidence = evaluatedConfidence,
+                            Secrecy = opportunity.Visibility == EvidenceVisibility.Private ? 70 : 20,
+                            EmotionalWeight = concealedBelief.EmotionalWeight / 2,
+                            AcquiredTick = decision.Tick,
+                            EnteredOfficialRecord =
+                                opportunity.Visibility == EvidenceVisibility.OfficialRecord,
+                        };
+                        listener.Beliefs.Add(received);
+                    }
+                    else
+                    {
+                        received.Confidence = Math.Max(received.Confidence, evaluatedConfidence);
+                    }
+
+                    societyEvent.DirectWitnessAgentIds.Add(listener.StableId);
+                    societyEvent.Deltas.Add(new StateDelta
+                    {
+                        EntityId = listener.StableId,
+                        FieldId = $"belief:{beliefId}:source-evaluated-confidence",
+                        Before = before,
+                        After = received.Confidence,
+                    });
+                }
+            }
+
+            societyEvent.EvidenceReliability = societyEvent.Deltas.Count == 0
+                ? 0
+                : societyEvent.Deltas[0].After;
+            events.Add(societyEvent);
+        }
+
+        private static int EvaluateAssertionConfidence(
+            AgentState listener,
+            string sourceAgentId,
+            LieOpportunity opportunity,
+            BeliefState sourceBelief)
+        {
+            RelationshipState source = listener.GetRelationship(sourceAgentId);
+            int trust = source?.Trust ?? 0;
+            int authority = source?.Authority ?? 0;
+            int corroboration = 0;
+            int opposition = 0;
+            for (int i = 0; i < listener.Beliefs.Count; i++)
+            {
+                BeliefState existing = listener.Beliefs[i];
+                if (!string.Equals(
+                        existing.SubjectId,
+                        opportunity.AssertionSubjectId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        existing.ObjectId,
+                        opportunity.AssertionObjectId,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (string.Equals(
+                        existing.PropositionId,
+                        opportunity.AssertionPropositionId,
+                        StringComparison.Ordinal))
+                {
+                    corroboration = Math.Max(corroboration, existing.Confidence);
+                }
+                else
+                {
+                    opposition = Math.Max(opposition, existing.Confidence);
+                }
+            }
+
+            return InstitutionalMath.Clamp(
+                10 + trust / 2 + authority / 4 + sourceBelief.Confidence / 8 +
+                corroboration / 5 - opposition / 3,
+                0,
+                100);
+        }
+
+        private static void ApplySteal(
+            AgentState actor,
+            SimulationInput input,
+            AgentDecision decision,
+            List<SocietyEvent> events)
+        {
+            StealOpportunity opportunity = FindByOpportunityId(
+                input.StealOpportunities,
+                decision.OpportunityId,
+                value => value.OpportunityId);
+            if (opportunity == null) return;
+            SocietyEvent societyEvent = NewEvent(
+                decision.Tick,
+                input.IncidentId,
+                SocietyEventKind.PossessionTransferRequested,
+                actor.StableId,
+                opportunity.ExpectedPhysicalHolderId,
+                null,
+                opportunity.Visibility,
+                decision.DecisionId);
+            societyEvent.OpportunityId = opportunity.OpportunityId;
+            societyEvent.ActionResourceId = opportunity.ResourceId;
+            societyEvent.ActionContextId = opportunity.NewLocationContextId;
+            societyEvent.AffectedStateRecordId = opportunity.AccessGrantId;
+            societyEvent.ActionSecrecy = opportunity.Secrecy;
+            societyEvent.DirectWitnessAgentIds = CloneStrings(
+                opportunity.DirectWitnessAgentIds);
+            societyEvent.PotentialRecordSourceIds = CloneStrings(
+                opportunity.PotentialRecordSourceIds);
+            events.Add(societyEvent);
+        }
+
+        private static void ApplyRetaliate(
+            SocietyState state,
+            AgentState actor,
+            SimulationInput input,
+            AgentDecision decision,
+            List<SocietyEvent> events)
+        {
+            RetaliationOpportunity opportunity = FindByOpportunityId(
+                input.RetaliationOpportunities,
+                decision.OpportunityId,
+                value => value.OpportunityId);
+            if (opportunity == null) return;
+            SocietyEvent societyEvent = NewEvent(
+                decision.Tick,
+                input.IncidentId,
+                SocietyEventKind.RetaliatoryAuthorityExercised,
+                actor.StableId,
+                opportunity.TargetAgentId,
+                opportunity.Visibility == EvidenceVisibility.OfficialRecord
+                    ? $"record:authority:{decision.Tick}:{actor.StableId}:" +
+                      opportunity.OpportunityId
+                    : null,
+                opportunity.Visibility,
+                decision.DecisionId);
+            societyEvent.OpportunityId = opportunity.OpportunityId;
+            societyEvent.EvidenceBeliefId = opportunity.PerceivedPriorActionBeliefId;
+            societyEvent.AuthorityGrantId = opportunity.AuthorityGrantId;
+            societyEvent.AffectedStateRecordId = opportunity.AffectedAccessGrantId;
+            societyEvent.ActionContextId = opportunity.AdverseActionKindId;
+            societyEvent.ActionSecrecy = opportunity.Secrecy;
+            societyEvent.DirectWitnessAgentIds = CloneStrings(
+                opportunity.DirectWitnessAgentIds);
+            societyEvent.PotentialRecordSourceIds = CloneStrings(
+                opportunity.PotentialRecordSourceIds);
+
+            AgentState target = state.GetAgent(opportunity.TargetAgentId);
+            if (target != null && opportunity.Visibility != EvidenceVisibility.Private)
+            {
+                ChangeRelationshipField(
+                    target, actor.StableId, "trust", -10, societyEvent.Deltas);
+                ChangeRelationshipField(
+                    target, actor.StableId, "fear", 12, societyEvent.Deltas);
+            }
+            events.Add(societyEvent);
+        }
+
+        private static void ApplyOrganise(
+            AgentState actor,
+            SimulationInput input,
+            AgentDecision decision,
+            List<SocietyEvent> events)
+        {
+            OrganiseOpportunity opportunity = FindByOpportunityId(
+                input.OrganiseOpportunities,
+                decision.OpportunityId,
+                value => value.OpportunityId);
+            if (opportunity == null) return;
+            SocietyEvent societyEvent = NewEvent(
+                decision.Tick,
+                input.IncidentId,
+                SocietyEventKind.OrganisationProposed,
+                actor.StableId,
+                opportunity.IssueId,
+                null,
+                opportunity.Visibility,
+                decision.DecisionId);
+            societyEvent.OpportunityId = opportunity.OpportunityId;
+            societyEvent.ActionContextId = opportunity.CommunicationContextId;
+            societyEvent.CollectiveCommitmentId = opportunity.CollectiveCommitmentId;
+            societyEvent.CollectiveIssueId = opportunity.IssueId;
+            societyEvent.CollectiveIntentionId = opportunity.IntentionId;
+            societyEvent.RequiredParticipantCount = opportunity.RequiredParticipantCount;
+            societyEvent.ActionSecrecy = opportunity.Secrecy;
+            societyEvent.PerceivedCauseEventIds = CloneStrings(
+                opportunity.PerceivedCauseEventIds);
+            societyEvent.DirectWitnessAgentIds = CloneStrings(
+                opportunity.DirectWitnessAgentIds);
+            societyEvent.PotentialRecordSourceIds = CloneStrings(
+                opportunity.PotentialRecordSourceIds);
+            events.Add(societyEvent);
+        }
+
+        private static T FindByOpportunityId<T>(
+            IReadOnlyList<T> values,
+            string expectedId,
+            Func<T, string> id)
+            where T : class
+        {
+            if (values == null || string.IsNullOrEmpty(expectedId)) return null;
+            for (int i = 0; i < values.Count; i++)
+            {
+                T value = values[i];
+                if (value != null && string.Equals(
+                        id(value), expectedId, StringComparison.Ordinal))
+                {
+                    return value;
+                }
+            }
+
+            return null;
+        }
+
+        private static List<string> CloneStrings(IReadOnlyList<string> source)
+        {
+            var result = new List<string>(source?.Count ?? 0);
+            if (source == null) return result;
+            for (int i = 0; i < source.Count; i++) result.Add(source[i]);
+            return result;
+        }
+
+        private static List<string> StableSingleton(string value)
+            => string.IsNullOrWhiteSpace(value)
+                ? new List<string>()
+                : new List<string> { value };
+
         private static SocietyEvent NewEvent(
             long tick,
             string incidentId,
@@ -562,17 +871,44 @@ namespace Desk42.Institutional
             int delta,
             List<StateDelta> deltas)
         {
+            ChangeRelationshipField(actor, targetId, fieldId, delta, deltas);
+        }
+
+        private static void ChangeRelationshipField(
+            AgentState actor,
+            string targetId,
+            string fieldId,
+            int delta,
+            List<StateDelta> deltas)
+        {
             RelationshipState relationship = actor.GetRelationship(targetId);
             if (relationship == null) return;
 
-            int before = relationship.Trust;
-            relationship.Trust = InstitutionalMath.Clamp(before + delta, 0, 100);
+            int before;
+            int after;
+            switch (fieldId)
+            {
+                case "trust":
+                    before = relationship.Trust;
+                    relationship.Trust = InstitutionalMath.Clamp(before + delta, 0, 100);
+                    after = relationship.Trust;
+                    break;
+                case "fear":
+                    before = relationship.Fear;
+                    relationship.Fear = InstitutionalMath.Clamp(before + delta, 0, 100);
+                    after = relationship.Fear;
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unsupported relationship mutation field {fieldId}.");
+            }
+
             deltas.Add(new StateDelta
             {
                 EntityId = actor.StableId,
                 FieldId = $"relationship:{targetId}:{fieldId}",
                 Before = before,
-                After = relationship.Trust,
+                After = after,
             });
         }
 

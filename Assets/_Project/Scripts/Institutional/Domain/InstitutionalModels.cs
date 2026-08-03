@@ -27,6 +27,10 @@ namespace Desk42.Institutional
         Disclose,
         Withhold,
         Appeal,
+        Lie,
+        Steal,
+        Retaliate,
+        Organise,
     }
 
     public enum SocietyEventKind
@@ -39,6 +43,10 @@ namespace Desk42.Institutional
         ResponseWithheld,
         AppealFiled,
         AnomalyStatusResponse,
+        AssertionMade,
+        PossessionTransferRequested,
+        RetaliatoryAuthorityExercised,
+        OrganisationProposed,
     }
 
     public enum EvidenceVisibility
@@ -304,6 +312,93 @@ namespace Desk42.Institutional
         public List<string> PartyAgentIds = new();
     }
 
+    /// <summary>
+    /// A perceived opportunity to make an assertion that conflicts with the actor's
+    /// own identified belief. The assertion is information, not a truth mutation.
+    /// </summary>
+    [Serializable]
+    public sealed class LieOpportunity
+    {
+        public string OpportunityId;
+        public string BeliefId;
+        public string AssertionPropositionId;
+        public string AssertionSubjectId;
+        public string AssertionObjectId;
+        public string ContextId;
+        public int UtilityBonus;
+        public EvidenceVisibility Visibility = EvidenceVisibility.Observable;
+        public string PotentialRecordSourceId;
+        public List<string> EligibleActorIds = new();
+        public List<string> AudienceAgentIds = new();
+    }
+
+    /// <summary>
+    /// A perceived opportunity to take physical possession. Official ownership is
+    /// deliberately absent because this action cannot rewrite it.
+    /// </summary>
+    [Serializable]
+    public sealed class StealOpportunity
+    {
+        public string OpportunityId;
+        public string ResourceId;
+        public string ExpectedPhysicalHolderId;
+        public string NewLocationContextId;
+        public string AccessGrantId;
+        public NeedKind ReliefNeed = NeedKind.Health;
+        public int ReliefAmount;
+        public int UtilityBonus;
+        public EvidenceVisibility Visibility = EvidenceVisibility.Private;
+        public int Secrecy;
+        public List<string> EligibleActorIds = new();
+        public List<string> DirectWitnessAgentIds = new();
+        public List<string> PotentialRecordSourceIds = new();
+    }
+
+    /// <summary>
+    /// A perceived opportunity to use institutional power against an agent believed
+    /// to have taken a prior adverse action.
+    /// </summary>
+    [Serializable]
+    public sealed class RetaliationOpportunity
+    {
+        public string OpportunityId;
+        public string TargetAgentId;
+        public string PerceivedPriorActionBeliefId;
+        public string AuthorityGrantId;
+        public string AffectedAccessGrantId;
+        public string AdverseActionKindId;
+        public int PerceivedPower;
+        public int UtilityBonus;
+        public EvidenceVisibility Visibility = EvidenceVisibility.Observable;
+        public int Secrecy;
+        public List<string> EligibleActorIds = new();
+        public List<string> DirectWitnessAgentIds = new();
+        public List<string> PotentialRecordSourceIds = new();
+    }
+
+    /// <summary>
+    /// One agent's perceived opportunity to propose or join collective action. Each
+    /// actor receives a distinct opportunity id; a shared commitment id is what lets
+    /// compatible independent actions accumulate.
+    /// </summary>
+    [Serializable]
+    public sealed class OrganiseOpportunity
+    {
+        public string OpportunityId;
+        public string CollectiveCommitmentId;
+        public string IssueId;
+        public string IntentionId;
+        public string CommunicationContextId;
+        public int RequiredParticipantCount = 2;
+        public int UtilityBonus;
+        public EvidenceVisibility Visibility = EvidenceVisibility.Observable;
+        public int Secrecy;
+        public List<string> EligibleActorIds = new();
+        public List<string> PerceivedCauseEventIds = new();
+        public List<string> DirectWitnessAgentIds = new();
+        public List<string> PotentialRecordSourceIds = new();
+    }
+
     [Serializable]
     public sealed class SimulationInput
     {
@@ -318,6 +413,10 @@ namespace Desk42.Institutional
         public List<WorkOpportunity> WorkOpportunities = new();
         public List<AidOpportunity> AidOpportunities = new();
         public List<AppealOpportunity> AppealOpportunities = new();
+        public List<LieOpportunity> LieOpportunities = new();
+        public List<StealOpportunity> StealOpportunities = new();
+        public List<RetaliationOpportunity> RetaliationOpportunities = new();
+        public List<OrganiseOpportunity> OrganiseOpportunities = new();
         public bool RestrictAidToOpportunities;
         public bool RestrictAppealToOpportunities;
 
@@ -463,6 +562,19 @@ namespace Desk42.Institutional
         public string EvidenceObjectId;
         public string EvidenceSourceId;
         internal string EvidenceBeliefId;
+        internal string ActionResourceId;
+        internal string ActionContextId;
+        internal string RelatedEventId;
+        internal string AuthorityGrantId;
+        internal string AffectedStateRecordId;
+        internal string CollectiveCommitmentId;
+        internal string CollectiveIssueId;
+        internal string CollectiveIntentionId;
+        internal int RequiredParticipantCount;
+        internal int ActionSecrecy;
+        internal List<string> DirectWitnessAgentIds = new();
+        internal List<string> PotentialRecordSourceIds = new();
+        internal List<string> PerceivedCauseEventIds = new();
         public string EvidenceSuppressedByAgentId;
         public int EvidenceReliability;
         public EvidenceVisibility Visibility;

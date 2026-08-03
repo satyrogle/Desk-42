@@ -198,4 +198,40 @@ namespace Desk42.Institutional
         internal List<string> PotentialRecordSourceIds = new();
         internal List<string> CauseEventIds = new();
     }
+
+    internal sealed class AuthorityExerciseRequest
+    {
+        internal string EventId;
+        internal string CauseDecisionId;
+        internal long Tick;
+        internal string ActorAgentId;
+        internal string TargetAgentId;
+        internal string AuthorityGrantId;
+        internal string AffectedAccessGrantId;
+        internal MaterialAuthorityKind RequiredAuthorityKind = MaterialAuthorityKind.RemoveAccess;
+        internal MaterialEventVisibility Visibility;
+        internal int Secrecy;
+        internal List<string> DirectWitnessAgentIds = new();
+        internal List<string> PotentialRecordSourceIds = new();
+        internal List<string> CauseEventIds = new();
+    }
+
+    internal sealed class CollectiveOrganisationRequest
+    {
+        internal string EventId;
+        internal string CauseDecisionId;
+        internal long Tick;
+        internal string ActorAgentId;
+        internal string CollectiveCommitmentId;
+        internal string IssueId;
+        internal string IntentionId;
+        internal string CommunicationContextId;
+        internal int RequiredParticipantCount = 2;
+        internal int StrengthContribution = 25;
+        internal MaterialEventVisibility Visibility;
+        internal int Secrecy;
+        internal List<string> DirectWitnessAgentIds = new();
+        internal List<string> PotentialRecordSourceIds = new();
+        internal List<string> CauseEventIds = new();
+    }
 }

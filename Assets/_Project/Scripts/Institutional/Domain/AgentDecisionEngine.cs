@@ -24,6 +24,10 @@ namespace Desk42.Institutional
             AddHelpCandidates(context, candidates);
             AddEvidenceCandidates(context, candidates);
             AddAppealCandidate(context, candidates);
+            AddLieCandidates(context, candidates);
+            AddStealCandidates(context, candidates);
+            AddRetaliationCandidates(context, candidates);
+            AddOrganiseCandidates(context, candidates);
 
             candidates.Sort(CompareCandidatesByRank);
             ActionCandidate winner = candidates[0];
@@ -124,6 +128,11 @@ namespace Desk42.Institutional
                 WorkOpportunities = CloneWorkOpportunities(source.WorkOpportunities),
                 AidOpportunities = CloneAidOpportunities(source.AidOpportunities),
                 AppealOpportunities = CloneAppealOpportunities(source.AppealOpportunities),
+                LieOpportunities = CloneLieOpportunities(source.LieOpportunities),
+                StealOpportunities = CloneStealOpportunities(source.StealOpportunities),
+                RetaliationOpportunities = CloneRetaliationOpportunities(
+                    source.RetaliationOpportunities),
+                OrganiseOpportunities = CloneOrganiseOpportunities(source.OrganiseOpportunities),
                 RestrictAidToOpportunities = source.RestrictAidToOpportunities,
                 RestrictAppealToOpportunities = source.RestrictAppealToOpportunities,
                 VisibleAgentIds = CloneStrings(source.VisibleAgentIds),
@@ -213,6 +222,124 @@ namespace Desk42.Institutional
                         UtilityBonus = opportunity.UtilityBonus,
                         PartyAgentIds = CloneStrings(opportunity.PartyAgentIds),
                     });
+            }
+
+            return clone;
+        }
+
+        private static List<LieOpportunity> CloneLieOpportunities(
+            IReadOnlyList<LieOpportunity> source)
+        {
+            if (source == null) return null;
+            var clone = new List<LieOpportunity>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                LieOpportunity opportunity = source[i];
+                clone.Add(opportunity == null ? null : new LieOpportunity
+                {
+                    OpportunityId = opportunity.OpportunityId,
+                    BeliefId = opportunity.BeliefId,
+                    AssertionPropositionId = opportunity.AssertionPropositionId,
+                    AssertionSubjectId = opportunity.AssertionSubjectId,
+                    AssertionObjectId = opportunity.AssertionObjectId,
+                    ContextId = opportunity.ContextId,
+                    UtilityBonus = opportunity.UtilityBonus,
+                    Visibility = opportunity.Visibility,
+                    PotentialRecordSourceId = opportunity.PotentialRecordSourceId,
+                    EligibleActorIds = CloneStrings(opportunity.EligibleActorIds),
+                    AudienceAgentIds = CloneStrings(opportunity.AudienceAgentIds),
+                });
+            }
+
+            return clone;
+        }
+
+        private static List<StealOpportunity> CloneStealOpportunities(
+            IReadOnlyList<StealOpportunity> source)
+        {
+            if (source == null) return null;
+            var clone = new List<StealOpportunity>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                StealOpportunity opportunity = source[i];
+                clone.Add(opportunity == null ? null : new StealOpportunity
+                {
+                    OpportunityId = opportunity.OpportunityId,
+                    ResourceId = opportunity.ResourceId,
+                    ExpectedPhysicalHolderId = opportunity.ExpectedPhysicalHolderId,
+                    NewLocationContextId = opportunity.NewLocationContextId,
+                    AccessGrantId = opportunity.AccessGrantId,
+                    ReliefNeed = opportunity.ReliefNeed,
+                    ReliefAmount = opportunity.ReliefAmount,
+                    UtilityBonus = opportunity.UtilityBonus,
+                    Visibility = opportunity.Visibility,
+                    Secrecy = opportunity.Secrecy,
+                    EligibleActorIds = CloneStrings(opportunity.EligibleActorIds),
+                    DirectWitnessAgentIds = CloneStrings(opportunity.DirectWitnessAgentIds),
+                    PotentialRecordSourceIds = CloneStrings(
+                        opportunity.PotentialRecordSourceIds),
+                });
+            }
+
+            return clone;
+        }
+
+        private static List<RetaliationOpportunity> CloneRetaliationOpportunities(
+            IReadOnlyList<RetaliationOpportunity> source)
+        {
+            if (source == null) return null;
+            var clone = new List<RetaliationOpportunity>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                RetaliationOpportunity opportunity = source[i];
+                clone.Add(opportunity == null ? null : new RetaliationOpportunity
+                {
+                    OpportunityId = opportunity.OpportunityId,
+                    TargetAgentId = opportunity.TargetAgentId,
+                    PerceivedPriorActionBeliefId = opportunity.PerceivedPriorActionBeliefId,
+                    AuthorityGrantId = opportunity.AuthorityGrantId,
+                    AffectedAccessGrantId = opportunity.AffectedAccessGrantId,
+                    AdverseActionKindId = opportunity.AdverseActionKindId,
+                    PerceivedPower = opportunity.PerceivedPower,
+                    UtilityBonus = opportunity.UtilityBonus,
+                    Visibility = opportunity.Visibility,
+                    Secrecy = opportunity.Secrecy,
+                    EligibleActorIds = CloneStrings(opportunity.EligibleActorIds),
+                    DirectWitnessAgentIds = CloneStrings(opportunity.DirectWitnessAgentIds),
+                    PotentialRecordSourceIds = CloneStrings(
+                        opportunity.PotentialRecordSourceIds),
+                });
+            }
+
+            return clone;
+        }
+
+        private static List<OrganiseOpportunity> CloneOrganiseOpportunities(
+            IReadOnlyList<OrganiseOpportunity> source)
+        {
+            if (source == null) return null;
+            var clone = new List<OrganiseOpportunity>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                OrganiseOpportunity opportunity = source[i];
+                clone.Add(opportunity == null ? null : new OrganiseOpportunity
+                {
+                    OpportunityId = opportunity.OpportunityId,
+                    CollectiveCommitmentId = opportunity.CollectiveCommitmentId,
+                    IssueId = opportunity.IssueId,
+                    IntentionId = opportunity.IntentionId,
+                    CommunicationContextId = opportunity.CommunicationContextId,
+                    RequiredParticipantCount = opportunity.RequiredParticipantCount,
+                    UtilityBonus = opportunity.UtilityBonus,
+                    Visibility = opportunity.Visibility,
+                    Secrecy = opportunity.Secrecy,
+                    EligibleActorIds = CloneStrings(opportunity.EligibleActorIds),
+                    PerceivedCauseEventIds = CloneStrings(
+                        opportunity.PerceivedCauseEventIds),
+                    DirectWitnessAgentIds = CloneStrings(opportunity.DirectWitnessAgentIds),
+                    PotentialRecordSourceIds = CloneStrings(
+                        opportunity.PotentialRecordSourceIds),
+                });
             }
 
             return clone;
@@ -533,6 +660,200 @@ namespace Desk42.Institutional
             AddVariation(context, candidate);
             candidates.Add(candidate);
         }
+
+        private static void AddLieCandidates(
+            AgentDecisionContext context,
+            List<ActionCandidate> candidates)
+        {
+            if (context.Input.LieOpportunities == null) return;
+            AgentPerception actor = context.Actor;
+            for (int i = 0; i < context.Input.LieOpportunities.Count; i++)
+            {
+                LieOpportunity opportunity = context.Input.LieOpportunities[i];
+                if (opportunity == null ||
+                    !Eligible(opportunity.EligibleActorIds, actor.StableId) ||
+                    string.IsNullOrWhiteSpace(opportunity.OpportunityId) ||
+                    string.IsNullOrWhiteSpace(opportunity.AssertionPropositionId))
+                {
+                    continue;
+                }
+
+                BeliefState belief = actor.GetBelief(opportunity.BeliefId);
+                if (belief == null || belief.Confidence < 50 ||
+                    string.Equals(
+                        belief.PropositionId,
+                        opportunity.AssertionPropositionId,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                RelationshipState relationship = actor.GetRelationship(belief.SubjectId);
+                var candidate = new ActionCandidate(
+                    $"lie:{opportunity.OpportunityId}",
+                    SocietyActionKind.Lie,
+                    opportunity.ContextId,
+                    belief.BeliefId,
+                    null,
+                    opportunity.OpportunityId);
+                candidate.Add("belief.confidence", belief.BeliefId, belief.Confidence / 5);
+                candidate.Add("belief.secrecy", belief.BeliefId, belief.Secrecy / 3);
+                candidate.Add("relationship.obligation", belief.SubjectId,
+                    (relationship?.Obligation ?? 0) / 3);
+                candidate.Add("relationship.fear", belief.SubjectId,
+                    (relationship?.Fear ?? 0) / 4);
+                candidate.Add("need.safety", NeedKind.Safety.ToString(),
+                    Need(actor, NeedKind.Safety) / 4);
+                candidate.Add("disposition.candour", null, -(actor.Disposition.Candour / 2));
+                candidate.Add("attitude.institutional-trust", null,
+                    -(Math.Max(0, actor.InstitutionalTrust) / 6));
+                candidate.Add("opportunity.lie", opportunity.OpportunityId,
+                    opportunity.UtilityBonus);
+                AddVariation(context, candidate);
+                candidates.Add(candidate);
+            }
+        }
+
+        private static void AddStealCandidates(
+            AgentDecisionContext context,
+            List<ActionCandidate> candidates)
+        {
+            if (context.Input.StealOpportunities == null) return;
+            AgentPerception actor = context.Actor;
+            for (int i = 0; i < context.Input.StealOpportunities.Count; i++)
+            {
+                StealOpportunity opportunity = context.Input.StealOpportunities[i];
+                if (opportunity == null ||
+                    !Eligible(opportunity.EligibleActorIds, actor.StableId) ||
+                    string.IsNullOrWhiteSpace(opportunity.OpportunityId) ||
+                    string.IsNullOrWhiteSpace(opportunity.ResourceId) ||
+                    string.IsNullOrWhiteSpace(opportunity.AccessGrantId))
+                {
+                    continue;
+                }
+
+                var candidate = new ActionCandidate(
+                    $"steal:{opportunity.OpportunityId}",
+                    SocietyActionKind.Steal,
+                    opportunity.ResourceId,
+                    null,
+                    opportunity.ReliefNeed,
+                    opportunity.OpportunityId);
+                candidate.Add("need.relief", opportunity.ReliefNeed.ToString(),
+                    Need(actor, opportunity.ReliefNeed) / 2);
+                candidate.Add("need.autonomy", NeedKind.Autonomy.ToString(),
+                    Need(actor, NeedKind.Autonomy) / 5);
+                candidate.Add("disposition.risk-tolerance", null,
+                    actor.Disposition.RiskTolerance / 4);
+                candidate.Add("disposition.duty", null, -(actor.Disposition.Duty / 4));
+                candidate.Add("attitude.institutional-trust", null,
+                    -(Math.Max(0, actor.InstitutionalTrust) / 5));
+                candidate.Add("opportunity.steal", opportunity.OpportunityId,
+                    opportunity.UtilityBonus);
+                AddVariation(context, candidate);
+                candidates.Add(candidate);
+            }
+        }
+
+        private static void AddRetaliationCandidates(
+            AgentDecisionContext context,
+            List<ActionCandidate> candidates)
+        {
+            if (context.Input.RetaliationOpportunities == null) return;
+            AgentPerception actor = context.Actor;
+            for (int i = 0; i < context.Input.RetaliationOpportunities.Count; i++)
+            {
+                RetaliationOpportunity opportunity = context.Input.RetaliationOpportunities[i];
+                if (opportunity == null ||
+                    !Eligible(opportunity.EligibleActorIds, actor.StableId) ||
+                    !IsPerceived(context.PerceivedAgentIds, opportunity.TargetAgentId) ||
+                    string.IsNullOrWhiteSpace(opportunity.OpportunityId) ||
+                    string.IsNullOrWhiteSpace(opportunity.AuthorityGrantId) ||
+                    string.IsNullOrWhiteSpace(opportunity.AffectedAccessGrantId) ||
+                    opportunity.PerceivedPower <= 0)
+                {
+                    continue;
+                }
+
+                BeliefState prior = actor.GetBelief(opportunity.PerceivedPriorActionBeliefId);
+                if (prior == null || prior.Confidence < 25 ||
+                    !string.Equals(prior.SubjectId, opportunity.TargetAgentId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                RelationshipState relationship = actor.GetRelationship(opportunity.TargetAgentId);
+                var candidate = new ActionCandidate(
+                    $"retaliate:{opportunity.OpportunityId}",
+                    SocietyActionKind.Retaliate,
+                    opportunity.TargetAgentId,
+                    prior.BeliefId,
+                    null,
+                    opportunity.OpportunityId);
+                candidate.Add("belief.prior-adverse-action", prior.BeliefId,
+                    prior.Confidence / 3);
+                candidate.Add("belief.emotional-weight", prior.BeliefId,
+                    prior.EmotionalWeight / 3);
+                candidate.Add("authority.perceived-power", opportunity.AuthorityGrantId,
+                    opportunity.PerceivedPower / 3);
+                candidate.Add("relationship.fear", opportunity.TargetAgentId,
+                    (relationship?.Fear ?? 0) / 5);
+                candidate.Add("disposition.duty", null, actor.Disposition.Duty / 5);
+                candidate.Add("regime.retaliation-risk", null,
+                    context.Regime.RetaliationRisk / 5);
+                candidate.Add("opportunity.retaliate", opportunity.OpportunityId,
+                    opportunity.UtilityBonus);
+                AddVariation(context, candidate);
+                candidates.Add(candidate);
+            }
+        }
+
+        private static void AddOrganiseCandidates(
+            AgentDecisionContext context,
+            List<ActionCandidate> candidates)
+        {
+            if (context.Input.OrganiseOpportunities == null) return;
+            AgentPerception actor = context.Actor;
+            for (int i = 0; i < context.Input.OrganiseOpportunities.Count; i++)
+            {
+                OrganiseOpportunity opportunity = context.Input.OrganiseOpportunities[i];
+                if (opportunity == null ||
+                    !Eligible(opportunity.EligibleActorIds, actor.StableId) ||
+                    string.IsNullOrWhiteSpace(opportunity.OpportunityId) ||
+                    string.IsNullOrWhiteSpace(opportunity.CollectiveCommitmentId) ||
+                    string.IsNullOrWhiteSpace(opportunity.IssueId) ||
+                    opportunity.RequiredParticipantCount < 2)
+                {
+                    continue;
+                }
+
+                int grievance = CommitmentStrength(actor, "grievance", opportunity.IssueId);
+                if (grievance <= 0) continue;
+                var candidate = new ActionCandidate(
+                    $"organise:{opportunity.OpportunityId}",
+                    SocietyActionKind.Organise,
+                    opportunity.IssueId,
+                    null,
+                    NeedKind.Belonging,
+                    opportunity.OpportunityId);
+                candidate.Add("commitment.grievance", opportunity.IssueId, grievance / 2);
+                candidate.Add("disposition.solidarity", null, actor.Disposition.Solidarity / 2);
+                candidate.Add("need.belonging", NeedKind.Belonging.ToString(),
+                    Need(actor, NeedKind.Belonging) / 4);
+                candidate.Add("need.autonomy", NeedKind.Autonomy.ToString(),
+                    Need(actor, NeedKind.Autonomy) / 4);
+                candidate.Add("disposition.risk-tolerance", null,
+                    actor.Disposition.RiskTolerance / 5);
+                candidate.Add("opportunity.organise", opportunity.OpportunityId,
+                    opportunity.UtilityBonus);
+                AddVariation(context, candidate);
+                candidates.Add(candidate);
+            }
+        }
+
+        private static bool Eligible(IReadOnlyList<string> eligibleActorIds, string actorId)
+            => eligibleActorIds == null || eligibleActorIds.Count == 0 ||
+               ContainsOrdinal(eligibleActorIds, actorId);
 
         private static void AddVariation(AgentDecisionContext context, ActionCandidate candidate)
         {

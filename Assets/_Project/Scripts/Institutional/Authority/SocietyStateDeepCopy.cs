@@ -208,8 +208,27 @@ namespace Desk42.Institutional
                 EvidenceSuppressedByAgentId = source.EvidenceSuppressedByAgentId,
                 EvidenceReliability = source.EvidenceReliability,
                 Visibility = source.Visibility,
+                ActionResourceId = source.ActionResourceId,
+                ActionContextId = source.ActionContextId,
+                RelatedEventId = source.RelatedEventId,
+                AuthorityGrantId = source.AuthorityGrantId,
+                AffectedStateRecordId = source.AffectedStateRecordId,
+                CollectiveCommitmentId = source.CollectiveCommitmentId,
+                CollectiveIssueId = source.CollectiveIssueId,
+                CollectiveIntentionId = source.CollectiveIntentionId,
+                RequiredParticipantCount = source.RequiredParticipantCount,
+                ActionSecrecy = source.ActionSecrecy,
+                DirectWitnessAgentIds = CopyStrings(source.DirectWitnessAgentIds),
+                PotentialRecordSourceIds = CopyStrings(source.PotentialRecordSourceIds),
+                PerceivedCauseEventIds = CopyStrings(source.PerceivedCauseEventIds),
                 Deltas = CopyList(source.Deltas, CopyDelta),
             };
+        }
+
+        private static List<string> CopyStrings(List<string> source)
+        {
+            if (source == null) return null;
+            return new List<string>(source);
         }
 
         private static StateDelta CopyDelta(StateDelta source)
