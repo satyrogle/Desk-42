@@ -1,0 +1,17 @@
+{
+    "name": "Desk42.Institutional.Player",
+    "rootNamespace": "Desk42.Institutional.Player",
+    "references": [
+        "Desk42.Institutional.Domain",
+        "Desk42.Institutional.Authority"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
