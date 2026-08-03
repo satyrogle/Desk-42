@@ -29,29 +29,7 @@ namespace Desk42.Institutional
                 Snapshot = snapshot,
             };
             string json = JsonConvert.SerializeObject(envelope, Settings);
-            string fullPath = Path.GetFullPath(path);
-            string directory = Path.GetDirectoryName(fullPath);
-            if (string.IsNullOrEmpty(directory))
-                throw new InvalidOperationException("Snapshot path has no parent directory.");
-            Directory.CreateDirectory(directory);
-            string temporaryPath = fullPath + ".tmp";
-            string backupPath = fullPath + ".bak";
-
-            WriteDurably(temporaryPath, json);
-            if (!File.Exists(fullPath))
-            {
-                File.Move(temporaryPath, fullPath);
-                return;
-            }
-
-            try
-            {
-                File.Replace(temporaryPath, fullPath, backupPath, ignoreMetadataErrors: true);
-            }
-            catch (PlatformNotSupportedException)
-            {
-                RecoverableReplace(temporaryPath, fullPath, backupPath);
-            }
+            WriteAtomically(path, json);
         }
 
         internal static EndogenousRunSnapshot Load(string path)
@@ -87,6 +65,60 @@ namespace Desk42.Institutional
             return JsonConvert.SerializeObject(snapshot, Settings);
         }
 
+        internal static string PayloadSha256(EndogenousRunSnapshot snapshot)
+            => Sha256(SerializePayload(snapshot));
+
+        internal static void SaveSession(
+            string path,
+            EndogenousRunSessionSnapshot session)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("A session path is required.", nameof(path));
+            EndogenousRunSessionSnapshotValidator.Validate(session);
+            string payload = SerializeSessionPayload(session);
+            var envelope = new SessionEnvelope
+            {
+                EnvelopeVersion = EnvelopeVersion,
+                PayloadSha256 = Sha256(payload),
+                Session = session,
+            };
+            WriteAtomically(path, JsonConvert.SerializeObject(envelope, Settings));
+        }
+
+        internal static EndogenousRunSessionSnapshot LoadSession(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("A session path is required.", nameof(path));
+            string fullPath = Path.GetFullPath(path);
+            try
+            {
+                return LoadSessionExact(fullPath);
+            }
+            catch (Exception primaryError)
+            {
+                string backupPath = fullPath + ".bak";
+                if (!File.Exists(backupPath)) throw;
+                try
+                {
+                    return LoadSessionExact(backupPath);
+                }
+                catch (Exception backupError)
+                {
+                    throw new AggregateException(
+                        "Primary and backup playable sessions are invalid.",
+                        primaryError,
+                        backupError);
+                }
+            }
+        }
+
+        private static string SerializeSessionPayload(
+            EndogenousRunSessionSnapshot session)
+        {
+            EndogenousRunSessionSnapshotValidator.Validate(session);
+            return JsonConvert.SerializeObject(session, Settings);
+        }
+
         private static EndogenousRunSnapshot LoadExact(string path)
         {
             string json = File.ReadAllText(path, Utf8WithoutBom);
@@ -107,6 +139,57 @@ namespace Desk42.Institutional
             }
             EndogenousRunSnapshotValidator.Validate(envelope.Snapshot);
             return envelope.Snapshot;
+        }
+
+        private static EndogenousRunSessionSnapshot LoadSessionExact(string path)
+        {
+            string json = File.ReadAllText(path, Utf8WithoutBom);
+            SessionEnvelope envelope = JsonConvert.DeserializeObject<SessionEnvelope>(
+                json, Settings);
+            if (envelope == null || envelope.EnvelopeVersion != EnvelopeVersion ||
+                envelope.Session == null || string.IsNullOrWhiteSpace(envelope.PayloadSha256))
+            {
+                throw new InvalidDataException(
+                    "Playable session envelope is incomplete or unsupported.");
+            }
+            string payload = SerializeSessionPayload(envelope.Session);
+            if (!string.Equals(
+                    envelope.PayloadSha256,
+                    Sha256(payload),
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "Playable session checksum does not match its payload.");
+            }
+            EndogenousRunSessionSnapshotValidator.Validate(envelope.Session);
+            return envelope.Session;
+        }
+
+        private static void WriteAtomically(string path, string json)
+        {
+            string fullPath = Path.GetFullPath(path);
+            string directory = Path.GetDirectoryName(fullPath);
+            if (string.IsNullOrEmpty(directory))
+                throw new InvalidOperationException("Snapshot path has no parent directory.");
+            Directory.CreateDirectory(directory);
+            string temporaryPath = fullPath + ".tmp";
+            string backupPath = fullPath + ".bak";
+
+            WriteDurably(temporaryPath, json);
+            if (!File.Exists(fullPath))
+            {
+                File.Move(temporaryPath, fullPath);
+                return;
+            }
+
+            try
+            {
+                File.Replace(temporaryPath, fullPath, backupPath, ignoreMetadataErrors: true);
+            }
+            catch (PlatformNotSupportedException)
+            {
+                RecoverableReplace(temporaryPath, fullPath, backupPath);
+            }
         }
 
         private static void WriteDurably(string path, string json)
@@ -168,6 +251,13 @@ namespace Desk42.Institutional
             public int EnvelopeVersion;
             public string PayloadSha256;
             public EndogenousRunSnapshot Snapshot;
+        }
+
+        private sealed class SessionEnvelope
+        {
+            public int EnvelopeVersion;
+            public string PayloadSha256;
+            public EndogenousRunSessionSnapshot Session;
         }
 
         private sealed class InstanceFieldContractResolver : DefaultContractResolver

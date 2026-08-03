@@ -19,6 +19,17 @@ namespace Desk42.Institutional.Player
         Broad,
     }
 
+    /// <summary>
+    /// The dispositions actually offered by the causal-legibility slice. Keeping this
+    /// vocabulary in the Player assembly prevents presentation code from acquiring a
+    /// compile-time dependency on the wider institutional domain.
+    /// </summary>
+    public enum PlayerRulingDisposition
+    {
+        Recognised,
+        Denied,
+    }
+
     public enum PublicTimelineKind
     {
         Observed,
@@ -360,7 +371,7 @@ namespace Desk42.Institutional.Player
             string evidenceEnvelopeHash,
             IEnumerable<string> recognisedFactIds,
             IEnumerable<string> citedEvidenceIds,
-            RulingDisposition disposition,
+            PlayerRulingDisposition disposition,
             PlayerScopeChoice scopeChoice)
         {
             CommandId = commandId ?? string.Empty;
@@ -379,7 +390,7 @@ namespace Desk42.Institutional.Player
         public string EvidenceEnvelopeHash { get; }
         public IReadOnlyList<string> RecognisedFactIds { get; }
         public IReadOnlyList<string> CitedEvidenceIds { get; }
-        public RulingDisposition Disposition { get; }
+        public PlayerRulingDisposition Disposition { get; }
         public PlayerScopeChoice ScopeChoice { get; }
     }
 

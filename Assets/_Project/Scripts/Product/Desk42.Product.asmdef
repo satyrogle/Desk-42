@@ -2,7 +2,6 @@
     "name": "Desk42.Product",
     "rootNamespace": "Desk42.Product",
     "references": [
-        "Desk42.Institutional.Domain",
         "Desk42.Institutional.Player"
     ],
     "includePlatforms": [],

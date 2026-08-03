@@ -17,8 +17,8 @@ namespace Desk42.Institutional
     [Serializable]
     internal sealed class EndogenousRunSnapshot
     {
-        internal const int CurrentSchemaVersion = 1;
-        internal const string CurrentRulesetVersion = "endogenous-run-snapshot-v1";
+        internal const int CurrentSchemaVersion = 2;
+        internal const string CurrentRulesetVersion = "endogenous-run-snapshot-v2";
 
         internal int SchemaVersion = CurrentSchemaVersion;
         internal string RulesetVersion = CurrentRulesetVersion;
@@ -99,6 +99,8 @@ namespace Desk42.Institutional
                 result.Add($"case:{docket.OpenCases[i].CaseId}");
             for (int i = 0; i < docket.Rulings.Count; i++)
                 result.Add($"ruling:{docket.Rulings[i].RulingId}");
+            for (int i = 0; i < docket.RemedyApplicationTraces.Count; i++)
+                result.Add($"remedy:{docket.RemedyApplicationTraces[i].TraceId}");
             for (int i = 0; i < docket.ScopeApplicationTraces.Count; i++)
                 result.Add($"scope:{docket.ScopeApplicationTraces[i].TraceId}");
             result.Sort(StringComparer.Ordinal);
@@ -132,6 +134,7 @@ namespace Desk42.Institutional
             InstitutionalMaterialWorldValidator.Validate(
                 snapshot.MaterialWorld, snapshot.Society);
             EndogenousDocketValidator.Validate(snapshot.Docket, snapshot.Society);
+            ValidateRemedyMaterialTransitions(snapshot);
             if (snapshot.CurrentTick != snapshot.Society.CurrentTick ||
                 snapshot.SocietyEventLedgerCursor != snapshot.Society.EventLedger.Count ||
                 snapshot.MaterialEventLedgerCursor !=
@@ -155,6 +158,56 @@ namespace Desk42.Institutional
                 snapshot.PendingPublicObservationIds,
                 "pending public observation");
             UniqueStable(snapshot.ExclusiveEntitlementIds, "exclusive entitlement");
+        }
+
+        private static void ValidateRemedyMaterialTransitions(
+            EndogenousRunSnapshot snapshot)
+        {
+            for (int i = 0; i < snapshot.Docket.RemedyApplicationTraces.Count; i++)
+            {
+                EndogenousRemedyApplicationTrace trace =
+                    snapshot.Docket.RemedyApplicationTraces[i];
+                OfficialOwnershipState ownership =
+                    snapshot.MaterialWorld.GetOfficialOwnership(trace.ResourceId);
+                if (ownership == null || !string.Equals(
+                        ownership.RegisteredOwnerId,
+                        trace.NewPhysicalHolderId,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Remedy {trace.TraceId} did not resolve to its registered owner.");
+                }
+                if (!trace.MaterialStateChanged) continue;
+                MaterialWorldEvent materialEvent = snapshot.MaterialWorld.GetEvent(
+                    trace.MaterialEventId);
+                if (materialEvent == null ||
+                    materialEvent.Kind != MaterialWorldEventKind.PossessionTransferred ||
+                    materialEvent.Tick != trace.AppliedTick ||
+                    !string.Equals(
+                        materialEvent.CauseDecisionId,
+                        trace.RulingId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        materialEvent.ResourceId,
+                        trace.ResourceId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        materialEvent.PreviousPhysicalHolderId,
+                        trace.PreviousPhysicalHolderId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        materialEvent.NewPhysicalHolderId,
+                        trace.NewPhysicalHolderId,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        materialEvent.ContextId,
+                        trace.NewLocationContextId,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Remedy {trace.TraceId} lacks its exact material transition.");
+                }
+            }
         }
 
         private static void RequireExact(

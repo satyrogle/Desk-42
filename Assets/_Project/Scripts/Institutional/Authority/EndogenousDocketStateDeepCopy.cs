@@ -117,6 +117,27 @@ namespace Desk42.Institutional
                     RulesetVersion = value.RulesetVersion,
                 });
             }
+            for (int i = 0; i < source.RemedyApplicationTraces.Count; i++)
+            {
+                EndogenousRemedyApplicationTrace value =
+                    source.RemedyApplicationTraces[i];
+                copy.RemedyApplicationTraces.Add(new EndogenousRemedyApplicationTrace
+                {
+                    TraceId = value.TraceId,
+                    RulingId = value.RulingId,
+                    CaseId = value.CaseId,
+                    RemedyDefinitionId = value.RemedyDefinitionId,
+                    AppliedTick = value.AppliedTick,
+                    ResourceId = value.ResourceId,
+                    DestinationRuleId = value.DestinationRuleId,
+                    PreviousPhysicalHolderId = value.PreviousPhysicalHolderId,
+                    NewPhysicalHolderId = value.NewPhysicalHolderId,
+                    PreviousLocationContextId = value.PreviousLocationContextId,
+                    NewLocationContextId = value.NewLocationContextId,
+                    MaterialEventId = value.MaterialEventId,
+                    MaterialStateChanged = value.MaterialStateChanged,
+                });
+            }
             for (int i = 0; i < source.ScopeApplicationTraces.Count; i++)
             {
                 EndogenousScopeApplicationTrace value = source.ScopeApplicationTraces[i];
@@ -129,6 +150,7 @@ namespace Desk42.Institutional
                     OpportunityId = value.OpportunityId,
                     IssueId = value.IssueId,
                     JurisdictionId = value.JurisdictionId,
+                    AppliedTick = value.AppliedTick,
                     ScopeMatched = value.ScopeMatched,
                     AffectedOfficialStatusId = value.AffectedOfficialStatusId,
                     StatusBefore = value.StatusBefore,

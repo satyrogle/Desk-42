@@ -1,6 +1,6 @@
 using System.Collections;
 using System.IO;
-using Desk42.Institutional;
+using System.Linq;
 using Desk42.Institutional.Player;
 using Desk42.Product;
 using NUnit.Framework;
@@ -13,6 +13,18 @@ namespace Desk42.Tests.PlayMode
     public sealed class CausalLegibilitySlicePlayModeTests
     {
         private const string SceneName = "InstitutionalProduct";
+
+        [Test]
+        public void ProductAssembly_ReferencesPlayerButNotInstitutionalDomain()
+        {
+            string[] references = typeof(InstitutionalProductBootstrap).Assembly
+                .GetReferencedAssemblies()
+                .Select(value => value.Name)
+                .ToArray();
+            CollectionAssert.Contains(references, "Desk42.Institutional.Player");
+            CollectionAssert.DoesNotContain(references, "Desk42.Institutional.Domain");
+            CollectionAssert.DoesNotContain(references, "Desk42.Institutional.Authority");
+        }
 
         [UnityTest]
         public IEnumerator SceneBootsWithPublicCaseAndFiveNavigableSurfaces()
@@ -48,7 +60,7 @@ namespace Desk42.Tests.PlayMode
 
             PlayerInstitutionView ruled = bootstrap.CommitSelection(
                 PlayerScopeChoice.Broad,
-                RulingDisposition.Recognised);
+                PlayerRulingDisposition.Recognised);
             Assert.That(ruled.Rulings.Count, Is.EqualTo(1));
             Assert.That(ruled.Cases.Count, Is.EqualTo(2));
             Assert.That(
@@ -93,11 +105,11 @@ namespace Desk42.Tests.PlayMode
             string[] paths =
             {
                 path,
-                path + ".backup",
+                path + ".bak",
+                path + ".tmp",
                 path + ".pre-ruling",
-                path + ".pre-ruling.backup",
-                path + ".temporary",
-                path + ".pre-ruling.temporary",
+                path + ".pre-ruling.bak",
+                path + ".pre-ruling.tmp",
             };
             for (int i = 0; i < paths.Length; i++)
                 if (File.Exists(paths[i])) File.Delete(paths[i]);

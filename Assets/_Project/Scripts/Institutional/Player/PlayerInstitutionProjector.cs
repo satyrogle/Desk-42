@@ -118,8 +118,10 @@ namespace Desk42.Institutional.Player
                     agent.DisplayName,
                     $"ID-{agent.SimulationOrdinal + 1:00} / {Humanise(agent.SpeciesId)}",
                     Humanise(agent.SpeciesId),
-                    Humanise(agent.EmployerId),
-                    Humanise(agent.HouseholdId),
+                    agent.Standing.IsRecognised("status.employment-recognised")
+                        ? "Employment recognised / employer not adjudicated"
+                        : "Employment not recognised",
+                    "No official household record",
                     resources,
                     actions,
                     statements,
@@ -304,13 +306,18 @@ namespace Desk42.Institutional.Player
                     ruling.CaseId,
                     ruling.CommittedTick,
                     Humanise(ruling.Disposition.ToString()),
-                    Humanise(ruling.HoldingRuleId),
-                    ScopeLabel(ruling.Scope),
+                    ruling.Disposition == RulingDisposition.Denied
+                        ? "Proposed but not established: " +
+                          Humanise(ruling.HoldingRuleId)
+                        : Humanise(ruling.HoldingRuleId),
+                    ruling.Disposition == RulingDisposition.Denied
+                        ? "Not applied; proposed " + ScopeLabel(ruling.Scope)
+                        : ScopeLabel(ruling.Scope),
                     Humanise(ruling.TemporalReach.ToString()),
                     HumaniseAll(ruling.RecognisedFactIds),
                     ruling.CitedEvidenceArtifactIds,
                     HumaniseAll(ruling.RemedyDefinitionIds),
-                    DirectChanges(ruling)));
+                    DirectChanges(ruling, docket)));
             }
             return result;
         }
@@ -387,12 +394,35 @@ namespace Desk42.Institutional.Player
                     string.Empty,
                     string.Empty)));
             }
+            for (int i = 0; i < docket.RemedyApplicationTraces.Count; i++)
+            {
+                EndogenousRemedyApplicationTrace trace =
+                    docket.RemedyApplicationTraces[i];
+                rows.Add(new OrderedTimelineEntry(4, new PublicTimelineEntry(
+                    $"timeline:{trace.TraceId}",
+                    trace.AppliedTick,
+                    PublicTimelineKind.RulingEffect,
+                    trace.MaterialStateChanged
+                        ? "Remedy executed"
+                        : "Remedy already satisfied",
+                    trace.MaterialStateChanged
+                        ? $"{Humanise(trace.ResourceId)} returned from " +
+                          $"{Humanise(trace.PreviousPhysicalHolderId)} to its " +
+                          $"registered owner, {Humanise(trace.NewPhysicalHolderId)}."
+                        : $"{Humanise(trace.ResourceId)} was already held by its " +
+                          "registered owner.",
+                    trace.RulingId,
+                    trace.RulingId,
+                    EndogenousPlayerRulingService.PossessionHoldingRule,
+                    string.Empty,
+                    trace.MaterialEventId)));
+            }
             for (int i = 0; i < docket.ScopeApplicationTraces.Count; i++)
             {
                 EndogenousScopeApplicationTrace trace = docket.ScopeApplicationTraces[i];
-                rows.Add(new OrderedTimelineEntry(4, new PublicTimelineEntry(
+                rows.Add(new OrderedTimelineEntry(5, new PublicTimelineEntry(
                     $"timeline:{trace.TraceId}",
-                    Math.Max(0, society.CurrentTick - 1),
+                    trace.AppliedTick,
                     PublicTimelineKind.RulingEffect,
                     trace.ScopeMatched ? "Holding applied" : "Holding did not apply",
                     trace.ScopeMatched
@@ -590,17 +620,43 @@ namespace Desk42.Institutional.Player
             return new List<string> { "Recognise collective", "No change" };
         }
 
-        private static List<string> DirectChanges(CommittedPlayerRuling ruling)
+        private static List<string> DirectChanges(
+            CommittedPlayerRuling ruling,
+            EndogenousDocketState docket)
         {
             var result = new List<string>
             {
                 $"Record disposition: {Humanise(ruling.Disposition.ToString())}",
-                $"Establish holding: {Humanise(ruling.HoldingRuleId)}",
-                $"Apply scope: {ScopeLabel(ruling.Scope)}",
             };
-            for (int i = 0; i < ruling.RemedyDefinitionIds.Count; i++)
-                result.Add($"Authorise remedy: {Humanise(ruling.RemedyDefinitionIds[i])}");
+            if (ruling.Disposition == RulingDisposition.Denied)
+            {
+                result.Add($"Do not establish proposed holding: " +
+                           Humanise(ruling.HoldingRuleId));
+                result.Add("Do not apply proposed scope or material remedy");
+                return result;
+            }
+            result.Add($"Establish holding: {Humanise(ruling.HoldingRuleId)}");
+            result.Add($"Apply scope: {ScopeLabel(ruling.Scope)}");
+            EndogenousRemedyApplicationTrace trace = RemedyTraceForRuling(
+                docket, ruling.RulingId);
+            result.Add(trace == null
+                ? "Required remedy has no recorded execution"
+                : $"Execute remedy: {Humanise(trace.ResourceId)} to " +
+                  Humanise(trace.NewPhysicalHolderId));
             return result;
+        }
+
+        private static EndogenousRemedyApplicationTrace RemedyTraceForRuling(
+            EndogenousDocketState docket,
+            string rulingId)
+        {
+            for (int i = 0; i < docket.RemedyApplicationTraces.Count; i++)
+                if (string.Equals(
+                        docket.RemedyApplicationTraces[i].RulingId,
+                        rulingId,
+                        StringComparison.Ordinal))
+                    return docket.RemedyApplicationTraces[i];
+            return null;
         }
 
         private static string CurrentCaseId(EndogenousDocketState docket)

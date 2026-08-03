@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Desk42.Institutional;
 using Desk42.Institutional.Player;
 using UnityEngine;
 
@@ -31,7 +30,7 @@ namespace Desk42.Product
         private static readonly Color Red = new(0.92f, 0.35f, 0.31f);
 
         private readonly Func<PlayerInstitutionView> _view;
-        private readonly Func<PlayerScopeChoice, RulingDisposition,
+        private readonly Func<PlayerScopeChoice, PlayerRulingDisposition,
             PlayerInstitutionView> _commit;
         private readonly Func<PlayerInstitutionView> _replay;
         private readonly Action _save;
@@ -40,7 +39,9 @@ namespace Desk42.Product
 
         private CausalLegibilityPanel _panel = CausalLegibilityPanel.Docket;
         private PlayerScopeChoice _scope = PlayerScopeChoice.Narrow;
-        private RulingDisposition _disposition = RulingDisposition.Recognised;
+        private PlayerRulingDisposition _disposition =
+            PlayerRulingDisposition.Recognised;
+        private bool _showTechnicalAttribution;
         private Vector2 _contentScroll;
         private Vector2 _navScroll;
         private GUIStyle _title;
@@ -57,7 +58,7 @@ namespace Desk42.Product
 
         internal CausalLegibilitySliceView(
             Func<PlayerInstitutionView> view,
-            Func<PlayerScopeChoice, RulingDisposition, PlayerInstitutionView> commit,
+            Func<PlayerScopeChoice, PlayerRulingDisposition, PlayerInstitutionView> commit,
             Func<PlayerInstitutionView> replay,
             Action save,
             Action load,
@@ -142,7 +143,7 @@ namespace Desk42.Product
             NavButton(CausalLegibilityPanel.Society, "01  SOCIETY", "8 recognised people");
             NavButton(CausalLegibilityPanel.Docket, "02  DOCKET", "Why the case exists");
             NavButton(CausalLegibilityPanel.Evidence, "03  EVIDENCE", "Sources and limits");
-            NavButton(CausalLegibilityPanel.Ruling, "04  RULING", "Finding → scope → remedy");
+            NavButton(CausalLegibilityPanel.Ruling, "04  RULING", "Disposition + scope");
             NavButton(
                 CausalLegibilityPanel.Consequences,
                 "05  CONSEQUENCES",
@@ -299,7 +300,9 @@ namespace Desk42.Product
         private void DrawRuling()
         {
             PlayerInstitutionView current = _view();
-            SectionTitle("RULING COMPOSER", "Each line is a separate institutional act");
+            SectionTitle(
+                "RULING COMPOSER",
+                "Two player choices inside a system-derived ruling");
             if (current.Rulings.Count > 0)
             {
                 GUILayout.Label("THIS HISTORY ALREADY CONTAINS A RULING", _subtitle);
@@ -314,30 +317,26 @@ namespace Desk42.Product
                 return;
             }
 
-            DrawRulingStage("1 / FINDING",
-                "Recognise the available issue and recorded possession change.");
+            DrawRulingStage("1 / SYSTEM-DERIVED FINDING",
+                "The available issue and recorded possession change are recognised automatically.");
 
-            DrawRulingStage("2 / DISPOSITION", "What happens to this case?");
+            DrawRulingStage("2 / PLAYER-SELECTED DISPOSITION", "What happens to this case?");
             GUILayout.BeginHorizontal();
             ChoiceButton(
                 "RECOGNISED",
-                _disposition == RulingDisposition.Recognised,
-                () => SetDisposition(RulingDisposition.Recognised));
-            ChoiceButton(
-                "PROVISIONAL",
-                _disposition == RulingDisposition.ProvisionallyRecognised,
-                () => SetDisposition(RulingDisposition.ProvisionallyRecognised));
+                _disposition == PlayerRulingDisposition.Recognised,
+                () => SetDisposition(PlayerRulingDisposition.Recognised));
             ChoiceButton(
                 "DENIED",
-                _disposition == RulingDisposition.Denied,
-                () => SetDisposition(RulingDisposition.Denied));
+                _disposition == PlayerRulingDisposition.Denied,
+                () => SetDisposition(PlayerRulingDisposition.Denied));
             GUILayout.EndHorizontal();
 
             DrawRulingStage(
-                "3 / HOLDING",
+                "3 / SYSTEM-DERIVED PROPOSED HOLDING",
                 "Possession requires an authorised transfer.");
 
-            DrawRulingStage("4 / SCOPE", "Who and what does that rule bind?");
+            DrawRulingStage("4 / PLAYER-SELECTED SCOPE", "Who and what does that rule bind?");
             GUILayout.BeginHorizontal();
             ChoiceButton(
                 "NARROW / CLAIMANT",
@@ -360,12 +359,12 @@ namespace Desk42.Product
             GUILayout.Label(scope.FutureMatchNote, _small);
             GUILayout.EndVertical();
 
-            DrawRulingStage("5 / TEMPORAL REACH", "Prospective only.");
+            DrawRulingStage("5 / FIXED TEMPORAL REACH", "Prospective only.");
             DrawRulingStage(
-                "6 / REMEDY",
-                _disposition == RulingDisposition.Denied
-                    ? "No institutional change."
-                    : "Restore possession and recognise the holding.");
+                "6 / DISPOSITION-REQUIRED REMEDY",
+                _disposition == PlayerRulingDisposition.Denied
+                    ? "No material change. The claim and holding are not established."
+                    : "Return the resource to its registered owner and recognise the holding.");
 
             GUILayout.Space(10f);
             GUILayout.Label("DIRECT CONSEQUENCES ONLY", _small);
@@ -400,13 +399,25 @@ namespace Desk42.Product
                     entry.Kind.ToString().ToUpperInvariant() + "  /  " + entry.Headline,
                     _subtitle);
                 GUILayout.Label(entry.Detail, _body);
-                string attribution = Attribution(entry);
+                string attribution = AttributionSummary(entry);
                 if (!string.IsNullOrWhiteSpace(attribution))
                     GUILayout.Label(attribution, _small);
+                if (_showTechnicalAttribution)
+                {
+                    string technical = TechnicalAttribution(entry);
+                    if (!string.IsNullOrWhiteSpace(technical))
+                        GUILayout.Label(technical, _small);
+                }
                 GUILayout.EndVertical();
                 GUILayout.EndHorizontal();
                 GUILayout.Space(5f);
             }
+
+            _showTechnicalAttribution = GUILayout.Toggle(
+                _showTechnicalAttribution,
+                "SHOW TECHNICAL TRACE IDS",
+                _button,
+                GUILayout.Height(32f));
 
             if (current.KnownDecisionPressures.Count > 0)
             {
@@ -471,7 +482,7 @@ namespace Desk42.Product
             _scope = scope;
         }
 
-        private void SetDisposition(RulingDisposition disposition)
+        private void SetDisposition(PlayerRulingDisposition disposition)
         {
             _disposition = disposition;
         }
@@ -528,7 +539,18 @@ namespace Desk42.Product
             }
         }
 
-        private static string Attribution(PublicTimelineEntry entry)
+        private static string AttributionSummary(PublicTimelineEntry entry)
+        {
+            if (!string.IsNullOrWhiteSpace(entry.ScopeMatchId))
+                return "ATTRIBUTION  The committed holding was tested against this context.";
+            if (!string.IsNullOrWhiteSpace(entry.OriginatingRulingId))
+                return "ATTRIBUTION  This record descends from the committed ruling.";
+            if (!string.IsNullOrWhiteSpace(entry.ImmediateCauseId))
+                return "ATTRIBUTION  An earlier public record supports this entry.";
+            return string.Empty;
+        }
+
+        private static string TechnicalAttribution(PublicTimelineEntry entry)
         {
             var parts = new List<string>();
             if (!string.IsNullOrWhiteSpace(entry.ImmediateCauseId))

@@ -9,15 +9,23 @@ namespace Desk42.Institutional.Player
     /// </summary>
     public sealed class CausalLegibilitySliceSession
     {
-        private const string OriginSuffix = ".pre-ruling";
-
+        private readonly string _sessionId;
+        private long _generation;
         private EndogenousRunSnapshot _canonical;
         private EndogenousRunSnapshot _current;
 
         private CausalLegibilitySliceSession(
+            string sessionId,
+            long generation,
             EndogenousRunSnapshot canonical,
             EndogenousRunSnapshot current)
         {
+            if (string.IsNullOrWhiteSpace(sessionId))
+                throw new ArgumentException("A stable session id is required.", nameof(sessionId));
+            if (generation < 0)
+                throw new ArgumentOutOfRangeException(nameof(generation));
+            _sessionId = sessionId;
+            _generation = generation;
             _canonical = CopySnapshot(canonical, "causal-legibility.canonical");
             _current = CopySnapshot(current, "causal-legibility.current");
             ValidateSessionState();
@@ -30,22 +38,28 @@ namespace Desk42.Institutional.Player
         {
             EndogenousRunSnapshot canonical =
                 CausalLegibilitySliceSeed.CreatePreRulingSnapshot();
-            return new CausalLegibilitySliceSession(canonical, canonical);
+            return new CausalLegibilitySliceSession(
+                "causal-legibility-session:" + Guid.NewGuid().ToString("N"),
+                0,
+                canonical,
+                canonical);
         }
 
         public static CausalLegibilitySliceSession Load(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("A session path is required.", nameof(path));
-            EndogenousRunSnapshot current = EndogenousRunSnapshotStore.Load(path);
-            EndogenousRunSnapshot canonical = EndogenousRunSnapshotStore.Load(
-                path + OriginSuffix);
-            return new CausalLegibilitySliceSession(canonical, current);
+            EndogenousRunSessionSnapshot saved = EndogenousRunSnapshotStore.LoadSession(path);
+            return new CausalLegibilitySliceSession(
+                saved.SessionId,
+                saved.Generation,
+                saved.Origin,
+                saved.Current);
         }
 
         public PlayerRulingDraft CreateDraft(
             PlayerScopeChoice scopeChoice,
-            RulingDisposition disposition)
+            PlayerRulingDisposition disposition)
         {
             if (_current.Docket.Rulings.Count != 0)
                 throw new InvalidOperationException(
@@ -72,19 +86,31 @@ namespace Desk42.Institutional.Player
                 draft.Disposition.ToString());
             var direct = new List<string>
             {
-                $"Recognise {draft.RecognisedFactIds.Count} official finding(s)",
-                $"Record disposition: {dispositionLabel}",
-                $"Establish: Possession requires authorised transfer",
-                $"Apply: {scope.Description}",
-                $"Authorise: {PlayerInstitutionProjector.Humanise(remedy)}",
+                $"System derives {draft.RecognisedFactIds.Count} official finding(s)",
+                $"Player selects disposition: {dispositionLabel}",
             };
+            if (draft.Disposition == PlayerRulingDisposition.Denied)
+            {
+                direct.Add("Do not establish the system-derived proposed holding");
+                direct.Add("Do not apply the proposed scope or material remedy");
+            }
+            else
+            {
+                direct.Add(
+                    "System-derived holding: Possession requires authorised transfer");
+                direct.Add($"Player selects scope: {scope.Description}");
+                direct.Add(
+                    $"Required execution: {PlayerInstitutionProjector.Humanise(remedy)} " +
+                    "to the registered owner");
+            }
             return new PlayerRulingPreview(
-                $"Recognise {draft.RecognisedFactIds.Count} available proposition(s)",
+                $"System-derived: recognise {draft.RecognisedFactIds.Count} " +
+                "available proposition(s)",
                 dispositionLabel,
-                "Possession requires authorised transfer",
+                "System-derived proposal: Possession requires authorised transfer",
                 scope,
-                "Prospective",
-                PlayerInstitutionProjector.Humanise(remedy),
+                "Fixed: Prospective",
+                "Disposition-required: " + PlayerInstitutionProjector.Humanise(remedy),
                 direct);
         }
 
@@ -100,7 +126,7 @@ namespace Desk42.Institutional.Player
                 EvidenceEnvelopeHash = draft.EvidenceEnvelopeHash,
                 RecognisedFactIds = Copy(draft.RecognisedFactIds),
                 CitedEvidenceArtifactIds = Copy(draft.CitedEvidenceIds),
-                Disposition = draft.Disposition,
+                Disposition = ToDomainDisposition(draft.Disposition),
                 HoldingRuleId = EndogenousPlayerRulingService.PossessionHoldingRule,
                 Scope = CausalLegibilityScopeFactory.Create(
                     opened, draft.ScopeChoice),
@@ -110,12 +136,17 @@ namespace Desk42.Institutional.Player
                     RemedyFor(draft.Disposition),
                 },
             };
-            EndogenousPlayerRulingService.Commit(
+            CommittedPlayerRuling committed = EndogenousPlayerRulingService.Commit(
                 _current.Society, _current.Docket, command);
 
             SimulationInput input = CausalLegibilitySliceSeed.QuietInput();
             EndogenousActionOpportunityBuilder.Populate(
                 _current.Society, _current.MaterialWorld, input);
+            EndogenousRemedyEffectService.Execute(
+                _current.Society,
+                _current.MaterialWorld,
+                _current.Docket,
+                committed);
             EndogenousScopeEffectService.Apply(
                 _current.Society, _current.Docket, input);
             new EndogenousSocietyStepService().Advance(
@@ -144,8 +175,15 @@ namespace Desk42.Institutional.Player
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("A session path is required.", nameof(path));
-            EndogenousRunSnapshotStore.Save(path + OriginSuffix, _canonical);
-            EndogenousRunSnapshotStore.Save(path, _current);
+            long nextGeneration = checked(_generation + 1);
+            EndogenousRunSessionSnapshot saved =
+                EndogenousRunSessionSnapshotService.Capture(
+                    _sessionId,
+                    nextGeneration,
+                    _canonical,
+                    _current);
+            EndogenousRunSnapshotStore.SaveSession(path, saved);
+            _generation = nextGeneration;
         }
 
         private void RefreshView()
@@ -194,11 +232,26 @@ namespace Desk42.Institutional.Player
                 throw new InvalidOperationException("This case already has a committed ruling.");
         }
 
-        private static string RemedyFor(RulingDisposition disposition)
+        private static string RemedyFor(PlayerRulingDisposition disposition)
         {
-            return disposition == RulingDisposition.Denied
+            return disposition == PlayerRulingDisposition.Denied
                 ? EndogenousPlayerRulingService.NoChangeRemedy
                 : EndogenousPlayerRulingService.RestorePossessionRemedy;
+        }
+
+        private static RulingDisposition ToDomainDisposition(
+            PlayerRulingDisposition disposition)
+        {
+            switch (disposition)
+            {
+                case PlayerRulingDisposition.Recognised:
+                    return RulingDisposition.Recognised;
+                case PlayerRulingDisposition.Denied:
+                    return RulingDisposition.Denied;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(disposition), disposition, "Unsupported player disposition.");
+            }
         }
 
         private static List<string> Copy(IReadOnlyList<string> source)

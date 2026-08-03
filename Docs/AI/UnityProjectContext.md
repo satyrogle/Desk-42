@@ -5,12 +5,12 @@
 ## Project Summary
 
 - Project root: `C:/Users/jacob/Desk 42`
-- Product branch: `codex/causal-legibility-slice-v0.1`
+- Product branch: `codex/causal-legibility-slice-v0.1.1`
 - Product direction: a systemic alien society simulation built around a deterministic institutional simulation substrate.
 - Frozen legacy game: tag `milestone/bucket4-candidate`, commit `e584ce6c986a8d4ff30fa391c2221c3f8da03a0e`.
 - Frozen engine candidate: tag `institutional-engine-candidate-v0.4.3`, commit `7407d290ea9e4fbab8b8525d47176ac02112374c`.
 - Last analyzed: 2026-08-03
-- Last analyzed commit: `3d85f81` (player-safe causal legibility layer)
+- Last analyzed checkpoint: causal-legibility slice v0.1.1 semantic-correctness patch
 
 ## Confirmed Environment
 
@@ -34,7 +34,7 @@
 | Path | Purpose | Confidence | Evidence |
 | --- | --- | --- | --- |
 | `Assets/_Project/Scripts/Institutional/Domain` | Engine-independent society state, decisions and scenario contracts | Confirmed | no-engine-reference asmdef |
-| `Assets/_Project/Scripts/Institutional/Authority` | Authoritative material state, evidence, adjudication, endogenous docket generation, rulings, scope execution and active-chain persistence | Confirmed | authority asmdef and checkpoint report |
+| `Assets/_Project/Scripts/Institutional/Authority` | Authoritative material state, evidence, adjudication, endogenous docket generation, executable remedies, scope execution and active-chain persistence | Confirmed | authority asmdef and checkpoint report |
 | `Assets/_Project/Scripts/Institutional/Player` | Immutable public-safe projection, ruling facade, deterministic slice seed, save/load and replay boundary | Confirmed | no-engine-reference player asmdef and truth-boundary tests |
 | `Assets/_Project/Scripts/Institutional/Authority/Scenarios` | Declarative authored scenario definitions | Confirmed | scenario asmdef references Domain only |
 | `Assets/_Project/Scripts/Institutional/Runtime` | Unity-facing persistence bridge for public society state | Confirmed | runtime asmdef and `InstitutionalSocietyStore.cs` |
@@ -49,9 +49,10 @@
 | --- | --- | --- | --- |
 | `Desk42.Institutional.Domain` | Deterministic society domain and declarative contracts | none | no Unity engine reference |
 | `Desk42.Institutional.Authority` | Authoritative material and institutional transitions plus active-chain snapshot store | Domain, Newtonsoft.Json | not auto-referenced; no Unity engine reference |
-| `Desk42.Institutional.Player` | Immutable public projection and validated playable-session facade | Domain, Authority | no Unity engine reference; does not reference scenario content |
+| `Desk42.Institutional.Player` | Immutable public projection and validated playable-session facade | Domain, Authority | no Unity engine reference; owns the product-safe disposition vocabulary |
 | `Desk42.Institutional.Scenarios` | Concrete scenario data | Domain | cannot invoke Authority |
 | `Desk42.Institutional.Runtime` | Society save/load adapter | Domain, Newtonsoft.Json | Unity-facing |
+| `Desk42.Product` | Unity presentation and input shell | Player | has no Domain, Authority or scenario reference |
 | `Desk42.Tests.EditMode` | Institutional validation | institutional assemblies and compatibility `Desk42.Core` | Editor only |
 | `Desk42.Core` | Legacy assembly compatibility shell | Input System, TMP, Newtonsoft.Json | extraction retains only `SeedEngine` because an institutional isolation test reads it |
 
@@ -71,7 +72,7 @@
 | Domain/authority separation | Lived truth is assembly-private and public projection is non-authoritative | Confirmed | asmdefs, `AssemblyInfo.cs`, engine tests |
 | Declarative scenarios | Scenario assemblies provide definitions and policies but cannot execute transitions | Confirmed | scenario asmdef and CI boundary gate |
 | Persistence | Public society state persists separately from the legacy run save | Confirmed | `InstitutionalSocietyStore.cs` |
-| Active consequence persistence | Complete endogenous causal state persists at committed boundaries with exact-once replay IDs, checksum and backup recovery | Confirmed | `EndogenousRunSnapshot.cs`; persistence tests |
+| Active consequence persistence | Complete endogenous causal state persists at committed boundaries with exact-once transition IDs, checksum and backup recovery; playable current/origin histories share one atomic session envelope | Confirmed | `EndogenousRunSnapshot.cs`; `EndogenousRunSessionSnapshot.cs`; persistence tests |
 | Endogenous institutional loop | Autonomous actions can create observable docket cases; executable ruling scope can change later decisions and descendant cases | Confirmed for the bounded v0.1 proof | `ENDOGENOUS_SOCIETY_CHECKPOINT_V0.1.md` |
 | Player-safe projection | Product UI consumes explicit immutable records and cannot reference Authority or scenario assemblies directly | Confirmed | player/product asmdefs and `InstitutionalPlayerViewTests` |
 
@@ -92,9 +93,10 @@
   full remaining EditMode suite 338/338 passed with no skips.
 - Endogenous society v0.1 local validation: institutional suite 381/381 passed;
   complete EditMode suite 385/385 passed with no skips.
-- Causal legibility v0.1 local validation: complete EditMode 394/394 and focused
-  PlayMode 2/2, both with no failures or skips. Windows x64 build, standalone
-  save/load smoke and actual-build screenshot capture pass.
+- Causal legibility v0.1.1 local validation: complete EditMode 400/400 and focused
+  PlayMode 3/3, both with no failures or skips. Windows x64 build and standalone
+  executable-remedy/save-load smoke pass. Validation uses CI connection overrides
+  to prevent an unavailable Unity MCP cloud authorization from polluting test logs.
 - CI/build validation: `.github/workflows/institutional-proof.yml` preserves the frozen evidence gate; `.github/workflows/ci.yml` contains the general Unity pipeline.
 
 ## Available Unity Tooling

@@ -23,7 +23,8 @@ namespace Desk42.Institutional
                     "The endogenous proof state must keep the Director disabled.");
             if (state.IncidentCandidates == null || state.Observations == null ||
                 state.DocketCandidates == null || state.OpenCases == null ||
-                state.Rulings == null || state.ScopeApplicationTraces == null)
+                state.Rulings == null || state.RemedyApplicationTraces == null ||
+                state.ScopeApplicationTraces == null)
             {
                 throw new InvalidOperationException(
                     "Endogenous docket state requires every committed collection.");
@@ -38,7 +39,8 @@ namespace Desk42.Institutional
             HashSet<string> caseIds = ValidateCases(
                 state, agentIds, docketIds, observationIds);
             ValidateRulings(state, caseIds);
-            ValidateScopeApplicationTraces(state, agentIds);
+            ValidateRemedyApplicationTraces(state, society.CurrentTick);
+            ValidateScopeApplicationTraces(state, agentIds, society.CurrentTick);
             ValidateLineage(state);
         }
 
@@ -282,14 +284,19 @@ namespace Desk42.Institutional
 
         private static void ValidateScopeApplicationTraces(
             EndogenousDocketState state,
-            HashSet<string> agentIds)
+            HashSet<string> agentIds,
+            long currentTick)
         {
             var ids = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < state.ScopeApplicationTraces.Count; i++)
             {
                 EndogenousScopeApplicationTrace trace = state.ScopeApplicationTraces[i];
+                CommittedPlayerRuling ruling = trace == null
+                    ? null
+                    : FindRuling(state, trace.RulingId);
                 if (trace == null || !Stable(trace.TraceId) || !ids.Add(trace.TraceId) ||
-                    FindRuling(state, trace.RulingId) == null ||
+                    ruling == null || trace.AppliedTick < ruling.CommittedTick ||
+                    trace.AppliedTick > currentTick ||
                     !Stable(trace.HoldingRuleId) || !agentIds.Contains(trace.ActorId) ||
                     !Stable(trace.OpportunityId) || !Stable(trace.IssueId) ||
                     !Stable(trace.JurisdictionId) ||
@@ -298,6 +305,48 @@ namespace Desk42.Institutional
                 {
                     throw new InvalidOperationException(
                         "Every scope application trace requires a unique deterministic transition.");
+                }
+            }
+        }
+
+        private static void ValidateRemedyApplicationTraces(
+            EndogenousDocketState state,
+            long currentTick)
+        {
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < state.RemedyApplicationTraces.Count; i++)
+            {
+                EndogenousRemedyApplicationTrace trace =
+                    state.RemedyApplicationTraces[i];
+                CommittedPlayerRuling ruling = trace == null
+                    ? null
+                    : FindRuling(state, trace.RulingId);
+                if (trace == null || !Stable(trace.TraceId) || !ids.Add(trace.TraceId) ||
+                    ruling == null || !string.Equals(
+                        trace.CaseId, ruling.CaseId, StringComparison.Ordinal) ||
+                    trace.AppliedTick < ruling.CommittedTick ||
+                    trace.AppliedTick > currentTick || !Stable(trace.ResourceId) ||
+                    !string.Equals(
+                        trace.RemedyDefinitionId,
+                        EndogenousPlayerRulingService.RestorePossessionRemedy,
+                        StringComparison.Ordinal) ||
+                    !string.Equals(
+                        trace.DestinationRuleId,
+                        EndogenousRemedyEffectService.RegisteredOwnerDestinationRule,
+                        StringComparison.Ordinal) ||
+                    !Stable(trace.PreviousPhysicalHolderId) ||
+                    !Stable(trace.NewPhysicalHolderId) ||
+                    !Stable(trace.PreviousLocationContextId) ||
+                    !Stable(trace.NewLocationContextId) ||
+                    trace.MaterialStateChanged == string.Equals(
+                        trace.PreviousPhysicalHolderId,
+                        trace.NewPhysicalHolderId,
+                        StringComparison.Ordinal) ||
+                    trace.MaterialStateChanged == string.IsNullOrWhiteSpace(
+                        trace.MaterialEventId))
+                {
+                    throw new InvalidOperationException(
+                        "Every remedy trace requires a unique executable material transition.");
                 }
             }
         }

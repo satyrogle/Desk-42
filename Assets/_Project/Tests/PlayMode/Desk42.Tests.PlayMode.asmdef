@@ -3,7 +3,6 @@
     "rootNamespace": "Desk42.Tests.PlayMode",
     "references": [
         "Desk42.Product",
-        "Desk42.Institutional.Domain",
         "Desk42.Institutional.Player",
         "UnityEngine.TestRunner"
     ],

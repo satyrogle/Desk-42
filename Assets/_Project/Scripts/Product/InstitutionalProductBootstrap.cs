@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.IO;
-using Desk42.Institutional;
 using Desk42.Institutional.Player;
 using UnityEngine;
 
@@ -34,7 +33,7 @@ namespace Desk42.Product
             {
                 _defaultSavePath = Path.Combine(
                     Application.persistentDataPath,
-                    "causal-legibility-v0.1.json");
+                    "causal-legibility-v0.1.1.json");
                 _session = CausalLegibilitySliceSession.Create();
                 _view = new CausalLegibilitySliceView(
                     () => _session.View,
@@ -79,7 +78,7 @@ namespace Desk42.Product
                 {
                     CommitSelection(
                         PlayerScopeChoice.Broad,
-                        RulingDisposition.Recognised);
+                        PlayerRulingDisposition.Recognised);
                     SaveTo(_defaultSavePath);
                     LoadFrom(_defaultSavePath);
                     if (_session.View.Cases.Count != 2 ||
@@ -152,7 +151,7 @@ namespace Desk42.Product
 
         public PlayerInstitutionView CommitSelection(
             PlayerScopeChoice scope,
-            RulingDisposition disposition)
+            PlayerRulingDisposition disposition)
         {
             PlayerRulingDraft draft = _session.CreateDraft(scope, disposition);
             PlayerInstitutionView result = _session.Commit(draft);

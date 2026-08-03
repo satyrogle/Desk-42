@@ -13,6 +13,7 @@ namespace Desk42.Institutional
         internal string OpportunityId;
         internal string IssueId;
         internal string JurisdictionId;
+        internal long AppliedTick;
         internal bool ScopeMatched;
         internal string AffectedOfficialStatusId;
         internal bool StatusBefore;
@@ -115,6 +116,7 @@ namespace Desk42.Institutional
                             OpportunityId = opportunity.OpportunityId,
                             IssueId = EndogenousIssueKindIds.PossessionDispute,
                             JurisdictionId = jurisdictionId,
+                            AppliedTick = society.CurrentTick,
                             ScopeMatched = matched,
                             AffectedOfficialStatusId = ProtectedPossessionStatusId,
                             StatusBefore = before,
