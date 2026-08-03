@@ -3,9 +3,7 @@
     "rootNamespace": "Desk42.Product",
     "references": [
         "Desk42.Institutional.Domain",
-        "Desk42.Institutional.Authority",
-        "Desk42.Institutional.Scenarios",
-        "Desk42.Institutional.Runtime"
+        "Desk42.Institutional.Player"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

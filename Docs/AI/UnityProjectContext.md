@@ -5,12 +5,12 @@
 ## Project Summary
 
 - Project root: `C:/Users/jacob/Desk 42`
-- Product branch: `codex/endogenous-society-v0.1`
+- Product branch: `codex/causal-legibility-slice-v0.1`
 - Product direction: a systemic alien society simulation built around a deterministic institutional simulation substrate.
 - Frozen legacy game: tag `milestone/bucket4-candidate`, commit `e584ce6c986a8d4ff30fa391c2221c3f8da03a0e`.
 - Frozen engine candidate: tag `institutional-engine-candidate-v0.4.3`, commit `7407d290ea9e4fbab8b8525d47176ac02112374c`.
 - Last analyzed: 2026-08-03
-- Last analyzed commit: `1701bb1` (endogenous society checkpoint before documentation)
+- Last analyzed commit: `3d85f81` (player-safe causal legibility layer)
 
 ## Confirmed Environment
 
@@ -23,11 +23,11 @@
 
 | Area | Finding | Confidence | Evidence |
 | --- | --- | --- | --- |
-| Institutional simulation | Four first-party assemblies separate Domain, Authority, scenario definitions and Unity-facing persistence | Confirmed | `Assets/_Project/Scripts/Institutional/` |
+| Institutional simulation | Domain, Authority, Player, scenario and Unity persistence assemblies enforce simulation and truth boundaries | Confirmed | `Assets/_Project/Scripts/Institutional/` |
 | Serialization | Newtonsoft.Json 3.2.1 supports `InstitutionalSocietyStore` | Confirmed | `Packages/manifest.json`; runtime asmdef |
-| Testing | Unity Test Framework 1.3.9 with EditMode institutional suites | Confirmed | package manifest and EditMode asmdef |
+| Testing | Unity Test Framework 1.3.9 with EditMode institutional suites and a focused product PlayMode suite | Confirmed | package manifest and test asmdefs |
 | Unity MCP | CoplayDev and IvanMurzak packages are both configured, but no Unity MCP tools are exposed in this Codex task | Confirmed | package files, `.mcp.json`, active tool inventory |
-| Presentation | uGUI, TextMesh Pro, Input System and URP packages remain available; no product presentation architecture is selected | Confirmed | package manifest; product extraction state |
+| Presentation | A text-first IMGUI slice renders the immutable public institutional view; uGUI, TMP and URP remain available but unused by the slice | Confirmed | product assembly and build screenshot |
 
 ## Directory Structure
 
@@ -35,9 +35,11 @@
 | --- | --- | --- | --- |
 | `Assets/_Project/Scripts/Institutional/Domain` | Engine-independent society state, decisions and scenario contracts | Confirmed | no-engine-reference asmdef |
 | `Assets/_Project/Scripts/Institutional/Authority` | Authoritative material state, evidence, adjudication, endogenous docket generation, rulings, scope execution and active-chain persistence | Confirmed | authority asmdef and checkpoint report |
+| `Assets/_Project/Scripts/Institutional/Player` | Immutable public-safe projection, ruling facade, deterministic slice seed, save/load and replay boundary | Confirmed | no-engine-reference player asmdef and truth-boundary tests |
 | `Assets/_Project/Scripts/Institutional/Authority/Scenarios` | Declarative authored scenario definitions | Confirmed | scenario asmdef references Domain only |
 | `Assets/_Project/Scripts/Institutional/Runtime` | Unity-facing persistence bridge for public society state | Confirmed | runtime asmdef and `InstitutionalSocietyStore.cs` |
 | `Assets/_Project/Tests/EditMode` | Institutional engine and scenario tests plus temporary legacy tests pending extraction | Confirmed | test asmdef and source inventory |
+| `Assets/_Project/Tests/PlayMode` | Product scene boot, five-surface navigation and ruling/save/load/replay validation | Confirmed | PlayMode asmdef and slice tests |
 | `Docs/Institutional` | Engine boundary and scenario specifications | Confirmed | repository contents |
 | `evidence/InstitutionalEngine` | Frozen validation evidence; not product runtime content | Confirmed | repository contents |
 
@@ -47,6 +49,7 @@
 | --- | --- | --- | --- |
 | `Desk42.Institutional.Domain` | Deterministic society domain and declarative contracts | none | no Unity engine reference |
 | `Desk42.Institutional.Authority` | Authoritative material and institutional transitions plus active-chain snapshot store | Domain, Newtonsoft.Json | not auto-referenced; no Unity engine reference |
+| `Desk42.Institutional.Player` | Immutable public projection and validated playable-session facade | Domain, Authority | no Unity engine reference; does not reference scenario content |
 | `Desk42.Institutional.Scenarios` | Concrete scenario data | Domain | cannot invoke Authority |
 | `Desk42.Institutional.Runtime` | Society save/load adapter | Domain, Newtonsoft.Json | Unity-facing |
 | `Desk42.Tests.EditMode` | Institutional validation | institutional assemblies and compatibility `Desk42.Core` | Editor only |
@@ -55,8 +58,8 @@
 ## Scenes And Startup Flow
 
 - Build scene: `Assets/_Project/Scenes/InstitutionalProduct.unity`.
-- Startup flow: the scene contains only `InstitutionalProductBootstrap`, which runs
-  a public institutional reference scenario and renders a diagnostic summary.
+- Startup flow: the scene contains only `InstitutionalProductBootstrap`, which
+  creates the causal-legibility session and renders five public-safe player surfaces.
 - Archived scenes `Boot`, `MainMenu`, `Shift` and `InternalAudit` do not exist on
   the product branch.
 
@@ -70,6 +73,7 @@
 | Persistence | Public society state persists separately from the legacy run save | Confirmed | `InstitutionalSocietyStore.cs` |
 | Active consequence persistence | Complete endogenous causal state persists at committed boundaries with exact-once replay IDs, checksum and backup recovery | Confirmed | `EndogenousRunSnapshot.cs`; persistence tests |
 | Endogenous institutional loop | Autonomous actions can create observable docket cases; executable ruling scope can change later decisions and descendant cases | Confirmed for the bounded v0.1 proof | `ENDOGENOUS_SOCIETY_CHECKPOINT_V0.1.md` |
+| Player-safe projection | Product UI consumes explicit immutable records and cannot reference Authority or scenario assemblies directly | Confirmed | player/product asmdefs and `InstitutionalPlayerViewTests` |
 
 ## Coding Conventions
 
@@ -81,12 +85,16 @@
 ## Testing And Validation
 
 - EditMode tests: institutional domain, authority, scenario and persistence coverage in `Desk42.Tests.EditMode`.
-- PlayMode tests: no active product PlayMode coverage at this checkpoint.
+- PlayMode tests: two focused product tests cover scene boot, all five surfaces,
+  broad ruling, descendant case, save/load and pre-ruling replay.
 - Hosted baseline at commit `3302302`: targeted institutional suite 334/334 passed; full EditMode 454 passed, 0 failed, 1 approved pre-existing skip.
 - Post-extraction local baseline: targeted institutional suite 334/334 passed;
   full remaining EditMode suite 338/338 passed with no skips.
 - Endogenous society v0.1 local validation: institutional suite 381/381 passed;
   complete EditMode suite 385/385 passed with no skips.
+- Causal legibility v0.1 local validation: complete EditMode 394/394 and focused
+  PlayMode 2/2, both with no failures or skips. Windows x64 build, standalone
+  save/load smoke and actual-build screenshot capture pass.
 - CI/build validation: `.github/workflows/institutional-proof.yml` preserves the frozen evidence gate; `.github/workflows/ci.yml` contains the general Unity pipeline.
 
 ## Available Unity Tooling
@@ -109,11 +117,11 @@
 
 ## Unknowns And Confidence
 
-- The final product presentation architecture, input model and render pipeline are not selected.
-- No production player-facing endogenous institutional loop exists yet; the
-  current scene remains a diagnostic composition root.
-- A Windows x64 player build and D3D11 smoke launch pass, but visual quality and
-  real player interaction are intentionally unvalidated.
+- The current IMGUI shell is a thin comprehension prototype, not the final
+  presentation architecture, input model or render pipeline.
+- Automated interaction is validated; six-player comprehension and agency
+  testing remains outstanding.
+- Visual polish, long-run pacing and commercial loop quality remain unvalidated.
 
 ## Source Files Inspected
 
