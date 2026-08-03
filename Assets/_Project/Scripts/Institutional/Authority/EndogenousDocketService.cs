@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Desk42.Institutional
 {
@@ -106,9 +108,15 @@ namespace Desk42.Institutional
                 DocketCandidateId = selected.DocketCandidateId,
                 IssueId = selected.IssueId,
                 OpenedTick = Math.Max(society.CurrentTick, selected.EligibleTick),
+                EvidenceEnvelopeHash = EvidenceEnvelopeHash(state, selected),
                 PartyIds = new List<string>(selected.PotentialPartyIds),
                 ObservationIds = new List<string>(selected.ObservableEvidenceIds),
             };
+            opened.AvailableFactIds.Add($"fact:issue:{selected.IssueId}");
+            for (int i = 0; i < selected.ObservableEvidenceIds.Count; i++)
+                opened.AvailableFactIds.Add(
+                    $"fact:observation:{selected.ObservableEvidenceIds[i]}");
+            opened.AvailableFactIds.Sort(StringComparer.Ordinal);
             selected.Admitted = true;
             selected.AdmittedCaseId = opened.CaseId;
             state.OpenCases.Add(opened);
@@ -124,6 +132,40 @@ namespace Desk42.Institutional
             return harm != 0
                 ? harm
                 : string.CompareOrdinal(left.DocketCandidateId, right.DocketCandidateId);
+        }
+
+        internal static string EvidenceEnvelopeHash(
+            EndogenousDocketState state,
+            DocketCandidate candidate)
+        {
+            var canonical = new StringBuilder();
+            canonical.Append(candidate.DocketCandidateId).Append('|')
+                .Append(candidate.IssueId).Append('|')
+                .Append(candidate.EligibleTick).Append('|');
+            var evidenceIds = new List<string>(candidate.ObservableEvidenceIds);
+            evidenceIds.Sort(StringComparer.Ordinal);
+            for (int i = 0; i < evidenceIds.Count; i++)
+            {
+                DocketObservation observation = state.GetObservation(evidenceIds[i]) ??
+                    throw new InvalidOperationException(
+                        $"Missing docket observation {evidenceIds[i]}.");
+                canonical.Append(observation.ObservationId).Append(':')
+                    .Append(observation.RecordedTick).Append(':')
+                    .Append(observation.IssueId).Append(':')
+                    .Append(observation.PropositionId).Append(':')
+                    .Append(observation.SourceRecordId).Append(':')
+                    .Append(observation.Reliability).Append(';');
+            }
+
+            using (SHA256 algorithm = SHA256.Create())
+            {
+                byte[] bytes = algorithm.ComputeHash(
+                    Encoding.UTF8.GetBytes(canonical.ToString()));
+                var result = new StringBuilder(bytes.Length * 2);
+                for (int i = 0; i < bytes.Length; i++)
+                    result.Append(bytes[i].ToString("x2"));
+                return result.ToString();
+            }
         }
 
         private static List<DocketObservation> ObservationsForIncident(

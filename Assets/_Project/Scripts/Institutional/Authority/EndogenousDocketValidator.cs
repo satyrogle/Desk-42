@@ -22,7 +22,8 @@ namespace Desk42.Institutional
                 throw new InvalidOperationException(
                     "The endogenous proof state must keep the Director disabled.");
             if (state.IncidentCandidates == null || state.Observations == null ||
-                state.DocketCandidates == null || state.OpenCases == null)
+                state.DocketCandidates == null || state.OpenCases == null ||
+                state.Rulings == null)
             {
                 throw new InvalidOperationException(
                     "Endogenous docket state requires every committed collection.");
@@ -34,7 +35,9 @@ namespace Desk42.Institutional
                 state, agentIds, incidentIds);
             HashSet<string> docketIds = ValidateDockets(
                 state, incidentIds, observationIds);
-            ValidateCases(state, agentIds, docketIds);
+            HashSet<string> caseIds = ValidateCases(
+                state, agentIds, docketIds, observationIds);
+            ValidateRulings(state, caseIds);
         }
 
         private static HashSet<string> AgentIds(SocietyState society)
@@ -161,10 +164,11 @@ namespace Desk42.Institutional
             return ids;
         }
 
-        private static void ValidateCases(
+        private static HashSet<string> ValidateCases(
             EndogenousDocketState state,
             HashSet<string> agentIds,
-            HashSet<string> docketIds)
+            HashSet<string> docketIds,
+            HashSet<string> observationIds)
         {
             var ids = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < state.OpenCases.Count; i++)
@@ -173,7 +177,9 @@ namespace Desk42.Institutional
                 if (opened == null || !Stable(opened.CaseId) || !ids.Add(opened.CaseId) ||
                     !docketIds.Contains(opened.DocketCandidateId) ||
                     !Stable(opened.IssueId) || opened.OpenedTick < 0 ||
-                    opened.PartyIds == null || opened.ObservationIds == null)
+                    opened.CaseVersion < 1 || !Stable(opened.EvidenceEnvelopeHash) ||
+                    opened.PartyIds == null || opened.ObservationIds == null ||
+                    opened.AvailableFactIds == null || opened.AvailableFactIds.Count == 0)
                 {
                     throw new InvalidOperationException(
                         "Every endogenous case requires a unique admitted docket source.");
@@ -186,7 +192,81 @@ namespace Desk42.Institutional
                         "Endogenous case and docket admission disagree.");
                 }
                 UniqueKnown(opened.PartyIds, agentIds, $"{opened.CaseId}.party");
-                UniqueStable(opened.ObservationIds, $"{opened.CaseId}.observation");
+                UniqueKnown(
+                    opened.ObservationIds,
+                    observationIds,
+                    $"{opened.CaseId}.observation");
+                UniqueStable(opened.AvailableFactIds, $"{opened.CaseId}.available-fact");
+            }
+            return ids;
+        }
+
+        private static void ValidateRulings(
+            EndogenousDocketState state,
+            HashSet<string> caseIds)
+        {
+            var rulingIds = new HashSet<string>(StringComparer.Ordinal);
+            var commandIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < state.Rulings.Count; i++)
+            {
+                CommittedPlayerRuling ruling = state.Rulings[i];
+                if (ruling == null || !Stable(ruling.RulingId) ||
+                    !rulingIds.Add(ruling.RulingId) || !Stable(ruling.PlayerCommandId) ||
+                    !commandIds.Add(ruling.PlayerCommandId) ||
+                    !caseIds.Contains(ruling.CaseId) || ruling.CaseVersion < 1 ||
+                    ruling.CommittedTick < 0 || !Stable(ruling.EvidenceEnvelopeHash) ||
+                    ruling.RecognisedFactIds == null ||
+                    ruling.CitedEvidenceArtifactIds == null ||
+                    !Stable(ruling.HoldingRuleId) || ruling.RemedyDefinitionIds == null ||
+                    !Enum.IsDefined(typeof(RulingDisposition), ruling.Disposition) ||
+                    !Enum.IsDefined(typeof(TemporalReach), ruling.TemporalReach) ||
+                    ruling.TemporalReach != TemporalReach.Prospective ||
+                    !string.Equals(
+                        ruling.RulesetVersion,
+                        EndogenousPlayerRulingService.CurrentRulesetVersion,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Every committed player ruling requires a frozen unique command payload.");
+                }
+                EndogenousInstitutionalCase opened = state.GetCase(ruling.CaseId);
+                if (opened.CaseVersion != ruling.CaseVersion || !string.Equals(
+                        opened.EvidenceEnvelopeHash,
+                        ruling.EvidenceEnvelopeHash,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Ruling {ruling.RulingId} does not match its frozen case envelope.");
+                }
+                UniqueSubset(
+                    ruling.RecognisedFactIds,
+                    opened.AvailableFactIds,
+                    $"{ruling.RulingId}.recognised-fact");
+                UniqueSubset(
+                    ruling.CitedEvidenceArtifactIds,
+                    opened.ObservationIds,
+                    $"{ruling.RulingId}.cited-evidence");
+                UniqueStable(
+                    ruling.RemedyDefinitionIds,
+                    $"{ruling.RulingId}.remedy");
+                ScopeExpressionEvaluator.Validate(ruling.Scope);
+            }
+        }
+
+        private static void UniqueSubset(
+            IReadOnlyList<string> values,
+            IReadOnlyList<string> allowed,
+            string field)
+        {
+            var allowedSet = new HashSet<string>(allowed, StringComparer.Ordinal);
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < values.Count; i++)
+            {
+                if (!Stable(values[i]) || !allowedSet.Contains(values[i]) ||
+                    !seen.Add(values[i]))
+                {
+                    throw new InvalidOperationException($"{field} contains an invalid id.");
+                }
             }
         }
 

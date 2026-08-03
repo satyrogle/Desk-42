@@ -33,6 +33,7 @@ namespace Desk42.Institutional
         internal List<DocketObservation> Observations = new();
         internal List<DocketCandidate> DocketCandidates = new();
         internal List<EndogenousInstitutionalCase> OpenCases = new();
+        internal List<CommittedPlayerRuling> Rulings = new();
 
         internal IncidentCandidate GetIncident(string candidateId)
             => Find(IncidentCandidates, value => value.CandidateId, candidateId);

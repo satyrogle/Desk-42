@@ -61,7 +61,10 @@ namespace Desk42.Institutional
         public string DocketCandidateId;
         public string IssueId;
         public long OpenedTick;
+        public int CaseVersion = 1;
+        public string EvidenceEnvelopeHash;
         public List<string> PartyIds = new();
         public List<string> ObservationIds = new();
+        public List<string> AvailableFactIds = new();
     }
 }
