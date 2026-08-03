@@ -182,6 +182,7 @@ namespace Desk42.Product.Automation
         {
             GameObject cameraObject = Own(new GameObject("Automation Camera"));
             Camera camera = cameraObject.AddComponent<Camera>();
+            cameraObject.AddComponent<AudioListener>();
             camera.orthographic = true;
             camera.orthographicSize = 8.8f;
             camera.clearFlags = CameraClearFlags.SolidColor;

@@ -24,6 +24,21 @@ namespace Desk42.Product.Automation
 
         public bool Ready => _floor != null;
         public int ClaimsInFlight => _floor?.ClaimsInFlight ?? 0;
+        public int ClaimsCompleted => _floor?.ClaimsCompleted ?? 0;
+        public int AppealsReturned => _floor?.AppealsReturned ?? 0;
+        public int AppealsResolved => _floor?.AppealsResolved ?? 0;
+        public int CurrentPolicyNumber => _floor?.PolicyNumber ?? 2;
+        public bool AuxVerifierInstalled => _floor?.AuxVerifierPlaced ?? false;
+
+        public void SelectPolicy(int policyNumber)
+        {
+            _floor?.SetPolicy(policyNumber);
+        }
+
+        public void InstallAuxVerifier()
+        {
+            _floor?.InstallAuxVerifierForCapture();
+        }
 
         private void Awake()
         {

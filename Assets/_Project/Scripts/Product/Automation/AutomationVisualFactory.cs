@@ -111,7 +111,7 @@ namespace Desk42.Product.Automation
             mesh.anchor = anchor;
             mesh.alignment = TextAlignment.Center;
             mesh.color = colour;
-            mesh.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            mesh.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             mesh.GetComponent<Renderer>().material = mesh.font.material;
             return root;
         }
