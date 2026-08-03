@@ -653,6 +653,8 @@ namespace Desk42.Institutional
             societyEvent.ActionContextId = opportunity.NewLocationContextId;
             societyEvent.AffectedStateRecordId = opportunity.AccessGrantId;
             societyEvent.ActionSecrecy = opportunity.Secrecy;
+            societyEvent.EnablingRulingId = opportunity.EnablingRulingId;
+            societyEvent.ParentCaseId = opportunity.ParentCaseId;
             societyEvent.DirectWitnessAgentIds = CloneStrings(
                 opportunity.DirectWitnessAgentIds);
             societyEvent.PotentialRecordSourceIds = CloneStrings(

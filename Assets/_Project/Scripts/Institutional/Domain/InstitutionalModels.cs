@@ -344,6 +344,11 @@ namespace Desk42.Institutional
         public string ExpectedPhysicalHolderId;
         public string NewLocationContextId;
         public string AccessGrantId;
+        public string ProtectionStatusId;
+        public int RecognisedProtectionUtilityBonus;
+        public int UnrecognisedExposureUtilityPenalty;
+        public string EnablingRulingId;
+        public string ParentCaseId;
         public NeedKind ReliefNeed = NeedKind.Health;
         public int ReliefAmount;
         public int UtilityBonus;
@@ -570,6 +575,8 @@ namespace Desk42.Institutional
         internal string CollectiveCommitmentId;
         internal string CollectiveIssueId;
         internal string CollectiveIntentionId;
+        internal string EnablingRulingId;
+        internal string ParentCaseId;
         internal int RequiredParticipantCount;
         internal int ActionSecrecy;
         internal List<string> DirectWitnessAgentIds = new();

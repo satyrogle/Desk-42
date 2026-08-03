@@ -40,6 +40,9 @@ namespace Desk42.Institutional
                     EligibleTick = observations[0].RecordedTick,
                     UnresolvedMaterialHarm = observations[0].ObservedMaterialHarm,
                     AuthorityIncidentCandidateId = incidentId,
+                    ParentCaseId = observations[0].ParentCaseId,
+                    OriginatingRulingId = observations[0].OriginatingRulingId,
+                    CausalAgentActionId = observations[0].CausalAgentActionId,
                 };
                 for (int observationIndex = 0;
                      observationIndex < observations.Count;
@@ -111,6 +114,9 @@ namespace Desk42.Institutional
                 EvidenceEnvelopeHash = EvidenceEnvelopeHash(state, selected),
                 PartyIds = new List<string>(selected.PotentialPartyIds),
                 ObservationIds = new List<string>(selected.ObservableEvidenceIds),
+                ParentCaseId = selected.ParentCaseId,
+                OriginatingRulingId = selected.OriginatingRulingId,
+                CausalAgentActionId = selected.CausalAgentActionId,
             };
             opened.AvailableFactIds.Add($"fact:issue:{selected.IssueId}");
             for (int i = 0; i < selected.ObservableEvidenceIds.Count; i++)

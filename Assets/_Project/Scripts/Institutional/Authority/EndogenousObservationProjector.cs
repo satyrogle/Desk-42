@@ -70,6 +70,9 @@ namespace Desk42.Institutional
                     ObservedMaterialHarm = ObservedHarm(incident.ConflictKindId),
                     OfficiallySubmitted = true,
                     AuthorityIncidentCandidateId = incident.CandidateId,
+                    ParentCaseId = societyEvent.ParentCaseId,
+                    OriginatingRulingId = societyEvent.EnablingRulingId,
+                    CausalAgentActionId = societyEvent.CauseDecisionId,
                 };
                 state.Observations.Add(observation);
                 added.Add(observation);
@@ -123,6 +126,9 @@ namespace Desk42.Institutional
                 ObservedMaterialHarm = ObservedHarm(incident.ConflictKindId),
                 OfficiallySubmitted = true,
                 AuthorityIncidentCandidateId = incident.CandidateId,
+                ParentCaseId = incident.ParentCaseId,
+                OriginatingRulingId = incident.OriginatingRulingId,
+                CausalAgentActionId = incident.CausalAgentActionId,
             };
         }
 

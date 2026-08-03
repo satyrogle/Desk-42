@@ -216,6 +216,8 @@ namespace Desk42.Institutional
                 CollectiveCommitmentId = source.CollectiveCommitmentId,
                 CollectiveIssueId = source.CollectiveIssueId,
                 CollectiveIntentionId = source.CollectiveIntentionId,
+                EnablingRulingId = source.EnablingRulingId,
+                ParentCaseId = source.ParentCaseId,
                 RequiredParticipantCount = source.RequiredParticipantCount,
                 ActionSecrecy = source.ActionSecrecy,
                 DirectWitnessAgentIds = CopyStrings(source.DirectWitnessAgentIds),

@@ -269,6 +269,13 @@ namespace Desk42.Institutional
                     ExpectedPhysicalHolderId = opportunity.ExpectedPhysicalHolderId,
                     NewLocationContextId = opportunity.NewLocationContextId,
                     AccessGrantId = opportunity.AccessGrantId,
+                    ProtectionStatusId = opportunity.ProtectionStatusId,
+                    RecognisedProtectionUtilityBonus =
+                        opportunity.RecognisedProtectionUtilityBonus,
+                    UnrecognisedExposureUtilityPenalty =
+                        opportunity.UnrecognisedExposureUtilityPenalty,
+                    EnablingRulingId = opportunity.EnablingRulingId,
+                    ParentCaseId = opportunity.ParentCaseId,
                     ReliefNeed = opportunity.ReliefNeed,
                     ReliefAmount = opportunity.ReliefAmount,
                     UtilityBonus = opportunity.UtilityBonus,
@@ -748,6 +755,19 @@ namespace Desk42.Institutional
                 candidate.Add("disposition.duty", null, -(actor.Disposition.Duty / 4));
                 candidate.Add("attitude.institutional-trust", null,
                     -(Math.Max(0, actor.InstitutionalTrust) / 5));
+                if (!string.IsNullOrWhiteSpace(opportunity.ProtectionStatusId))
+                {
+                    bool protectedAction = actor.Standing.IsRecognised(
+                        opportunity.ProtectionStatusId);
+                    candidate.Add(
+                        protectedAction
+                            ? "standing.holding-protection"
+                            : "standing.unprotected-exposure",
+                        opportunity.ProtectionStatusId,
+                        protectedAction
+                            ? opportunity.RecognisedProtectionUtilityBonus
+                            : -opportunity.UnrecognisedExposureUtilityPenalty);
+                }
                 candidate.Add("opportunity.steal", opportunity.OpportunityId,
                     opportunity.UtilityBonus);
                 AddVariation(context, candidate);

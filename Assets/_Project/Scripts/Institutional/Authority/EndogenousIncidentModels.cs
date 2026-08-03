@@ -18,6 +18,9 @@ namespace Desk42.Institutional
         internal int UnresolvedMaterialHarm;
         internal string SubjectResourceId;
         internal string DedupeKey;
+        internal string ParentCaseId;
+        internal string OriginatingRulingId;
+        internal string CausalAgentActionId;
     }
 
     [Serializable]

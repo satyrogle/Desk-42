@@ -11,6 +11,7 @@ namespace Desk42.Institutional
     {
         internal const string MaterialPossessionAccessKind = "material-possession";
         internal const string ObservationAccessKind = "observe";
+        internal const string RecordingAccessKind = "record-source";
         internal const string CommunicationAccessKind = "communication";
         internal const string PerceivedAdverseActionProposition =
             "perceived-adverse-action";
@@ -121,6 +122,10 @@ namespace Desk42.Institutional
                     ExpectedPhysicalHolderId = resource.PhysicalHolderId,
                     NewLocationContextId = "actor-controlled",
                     AccessGrantId = $"projected-access:{resource.ResourceId}:{tick}",
+                    ProtectionStatusId =
+                        EndogenousScopeEffectService.ProtectedPossessionStatusId,
+                    RecognisedProtectionUtilityBonus = 80,
+                    UnrecognisedExposureUtilityPenalty = 20,
                     ReliefNeed = NeedKind.Health,
                     ReliefAmount = 20,
                     UtilityBonus = 0,
@@ -130,7 +135,10 @@ namespace Desk42.Institutional
                 };
                 AddObservers(world, agents, resource.ResourceId, tick,
                     opportunity.DirectWitnessAgentIds);
-                if (opportunity.DirectWitnessAgentIds.Count > 0)
+                AddRecordSources(world, resource.ResourceId, tick,
+                    opportunity.PotentialRecordSourceIds);
+                if (opportunity.DirectWitnessAgentIds.Count > 0 ||
+                    opportunity.PotentialRecordSourceIds.Count > 0)
                     opportunity.Visibility = EvidenceVisibility.Observable;
                 input.StealOpportunities.Add(opportunity);
             }
@@ -301,6 +309,25 @@ namespace Desk42.Institutional
                     witnesses.Add(agents[i].StableId);
                 }
             }
+        }
+
+        private static void AddRecordSources(
+            InstitutionalMaterialWorld world,
+            string targetId,
+            long tick,
+            List<string> recordSources)
+        {
+            for (int i = 0; i < world.AccessGrants.Count; i++)
+            {
+                MaterialAccessGrantState grant = world.AccessGrants[i];
+                if (grant.Active && ActiveAt(grant.ValidFromTick, grant.ValidUntilTick, tick) &&
+                    string.Equals(grant.AccessKindId, RecordingAccessKind, StringComparison.Ordinal) &&
+                    string.Equals(grant.TargetId, targetId, StringComparison.Ordinal))
+                {
+                    AddUnique(recordSources, grant.SourceRecordId);
+                }
+            }
+            recordSources.Sort(StringComparer.Ordinal);
         }
 
         private static bool ActiveAt(long from, long until, long tick)

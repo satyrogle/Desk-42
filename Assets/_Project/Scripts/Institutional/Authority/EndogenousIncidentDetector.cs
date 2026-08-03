@@ -25,7 +25,7 @@ namespace Desk42.Institutional
             for (int i = 0; i < world.EventLedger.Count; i++)
             {
                 MaterialWorldEvent materialEvent = world.EventLedger[i];
-                IncidentCandidate candidate = FromMaterialEvent(world, materialEvent);
+                IncidentCandidate candidate = FromMaterialEvent(world, society, materialEvent);
                 if (candidate == null || ContainsDedupe(state, candidate.DedupeKey)) continue;
                 state.IncidentCandidates.Add(candidate);
                 added.Add(candidate);
@@ -37,8 +37,10 @@ namespace Desk42.Institutional
 
         private static IncidentCandidate FromMaterialEvent(
             InstitutionalMaterialWorld world,
+            SocietyState society,
             MaterialWorldEvent materialEvent)
         {
+            SocietyEvent causalAction = FindCausalAction(society, materialEvent);
             switch (materialEvent.Kind)
             {
                 case MaterialWorldEventKind.PossessionTransferred:
@@ -56,6 +58,7 @@ namespace Desk42.Institutional
                         EndogenousIssueKindIds.PossessionDispute,
                         60,
                         materialEvent.ResourceId,
+                        causalAction,
                         materialEvent.ActorAgentId);
                 case MaterialWorldEventKind.AccessChanged:
                     if (materialEvent.StateBefore == materialEvent.StateAfter) return null;
@@ -64,6 +67,7 @@ namespace Desk42.Institutional
                         EndogenousIssueKindIds.AccessWithdrawal,
                         75,
                         null,
+                        causalAction,
                         materialEvent.ActorAgentId,
                         materialEvent.TargetAgentId);
                 case MaterialWorldEventKind.CollectiveCommitmentChanged:
@@ -76,6 +80,7 @@ namespace Desk42.Institutional
                         EndogenousIssueKindIds.CollectiveGrievance,
                         40,
                         null,
+                        causalAction,
                         collective.MemberAgentIds.ToArray());
                 default:
                     return null;
@@ -87,6 +92,7 @@ namespace Desk42.Institutional
             string conflictKindId,
             int harm,
             string resourceId,
+            SocietyEvent causalAction,
             params string[] affectedAgentIds)
         {
             var causes = new List<string>(materialEvent.CauseEventIds.Count + 1)
@@ -111,7 +117,29 @@ namespace Desk42.Institutional
                 UnresolvedMaterialHarm = harm,
                 SubjectResourceId = resourceId,
                 DedupeKey = $"{conflictKindId}:{materialEvent.EventId}",
+                ParentCaseId = causalAction?.ParentCaseId,
+                OriginatingRulingId = causalAction?.EnablingRulingId,
+                CausalAgentActionId = causalAction?.CauseDecisionId,
             };
+        }
+
+        private static SocietyEvent FindCausalAction(
+            SocietyState society,
+            MaterialWorldEvent materialEvent)
+        {
+            for (int causeIndex = 0;
+                 causeIndex < materialEvent.CauseEventIds.Count;
+                 causeIndex++)
+            {
+                string causeId = materialEvent.CauseEventIds[causeIndex];
+                for (int eventIndex = 0; eventIndex < society.EventLedger.Count; eventIndex++)
+                {
+                    SocietyEvent candidate = society.EventLedger[eventIndex];
+                    if (string.Equals(candidate.EventId, causeId, StringComparison.Ordinal))
+                        return candidate;
+                }
+            }
+            return null;
         }
 
         private static bool ContainsDedupe(EndogenousDocketState state, string dedupeKey)

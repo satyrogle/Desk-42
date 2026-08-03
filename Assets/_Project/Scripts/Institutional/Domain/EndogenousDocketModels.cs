@@ -29,6 +29,9 @@ namespace Desk42.Institutional
         public int Reliability;
         public int ObservedMaterialHarm;
         public bool OfficiallySubmitted;
+        public string ParentCaseId;
+        public string OriginatingRulingId;
+        public string CausalAgentActionId;
 
         internal string AuthorityIncidentCandidateId;
     }
@@ -50,6 +53,9 @@ namespace Desk42.Institutional
         public List<string> PotentialPartyIds = new();
         public bool Admitted;
         public string AdmittedCaseId;
+        public string ParentCaseId;
+        public string OriginatingRulingId;
+        public string CausalAgentActionId;
 
         internal string AuthorityIncidentCandidateId;
     }
@@ -66,5 +72,8 @@ namespace Desk42.Institutional
         public List<string> PartyIds = new();
         public List<string> ObservationIds = new();
         public List<string> AvailableFactIds = new();
+        public string ParentCaseId;
+        public string OriginatingRulingId;
+        public string CausalAgentActionId;
     }
 }

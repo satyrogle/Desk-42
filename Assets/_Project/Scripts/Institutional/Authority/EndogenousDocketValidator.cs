@@ -38,6 +38,7 @@ namespace Desk42.Institutional
             HashSet<string> caseIds = ValidateCases(
                 state, agentIds, docketIds, observationIds);
             ValidateRulings(state, caseIds);
+            ValidateLineage(state);
         }
 
         private static HashSet<string> AgentIds(SocietyState society)
@@ -251,6 +252,64 @@ namespace Desk42.Institutional
                     $"{ruling.RulingId}.remedy");
                 ScopeExpressionEvaluator.Validate(ruling.Scope);
             }
+        }
+
+        private static void ValidateLineage(EndogenousDocketState state)
+        {
+            for (int i = 0; i < state.Observations.Count; i++)
+                ValidateLineageTuple(
+                    state,
+                    state.Observations[i].ParentCaseId,
+                    state.Observations[i].OriginatingRulingId,
+                    state.Observations[i].CausalAgentActionId,
+                    state.Observations[i].ObservationId);
+            for (int i = 0; i < state.DocketCandidates.Count; i++)
+                ValidateLineageTuple(
+                    state,
+                    state.DocketCandidates[i].ParentCaseId,
+                    state.DocketCandidates[i].OriginatingRulingId,
+                    state.DocketCandidates[i].CausalAgentActionId,
+                    state.DocketCandidates[i].DocketCandidateId);
+            for (int i = 0; i < state.OpenCases.Count; i++)
+                ValidateLineageTuple(
+                    state,
+                    state.OpenCases[i].ParentCaseId,
+                    state.OpenCases[i].OriginatingRulingId,
+                    state.OpenCases[i].CausalAgentActionId,
+                    state.OpenCases[i].CaseId);
+        }
+
+        private static void ValidateLineageTuple(
+            EndogenousDocketState state,
+            string parentCaseId,
+            string rulingId,
+            string actionId,
+            string ownerId)
+        {
+            bool noPrecedentLineage = parentCaseId == null && rulingId == null;
+            if (noPrecedentLineage)
+            {
+                if (actionId != null && !Stable(actionId))
+                    throw new InvalidOperationException(
+                        $"{ownerId} has an invalid primary causal action id.");
+                return;
+            }
+            if (!Stable(parentCaseId) || !Stable(rulingId) || !Stable(actionId) ||
+                state.GetCase(parentCaseId) == null || FindRuling(state, rulingId) == null)
+            {
+                throw new InvalidOperationException(
+                    $"{ownerId} has incomplete or unavailable descendant-case lineage.");
+            }
+        }
+
+        private static CommittedPlayerRuling FindRuling(
+            EndogenousDocketState state,
+            string rulingId)
+        {
+            for (int i = 0; i < state.Rulings.Count; i++)
+                if (string.Equals(state.Rulings[i].RulingId, rulingId, StringComparison.Ordinal))
+                    return state.Rulings[i];
+            return null;
         }
 
         private static void UniqueSubset(
