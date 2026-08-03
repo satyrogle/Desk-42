@@ -58,6 +58,8 @@ namespace Desk42.Institutional.Scenarios.WorkplaceIdentity
         public const string RelianceId = "reliance.workplace.private-care";
         public const string AppealId = "appeal.workplace.primary";
         public const string HoldingId = "holding.workplace.identity-continuity";
+        public const string HoldingCitationId =
+            "citation.workplace.successor-initial-identity-continuity";
         public const string HoldingRuleId =
             "rule.workplace.superseded-identity-retains-employment";
 
@@ -96,6 +98,7 @@ namespace Desk42.Institutional.Scenarios.WorkplaceIdentity
                 RelianceRecoveries = CreateRelianceRecoveries(),
                 Appeals = CreateAppealDefinitions(),
                 Holdings = CreateHoldingDefinitions(),
+                HoldingCitations = CreateHoldingCitationDefinitions(),
                 DescendantCases = CreateDescendantDefinitions(),
                 ExclusiveEntitlements = CreateEntitlementDefinitions(),
                 EntitlementTransfers = CreateEntitlementTransfers(),
@@ -467,7 +470,6 @@ namespace Desk42.Institutional.Scenarios.WorkplaceIdentity
                     ProvisionalScoreThreshold = 30,
                     ProvisionalRecognitionPermitted = false,
                     AdjudicationScoreThreshold = 60,
-                    CitedHoldingIds = new List<string> { HoldingId },
                 },
             };
         }
@@ -619,6 +621,21 @@ namespace Desk42.Institutional.Scenarios.WorkplaceIdentity
             };
         }
 
+        private static List<ScenarioHoldingCitationDefinition>
+            CreateHoldingCitationDefinitions()
+        {
+            return new List<ScenarioHoldingCitationDefinition>
+            {
+                new ScenarioHoldingCitationDefinition
+                {
+                    CitationId = HoldingCitationId,
+                    HoldingId = HoldingId,
+                    TargetCaseId = SuccessorCaseId,
+                    TargetRulingId = SuccessorInitialRulingId,
+                },
+            };
+        }
+
         private static List<ScenarioActionCausedDescendantCaseDefinition>
             CreateDescendantDefinitions()
         {
@@ -669,13 +686,14 @@ namespace Desk42.Institutional.Scenarios.WorkplaceIdentity
                 new ScenarioExclusiveEntitlementTransferDefinition
                 {
                     TransferId = EntitlementTransferId,
-                    Cycle = 10,
+                    Cycle = 9,
                     EntitlementId = PaidShiftEntitlementId,
                     FromRoleId = ContingentHolderRoleId,
                     ToRoleId = LaterClaimantRoleId,
                     CauseCaseId = SuccessorCaseId,
                     CauseRulingId = SuccessorInitialRulingId,
                     CauseHoldingId = HoldingId,
+                    RequiredRulingDisposition = RulingDisposition.Recognised,
                     GainKind = MaterialConsequenceKind.BackpayAwarded,
                     LossKind = MaterialConsequenceKind.WagesLost,
                     GainKindId = "material-kind.workplace.shift-awarded",

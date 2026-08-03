@@ -166,7 +166,20 @@ namespace Desk42.Institutional
         public int ProvisionalScoreThreshold;
         public bool ProvisionalRecognitionPermitted;
         public int AdjudicationScoreThreshold;
-        public List<string> CitedHoldingIds = new();
+    }
+
+    /// <summary>
+    /// Makes a case conditional on one exact projected evidence template. The
+    /// template owns the event/action signature; the runtime opening must retain
+    /// the resulting artifact and autonomous action provenance.
+    /// </summary>
+    [Serializable]
+    public sealed class ScenarioEvidenceActivatedCaseDefinition
+    {
+        public string ActivationId;
+        public string CaseId;
+        public string EvidenceTemplateId;
+        public long TriggerCycle;
     }
 
     /// <summary>
@@ -279,6 +292,19 @@ namespace Desk42.Institutional
     }
 
     /// <summary>
+    /// Declares one optional holding citation for one exact ruling. A holding that
+    /// never materialises or does not match at runtime leaves this branch absent.
+    /// </summary>
+    [Serializable]
+    public sealed class ScenarioHoldingCitationDefinition
+    {
+        public string CitationId;
+        public string HoldingId;
+        public string TargetCaseId;
+        public string TargetRulingId;
+    }
+
+    /// <summary>
     /// Declares a descendant case whose opening depends on a role's society action.
     /// The declaration contains the causal keys but does not open the case itself.
     /// </summary>
@@ -319,10 +345,22 @@ namespace Desk42.Institutional
         public string CauseCaseId;
         public string CauseRulingId;
         public string CauseHoldingId;
+        public RulingDisposition RequiredRulingDisposition =
+            (RulingDisposition)(-1);
         public MaterialConsequenceKind GainKind = MaterialConsequenceKind.ResourceGranted;
         public MaterialConsequenceKind LossKind = MaterialConsequenceKind.ResourceRevoked;
         public string GainKindId;
         public string LossKindId;
+    }
+
+    internal static class InstitutionalScenarioDerivedIds
+    {
+        internal const string ConnectedOutcomePairPrefix = "connected:";
+
+        internal static string ConnectedOutcomePair(string transferId)
+        {
+            return $"{ConnectedOutcomePairPrefix}{transferId}";
+        }
     }
 
     /// <summary>
@@ -332,7 +370,7 @@ namespace Desk42.Institutional
     [Serializable]
     public sealed class InstitutionalScenarioDefinition
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
 
         public int SchemaVersion = CurrentSchemaVersion;
         public string ScenarioId;
@@ -349,11 +387,13 @@ namespace Desk42.Institutional
         public List<ScenarioCycleScheduleEntry> CycleSchedule = new();
         public List<ScenarioEvidenceTemplateDefinition> EvidenceTemplates = new();
         public List<ScenarioCaseDefinition> Cases = new();
+        public List<ScenarioEvidenceActivatedCaseDefinition> EvidenceActivatedCases = new();
         public List<ScenarioOfficialStatusEffectRequest> OfficialStatusEffectRequests = new();
         public List<ScenarioIrreversibleRelianceDefinition> RelianceDefinitions = new();
         public List<ScenarioRelianceRecoveryDefinition> RelianceRecoveries = new();
         public List<ScenarioAppealDefinition> Appeals = new();
         public List<ScenarioHoldingDefinition> Holdings = new();
+        public List<ScenarioHoldingCitationDefinition> HoldingCitations = new();
         public List<ScenarioActionCausedDescendantCaseDefinition> DescendantCases = new();
         public List<ScenarioExclusiveEntitlementDefinition> ExclusiveEntitlements = new();
         public List<ScenarioExclusiveEntitlementTransferDefinition> EntitlementTransfers = new();

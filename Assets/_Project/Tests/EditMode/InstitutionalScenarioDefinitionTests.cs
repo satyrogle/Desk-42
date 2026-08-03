@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Desk42.Institutional;
+using Desk42.Institutional.Scenarios.WorkplaceIdentity;
 using NUnit.Framework;
 
 namespace Desk42.Tests.EditMode
@@ -29,6 +31,8 @@ namespace Desk42.Tests.EditMode
             Assert.That(index.GetEvidenceTemplate("evidence.003"),
                 Is.SameAs(definition.EvidenceTemplates[2]));
             Assert.That(index.GetCase("case.002"), Is.SameAs(definition.Cases[1]));
+            Assert.That(index.GetHoldingCitation("citation.001"),
+                Is.SameAs(definition.HoldingCitations[0]));
             Assert.That(index.GetStatusEffect("effect.001"),
                 Is.SameAs(definition.OfficialStatusEffectRequests[0]));
             Assert.That(index.GetReliance("reliance.001"),
@@ -159,6 +163,312 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void Validator_RejectsTransferWithoutExplicitValidDisposition()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.EntitlementTransfers[0].RequiredRulingDisposition =
+                (RulingDisposition)999;
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+
+            Assert.That(exception.Message, Does.Contain("valid ruling disposition"));
+        }
+
+        [Test]
+        public void Validator_RejectsTransferDispositionImpossibleForCauseRulingPhase()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.EntitlementTransfers[0].RequiredRulingDisposition =
+                RulingDisposition.Recognised;
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+
+            Assert.That(exception.Message, Does.Contain("cannot materialise"));
+        }
+
+        [Test]
+        public void Validator_RejectsTransferWhoseDerivedConnectedPairIdIsTooLong()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.EntitlementTransfers[0].TransferId = new string('t', 119);
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+
+            Assert.That(exception.Message,
+                Does.Contain("connected-outcome pair id"));
+        }
+
+        [Test]
+        public void Validator_RejectsTransferAfterExactCauseRulingCycle()
+        {
+            InstitutionalScenarioDefinition definition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            definition.EntitlementTransfers[0].Cycle++;
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+
+            Assert.That(exception.Message,
+                Does.Contain("exact cause holding and ruling citation"));
+        }
+
+        [Test]
+        public void Validator_RejectsTransferWhoseHoldingIsDeclaredForAnotherRuling()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.EntitlementTransfers[0].CauseRulingId =
+                "ruling:case.002:initial:8";
+            definition.EntitlementTransfers[0].Cycle = 8;
+            definition.EntitlementTransfers[0].RequiredRulingDisposition =
+                RulingDisposition.Denied;
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+
+            Assert.That(exception.Message, Does.Contain("exact cause holding and ruling"));
+        }
+
+        [Test]
+        public void Validator_RejectsInitialCitationEstablishedLaterInSameCycle()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.HoldingCitations[0].TargetRulingId =
+                "ruling:case.002:initial:8";
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+
+            Assert.That(exception.Message, Does.Contain("execution order"));
+        }
+
+        [Test]
+        public void Validator_AcceptsSameCycleAdjudicationCitation()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            ScenarioCaseDefinition target = definition.Cases[1];
+            target.OpenCycle = 6;
+            target.InitialEvidenceCutoffCycle = 6;
+            target.InitialRulingCycle = 6;
+            target.InitialRulingId = "ruling:case.002:initial:6";
+            target.AdjudicationEvidenceCutoffCycle = 8;
+            target.AdjudicationCycle = 8;
+            target.AdjudicationRulingId =
+                "ruling:case.002:adjudication:8";
+            definition.DescendantCases[0].OpenCycle = 6;
+
+            ScenarioOpportunityDefinition opportunity = definition.Opportunities.Single(
+                item => item.OpportunityId == "op.003-appeal-second");
+            opportunity.AvailabilityStartCycle = 7;
+            opportunity.AvailabilityEndCycle = 7;
+            opportunity.ChallengedRulingId = target.InitialRulingId;
+            opportunity.HearingCycle = 8;
+            ScenarioCycleScheduleEntry filing = definition.CycleSchedule.Single(
+                item => item.Cycle == 7);
+            filing.AppealWindowOpen = true;
+            filing.OpenDocketId = "docket.002.same-cycle";
+            filing.ActiveOpportunityIds.Add(opportunity.OpportunityId);
+            ScenarioCycleScheduleEntry oldFiling = definition.CycleSchedule.Single(
+                item => item.Cycle == 9);
+            oldFiling.AppealWindowOpen = false;
+            oldFiling.OpenDocketId = null;
+            oldFiling.ActiveOpportunityIds.Clear();
+
+            ScenarioAppealDefinition appeal = definition.Appeals.Single(
+                item => item.AppealId == "appeal.002");
+            appeal.FilingCycle = 7;
+            appeal.HearingCycle = 8;
+            appeal.ChallengedRulingId = target.InitialRulingId;
+            appeal.ResultingRulingId = target.AdjudicationRulingId;
+            ScenarioOfficialStatusEffectRequest adverse =
+                definition.OfficialStatusEffectRequests.Single(
+                    item => item.EffectRequestId == "effect.003");
+            adverse.Cycle = 6;
+            adverse.CauseRulingId = target.InitialRulingId;
+            definition.HoldingCitations[0].TargetRulingId =
+                target.AdjudicationRulingId;
+            definition.EntitlementTransfers[0].Cycle = 8;
+            definition.EntitlementTransfers[0].CauseRulingId =
+                target.AdjudicationRulingId;
+
+            Assert.DoesNotThrow(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+        }
+
+        [Test]
+        public void Validator_RejectsAdjudicationCitationWithoutExactAppealRoute()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.Appeals.RemoveAll(item => item.AppealId == "appeal.002");
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+
+            Assert.That(exception.Message, Does.Contain("exact declared appeal route"));
+        }
+
+        [Test]
+        public void Validator_RejectsDuplicateExactHoldingRulingCitation()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.HoldingCitations.Add(new ScenarioHoldingCitationDefinition
+            {
+                CitationId = "citation.002",
+                HoldingId = "holding.001",
+                TargetCaseId = "case.002",
+                TargetRulingId = "ruling:case.002:adjudication:10",
+            });
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message, Does.Contain("exact target ruling"));
+        }
+
+        [Test]
+        public void Validator_RejectsCitationWhoseRulingBelongsToAnotherCase()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.HoldingCitations[0].TargetCaseId = "case.001";
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message, Does.Contain("exact target case"));
+        }
+
+        [Test]
+        public void Validator_RejectsHoldingSourceRulingSelfCitation()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.HoldingCitations[0].TargetCaseId = "case.001";
+            definition.HoldingCitations[0].TargetRulingId =
+                "ruling:case.001:adjudication:8";
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message, Does.Contain("cannot cite itself"));
+        }
+
+        [Test]
+        public void Validator_AcceptsSameCycleEvidenceActivation()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.DescendantCases.Clear();
+            definition.Cases[1].OpenCycle = 2;
+            definition.EvidenceActivatedCases.Add(new ScenarioEvidenceActivatedCaseDefinition
+            {
+                ActivationId = "activation.001",
+                CaseId = "case.002",
+                EvidenceTemplateId = "evidence.003",
+                TriggerCycle = 2,
+            });
+
+            Assert.DoesNotThrow(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+        }
+
+        [Test]
+        public void Validator_RejectsEvidenceActivationAfterOpenCycle()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.DescendantCases.Clear();
+            definition.EvidenceActivatedCases.Add(new ScenarioEvidenceActivatedCaseDefinition
+            {
+                ActivationId = "activation.001",
+                CaseId = "case.002",
+                EvidenceTemplateId = "evidence.003",
+                TriggerCycle = 8,
+            });
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message, Does.Contain("cannot follow"));
+        }
+
+        [Test]
+        public void Validator_RejectsNonOpportunityEvidenceActivation()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.DescendantCases.Clear();
+            definition.Cases[1].OpenCycle = 2;
+            ScenarioEvidenceTemplateDefinition template =
+                definition.EvidenceTemplates.Single(value =>
+                    value.EvidenceTemplateId == "evidence.003");
+            template.SourceEventKind = SocietyEventKind.NoActionObserved;
+            template.SourceOpportunityId = null;
+            definition.EvidenceActivatedCases.Add(
+                new ScenarioEvidenceActivatedCaseDefinition
+                {
+                    ActivationId = "activation.001",
+                    CaseId = "case.002",
+                    EvidenceTemplateId = "evidence.003",
+                    TriggerCycle = 2,
+                });
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message, Does.Contain("capacity-reserved"));
+        }
+
+        [Test]
+        public void Validator_RejectsActivationOnInitializationCycle()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.DescendantCases.Clear();
+            definition.Cases[1].OpenCycle = 2;
+            definition.EvidenceActivatedCases.Add(
+                new ScenarioEvidenceActivatedCaseDefinition
+                {
+                    ActivationId = "activation.001",
+                    CaseId = "case.002",
+                    EvidenceTemplateId = "evidence.003",
+                    TriggerCycle = definition.StartCycle,
+                });
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message, Does.Contain("initialization-only"));
+        }
+
+        [Test]
+        public void Validator_RejectsActivationWhenOpportunityIsInactiveThatCycle()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.DescendantCases.Clear();
+            definition.Cases[1].OpenCycle = 3;
+            definition.EvidenceActivatedCases.Add(
+                new ScenarioEvidenceActivatedCaseDefinition
+                {
+                    ActivationId = "activation.001",
+                    CaseId = "case.002",
+                    EvidenceTemplateId = "evidence.003",
+                    TriggerCycle = 3,
+                });
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message, Does.Contain("not active"));
+        }
+
+        [Test]
+        public void Validator_RejectsCaseWithTwoActivationContracts()
+        {
+            InstitutionalScenarioDefinition definition = ValidDefinition();
+            definition.EvidenceActivatedCases.Add(new ScenarioEvidenceActivatedCaseDefinition
+            {
+                ActivationId = "activation.001",
+                CaseId = "case.002",
+                EvidenceTemplateId = "evidence.003",
+                TriggerCycle = 2,
+            });
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => InstitutionalScenarioDefinitionValidator.Validate(definition));
+            Assert.That(exception.Message, Does.Contain("both evidence-activated and action-caused"));
+        }
+
+        [Test]
         public void Validator_RejectsDirectAgentIdsHiddenInOpaqueCauseFields()
         {
             InstitutionalScenarioDefinition definition = ValidDefinition();
@@ -183,12 +493,14 @@ namespace Desk42.Tests.EditMode
                 typeof(ScenarioCycleScheduleEntry),
                 typeof(ScenarioEvidenceTemplateDefinition),
                 typeof(ScenarioCaseDefinition),
+                typeof(ScenarioEvidenceActivatedCaseDefinition),
                 typeof(ScenarioOfficialStatusEffectRequest),
                 typeof(ScenarioIrreversibleRelianceDefinition),
                 typeof(ScenarioRelianceEffectDefinition),
                 typeof(ScenarioRelianceRecoveryDefinition),
                 typeof(ScenarioAppealDefinition),
                 typeof(ScenarioHoldingDefinition),
+                typeof(ScenarioHoldingCitationDefinition),
                 typeof(ScenarioActionCausedDescendantCaseDefinition),
                 typeof(ScenarioExclusiveEntitlementDefinition),
                 typeof(ScenarioExclusiveEntitlementTransferDefinition),
@@ -210,6 +522,7 @@ namespace Desk42.Tests.EditMode
             {
                 typeof(ScenarioOpportunityDefinition),
                 typeof(ScenarioCycleScheduleEntry),
+                typeof(ScenarioEvidenceActivatedCaseDefinition),
                 typeof(ScenarioOfficialStatusEffectRequest),
                 typeof(ScenarioIrreversibleRelianceDefinition),
                 typeof(ScenarioRelianceRecoveryDefinition),
@@ -306,10 +619,9 @@ namespace Desk42.Tests.EditMode
                 "ruling:case.001:adjudication:8"));
             definition.Cases.Add(Case(
                 "case.002", "issue.001", "role.beta", "role.alpha", "fact.jurisdiction", "alpha",
-                7, 8, 9, "ruling:case.002:initial:8",
-                "ruling:case.002:adjudication:9"));
+                7, 8, 10, "ruling:case.002:initial:8",
+                "ruling:case.002:adjudication:10"));
             definition.Cases[1].Facts.Add("fact.subject", "beta");
-            definition.Cases[1].CitedHoldingIds.Add("holding.001");
 
             definition.Opportunities.Add(Opportunity(
                 "op.001-aid", ScenarioOpportunityKind.Aid, 5, 5, "role.alpha"));
@@ -328,6 +640,20 @@ namespace Desk42.Tests.EditMode
                 ChallengedRulingId = "ruling:case.001:initial:4",
                 HearingCycle = 8,
                 EligibleRoleIds = new List<string> { "role.alpha" },
+            });
+            definition.Opportunities.Add(new ScenarioOpportunityDefinition
+            {
+                OpportunityId = "op.003-appeal-second",
+                Kind = ScenarioOpportunityKind.Appeal,
+                PurposeId = "purpose.003",
+                SourceCauseId = "cause.003",
+                AvailabilityStartCycle = 9,
+                AvailabilityEndCycle = 9,
+                UtilityBonus = 10,
+                CaseId = "case.002",
+                ChallengedRulingId = "ruling:case.002:initial:8",
+                HearingCycle = 10,
+                EligibleRoleIds = new List<string> { "role.beta" },
             });
             definition.Opportunities.Add(Opportunity(
                 "op.003-work", ScenarioOpportunityKind.Work, 2, 2, "role.beta"));
@@ -349,7 +675,8 @@ namespace Desk42.Tests.EditMode
             definition.CycleSchedule.Add(Schedule(
                 "schedule.008", 8, false, false, false, false, null));
             definition.CycleSchedule.Add(Schedule(
-                "schedule.009", 9, false, false, false, false, null));
+                "schedule.009", 9, false, false, false, true, "docket.002",
+                "op.003-appeal-second"));
             definition.CycleSchedule.Add(Schedule(
                 "schedule.010", 10, false, false, false, false, null));
 
@@ -383,6 +710,17 @@ namespace Desk42.Tests.EditMode
                 CauseRulingId = "ruling:case.001:initial:4",
                 RequiredRulingDisposition = RulingDisposition.ProvisionallyRecognised,
                 TargetRoleId = "role.alpha",
+                StatusId = InstitutionalStatusIds.AdverseDecision,
+                RequestedRecognisedState = true,
+            });
+            definition.OfficialStatusEffectRequests.Add(new ScenarioOfficialStatusEffectRequest
+            {
+                EffectRequestId = "effect.003",
+                Cycle = 8,
+                CauseCaseId = "case.002",
+                CauseRulingId = "ruling:case.002:initial:8",
+                RequiredRulingDisposition = RulingDisposition.Denied,
+                TargetRoleId = "role.beta",
                 StatusId = InstitutionalStatusIds.AdverseDecision,
                 RequestedRecognisedState = true,
             });
@@ -429,6 +767,18 @@ namespace Desk42.Tests.EditMode
                 ResultingHoldingId = "holding.001",
                 GroundsEvidenceTemplateIds = new List<string> { "evidence.002" },
             });
+            definition.Appeals.Add(new ScenarioAppealDefinition
+            {
+                AppealId = "appeal.002",
+                CaseId = "case.002",
+                OpportunityId = "op.003-appeal-second",
+                AppellantRoleId = "role.beta",
+                FilingCycle = 9,
+                HearingCycle = 10,
+                ChallengedRulingId = "ruling:case.002:initial:8",
+                ResultingRulingId = "ruling:case.002:adjudication:10",
+                GroundsEvidenceTemplateIds = new List<string> { "evidence.003" },
+            });
             definition.RelianceRecoveries.Add(new ScenarioRelianceRecoveryDefinition
             {
                 RecoveryDefinitionId = "recovery.001",
@@ -458,6 +808,13 @@ namespace Desk42.Tests.EditMode
                 RequiredScopeFacts = new CaseFactSet(new[] { new CaseFact("fact.jurisdiction", "alpha") }),
                 SupportingEvidenceTemplateIds = new List<string> { "evidence.002" },
             });
+            definition.HoldingCitations.Add(new ScenarioHoldingCitationDefinition
+            {
+                CitationId = "citation.001",
+                HoldingId = "holding.001",
+                TargetCaseId = "case.002",
+                TargetRulingId = "ruling:case.002:adjudication:10",
+            });
 
             definition.DescendantCases.Add(new ScenarioActionCausedDescendantCaseDefinition
             {
@@ -485,13 +842,14 @@ namespace Desk42.Tests.EditMode
             definition.EntitlementTransfers.Add(new ScenarioExclusiveEntitlementTransferDefinition
             {
                 TransferId = "transfer.001",
-                Cycle = 9,
+                Cycle = 10,
                 EntitlementId = "entitlement.001",
                 FromRoleId = "role.alpha",
                 ToRoleId = "role.beta",
                 CauseCaseId = "case.002",
-                CauseRulingId = "ruling:case.002:adjudication:9",
+                CauseRulingId = "ruling:case.002:adjudication:10",
                 CauseHoldingId = "holding.001",
+                RequiredRulingDisposition = RulingDisposition.ReversedAndRecognised,
             });
 
             return definition;

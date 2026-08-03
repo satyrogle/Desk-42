@@ -1,10 +1,37 @@
 # Institutional Engine Candidate Boundary
 
-Status: extraction contract, prior to the engine-candidate freeze.
+Status: v0.2 extraction and freeze contract.
 
 This document compares the preserved Workplace Identity proof with the Glass
 Canal discharge specification. It defines ownership and dependency direction;
 it does not claim that the second-scenario gate has passed.
+
+## Candidate history and falsification
+
+The immutable tag `institutional-engine-candidate-v0.1` is preserved at commit
+`451982aeb06af0c1e36e944ab2b1e87897221194`, together with its original
+`evidence/InstitutionalEngine/v0.1/` package. That checkpoint remains credible
+evidence for a deterministic generic substrate and one declarative control
+fixture. It is not rewritten or relabelled as the two-scenario candidate.
+
+Auditing the frozen Glass Canal specification against v0.1 falsified two
+claimed generic seams before Scenario 02 was authored:
+
+1. citation declarations were case-wide, so a matching holding could not be
+   directed only to an exact appellate ruling; and
+2. primary cases were unconditionally active, so removing the autonomous
+   sampling action could remove evidence but not the primary case path.
+
+Those are engine-contract failures, not permissions for Glass Canal code to
+special-case the scenario. Candidate v0.2 adds two generic capabilities:
+
+- citations are declared and applied against an exact case, ruling and
+  holding; and
+- any case, including the primary case, may be activated by a declared causal
+  agent action while the exact trigger evidence can enter before activation.
+
+The v0.2 candidate is not established until its protected manifest and
+immutable tag both exist. The gate fails closed while either is absent.
 
 ## Preserved pulse order
 
@@ -115,6 +142,8 @@ future immutable report projection replaces the compatibility surface.
 | Resource | paid shift | municipal filter cartridge CF-9 | exclusive conserved entitlement |
 | Descendant | later continuity allocation | later purification-priority claim | action-caused case definition |
 | Connection | wage winner and loser | filter holder winner and loser | paired transfer observation |
+| Citation phase | successor initial ruling | later appellate ruling | exact case/ruling/holding citation declaration |
+| Primary opening | unconditionally active | autonomous sealed sample | causal activation available to primary and descendant cases |
 
 `WorkAllocationState`, employer IDs and identity-condition fields remain legacy
 compatibility surfaces for the preserved proof. New generic operations must not
@@ -145,13 +174,18 @@ Linux CI runner.
 
 ## Engine freeze rule
 
-The immutable tag `institutional-engine-candidate-v0.1` names the candidate
+The immutable tag `institutional-engine-candidate-v0.2` names the candidate
 commit. That commit tracks
-`evidence/InstitutionalEngine/v0.1/engine-manifest.sha256`. The baseline is
+`evidence/InstitutionalEngine/v0.2/engine-manifest.sha256`. The baseline is
 mandatory, and its Git blob at every later scenario commit and its checked-out
 file must remain clean relative to the byte-identical blob at the tag. The
 candidate commit's own CI verifies the baseline without demanding a second
 scenario.
+
+The v0.1 tag and evidence directory remain historical evidence and are never
+used as an alias for v0.2. The v0.2 manifest must be generated from the fixed
+candidate itself; no v0.1 hash or test result may be copied forward as v0.2
+evidence.
 
 After the freeze, Glass Canal may add only its scenario definition, its tests and
 optional non-executable presentation fixtures. The gate requires a clean worktree

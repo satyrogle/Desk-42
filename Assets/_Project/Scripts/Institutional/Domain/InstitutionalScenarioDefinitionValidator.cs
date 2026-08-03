@@ -18,11 +18,13 @@ namespace Desk42.Institutional
         public const int MaximumScheduleEntries = 512;
         public const int MaximumEvidenceTemplates = 256;
         public const int MaximumCases = 64;
+        public const int MaximumEvidenceActivatedCases = 64;
         public const int MaximumStatusEffects = 256;
         public const int MaximumRelianceDefinitions = 128;
         public const int MaximumRelianceRecoveries = 128;
         public const int MaximumAppeals = 64;
         public const int MaximumHoldings = 64;
+        public const int MaximumHoldingCitations = 128;
         public const int MaximumDescendantCases = 64;
         public const int MaximumEntitlements = 64;
         public const int MaximumTransfers = 128;
@@ -61,6 +63,8 @@ namespace Desk42.Institutional
             RequireCollection(definition.CycleSchedule, 1, MaximumScheduleEntries, "cycle schedule");
             RequireCollection(definition.EvidenceTemplates, 1, MaximumEvidenceTemplates, "evidence templates");
             RequireCollection(definition.Cases, 1, MaximumCases, "cases");
+            RequireCollection(definition.EvidenceActivatedCases, 0,
+                MaximumEvidenceActivatedCases, "evidence-activated cases");
             RequireCollection(definition.OfficialStatusEffectRequests, 0, MaximumStatusEffects,
                 "official-status effect requests");
             RequireCollection(definition.RelianceDefinitions, 0, MaximumRelianceDefinitions,
@@ -69,6 +73,8 @@ namespace Desk42.Institutional
                 "reliance recoveries");
             RequireCollection(definition.Appeals, 0, MaximumAppeals, "appeals");
             RequireCollection(definition.Holdings, 0, MaximumHoldings, "holdings");
+            RequireCollection(definition.HoldingCitations, 0,
+                MaximumHoldingCitations, "holding citations");
             RequireCollection(definition.DescendantCases, 0, MaximumDescendantCases,
                 "descendant cases");
             RequireCollection(definition.ExclusiveEntitlements, 0, MaximumEntitlements,
@@ -98,6 +104,12 @@ namespace Desk42.Institutional
                 ValidateSchedule(definition, roles, opportunities, agentIds);
             Dictionary<string, ScenarioEvidenceTemplateDefinition> evidence =
                 ValidateEvidenceTemplates(definition, opportunities, cases);
+            HashSet<string> evidenceActivatedCaseIds =
+                ValidateEvidenceActivatedCases(
+                    definition,
+                    cases,
+                    evidence,
+                    activeOpportunityCycles);
             Dictionary<string, ScenarioOfficialStatusEffectRequest> effects =
                 ValidateStatusEffects(definition, roles, cases, rulingToCase, agentIds);
             Dictionary<string, ScenarioIrreversibleRelianceDefinition> reliance =
@@ -114,14 +126,20 @@ namespace Desk42.Institutional
                 ValidateHoldings(
                     definition, appeals, cases, rulingToCase, evidence, agentIds);
             ValidateAppealHoldingLinks(appeals, holdings);
-            ValidateCaseHoldingCitations(cases, holdings);
+            ValidateHoldingCitations(
+                definition,
+                cases,
+                rulingToCase,
+                holdings,
+                appeals);
             ValidateDescendantCases(
                 definition, roles, opportunities, cases, rulingToCase,
-                activeOpportunityCycles, agentIds);
+                activeOpportunityCycles, evidenceActivatedCaseIds, agentIds);
             Dictionary<string, ScenarioExclusiveEntitlementDefinition> entitlements =
                 ValidateEntitlements(definition, roles, agentIds);
             ValidateTransfers(
-                definition, roles, cases, rulingToCase, holdings, entitlements, agentIds);
+                definition, roles, cases, rulingToCase, holdings, entitlements,
+                agentIds);
         }
 
         private static Dictionary<string, ScenarioParticipantRoleDefinition> ValidateRoles(
@@ -407,7 +425,6 @@ namespace Desk42.Institutional
                 }
                 ValidateRange(item.AdjudicationScoreThreshold, 1, 10_000,
                     $"case '{item.CaseId}' adjudication score threshold");
-                ValidateOrderedIds(item.CitedHoldingIds, $"case '{item.CaseId}' cited holdings", false);
             }
             return result;
         }
@@ -690,6 +707,86 @@ namespace Desk42.Institutional
                 ValidateRange(item.Weight, 1, 1_000, "evidence weight");
             }
             return result;
+        }
+
+        private static HashSet<string> ValidateEvidenceActivatedCases(
+            InstitutionalScenarioDefinition definition,
+            Dictionary<string, ScenarioCaseDefinition> cases,
+            Dictionary<string, ScenarioEvidenceTemplateDefinition> evidence,
+            HashSet<string> activeOpportunityCycles)
+        {
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            var activatedCaseIds = new HashSet<string>(StringComparer.Ordinal);
+            string previousId = null;
+            for (int i = 0; i < definition.EvidenceActivatedCases.Count; i++)
+            {
+                ScenarioEvidenceActivatedCaseDefinition item =
+                    definition.EvidenceActivatedCases[i] ??
+                    throw new InvalidOperationException(
+                        "Evidence-activated cases cannot contain null entries.");
+                ValidateStableId(item.ActivationId, "case activation id");
+                ValidateStrictObjectOrder(
+                    previousId,
+                    item.ActivationId,
+                    "evidence-activated cases");
+                previousId = item.ActivationId;
+                if (!ids.Add(item.ActivationId))
+                {
+                    throw new InvalidOperationException(
+                        $"Duplicate case activation id '{item.ActivationId}'.");
+                }
+                ValidateStableId(item.CaseId, "case activation target case id");
+                ValidateStableId(
+                    item.EvidenceTemplateId,
+                    "case activation evidence template id");
+                if (!cases.TryGetValue(item.CaseId, out ScenarioCaseDefinition target) ||
+                    !activatedCaseIds.Add(item.CaseId))
+                {
+                    throw new InvalidOperationException(
+                        "Case activation references a missing or duplicate case.");
+                }
+                if (!evidence.TryGetValue(
+                        item.EvidenceTemplateId,
+                        out ScenarioEvidenceTemplateDefinition template) ||
+                    !string.Equals(template.CaseId, item.CaseId, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Case activation evidence must belong to its exact target case.");
+                }
+                ValidateCycle(item.TriggerCycle, definition, "case activation trigger cycle");
+                if (item.TriggerCycle <= definition.StartCycle)
+                {
+                    throw new InvalidOperationException(
+                        "Case activation trigger cycle must follow the " +
+                        "initialization-only start cycle.");
+                }
+                if (item.TriggerCycle > target.OpenCycle)
+                {
+                    throw new InvalidOperationException(
+                        "Case activation trigger cycle cannot follow its case open cycle.");
+                }
+                bool opportunityBacked =
+                    template.SourceEventKind == SocietyEventKind.WorkPerformed ||
+                    template.SourceEventKind == SocietyEventKind.AidRequested ||
+                    template.SourceEventKind == SocietyEventKind.AppealFiled;
+                if (!opportunityBacked ||
+                    string.IsNullOrWhiteSpace(template.SourceOpportunityId))
+                {
+                    throw new InvalidOperationException(
+                        "Case activation evidence must originate from one " +
+                        "capacity-reserved opportunity action.");
+                }
+                if (!activeOpportunityCycles.Contains(
+                        OpportunityCycleKey(
+                            template.SourceOpportunityId,
+                            item.TriggerCycle)))
+                {
+                    throw new InvalidOperationException(
+                        "Case activation evidence opportunity is not active on its " +
+                        "exact trigger cycle.");
+                }
+            }
+            return activatedCaseIds;
         }
 
         private static Dictionary<string, ScenarioOfficialStatusEffectRequest> ValidateStatusEffects(
@@ -1240,24 +1337,119 @@ namespace Desk42.Institutional
             }
         }
 
-        private static void ValidateCaseHoldingCitations(
+        private static void ValidateHoldingCitations(
+            InstitutionalScenarioDefinition definition,
             Dictionary<string, ScenarioCaseDefinition> cases,
-            Dictionary<string, ScenarioHoldingDefinition> holdings)
+            Dictionary<string, string> rulingToCase,
+            Dictionary<string, ScenarioHoldingDefinition> holdings,
+            Dictionary<string, ScenarioAppealDefinition> appeals)
         {
-            foreach (ScenarioCaseDefinition caseDefinition in cases.Values)
+            var citationIds = new HashSet<string>(StringComparer.Ordinal);
+            var holdingRulingPairs = new HashSet<string>(StringComparer.Ordinal);
+            var holdingCasePairs = new HashSet<string>(StringComparer.Ordinal);
+            string previousId = null;
+            for (int i = 0; i < definition.HoldingCitations.Count; i++)
             {
-                for (int i = 0; i < caseDefinition.CitedHoldingIds.Count; i++)
+                ScenarioHoldingCitationDefinition item =
+                    definition.HoldingCitations[i] ??
+                    throw new InvalidOperationException(
+                        "Holding citations cannot contain null entries.");
+                ValidateStableId(item.CitationId, "holding citation id");
+                ValidateStrictObjectOrder(
+                    previousId,
+                    item.CitationId,
+                    "holding citations");
+                previousId = item.CitationId;
+                if (!citationIds.Add(item.CitationId))
                 {
-                    string holdingId = caseDefinition.CitedHoldingIds[i];
-                    if (!holdings.TryGetValue(holdingId, out ScenarioHoldingDefinition holding))
-                        throw new InvalidOperationException("Case cites a missing holding.");
-                    if (holding.EstablishedCycle >= caseDefinition.AdjudicationCycle)
-                        throw new InvalidOperationException("Case cites a holding not established before adjudication.");
-                    if (!string.Equals(holding.IssueId, caseDefinition.IssueId,
+                    throw new InvalidOperationException(
+                        $"Duplicate holding citation id '{item.CitationId}'.");
+                }
+                if (!holdings.TryGetValue(
+                        item.HoldingId,
+                        out ScenarioHoldingDefinition holding))
+                    throw new InvalidOperationException("Citation references a missing holding.");
+                if (!cases.TryGetValue(
+                        item.TargetCaseId,
+                        out ScenarioCaseDefinition targetCase))
+                    throw new InvalidOperationException("Citation references a missing target case.");
+                if (!rulingToCase.TryGetValue(
+                        item.TargetRulingId,
+                        out string rulingCaseId) ||
+                    !string.Equals(
+                        rulingCaseId,
+                        item.TargetCaseId,
                         StringComparison.Ordinal))
-                        throw new InvalidOperationException("Case citation issue does not match its holding.");
-                    if (!caseDefinition.Facts.ContainsAll(holding.RequiredScopeFacts))
-                        throw new InvalidOperationException("Cited holding scope does not match the case facts.");
+                {
+                    throw new InvalidOperationException(
+                        "Citation target ruling must belong to its exact target case.");
+                }
+                if (string.Equals(
+                        item.TargetRulingId,
+                        holding.SourceRulingId,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "A holding cannot cite itself in its source ruling.");
+                }
+                long targetCycle = RulingCycle(targetCase, item.TargetRulingId);
+                bool targetsInitialRuling = string.Equals(
+                    item.TargetRulingId,
+                    targetCase.InitialRulingId,
+                    StringComparison.Ordinal);
+                if (!targetsInitialRuling)
+                {
+                    int exactAppealRoutes = 0;
+                    foreach (ScenarioAppealDefinition appeal in appeals.Values)
+                    {
+                        if (string.Equals(
+                                appeal.CaseId,
+                                item.TargetCaseId,
+                                StringComparison.Ordinal) &&
+                            string.Equals(
+                                appeal.ResultingRulingId,
+                                item.TargetRulingId,
+                                StringComparison.Ordinal) &&
+                            appeal.HearingCycle == targetCase.AdjudicationCycle)
+                        {
+                            exactAppealRoutes++;
+                        }
+                    }
+                    if (exactAppealRoutes != 1)
+                    {
+                        throw new InvalidOperationException(
+                            "Citation target adjudication ruling requires one exact " +
+                            "declared appeal route.");
+                    }
+                }
+                if (targetCycle < holding.EstablishedCycle ||
+                    (targetsInitialRuling &&
+                     targetCycle == holding.EstablishedCycle))
+                {
+                    throw new InvalidOperationException(
+                        "Citation target ruling precedes the holding in execution order.");
+                }
+                if (!string.Equals(
+                        targetCase.IssueId,
+                        holding.IssueId,
+                        StringComparison.Ordinal))
+                    throw new InvalidOperationException(
+                        "Citation target issue does not match its holding.");
+                if (!targetCase.Facts.ContainsAll(holding.RequiredScopeFacts))
+                    throw new InvalidOperationException(
+                        "Citation holding scope does not match target case facts.");
+
+                string rulingPair = $"{item.HoldingId}\u001f{item.TargetRulingId}";
+                if (!holdingRulingPairs.Add(rulingPair))
+                {
+                    throw new InvalidOperationException(
+                        "A holding may be declared only once for an exact target ruling.");
+                }
+                string casePair = $"{item.HoldingId}\u001f{item.TargetCaseId}";
+                if (!holdingCasePairs.Add(casePair))
+                {
+                    throw new InvalidOperationException(
+                        "A holding may be applied only once per target case.");
                 }
             }
         }
@@ -1269,6 +1461,7 @@ namespace Desk42.Institutional
             Dictionary<string, ScenarioCaseDefinition> cases,
             Dictionary<string, string> rulingToCase,
             HashSet<string> activeOpportunityCycles,
+            HashSet<string> evidenceActivatedCaseIds,
             HashSet<string> agentIds)
         {
             var ids = new HashSet<string>(StringComparer.Ordinal);
@@ -1286,6 +1479,11 @@ namespace Desk42.Institutional
                 if (!cases.TryGetValue(item.CaseId, out ScenarioCaseDefinition descendantCase) ||
                     !descendantCaseIds.Add(item.CaseId))
                     throw new InvalidOperationException("Descendant definition references a missing or duplicate case.");
+                if (evidenceActivatedCaseIds.Contains(item.CaseId))
+                {
+                    throw new InvalidOperationException(
+                        "A case cannot be both evidence-activated and action-caused.");
+                }
                 if (!cases.TryGetValue(item.ParentCaseId, out ScenarioCaseDefinition parentCase) ||
                     string.Equals(item.CaseId, item.ParentCaseId, StringComparison.Ordinal))
                     throw new InvalidOperationException("Descendant definition has an invalid parent case.");
@@ -1356,8 +1554,12 @@ namespace Desk42.Institutional
                     if (descendantCaseIds.Contains(caseId))
                         throw new InvalidOperationException("Primary case cannot also be a descendant case.");
                 }
-                else if (!descendantCaseIds.Contains(caseId))
-                    throw new InvalidOperationException($"Non-primary case '{caseId}' lacks a descendant definition.");
+                else if (!descendantCaseIds.Contains(caseId) &&
+                         !evidenceActivatedCaseIds.Contains(caseId))
+                {
+                    throw new InvalidOperationException(
+                        $"Non-primary case '{caseId}' lacks a conditional activation definition.");
+                }
             }
         }
 
@@ -1418,18 +1620,24 @@ namespace Desk42.Institutional
             HashSet<string> agentIds)
         {
             var ids = new HashSet<string>(StringComparer.Ordinal);
+            var causeResourcePairs = new HashSet<string>(StringComparer.Ordinal);
             string previousId = null;
             for (int i = 0; i < definition.EntitlementTransfers.Count; i++)
             {
                 ScenarioExclusiveEntitlementTransferDefinition item = definition.EntitlementTransfers[i] ??
                     throw new InvalidOperationException("Entitlement transfers cannot contain null entries.");
                 ValidateStableId(item.TransferId, "entitlement transfer id");
+                ValidateStableId(
+                    InstitutionalScenarioDerivedIds.ConnectedOutcomePair(item.TransferId),
+                    "entitlement transfer connected-outcome pair id");
                 ValidateStrictObjectOrder(previousId, item.TransferId, "entitlement transfers");
                 previousId = item.TransferId;
                 if (!ids.Add(item.TransferId))
                     throw new InvalidOperationException("Duplicate entitlement transfer id.");
                 ValidateCycle(item.Cycle, definition, "entitlement transfer cycle");
-                if (!entitlements.ContainsKey(item.EntitlementId))
+                if (!entitlements.TryGetValue(
+                        item.EntitlementId,
+                        out ScenarioExclusiveEntitlementDefinition entitlement))
                     throw new InvalidOperationException("Transfer references a missing entitlement.");
                 RequireRoleReference(item.FromRoleId, "transfer source role", roles, agentIds);
                 RequireRoleReference(item.ToRoleId, "transfer destination role", roles, agentIds);
@@ -1440,6 +1648,13 @@ namespace Desk42.Institutional
                     item.ToRoleId,
                     roles,
                     "exclusive entitlement transfer holders");
+                if (!Enum.IsDefined(
+                        typeof(RulingDisposition),
+                        item.RequiredRulingDisposition))
+                {
+                    throw new InvalidOperationException(
+                        "Entitlement transfer requires a valid ruling disposition.");
+                }
                 if (!Enum.IsDefined(typeof(MaterialConsequenceKind), item.GainKind) ||
                     !Enum.IsDefined(typeof(MaterialConsequenceKind), item.LossKind))
                 {
@@ -1460,18 +1675,58 @@ namespace Desk42.Institutional
                     throw new InvalidOperationException(
                         "Transfer cause ruling must belong to its exact cause case.");
                 }
+                string causeResourcePair =
+                    $"{item.CauseRulingId}\u001f{entitlement.ResourceId}";
+                if (!causeResourcePairs.Add(causeResourcePair))
+                {
+                    throw new InvalidOperationException(
+                        "A cause ruling may transfer an exclusive resource only once.");
+                }
                 ValidateStableId(item.CauseHoldingId, "entitlement transfer cause holding id");
                 if (!holdings.TryGetValue(item.CauseHoldingId, out ScenarioHoldingDefinition holding))
                     throw new InvalidOperationException("Transfer references a missing cause holding.");
                 ScenarioCaseDefinition targetCase = cases[item.CauseCaseId];
-                if (!targetCase.CitedHoldingIds.Contains(item.CauseHoldingId) ||
-                    !targetCase.Facts.ContainsAll(holding.RequiredScopeFacts) ||
-                    RulingCycle(targetCase, item.CauseRulingId) > item.Cycle ||
-                    item.Cycle < holding.EstablishedCycle ||
-                    item.Cycle < targetCase.AdjudicationCycle)
+                if (!RulingDispositionCanMaterialise(
+                        targetCase,
+                        item.CauseRulingId,
+                        item.RequiredRulingDisposition))
                 {
                     throw new InvalidOperationException(
-                        "Transfer requires a scoped holding cited by its adjudicated target case.");
+                        "Entitlement transfer ruling disposition cannot materialise " +
+                        "in its cause-ruling phase.");
+                }
+                bool exactCitationDeclared = false;
+                for (int citationIndex = 0;
+                     citationIndex < definition.HoldingCitations.Count;
+                     citationIndex++)
+                {
+                    ScenarioHoldingCitationDefinition citation =
+                        definition.HoldingCitations[citationIndex];
+                    if (string.Equals(
+                            citation.HoldingId,
+                            item.CauseHoldingId,
+                            StringComparison.Ordinal) &&
+                        string.Equals(
+                            citation.TargetCaseId,
+                            item.CauseCaseId,
+                            StringComparison.Ordinal) &&
+                        string.Equals(
+                            citation.TargetRulingId,
+                            item.CauseRulingId,
+                            StringComparison.Ordinal))
+                    {
+                        exactCitationDeclared = true;
+                        break;
+                    }
+                }
+                if (!exactCitationDeclared ||
+                    !targetCase.Facts.ContainsAll(holding.RequiredScopeFacts) ||
+                    RulingCycle(targetCase, item.CauseRulingId) != item.Cycle ||
+                    item.Cycle < holding.EstablishedCycle)
+                {
+                    throw new InvalidOperationException(
+                        "Transfer requires its exact cause holding and ruling citation " +
+                        "in the same cycle.");
                 }
             }
 
@@ -1580,6 +1835,24 @@ namespace Desk42.Institutional
             return string.Equals(caseDefinition.InitialRulingId, rulingId, StringComparison.Ordinal)
                 ? caseDefinition.InitialRulingCycle
                 : caseDefinition.AdjudicationCycle;
+        }
+
+        private static bool RulingDispositionCanMaterialise(
+            ScenarioCaseDefinition caseDefinition,
+            string rulingId,
+            RulingDisposition disposition)
+        {
+            bool initial = string.Equals(
+                caseDefinition.InitialRulingId,
+                rulingId,
+                StringComparison.Ordinal);
+            return initial
+                ? disposition == RulingDisposition.Denied ||
+                  disposition == RulingDisposition.ProvisionallyRecognised ||
+                  disposition == RulingDisposition.Recognised
+                : disposition == RulingDisposition.Affirmed ||
+                  disposition == RulingDisposition.ReversedAndDenied ||
+                  disposition == RulingDisposition.ReversedAndRecognised;
         }
 
         private static void RequireRoleReference(
@@ -1718,11 +1991,15 @@ namespace Desk42.Institutional
         private readonly SortedDictionary<string, ScenarioCycleScheduleEntry> _schedule = new();
         private readonly SortedDictionary<string, ScenarioEvidenceTemplateDefinition> _evidence = new();
         private readonly SortedDictionary<string, ScenarioCaseDefinition> _cases = new();
+        private readonly SortedDictionary<string, ScenarioEvidenceActivatedCaseDefinition>
+            _evidenceActivatedCases = new();
         private readonly SortedDictionary<string, ScenarioOfficialStatusEffectRequest> _effects = new();
         private readonly SortedDictionary<string, ScenarioIrreversibleRelianceDefinition> _reliance = new();
         private readonly SortedDictionary<string, ScenarioRelianceRecoveryDefinition> _recoveries = new();
         private readonly SortedDictionary<string, ScenarioAppealDefinition> _appeals = new();
         private readonly SortedDictionary<string, ScenarioHoldingDefinition> _holdings = new();
+        private readonly SortedDictionary<string, ScenarioHoldingCitationDefinition>
+            _holdingCitations = new();
         private readonly SortedDictionary<string, ScenarioActionCausedDescendantCaseDefinition> _descendants = new();
         private readonly SortedDictionary<string, ScenarioExclusiveEntitlementDefinition> _entitlements = new();
         private readonly SortedDictionary<string, ScenarioExclusiveEntitlementTransferDefinition> _transfers = new();
@@ -1749,6 +2026,10 @@ namespace Desk42.Institutional
                 _evidence.Add(definition.EvidenceTemplates[i].EvidenceTemplateId, definition.EvidenceTemplates[i]);
             for (int i = 0; i < definition.Cases.Count; i++)
                 _cases.Add(definition.Cases[i].CaseId, definition.Cases[i]);
+            for (int i = 0; i < definition.EvidenceActivatedCases.Count; i++)
+                _evidenceActivatedCases.Add(
+                    definition.EvidenceActivatedCases[i].ActivationId,
+                    definition.EvidenceActivatedCases[i]);
             for (int i = 0; i < definition.OfficialStatusEffectRequests.Count; i++)
                 _effects.Add(definition.OfficialStatusEffectRequests[i].EffectRequestId,
                     definition.OfficialStatusEffectRequests[i]);
@@ -1762,6 +2043,10 @@ namespace Desk42.Institutional
                 _appeals.Add(definition.Appeals[i].AppealId, definition.Appeals[i]);
             for (int i = 0; i < definition.Holdings.Count; i++)
                 _holdings.Add(definition.Holdings[i].HoldingId, definition.Holdings[i]);
+            for (int i = 0; i < definition.HoldingCitations.Count; i++)
+                _holdingCitations.Add(
+                    definition.HoldingCitations[i].CitationId,
+                    definition.HoldingCitations[i]);
             for (int i = 0; i < definition.DescendantCases.Count; i++)
                 _descendants.Add(definition.DescendantCases[i].DescendantDefinitionId,
                     definition.DescendantCases[i]);
@@ -1784,12 +2069,16 @@ namespace Desk42.Institutional
         public ScenarioCycleScheduleEntry GetScheduleEntry(string id) => Get(_schedule, id, "schedule entry");
         public ScenarioEvidenceTemplateDefinition GetEvidenceTemplate(string id) => Get(_evidence, id, "evidence template");
         public ScenarioCaseDefinition GetCase(string id) => Get(_cases, id, "case");
+        public ScenarioEvidenceActivatedCaseDefinition GetEvidenceActivatedCase(string id) =>
+            Get(_evidenceActivatedCases, id, "evidence-activated case");
         public ScenarioOfficialStatusEffectRequest GetStatusEffect(string id) => Get(_effects, id, "status effect");
         public ScenarioIrreversibleRelianceDefinition GetReliance(string id) => Get(_reliance, id, "reliance");
         public ScenarioRelianceRecoveryDefinition GetRelianceRecovery(string id) =>
             Get(_recoveries, id, "reliance recovery");
         public ScenarioAppealDefinition GetAppeal(string id) => Get(_appeals, id, "appeal");
         public ScenarioHoldingDefinition GetHolding(string id) => Get(_holdings, id, "holding");
+        public ScenarioHoldingCitationDefinition GetHoldingCitation(string id) =>
+            Get(_holdingCitations, id, "holding citation");
         public ScenarioActionCausedDescendantCaseDefinition GetDescendant(string id) => Get(_descendants, id, "descendant");
         public ScenarioExclusiveEntitlementDefinition GetEntitlement(string id) => Get(_entitlements, id, "entitlement");
         public ScenarioExclusiveEntitlementTransferDefinition GetTransfer(string id) => Get(_transfers, id, "transfer");

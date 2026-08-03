@@ -35,6 +35,16 @@ namespace Desk42.Tests.EditMode.Scenarios.WorkplaceIdentity
                 Is.EqualTo(WorkplaceIdentityScenario.SuccessorInitialRulingId));
             Assert.That(transfer.CauseHoldingId,
                 Is.EqualTo(WorkplaceIdentityScenario.HoldingId));
+            Assert.That(transfer.RequiredRulingDisposition,
+                Is.EqualTo(RulingDisposition.Recognised));
+            ScenarioHoldingCitationDefinition citation =
+                definition.HoldingCitations.Single();
+            Assert.That(citation.CitationId,
+                Is.EqualTo(WorkplaceIdentityScenario.HoldingCitationId));
+            Assert.That(citation.TargetCaseId,
+                Is.EqualTo(WorkplaceIdentityScenario.SuccessorCaseId));
+            Assert.That(citation.TargetRulingId,
+                Is.EqualTo(WorkplaceIdentityScenario.SuccessorInitialRulingId));
         }
 
         [Test]
@@ -122,6 +132,8 @@ namespace Desk42.Tests.EditMode.Scenarios.WorkplaceIdentity
                 WorkplaceIdentityScenario.PrimaryAppealRulingId);
             Assert.That(appellate.Disposition,
                 Is.EqualTo(RulingDisposition.ReversedAndRecognised));
+            Assert.That(appellate.CitedHoldingIds, Is.Empty,
+                "A holding cannot leak from its later-ruling declaration into the source appeal.");
             Holding holding = result.Report.Holdings.Single();
             Assert.That(holding.HoldingId,
                 Is.EqualTo(WorkplaceIdentityScenario.HoldingId));
@@ -164,6 +176,36 @@ namespace Desk42.Tests.EditMode.Scenarios.WorkplaceIdentity
                 result.Report.ExclusiveEntitlements.Single();
             Assert.That(entitlement.CurrentHolderAgentId,
                 Is.EqualTo(WorkplaceIdentityScenario.LaterClaimantAgentId));
+            Assert.That(entitlement.LastMutationCauseId,
+                Is.EqualTo(successorRuling.RulingId));
+            OfficialStatusMutation[] transferMutations = result.Report
+                .OfficialStatusMutations
+                .Where(value =>
+                    value.CauseId == successorRuling.RulingId &&
+                    value.StatusId == entitlement.HolderStatusId)
+                .ToArray();
+            Assert.That(transferMutations, Has.Length.EqualTo(2));
+            Assert.That(transferMutations.Single(value =>
+                    value.AffectedAgentId ==
+                        WorkplaceIdentityScenario.ContingentHolderAgentId)
+                    .AfterRecognised,
+                Is.False);
+            Assert.That(transferMutations.Single(value =>
+                    value.AffectedAgentId ==
+                        WorkplaceIdentityScenario.LaterClaimantAgentId)
+                    .AfterRecognised,
+                Is.True);
+            MaterialConsequence[] transferMaterials = result.Report
+                .MaterialConsequences
+                .Where(value =>
+                    value.CauseId == successorRuling.RulingId &&
+                    value.ResourceId == entitlement.ResourceId)
+                .ToArray();
+            Assert.That(transferMaterials, Has.Length.EqualTo(2));
+            Assert.That(transferMaterials.Single(value => value.ResourceDelta > 0).Kind,
+                Is.EqualTo(MaterialConsequenceKind.BackpayAwarded));
+            Assert.That(transferMaterials.Single(value => value.ResourceDelta < 0).Kind,
+                Is.EqualTo(MaterialConsequenceKind.WagesLost));
             ConnectedOutcomePair connection = result.Report.ConnectedOutcomes.Single();
             Assert.That(connection.CauseRuleId,
                 Is.EqualTo(WorkplaceIdentityScenario.HoldingRuleId));

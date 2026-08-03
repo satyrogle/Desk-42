@@ -70,6 +70,7 @@ namespace Desk42.Institutional
 
             var index = new ReportIndex(report);
             ValidateActions(index);
+            ValidateCaseOpenings(index);
             ValidateEvidence(index);
             ValidateFindings(index);
             ValidateRulings(index);
@@ -175,6 +176,18 @@ namespace Desk42.Institutional
                         IsCaseOpeningTriggerEvidence(index, evidenceCase, artifact),
                         $"Evidence {artifact.ArtifactId} predates its case.");
                 }
+                if (index.CaseOpeningsByCase.TryGetValue(
+                        artifact.CaseId,
+                        out InstitutionalCaseOpening caseOpening))
+                {
+                    Require(
+                        artifact.EnteredCycle > caseOpening.OpenedCycle ||
+                        IsCaseOpeningTriggerEvidence(
+                            index,
+                            caseOpening,
+                            artifact),
+                        $"Evidence {artifact.ArtifactId} predates its evidence-activated case.");
+                }
 
                 if (artifact.Provenance.CreatedByAgentAction)
                 {
@@ -194,6 +207,46 @@ namespace Desk42.Institutional
                     RequireId(artifact.Provenance.SourceDecisionId,
                         $"evidence {artifact.ArtifactId} source decision");
                 }
+            }
+        }
+
+        private static void ValidateCaseOpenings(ReportIndex index)
+        {
+            foreach (InstitutionalCaseOpening opening in index.CaseOpenings.Values)
+            {
+                RequireId(opening.CaseId,
+                    $"case opening {opening.ActivationId} case");
+                RequireId(opening.TriggerEvidenceArtifactId,
+                    $"case opening {opening.ActivationId} trigger evidence");
+                RequireId(opening.CausalAgentActionId,
+                    $"case opening {opening.ActivationId} causal action");
+                ValidateCycle(
+                    opening.OpenedCycle,
+                    index.Report.FinalCycle,
+                    $"Case opening {opening.ActivationId}");
+                Require(index.Evidence.TryGetValue(
+                            opening.TriggerEvidenceArtifactId,
+                            out EvidenceArtifact trigger),
+                    $"Case opening {opening.ActivationId} has no trigger evidence.");
+                Require(index.Actions.TryGetValue(
+                            opening.CausalAgentActionId,
+                            out ObservedAgentAction action),
+                    $"Case opening {opening.ActivationId} has no causal action.");
+                Require(OrdinalEquals(trigger.CaseId, opening.CaseId) &&
+                        trigger.EnteredCycle <= opening.OpenedCycle &&
+                        trigger.Provenance != null &&
+                        trigger.Provenance.CreatedByAgentAction &&
+                        OrdinalEquals(
+                            trigger.Provenance.SourceSocietyEventId,
+                            opening.CausalAgentActionId) &&
+                        action.Cycle == trigger.EnteredCycle &&
+                        CountOrdinal(
+                            action.ResultEvidenceArtifactIds,
+                            trigger.ArtifactId) == 1,
+                    $"Case opening {opening.ActivationId} has an invalid " +
+                    "evidence/action provenance envelope.");
+                Require(!index.Descendants.ContainsKey(opening.CaseId),
+                    $"Case {opening.CaseId} is both evidence-activated and descendant.");
             }
         }
 
@@ -220,6 +273,30 @@ namespace Desk42.Institutional
                    CountOrdinal(
                        sourceAction.ResultDescendantCaseIds,
                        descendant.CaseId) == 1 &&
+                   CountOrdinal(
+                       sourceAction.ResultEvidenceArtifactIds,
+                       artifact.ArtifactId) == 1;
+        }
+
+        private static bool IsCaseOpeningTriggerEvidence(
+            ReportIndex index,
+            InstitutionalCaseOpening opening,
+            EvidenceArtifact artifact)
+        {
+            if (artifact?.Provenance == null || opening == null ||
+                !OrdinalEquals(
+                    artifact.ArtifactId,
+                    opening.TriggerEvidenceArtifactId) ||
+                !OrdinalEquals(
+                    artifact.Provenance.SourceSocietyEventId,
+                    opening.CausalAgentActionId) ||
+                !index.Actions.TryGetValue(
+                    opening.CausalAgentActionId,
+                    out ObservedAgentAction sourceAction))
+            {
+                return false;
+            }
+            return sourceAction.Cycle == artifact.EnteredCycle &&
                    CountOrdinal(
                        sourceAction.ResultEvidenceArtifactIds,
                        artifact.ArtifactId) == 1;
@@ -927,6 +1004,68 @@ namespace Desk42.Institutional
                         descendant.Kind.ToString()) == 1,
                     $"Descendant case {descendant.CaseId} lacks one opening timeline projection.");
             }
+            foreach (InstitutionalCaseOpening opening in index.CaseOpenings.Values)
+            {
+                Require(CountTimeline(
+                        index.Report,
+                        InstitutionalTimelineKind.CaseOpened,
+                        opening.OpenedCycle,
+                        opening.TriggerEvidenceArtifactId,
+                        opening.CaseId,
+                        opening.ActivationId) == 1,
+                    $"Case opening {opening.ActivationId} lacks one timeline projection.");
+                int evidenceTimelineIndex = -1;
+                int openingTimelineIndex = -1;
+                for (int timelineIndex = 0;
+                     timelineIndex < index.Report.Timeline.Count;
+                     timelineIndex++)
+                {
+                    InstitutionalTimelineEntry entry =
+                        index.Report.Timeline[timelineIndex];
+                    if (entry.Kind == InstitutionalTimelineKind.EvidenceEntered &&
+                        OrdinalEquals(
+                            entry.DetailId,
+                            opening.TriggerEvidenceArtifactId))
+                    {
+                        evidenceTimelineIndex = timelineIndex;
+                    }
+                    if (entry.Kind == InstitutionalTimelineKind.CaseOpened &&
+                        OrdinalEquals(entry.DetailId, opening.ActivationId))
+                    {
+                        openingTimelineIndex = timelineIndex;
+                    }
+                }
+                Require(evidenceTimelineIndex >= 0 &&
+                        openingTimelineIndex > evidenceTimelineIndex,
+                    $"Case opening {opening.ActivationId} does not follow its trigger " +
+                    "evidence in the public timeline.");
+                foreach (Ruling ruling in index.Rulings.Values)
+                {
+                    if (ruling.Cycle != opening.OpenedCycle ||
+                        !OrdinalEquals(ruling.CaseId, opening.CaseId))
+                    {
+                        continue;
+                    }
+
+                    int rulingTimelineIndex = -1;
+                    for (int timelineIndex = 0;
+                         timelineIndex < index.Report.Timeline.Count;
+                         timelineIndex++)
+                    {
+                        InstitutionalTimelineEntry entry =
+                            index.Report.Timeline[timelineIndex];
+                        if (entry.Kind == InstitutionalTimelineKind.RulingIssued &&
+                            OrdinalEquals(entry.CauseId, ruling.RulingId))
+                        {
+                            rulingTimelineIndex = timelineIndex;
+                            break;
+                        }
+                    }
+                    Require(rulingTimelineIndex > openingTimelineIndex,
+                        $"Ruling {ruling.RulingId} does not follow case opening " +
+                        $"{opening.ActivationId} in the public timeline.");
+                }
+            }
         }
 
         private static void ValidateTimelineReference(
@@ -1016,6 +1155,17 @@ namespace Desk42.Institutional
                             target.CitedHoldingIds.Contains(precedent.HoldingId) &&
                             precedent.AppliedCaseIds.Contains(entry.SubjectId),
                         $"Timeline entry {entry.EntryId} has an invalid precedent reference.");
+                    return;
+                case InstitutionalTimelineKind.CaseOpened:
+                    Require(index.CaseOpenings.TryGetValue(
+                                entry.DetailId,
+                                out InstitutionalCaseOpening opening) &&
+                            opening.OpenedCycle == entry.Cycle &&
+                            OrdinalEquals(
+                                opening.TriggerEvidenceArtifactId,
+                                entry.CauseId) &&
+                            OrdinalEquals(opening.CaseId, entry.SubjectId),
+                        $"Timeline entry {entry.EntryId} has an invalid case-opening reference.");
                     return;
                 case InstitutionalTimelineKind.DescendantCaseOpened:
                     Require(index.Descendants.TryGetValue(
@@ -1577,6 +1727,13 @@ namespace Desk42.Institutional
             string label)
         {
             ValidateCycle(cycle, index.Report.FinalCycle, label);
+            if (index.CaseOpeningsByCase.TryGetValue(
+                    caseId,
+                    out InstitutionalCaseOpening opening))
+            {
+                Require(cycle >= opening.OpenedCycle,
+                    $"{label} predates case {caseId}.");
+            }
             if (index.Descendants.TryGetValue(caseId, out DescendantCase descendant))
                 Require(cycle >= descendant.OpenedCycle,
                     $"{label} predates case {caseId}.");
@@ -1981,6 +2138,8 @@ namespace Desk42.Institutional
             internal readonly Dictionary<string, OfficialFinding> Findings;
             internal readonly Dictionary<string, Ruling> Rulings;
             internal readonly Dictionary<string, OfficialStatusMutation> Mutations;
+            internal readonly Dictionary<string, InstitutionalCaseOpening> CaseOpenings;
+            internal readonly Dictionary<string, InstitutionalCaseOpening> CaseOpeningsByCase;
             internal readonly Dictionary<string, DescendantCase> Descendants;
             internal readonly Dictionary<string, Appeal> Appeals;
             internal readonly Dictionary<string, Holding> Holdings;
@@ -2008,6 +2167,12 @@ namespace Desk42.Institutional
                     value => value.RulingId, "ruling");
                 Mutations = Map(report.OfficialStatusMutations,
                     value => value.MutationId, "official mutation");
+                CaseOpenings = Map(report.CaseOpenings,
+                    value => value.ActivationId, "case opening");
+                CaseOpeningsByCase = UniqueMap(
+                    report.CaseOpenings,
+                    value => value.CaseId,
+                    "case opening case");
                 Descendants = Map(report.DescendantCases,
                     value => value.CaseId, "descendant case");
                 Appeals = Map(report.Appeals,
@@ -2029,6 +2194,12 @@ namespace Desk42.Institutional
 
                 Require(Cases.Add(report.PrimaryCaseId),
                     "Primary case id is duplicated.");
+                foreach (InstitutionalCaseOpening opening in CaseOpenings.Values)
+                {
+                    if (!OrdinalEquals(opening.CaseId, report.PrimaryCaseId))
+                        Require(Cases.Add(opening.CaseId),
+                            $"Duplicate case id {opening.CaseId}.");
+                }
                 foreach (string caseId in Descendants.Keys)
                     Require(Cases.Add(caseId), $"Duplicate case id {caseId}.");
             }

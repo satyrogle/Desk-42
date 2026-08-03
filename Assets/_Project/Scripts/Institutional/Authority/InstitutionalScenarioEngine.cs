@@ -96,6 +96,9 @@ namespace Desk42.Institutional
                     definition,
                     step,
                     agentIdByRole);
+                InstitutionalEvidenceActivatedCaseService.OpenDueCases(
+                    context,
+                    cycle);
                 InstitutionalScenarioActionPhase.FileObservedAppeals(context, input, step);
                 InstitutionalScenarioActionPhase.CreateDueReliance(context, step, cycle);
                 InstitutionalScenarioActionPhase.OpenDueDescendantCases(context, cycle);
@@ -109,10 +112,8 @@ namespace Desk42.Institutional
             run.Report.FinalCycle = society.CurrentTick;
             InstitutionalScenarioRunValidator.Validate(context);
             return new InstitutionalScenarioRunResult(
-                run,
-                agentIdByRole,
+                context,
                 sourceBindings.Diagnostics,
-                context.EntitlementRegistry,
                 initialization);
         }
 

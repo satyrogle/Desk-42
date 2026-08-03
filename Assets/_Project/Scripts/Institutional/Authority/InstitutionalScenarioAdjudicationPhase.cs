@@ -22,7 +22,10 @@ namespace Desk42.Institutional
                     continue;
                 }
 
-                List<string> citedHoldingIds = ResolveCitations(context, declaration);
+                List<string> citedHoldingIds = ResolveCitations(
+                    context,
+                    declaration,
+                    declaration.InitialRulingId);
                 InstitutionalAdjudicationResult result =
                     InstitutionalAdjudicationService.IssueInitial(
                         context.Run.Report,
@@ -133,11 +136,22 @@ namespace Desk42.Institutional
             HashSet<string> completedCaseIds)
         {
             if (!context.Policy.AutoCiteMatchingHoldings) return false;
-            for (int i = 0; i < target.CitedHoldingIds.Count; i++)
+            for (int i = 0; i < context.Definition.HoldingCitations.Count; i++)
             {
+                ScenarioHoldingCitationDefinition citation =
+                    context.Definition.HoldingCitations[i];
+                if (!InstitutionalScenarioLookup.Equal(
+                        citation.TargetCaseId,
+                        target.CaseId) ||
+                    !InstitutionalScenarioLookup.Equal(
+                        citation.TargetRulingId,
+                        target.AdjudicationRulingId))
+                {
+                    continue;
+                }
                 ScenarioHoldingDefinition holding = InstitutionalScenarioLookup.Holding(
                     context.Definition,
-                    target.CitedHoldingIds[i]);
+                    citation.HoldingId);
                 ScenarioAppealDefinition sourceAppeal = InstitutionalScenarioLookup.Appeal(
                     context.Definition,
                     holding.SourceAppealId);
@@ -199,7 +213,10 @@ namespace Desk42.Institutional
                     $"Appeal '{appealDefinition.AppealId}' has no challenged ruling.");
             }
 
-            List<string> citedHoldingIds = ResolveCitations(context, caseDefinition);
+            List<string> citedHoldingIds = ResolveCitations(
+                context,
+                caseDefinition,
+                caseDefinition.AdjudicationRulingId);
             InstitutionalAdjudicationResult result =
                 InstitutionalAdjudicationService.ResolveAppeal(
                     context.Run.Report,
@@ -267,7 +284,8 @@ namespace Desk42.Institutional
 
         private static List<string> ResolveCitations(
             InstitutionalScenarioExecutionContext context,
-            ScenarioCaseDefinition caseDefinition)
+            ScenarioCaseDefinition caseDefinition,
+            string targetRulingId)
         {
             var result = new List<string>();
             if (!context.Policy.AutoCiteMatchingHoldings) return result;
@@ -289,9 +307,20 @@ namespace Desk42.Institutional
             InstitutionalScenarioLookup.RequireAccepted(matches, "precedent matching");
             if (matches.Value == null) return result;
 
-            for (int i = 0; i < caseDefinition.CitedHoldingIds.Count; i++)
+            for (int i = 0; i < context.Definition.HoldingCitations.Count; i++)
             {
-                string declaredId = caseDefinition.CitedHoldingIds[i];
+                ScenarioHoldingCitationDefinition declaration =
+                    context.Definition.HoldingCitations[i];
+                if (!InstitutionalScenarioLookup.Equal(
+                        declaration.TargetCaseId,
+                        caseDefinition.CaseId) ||
+                    !InstitutionalScenarioLookup.Equal(
+                        declaration.TargetRulingId,
+                        targetRulingId))
+                {
+                    continue;
+                }
+                string declaredId = declaration.HoldingId;
                 for (int j = 0; j < matches.Value.Count; j++)
                 {
                     if (InstitutionalScenarioLookup.Equal(

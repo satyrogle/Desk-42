@@ -471,6 +471,7 @@ namespace Desk42.Tests.EditMode
                     CauseCaseId = "case.test.entitlement",
                     CauseRulingId = "ruling.test.exact",
                     CauseHoldingId = "holding.test",
+                    RequiredRulingDisposition = RulingDisposition.Recognised,
                 });
             var context = new InstitutionalScenarioExecutionContext(
                 definition,
@@ -484,7 +485,7 @@ namespace Desk42.Tests.EditMode
             InstitutionalScenarioEntitlementPhase.RegisterInitial(context);
             Ruling other = AddRuling(run, "ruling.test.other", 2);
             other.CitedHoldingIds.Add("holding.test");
-            Ruling exact = AddRuling(run, "ruling.test.exact", 3);
+            Ruling exact = AddRuling(run, "ruling.test.exact", 4);
             exact.CitedHoldingIds.Add("holding.test");
 
             InstitutionalScenarioEntitlementPhase.TransferDue(context, 4);
@@ -518,7 +519,7 @@ namespace Desk42.Tests.EditMode
             InstitutionalScenarioExecutionContext uncitedContext =
                 CreateScenarioTransferContext(uncitedRun);
             InstitutionalScenarioEntitlementPhase.RegisterInitial(uncitedContext);
-            AddRuling(uncitedRun, "ruling.test.exact", 3);
+            AddRuling(uncitedRun, "ruling.test.exact", 4);
 
             Assert.DoesNotThrow(() =>
                 InstitutionalScenarioEntitlementPhase.TransferDue(uncitedContext, 4));
@@ -531,13 +532,37 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void ScenarioTransfer_CitedButDispositionIneligibleRulingDoesNotMaterialise()
+        {
+            InstitutionalConsequenceRun run = CreateRun();
+            InstitutionalScenarioExecutionContext context =
+                CreateScenarioTransferContext(run);
+            InstitutionalScenarioEntitlementPhase.RegisterInitial(context);
+            Ruling denied = AddRuling(run, "ruling.test.exact", 4);
+            denied.Disposition = RulingDisposition.Denied;
+            denied.CitedHoldingIds.Add("holding.test");
+
+            Assert.DoesNotThrow(() =>
+                InstitutionalScenarioEntitlementPhase.TransferDue(context, 4));
+
+            ExclusiveEntitlementState state = context.EntitlementRegistry.Find(
+                EntitlementId,
+                ResourceId);
+            Assert.That(state.CurrentHolderAgentId, Is.EqualTo("agent.old-holder"));
+            Assert.That(state.LastMutationCauseId, Is.Null);
+            Assert.That(run.Report.OfficialStatusMutations, Is.Empty);
+            Assert.That(run.Report.MaterialConsequences, Is.Empty);
+            Assert.That(run.Report.ConnectedOutcomes, Is.Empty);
+        }
+
+        [Test]
         public void ScenarioTransfer_ForeignExactCauseStillRejectsWithoutMutation()
         {
             InstitutionalConsequenceRun run = CreateRun();
             InstitutionalScenarioExecutionContext context =
                 CreateScenarioTransferContext(run);
             InstitutionalScenarioEntitlementPhase.RegisterInitial(context);
-            Ruling foreign = AddRuling(run, "ruling.test.exact", 3);
+            Ruling foreign = AddRuling(run, "ruling.test.exact", 4);
             foreign.CaseId = "case.test.foreign";
             foreign.CitedHoldingIds.Add("holding.test");
 
@@ -583,6 +608,7 @@ namespace Desk42.Tests.EditMode
                     CauseCaseId = "case.test.entitlement",
                     CauseRulingId = "ruling.test.exact",
                     CauseHoldingId = "holding.test",
+                    RequiredRulingDisposition = RulingDisposition.Recognised,
                 });
             return new InstitutionalScenarioExecutionContext(
                 definition,

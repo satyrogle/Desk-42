@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Desk42.Institutional;
+using Desk42.Institutional.Scenarios.WorkplaceIdentity;
 using NUnit.Framework;
 
 namespace Desk42.Tests.EditMode
@@ -96,6 +97,613 @@ namespace Desk42.Tests.EditMode
                 Is.EqualTo(descendant.CausalAgentActionId));
             Assert.That(result.Report.Rulings.Any(value =>
                 value.CaseId == descendant.CaseId), Is.True);
+        }
+
+        [Test]
+        public void Run_SameCycleEvidenceActionOpensPrimaryBeforeItsRuling()
+        {
+            InstitutionalScenarioDefinition definition =
+                EvidenceActivatedPrimaryDefinition(canWork: true);
+
+            InstitutionalScenarioRunResult first = InstitutionalScenarioEngine.Run(
+                definition,
+                Policy("activation"));
+            InstitutionalScenarioRunResult replay = InstitutionalScenarioEngine.Run(
+                EvidenceActivatedPrimaryDefinition(canWork: true),
+                Policy("activation"));
+
+            InstitutionalCaseOpening opening = first.Report.CaseOpenings.Single();
+            EvidenceArtifact trigger = first.Report.EvidenceArtifacts.Single();
+            Ruling ruling = first.Report.Rulings.Single();
+            Assert.That(opening.OpenedCycle, Is.EqualTo(1));
+            Assert.That(opening.TriggerEvidenceArtifactId,
+                Is.EqualTo(trigger.ArtifactId));
+            Assert.That(opening.CausalAgentActionId,
+                Is.EqualTo(trigger.Provenance.SourceSocietyEventId));
+            Assert.That(ruling.Cycle, Is.EqualTo(opening.OpenedCycle));
+            Assert.That(first.Report.Timeline.FindIndex(entry =>
+                    entry.Kind == InstitutionalTimelineKind.EvidenceEntered),
+                Is.LessThan(first.Report.Timeline.FindIndex(entry =>
+                    entry.Kind == InstitutionalTimelineKind.CaseOpened)));
+            Assert.That(first.Report.Timeline.FindIndex(entry =>
+                    entry.Kind == InstitutionalTimelineKind.CaseOpened),
+                Is.LessThan(first.Report.Timeline.FindIndex(entry =>
+                    entry.Kind == InstitutionalTimelineKind.RulingIssued)));
+
+            Assert.That(replay.Report.CaseOpenings.Select(value =>
+                    $"{value.ActivationId}|{value.CaseId}|{value.OpenedCycle}|" +
+                    $"{value.TriggerEvidenceArtifactId}|{value.CausalAgentActionId}"),
+                Is.EqualTo(first.Report.CaseOpenings.Select(value =>
+                    $"{value.ActivationId}|{value.CaseId}|{value.OpenedCycle}|" +
+                    $"{value.TriggerEvidenceArtifactId}|{value.CausalAgentActionId}")));
+        }
+
+        [Test]
+        public void Run_WithoutTriggerAction_PrimaryNeverOpensOrRules()
+        {
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                EvidenceActivatedPrimaryDefinition(canWork: false),
+                Policy("activation"));
+
+            Assert.That(result.Report.EvidenceArtifacts, Is.Empty);
+            Assert.That(result.Report.CaseOpenings, Is.Empty);
+            Assert.That(result.Report.Rulings, Is.Empty);
+            Assert.That(result.Report.OfficialStatusMutations, Is.Empty);
+        }
+
+        [Test]
+        public void RunValidator_RejectsUndeclaredCaseOpening()
+        {
+            InstitutionalScenarioDefinition definition = Definition("undeclared-opening");
+            definition.InitialSociety.GetAgent("agent.undeclared-opening.claimant")
+                .Standing.CanWork = true;
+            InstitutionalPolicyConfiguration policy = Policy("undeclared-opening");
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                definition,
+                policy);
+            EvidenceArtifact trigger = result.Report.EvidenceArtifacts.Single();
+            result.Report.CaseOpenings.Add(new InstitutionalCaseOpening
+            {
+                ActivationId = "activation.undeclared",
+                CaseId = definition.PrimaryCaseId,
+                OpenedCycle = definition.Cases[0].OpenCycle,
+                TriggerEvidenceArtifactId = trigger.ArtifactId,
+                CausalAgentActionId = trigger.Provenance.SourceSocietyEventId,
+            });
+
+            Assert.Throws<InvalidOperationException>(() =>
+                ValidateMutatedRun(definition, policy, result));
+        }
+
+        [Test]
+        public void RunValidator_RejectsDuplicateAndForgedCaseOpenings()
+        {
+            InstitutionalScenarioDefinition duplicateDefinition =
+                EvidenceActivatedPrimaryDefinition(canWork: true);
+            InstitutionalPolicyConfiguration duplicatePolicy = Policy("activation");
+            InstitutionalScenarioRunResult duplicate = InstitutionalScenarioEngine.Run(
+                duplicateDefinition,
+                duplicatePolicy);
+            duplicate.Report.CaseOpenings.Add(duplicate.Report.CaseOpenings.Single());
+            Assert.Throws<InvalidOperationException>(() =>
+                ValidateMutatedRun(duplicateDefinition, duplicatePolicy, duplicate));
+
+            InstitutionalScenarioDefinition forgedDefinition =
+                EvidenceActivatedPrimaryDefinition(canWork: true);
+            InstitutionalPolicyConfiguration forgedPolicy = Policy("activation");
+            InstitutionalScenarioRunResult forged = InstitutionalScenarioEngine.Run(
+                forgedDefinition,
+                forgedPolicy);
+            forged.Report.CaseOpenings.Single().CausalAgentActionId =
+                "action.forged";
+            Assert.Throws<InvalidOperationException>(() =>
+                ValidateMutatedRun(forgedDefinition, forgedPolicy, forged));
+        }
+
+        [Test]
+        public void EvidenceActivation_EquivalentLiveRunReentryIsIdempotent()
+        {
+            InstitutionalScenarioDefinition definition =
+                EvidenceActivatedPrimaryDefinition(canWork: true);
+            InstitutionalPolicyConfiguration policy = Policy("activation");
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                definition,
+                policy);
+            var context = new InstitutionalScenarioExecutionContext(
+                definition,
+                policy,
+                result.AssessorRun,
+                result.AgentIdByRole);
+            int timelineCount = result.Report.Timeline.Count;
+
+            InstitutionalEvidenceActivatedCaseService.OpenDueCases(context, 1);
+
+            Assert.That(result.Report.CaseOpenings, Has.Count.EqualTo(1));
+            Assert.That(result.Report.Timeline, Has.Count.EqualTo(timelineCount));
+        }
+
+        [TestCase("class")]
+        [TestCase("effect")]
+        [TestCase("weight")]
+        [TestCase("visibility")]
+        [TestCase("kind")]
+        [TestCase("submission")]
+        public void RunValidator_RejectsAlteredTriggerTemplateSemantics(
+            string alteration)
+        {
+            InstitutionalScenarioDefinition definition =
+                EvidenceActivatedPrimaryDefinition(canWork: true);
+            InstitutionalPolicyConfiguration policy = Policy("activation");
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                definition,
+                policy);
+            EvidenceArtifact trigger = result.Report.EvidenceArtifacts.Single();
+
+            switch (alteration)
+            {
+                case "class":
+                    trigger.EvidenceClassId = "evidence-class.forged";
+                    break;
+                case "effect":
+                    trigger.Effect = EvidenceEffect.OpposesFinding;
+                    break;
+                case "weight":
+                    trigger.BaseWeight++;
+                    break;
+                case "visibility":
+                    trigger.Provenance.Visibility = EvidenceVisibility.Private;
+                    break;
+                case "kind":
+                    trigger.Kind = EvidenceArtifactKind.ClaimantStatement;
+                    break;
+                case "submission":
+                    trigger.OfficiallySubmitted = false;
+                    break;
+                default:
+                    Assert.Fail($"Unknown trigger alteration '{alteration}'.");
+                    break;
+            }
+
+            Assert.Throws<InvalidOperationException>(() =>
+                ValidateMutatedRun(definition, policy, result));
+        }
+
+        [Test]
+        public void RunValidator_RejectsNonTriggerEvidenceAtCaseOpening()
+        {
+            InstitutionalScenarioDefinition definition =
+                EvidenceActivatedPrimaryDefinition(canWork: true);
+            InstitutionalPolicyConfiguration policy = Policy("activation");
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                definition,
+                policy);
+            EvidenceArtifact trigger = result.Report.EvidenceArtifacts.Single();
+            result.Report.EvidenceArtifacts.Add(CopyArtifact(
+                trigger,
+                "artifact.activation.unrelated"));
+
+            Assert.Throws<InvalidOperationException>(() =>
+                ValidateMutatedRun(definition, policy, result));
+        }
+
+        [Test]
+        public void CausalValidator_RejectsMissingOrPostRulingCaseOpeningTimeline()
+        {
+            InstitutionalScenarioDefinition missingDefinition =
+                EvidenceActivatedPrimaryDefinition(canWork: true);
+            InstitutionalPolicyConfiguration missingPolicy = Policy("activation");
+            InstitutionalScenarioRunResult missing = InstitutionalScenarioEngine.Run(
+                missingDefinition,
+                missingPolicy);
+            missing.Report.Timeline.RemoveAll(entry =>
+                entry.Kind == InstitutionalTimelineKind.CaseOpened);
+            Assert.Throws<InvalidOperationException>(() =>
+                ValidateMutatedRun(missingDefinition, missingPolicy, missing));
+
+            InstitutionalScenarioDefinition reorderedDefinition =
+                EvidenceActivatedPrimaryDefinition(canWork: true);
+            InstitutionalPolicyConfiguration reorderedPolicy = Policy("activation");
+            InstitutionalScenarioRunResult reordered = InstitutionalScenarioEngine.Run(
+                reorderedDefinition,
+                reorderedPolicy);
+            InstitutionalTimelineEntry opening = reordered.Report.Timeline.Single(entry =>
+                entry.Kind == InstitutionalTimelineKind.CaseOpened);
+            reordered.Report.Timeline.Remove(opening);
+            int rulingIndex = reordered.Report.Timeline.FindIndex(entry =>
+                entry.Kind == InstitutionalTimelineKind.RulingIssued);
+            reordered.Report.Timeline.Insert(rulingIndex + 1, opening);
+
+            Assert.Throws<InvalidOperationException>(() =>
+                ValidateMutatedRun(reorderedDefinition, reorderedPolicy, reordered));
+        }
+
+        [Test]
+        public void Validators_RejectFindingOrRulingBeforeCaseOpening()
+        {
+            InstitutionalScenarioDefinition findingDefinition =
+                EvidenceActivatedPrimaryDefinition(canWork: true);
+            InstitutionalPolicyConfiguration findingPolicy = Policy("activation");
+            InstitutionalScenarioRunResult finding = InstitutionalScenarioEngine.Run(
+                findingDefinition,
+                findingPolicy);
+            finding.Report.OfficialFindings.Single().Cycle = 0;
+            Assert.Throws<InvalidOperationException>(() =>
+                ValidateMutatedRun(findingDefinition, findingPolicy, finding));
+
+            InstitutionalScenarioDefinition rulingDefinition =
+                EvidenceActivatedPrimaryDefinition(canWork: true);
+            InstitutionalPolicyConfiguration rulingPolicy = Policy("activation");
+            InstitutionalScenarioRunResult ruling = InstitutionalScenarioEngine.Run(
+                rulingDefinition,
+                rulingPolicy);
+            ruling.Report.Rulings.Single().Cycle = 0;
+            Assert.Throws<InvalidOperationException>(() =>
+                ValidateMutatedRun(rulingDefinition, rulingPolicy, ruling));
+        }
+
+        [Test]
+        public void Run_AdjudicationOnlyCitationLeavesInitialDeniedThenChangesAppeal()
+        {
+            InstitutionalScenarioDefinition definition =
+                AdjudicationOnlyCitationDefinition();
+            InstitutionalPolicyConfiguration policy =
+                WorkplaceIdentityScenario.CreatePrecedentPolicy();
+            policy.EvidenceClassWeights.Add(new EvidenceClassWeight
+            {
+                EvidenceClassId = "evidence-class.workplace.successor-action",
+                WeightPercent = 100,
+            });
+
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                definition,
+                policy);
+
+            ScenarioCaseDefinition targetCase = definition.Cases.Single(value =>
+                value.CaseId == WorkplaceIdentityScenario.SuccessorCaseId);
+            Ruling initial = result.Report.Rulings.Single(value =>
+                value.RulingId == targetCase.InitialRulingId);
+            Ruling adjudication = result.Report.Rulings.Single(value =>
+                value.RulingId == targetCase.AdjudicationRulingId);
+            Assert.That(initial.Disposition, Is.EqualTo(RulingDisposition.Denied));
+            Assert.That(initial.CitedHoldingIds, Is.Empty);
+            Assert.That(adjudication.Disposition,
+                Is.EqualTo(RulingDisposition.ReversedAndRecognised));
+            Assert.That(adjudication.CitedHoldingIds,
+                Is.EqualTo(new[] { WorkplaceIdentityScenario.HoldingId }));
+            Assert.That(result.Report.Holdings.Single().AppliedCaseIds,
+                Is.EqualTo(new[] { WorkplaceIdentityScenario.SuccessorCaseId }));
+
+            ScenarioExclusiveEntitlementTransferDefinition transfer =
+                definition.EntitlementTransfers.Single();
+            ExclusiveEntitlementObservation entitlement =
+                result.Report.ExclusiveEntitlements.Single();
+            Assert.That(entitlement.CurrentHolderAgentId,
+                Is.EqualTo(WorkplaceIdentityScenario.LaterClaimantAgentId));
+            Assert.That(entitlement.LastMutationCauseId,
+                Is.EqualTo(adjudication.RulingId));
+            OfficialStatusMutation[] transferMutations = result.Report
+                .OfficialStatusMutations
+                .Where(value =>
+                    value.CauseId == adjudication.RulingId &&
+                    value.StatusId == entitlement.HolderStatusId)
+                .ToArray();
+            Assert.That(transferMutations, Has.Length.EqualTo(2));
+            Assert.That(transferMutations.Single(value =>
+                    value.AffectedAgentId ==
+                        WorkplaceIdentityScenario.ContingentHolderAgentId)
+                    .AfterRecognised,
+                Is.False);
+            Assert.That(transferMutations.Single(value =>
+                    value.AffectedAgentId ==
+                        WorkplaceIdentityScenario.LaterClaimantAgentId)
+                    .AfterRecognised,
+                Is.True);
+            MaterialConsequence[] transferMaterials = result.Report
+                .MaterialConsequences
+                .Where(value =>
+                    value.CauseId == adjudication.RulingId &&
+                    value.ResourceId == entitlement.ResourceId)
+                .ToArray();
+            Assert.That(transferMaterials, Has.Length.EqualTo(2));
+            Assert.That(transferMaterials.All(value =>
+                value.CauseId == adjudication.RulingId), Is.True);
+            ConnectedOutcomePair connected = result.Report.ConnectedOutcomes.Single();
+            Assert.That(connected.PairId,
+                Is.EqualTo($"connected:{transfer.TransferId}"));
+            Assert.That(connected.WinnerAgentId,
+                Is.EqualTo(WorkplaceIdentityScenario.LaterClaimantAgentId));
+            Assert.That(connected.LoserAgentId,
+                Is.EqualTo(WorkplaceIdentityScenario.ContingentHolderAgentId));
+            Assert.That(result.Report.OfficialStatusMutations.Any(value =>
+                    value.CauseId == initial.RulingId &&
+                    value.StatusId == entitlement.HolderStatusId),
+                Is.False,
+                "The denied initial ruling must not transfer the entitlement.");
+            Assert.That(result.Report.MaterialConsequences.Any(value =>
+                    value.CauseId == initial.RulingId &&
+                    value.ResourceId == entitlement.ResourceId),
+                Is.False);
+        }
+
+        [Test]
+        public void RunValidator_RejectsHoldingMovedToUndeclaredAppellateRuling()
+        {
+            InstitutionalScenarioDefinition definition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            InstitutionalPolicyConfiguration policy =
+                WorkplaceIdentityScenario.CreatePrecedentPolicy();
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                definition,
+                policy);
+            Holding holding = result.Report.Holdings.Single();
+            Ruling appellate = result.Report.Rulings.Single(value =>
+                value.RulingId == WorkplaceIdentityScenario.PrimaryAppealRulingId);
+            appellate.CitedHoldingIds.Add(holding.HoldingId);
+            appellate.CitedScopeIds.Add(holding.Scope.ScopeId);
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    ValidateMutatedRun(definition, policy, result));
+            Assert.That(exception.Message, Does.Contain("undeclared holding"));
+        }
+
+        [Test]
+        public void RunValidator_RejectsRemovedOrReattributedTransferProjection()
+        {
+            InstitutionalScenarioDefinition removedDefinition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            InstitutionalPolicyConfiguration removedPolicy =
+                WorkplaceIdentityScenario.CreatePrecedentPolicy();
+            InstitutionalScenarioRunResult removed = InstitutionalScenarioEngine.Run(
+                removedDefinition,
+                removedPolicy);
+            MaterialConsequence removedGain = removed.Report.MaterialConsequences.Single(
+                value =>
+                    value.CauseId == WorkplaceIdentityScenario.SuccessorInitialRulingId &&
+                    value.ResourceId == WorkplaceIdentityScenario.PaidShiftResourceId &&
+                    value.ResourceDelta > 0);
+            removed.Report.MaterialConsequences.Remove(removedGain);
+            InvalidOperationException removedException =
+                Assert.Throws<InvalidOperationException>(() =>
+                    ValidateMutatedRun(removedDefinition, removedPolicy, removed));
+            Assert.That(removedException.Message,
+                Does.Contain("lacks its exact conserved material pair"));
+
+            InstitutionalScenarioDefinition reattributedDefinition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            InstitutionalPolicyConfiguration reattributedPolicy =
+                WorkplaceIdentityScenario.CreatePrecedentPolicy();
+            InstitutionalScenarioRunResult reattributed = InstitutionalScenarioEngine.Run(
+                reattributedDefinition,
+                reattributedPolicy);
+            OfficialStatusMutation reattributedGain = reattributed.Report
+                .OfficialStatusMutations.Single(value =>
+                    value.CauseId ==
+                        WorkplaceIdentityScenario.SuccessorInitialRulingId &&
+                    value.StatusId == WorkplaceIdentityScenario.PaidShiftHolderStatusId &&
+                    value.AfterRecognised);
+            reattributedGain.CauseId = WorkplaceIdentityScenario.PrimaryAppealRulingId;
+            InvalidOperationException reattributedException =
+                Assert.Throws<InvalidOperationException>(() =>
+                    ValidateMutatedRun(
+                        reattributedDefinition,
+                        reattributedPolicy,
+                        reattributed));
+            Assert.That(reattributedException.Message,
+                Does.Contain("lacks its exact paired status mutations"));
+        }
+
+        [Test]
+        public void RunValidator_RejectsReattributedConnectedOutcome()
+        {
+            InstitutionalScenarioDefinition definition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            InstitutionalPolicyConfiguration policy =
+                WorkplaceIdentityScenario.CreatePrecedentPolicy();
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                definition,
+                policy);
+            result.Report.ConnectedOutcomes.Single().CauseRuleId = "rule.forged";
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    ValidateMutatedRun(definition, policy, result));
+
+            Assert.That(exception.Message,
+                Does.Contain("connected outcome was reattributed"));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void RunValidator_RejectsPublicEntitlementChainTamper(bool mutateCause)
+        {
+            InstitutionalScenarioDefinition definition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            InstitutionalPolicyConfiguration policy =
+                WorkplaceIdentityScenario.CreatePrecedentPolicy();
+            InstitutionalScenarioRunResult result = InstitutionalScenarioEngine.Run(
+                definition,
+                policy);
+            ExclusiveEntitlementObservation observation =
+                result.Report.ExclusiveEntitlements.Single();
+            if (mutateCause)
+            {
+                observation.LastMutationCauseId =
+                    WorkplaceIdentityScenario.PrimaryAppealRulingId;
+            }
+            else
+            {
+                observation.CurrentHolderAgentId =
+                    WorkplaceIdentityScenario.ContingentHolderAgentId;
+            }
+
+            InvalidOperationException exception =
+                Assert.Throws<InvalidOperationException>(() =>
+                    ValidateMutatedRun(definition, policy, result));
+
+            Assert.That(exception.Message,
+                Does.Contain("Public entitlement").And
+                    .Contain("eligible transfer chain"));
+        }
+
+        private static InstitutionalScenarioDefinition
+            EvidenceActivatedPrimaryDefinition(bool canWork)
+        {
+            InstitutionalScenarioDefinition definition = Definition("activation");
+            definition.Cases[0].OpenCycle = 1;
+            definition.EvidenceActivatedCases.Add(
+                new ScenarioEvidenceActivatedCaseDefinition
+                {
+                    ActivationId = "activation.primary.work",
+                    CaseId = "case.activation",
+                    EvidenceTemplateId = "evidence.activation.work",
+                    TriggerCycle = 1,
+                });
+            definition.InitialSociety.GetAgent("agent.activation.claimant")
+                .Standing.CanWork = canWork;
+            return definition;
+        }
+
+        private static void ValidateMutatedRun(
+            InstitutionalScenarioDefinition definition,
+            InstitutionalPolicyConfiguration policy,
+            InstitutionalScenarioRunResult result)
+        {
+            InstitutionalScenarioRunValidator.Validate(result);
+        }
+
+        private static EvidenceArtifact CopyArtifact(
+            EvidenceArtifact source,
+            string artifactId)
+        {
+            return new EvidenceArtifact
+            {
+                ArtifactId = artifactId,
+                CaseId = source.CaseId,
+                EnteredCycle = source.EnteredCycle,
+                Kind = source.Kind,
+                EvidenceClassId = source.EvidenceClassId,
+                SourceTemplateId = source.SourceTemplateId,
+                IssueId = source.IssueId,
+                PropositionId = source.PropositionId,
+                OfficialEmployerId = source.OfficialEmployerId,
+                OfficialIdentityConditionId = source.OfficialIdentityConditionId,
+                OfficialResourceId = source.OfficialResourceId,
+                Effect = source.Effect,
+                BaseWeight = source.BaseWeight,
+                Reliability = source.Reliability,
+                OfficiallySubmitted = source.OfficiallySubmitted,
+                SuppressedByAgentId = source.SuppressedByAgentId,
+                KnownByAgentIds = new List<string>(source.KnownByAgentIds),
+                EnteredAfterInitialRuling = source.EnteredAfterInitialRuling,
+                Provenance = new EvidenceProvenance
+                {
+                    ProvenanceId = "provenance.activation.unrelated",
+                    CreatedCycle = source.Provenance.CreatedCycle,
+                    SourceAgentId = source.Provenance.SourceAgentId,
+                    SourceDecisionId = source.Provenance.SourceDecisionId,
+                    SourceSocietyEventId = source.Provenance.SourceSocietyEventId,
+                    SourceRecordId = source.Provenance.SourceRecordId,
+                    Visibility = source.Provenance.Visibility,
+                    CreatedByAgentAction = source.Provenance.CreatedByAgentAction,
+                    ChainOfCustodyIds = new List<string>(
+                        source.Provenance.ChainOfCustodyIds),
+                },
+            };
+        }
+
+        private static InstitutionalScenarioDefinition
+            AdjudicationOnlyCitationDefinition()
+        {
+            const string appealId = "appeal.workplace.successor-runtime";
+            const string appealOpportunityId = "opportunity.workplace.appeal-successor";
+            const string evidenceTemplateId =
+                "evidence-template.workplace.successor-work-runtime";
+            InstitutionalScenarioDefinition definition =
+                WorkplaceIdentityScenario.CreateDefinition();
+            ScenarioCaseDefinition targetCase = definition.Cases.Single(value =>
+                value.CaseId == WorkplaceIdentityScenario.SuccessorCaseId);
+            targetCase.InitialRulingCycle = 8;
+            targetCase.InitialRulingId =
+                "ruling:case.workplace.successor-shift:initial:8";
+
+            definition.InitialSociety
+                .GetAgent(WorkplaceIdentityScenario.LaterClaimantAgentId)
+                .Standing.CanAppeal = true;
+            definition.Opportunities.Insert(1, new ScenarioOpportunityDefinition
+            {
+                OpportunityId = appealOpportunityId,
+                Kind = ScenarioOpportunityKind.Appeal,
+                PurposeId = "purpose.runtime.challenge-successor-denial",
+                SourceCauseId = "cause.runtime.successor-appeal-window",
+                AvailabilityStartCycle = 9,
+                AvailabilityEndCycle = 9,
+                UtilityBonus = 1000,
+                CaseId = targetCase.CaseId,
+                ChallengedRulingId = targetCase.InitialRulingId,
+                HearingCycle = 10,
+                EligibleRoleIds = new List<string>
+                {
+                    WorkplaceIdentityScenario.LaterClaimantRoleId,
+                },
+            });
+            ScenarioCycleScheduleEntry filingSchedule =
+                definition.CycleSchedule.Single(value => value.Cycle == 9);
+            filingSchedule.AppealWindowOpen = true;
+            filingSchedule.OpenDocketId = "docket.runtime.successor";
+            filingSchedule.ActiveOpportunityIds.Add(appealOpportunityId);
+            definition.EvidenceTemplates.Add(new ScenarioEvidenceTemplateDefinition
+            {
+                EvidenceTemplateId = evidenceTemplateId,
+                SourceEventKind = SocietyEventKind.WorkPerformed,
+                SourceOpportunityId = WorkplaceIdentityScenario.WorkOpportunityId,
+                CaseId = targetCase.CaseId,
+                IssueId = targetCase.IssueId,
+                EvidenceClassId = "evidence-class.workplace.successor-action",
+                Effect = EvidenceEffect.SupportsFinding,
+                Weight = 10,
+                Visibility = EvidenceVisibility.OfficialRecord,
+            });
+            definition.Appeals.Add(new ScenarioAppealDefinition
+            {
+                AppealId = appealId,
+                CaseId = targetCase.CaseId,
+                OpportunityId = appealOpportunityId,
+                AppellantRoleId = WorkplaceIdentityScenario.LaterClaimantRoleId,
+                FilingCycle = 9,
+                HearingCycle = 10,
+                ChallengedRulingId = targetCase.InitialRulingId,
+                ResultingRulingId = targetCase.AdjudicationRulingId,
+                GroundsEvidenceTemplateIds = new List<string>
+                {
+                    evidenceTemplateId,
+                },
+            });
+            definition.OfficialStatusEffectRequests.Add(
+                new ScenarioOfficialStatusEffectRequest
+                {
+                    EffectRequestId =
+                        "effect.workplace.successor-adverse-decision",
+                    Cycle = 8,
+                    CauseCaseId = targetCase.CaseId,
+                    CauseRulingId = targetCase.InitialRulingId,
+                    RequiredRulingDisposition = RulingDisposition.Denied,
+                    TargetRoleId =
+                        WorkplaceIdentityScenario.LaterClaimantRoleId,
+                    StatusId = InstitutionalStatusIds.AdverseDecision,
+                    RequestedRecognisedState = true,
+                });
+            definition.HoldingCitations[0].CitationId =
+                "citation.runtime.successor-adjudication";
+            definition.HoldingCitations[0].TargetRulingId =
+                targetCase.AdjudicationRulingId;
+            definition.EntitlementTransfers[0].CauseRulingId =
+                targetCase.AdjudicationRulingId;
+            definition.EntitlementTransfers[0].Cycle =
+                targetCase.AdjudicationCycle;
+            definition.EntitlementTransfers[0].RequiredRulingDisposition =
+                RulingDisposition.ReversedAndRecognised;
+            return definition;
         }
 
         private static InstitutionalScenarioDefinition DescendantTriggerDefinition()

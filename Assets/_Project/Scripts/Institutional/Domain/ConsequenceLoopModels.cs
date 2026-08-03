@@ -97,6 +97,7 @@ namespace Desk42.Institutional
         AppealHeard,
         HoldingEstablished,
         PrecedentApplied,
+        CaseOpened,
         DescendantCaseOpened,
         ComparisonClosed,
     }
@@ -225,6 +226,21 @@ namespace Desk42.Institutional
         public List<string> ConnectedAgentIds = new();
         public List<string> SourceActionEventIds = new();
         public List<string> CitedHoldingIds = new();
+    }
+
+    /// <summary>
+    /// Player-safe record that a conditionally declared case opened because one
+    /// exact evidence artifact was projected from an autonomous action. It contains
+    /// no lived-event truth or private decision reasons.
+    /// </summary>
+    [Serializable]
+    public sealed class InstitutionalCaseOpening
+    {
+        public string ActivationId;
+        public string CaseId;
+        public long OpenedCycle;
+        public string TriggerEvidenceArtifactId;
+        public string CausalAgentActionId;
     }
 
     [Serializable]
@@ -423,7 +439,7 @@ namespace Desk42.Institutional
     [Serializable]
     public sealed class InstitutionalConsequenceReport
     {
-        public const string RulesetVersion = "institutional-consequence-loop-v0.1";
+        public const string RulesetVersion = "institutional-consequence-loop-v0.2";
 
         public string Ruleset = RulesetVersion;
         public int MasterSeed;
@@ -435,6 +451,7 @@ namespace Desk42.Institutional
         public List<OfficialFinding> OfficialFindings = new();
         public List<Ruling> Rulings = new();
         public List<OfficialStatusMutation> OfficialStatusMutations = new();
+        public List<InstitutionalCaseOpening> CaseOpenings = new();
         public List<DescendantCase> DescendantCases = new();
         public List<Appeal> Appeals = new();
         public List<Holding> Holdings = new();

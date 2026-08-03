@@ -33,6 +33,18 @@ namespace Desk42.Institutional
                 throw new ArgumentNullException(nameof(caseDefinition));
             if (cycle < caseDefinition.OpenCycle) return false;
 
+            ScenarioEvidenceActivatedCaseDefinition evidenceActivation = null;
+            int evidenceActivationCount = 0;
+            for (int i = 0; i < definition.EvidenceActivatedCases.Count; i++)
+            {
+                ScenarioEvidenceActivatedCaseDefinition candidate =
+                    definition.EvidenceActivatedCases[i];
+                if (candidate == null || !Equal(candidate.CaseId, caseDefinition.CaseId))
+                    continue;
+                evidenceActivation = candidate;
+                evidenceActivationCount++;
+            }
+
             bool isActionCaused = false;
             for (int i = 0; i < definition.DescendantCases.Count; i++)
             {
@@ -44,6 +56,49 @@ namespace Desk42.Institutional
                     break;
                 }
             }
+            if (evidenceActivationCount > 1 ||
+                (evidenceActivationCount == 1 && isActionCaused))
+            {
+                throw new InvalidOperationException(
+                    $"Case '{caseDefinition.CaseId}' has ambiguous activation declarations.");
+            }
+            if (evidenceActivationCount == 1)
+            {
+                if (report == null) return false;
+                if (report.CaseOpenings == null)
+                {
+                    throw new InvalidOperationException(
+                        "Evidence activation requires a case-opening collection.");
+                }
+
+                InstitutionalCaseOpening opening = null;
+                int openingCount = 0;
+                for (int i = 0; i < report.CaseOpenings.Count; i++)
+                {
+                    InstitutionalCaseOpening candidate = report.CaseOpenings[i];
+                    if (candidate == null || !Equal(
+                            candidate.CaseId,
+                            caseDefinition.CaseId)) continue;
+                    opening = candidate;
+                    openingCount++;
+                }
+                if (openingCount > 1)
+                {
+                    throw new InvalidOperationException(
+                        $"Evidence-activated case '{caseDefinition.CaseId}' is duplicated " +
+                        "in the report.");
+                }
+                if (opening == null) return false;
+                if (!Equal(opening.ActivationId, evidenceActivation.ActivationId) ||
+                    opening.OpenedCycle != caseDefinition.OpenCycle)
+                {
+                    throw new InvalidOperationException(
+                        $"Evidence-activated case '{caseDefinition.CaseId}' opened outside " +
+                        "its declaration.");
+                }
+                return opening.OpenedCycle <= cycle;
+            }
+
             if (!isActionCaused) return true;
             if (report == null) return false;
             if (report.DescendantCases == null)

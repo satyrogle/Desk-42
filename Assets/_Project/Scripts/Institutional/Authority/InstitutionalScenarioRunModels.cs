@@ -10,24 +10,25 @@ namespace Desk42.Institutional
     /// </summary>
     internal sealed class InstitutionalScenarioRunResult
     {
+        private readonly InstitutionalScenarioExecutionContext _validationContext;
+
         internal InstitutionalScenarioRunResult(
-            InstitutionalConsequenceRun assessorRun,
-            IReadOnlyDictionary<string, string> agentIdByRole,
+            InstitutionalScenarioExecutionContext validationContext,
             IReadOnlyList<ScenarioParticipantBindingDiagnostic> bindingDiagnostics,
-            ExclusiveEntitlementRegistry entitlementRegistry,
             ScenarioRunStateInitializationResult initialization)
         {
-            AssessorRun = assessorRun ?? throw new ArgumentNullException(nameof(assessorRun));
+            _validationContext = validationContext ??
+                throw new ArgumentNullException(nameof(validationContext));
+            AssessorRun = _validationContext.Run;
             AgentIdByRole = new ReadOnlyDictionary<string, string>(
                 new Dictionary<string, string>(
-                    agentIdByRole ?? throw new ArgumentNullException(nameof(agentIdByRole)),
+                    _validationContext.AgentIdByRole,
                     StringComparer.Ordinal));
             BindingDiagnostics = new ReadOnlyCollection<ScenarioParticipantBindingDiagnostic>(
                 new List<ScenarioParticipantBindingDiagnostic>(
                     bindingDiagnostics ??
                     throw new ArgumentNullException(nameof(bindingDiagnostics))));
-            EntitlementRegistry = entitlementRegistry ??
-                throw new ArgumentNullException(nameof(entitlementRegistry));
+            EntitlementRegistry = _validationContext.EntitlementRegistry;
             Initialization = initialization ??
                 throw new ArgumentNullException(nameof(initialization));
         }
@@ -38,6 +39,10 @@ namespace Desk42.Institutional
         internal IReadOnlyList<ScenarioParticipantBindingDiagnostic> BindingDiagnostics { get; }
         internal ExclusiveEntitlementRegistry EntitlementRegistry { get; }
         internal ScenarioRunStateInitializationResult Initialization { get; }
+        internal void ValidateAgainstOrigin()
+        {
+            InstitutionalScenarioRunValidator.Validate(_validationContext);
+        }
     }
 
     internal sealed class InstitutionalScenarioExecutionContext

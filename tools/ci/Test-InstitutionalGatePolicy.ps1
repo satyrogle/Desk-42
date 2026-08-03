@@ -15,6 +15,19 @@ function Assert-False([bool]$Condition, [string]$Message) {
     Assert-True (-not $Condition) $Message
 }
 
+function Assert-ScenarioTestRejected([string]$Name, [string]$SourceText) {
+    $violations = @(Get-InstitutionalScenarioTestViolations $SourceText)
+    Assert-True ($violations.Count -gt 0) `
+        "scenario-test mutation fixture should be rejected: $Name"
+}
+
+function Assert-ScenarioTestAccepted([string]$Name, [string]$SourceText) {
+    $violations = @(Get-InstitutionalScenarioTestViolations $SourceText)
+    $detail = ($violations | ForEach-Object { $_.Reason }) -join ', '
+    Assert-True ($violations.Count -eq 0) `
+        "read-only scenario-test fixture should pass: $Name ($detail)"
+}
+
 $paths = Get-InstitutionalScenarioPathPolicy 'GlassCanal'
 Assert-True ($paths.SourceFolderMeta -eq
     'Assets/_Project/Scripts/Institutional/Authority/Scenarios/GlassCanal.meta') `
@@ -53,10 +66,86 @@ foreach ($path in @(
 
 Assert-True ((Get-InstitutionalTransitionTypeNames) -contains
     'InstitutionalAdjudicationService') 'transition-service denylist is incomplete'
+Assert-True ((Get-InstitutionalTransitionTypeNames) -contains
+    'InstitutionalEvidenceActivatedCaseService') `
+    'evidence-activation transition denylist is incomplete'
 Assert-True ((Get-InstitutionalOutcomeTypeNames) -contains
     'InstitutionalConsequenceReport') 'outcome-construction denylist is incomplete'
+Assert-True ((Get-InstitutionalOutcomeTypeNames) -contains
+    'InstitutionalCaseOpening') 'case-opening outcome denylist is incomplete'
 Assert-True ((Get-InstitutionalReportCollectionNames) -contains
     'ConnectedOutcomes') 'report-mutation denylist is incomplete'
+Assert-True ((Get-InstitutionalReportCollectionNames) -contains
+    'CaseOpenings') 'case-opening collection denylist is incomplete'
+
+Assert-ScenarioTestRejected 'direct activation service' @'
+InstitutionalEvidenceActivatedCaseService.OpenDueCases(context, 1);
+'@
+Assert-ScenarioTestRejected 'opening construction' @'
+var opening = new InstitutionalCaseOpening();
+'@
+Assert-ScenarioTestRejected 'multiline direct collection mutation' @'
+result.Report
+    .CaseOpenings
+    .Add(opening);
+'@
+Assert-ScenarioTestRejected 'typed opening alias field mutation' @'
+InstitutionalCaseOpening opening = result.Report.CaseOpenings.Single();
+opening.CaseId = "case.forged";
+'@
+Assert-ScenarioTestRejected 'typed ruling alias nested mutation' @'
+Ruling appellate = FindRuling(result);
+appellate.CitedHoldingIds.Add("holding.forged");
+'@
+Assert-ScenarioTestRejected 'var opening alias increment' @'
+var opening = result.Report.CaseOpenings.Single();
+opening.OpenedCycle++;
+'@
+Assert-ScenarioTestRejected 'foreach outcome alias mutation' @'
+foreach (Ruling ruling in result.Report.Rulings)
+{
+    ruling.CitedHoldingIds.Add("holding.forged");
+}
+'@
+Assert-ScenarioTestRejected 'method parameter outcome mutation' @'
+private static void Corrupt(Ruling ruling)
+{
+    ruling.CitedHoldingIds.Add("holding.forged");
+}
+Corrupt(result.Report.Rulings.Single());
+'@
+Assert-ScenarioTestRejected 'lambda parameter outcome mutation' @'
+result.Report.Rulings.ForEach(ruling =>
+    ruling.CitedHoldingIds.Add("holding.forged"));
+'@
+Assert-ScenarioTestRejected 'typed report collection alias mutation' @'
+List<Ruling> rows = result.Report.Rulings;
+rows.Clear();
+'@
+Assert-ScenarioTestRejected 'var report collection alias mutation' @'
+var rows = result.Report.Rulings;
+rows.Clear();
+'@
+Assert-ScenarioTestAccepted 'read-only report assertions' @'
+InstitutionalCaseOpening opening = result.Report.CaseOpenings.Single();
+Assert.That(opening.CaseId, Is.EqualTo("case.expected"));
+Ruling appellate = result.Report.Rulings.Single();
+Assert.That(appellate.CitedHoldingIds, Is.Empty);
+var ids = result.Report.CaseOpenings.Select(value => value.CaseId).ToArray();
+'@
+Assert-ScenarioTestAccepted 'read-only foreach and helper assertions' @'
+foreach (Ruling ruling in result.Report.Rulings)
+{
+    Assert.That(ruling.CitedHoldingIds, Is.Not.Null);
+}
+private static void AssertRuling(Ruling ruling)
+{
+    Assert.That(ruling.CaseId, Is.Not.Empty);
+}
+AssertRuling(result.Report.Rulings.Single());
+List<Ruling> rows = result.Report.Rulings;
+Assert.That(rows.Count, Is.GreaterThanOrEqualTo(0));
+'@
 
 $scriptPaths = @(
     'Assert-InstitutionalGeneralisationGate.ps1',
@@ -77,10 +166,10 @@ foreach ($scriptPath in $scriptPaths) {
 
 $gatePath = Join-Path $PSScriptRoot 'Assert-InstitutionalGeneralisationGate.ps1'
 $gateText = Get-Content -LiteralPath $gatePath -Raw
-Assert-True ($gateText.Contains("'institutional-engine-candidate-v0.1'")) `
+Assert-True ($gateText.Contains("'institutional-engine-candidate-v0.2'")) `
     'candidate tag is not pinned'
 Assert-True ($gateText.Contains(
-        "'evidence/InstitutionalEngine/v0.1/engine-manifest.sha256'")) `
+        "'evidence/InstitutionalEngine/v0.2/engine-manifest.sha256'")) `
     'candidate baseline path is not pinned'
 Assert-False ($gateText.Contains('EngineManifestPath')) `
     'gate still accepts an external manifest path'

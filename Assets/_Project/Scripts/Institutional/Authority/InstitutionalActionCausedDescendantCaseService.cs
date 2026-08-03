@@ -275,7 +275,10 @@ namespace Desk42.Institutional
                     out string triggerAgentId) ||
                 artifact.EnteredCycle != definition.TriggerCycle ||
                 !OrdinalEquals(artifact.Provenance.SourceAgentId, triggerAgentId) ||
-                !OrdinalEquals(artifact.PropositionId, definition.TriggerPropositionId))
+                (!IsBlank(definition.TriggerPropositionId) &&
+                 !OrdinalEquals(
+                     artifact.PropositionId,
+                     definition.TriggerPropositionId)))
             {
                 return false;
             }

@@ -196,6 +196,7 @@ namespace Desk42.Institutional
                             definition,
                             roleAgentIds,
                             caseDefinition.CaseId,
+                            template,
                             societyEvent))
                     {
                         continue;
@@ -225,10 +226,13 @@ namespace Desk42.Institutional
             InstitutionalScenarioDefinition definition,
             IReadOnlyDictionary<string, string> roleAgentIds,
             string caseId,
+            ScenarioEvidenceTemplateDefinition template,
             SocietyEvent societyEvent)
         {
-            ScenarioActionCausedDescendantCaseDefinition matched = null;
-            int matches = 0;
+            ScenarioActionCausedDescendantCaseDefinition descendant = null;
+            ScenarioEvidenceActivatedCaseDefinition activation = null;
+            int descendantMatches = 0;
+            int activationMatches = 0;
             for (int i = 0; i < definition.DescendantCases.Count; i++)
             {
                 ScenarioActionCausedDescendantCaseDefinition candidate =
@@ -240,19 +244,40 @@ namespace Desk42.Institutional
                 {
                     continue;
                 }
-                matched = candidate;
-                matches++;
+                descendant = candidate;
+                descendantMatches++;
             }
-            if (matches > 1)
+            for (int i = 0; i < definition.EvidenceActivatedCases.Count; i++)
+            {
+                ScenarioEvidenceActivatedCaseDefinition candidate =
+                    definition.EvidenceActivatedCases[i];
+                if (candidate == null || !string.Equals(
+                        candidate.CaseId,
+                        caseId,
+                        StringComparison.Ordinal)) continue;
+                activation = candidate;
+                activationMatches++;
+            }
+            if (descendantMatches > 1 || activationMatches > 1 ||
+                (descendantMatches == 1 && activationMatches == 1))
             {
                 throw new InvalidOperationException(
-                    $"Case '{caseId}' has ambiguous descendant trigger declarations.");
+                    $"Case '{caseId}' has ambiguous trigger declarations.");
             }
-            return matched != null &&
+            if (activation != null)
+            {
+                return InstitutionalEvidenceActivatedCaseService
+                    .IsExactDeclaredTriggerEvent(
+                        run,
+                        activation,
+                        template,
+                        societyEvent);
+            }
+            return descendant != null &&
                    InstitutionalActionCausedDescendantCaseService
                        .IsExactDeclaredTriggerEvent(
                            run,
-                           matched,
+                           descendant,
                            roleAgentIds,
                            societyEvent);
         }
@@ -276,10 +301,9 @@ namespace Desk42.Institutional
 
         private static EvidenceArtifact CreateArtifact(PendingProjection item)
         {
-            string propositionId = string.IsNullOrWhiteSpace(
-                item.SocietyEvent.EvidencePropositionId)
-                ? item.Template.RequiredPropositionId
-                : item.SocietyEvent.EvidencePropositionId;
+            string propositionId = ResolvePropositionId(
+                item.SocietyEvent,
+                item.Template);
             EvidenceArtifact artifact = InstitutionalEvidencePipeline.FromAction(
                 item.SocietyEvent,
                 item.Template.CaseId,
@@ -329,10 +353,9 @@ namespace Desk42.Institutional
             EvidenceArtifact existing,
             PendingProjection pending)
         {
-            string expectedProposition = string.IsNullOrWhiteSpace(
-                pending.SocietyEvent.EvidencePropositionId)
-                ? pending.Template.RequiredPropositionId
-                : pending.SocietyEvent.EvidencePropositionId;
+            string expectedProposition = ResolvePropositionId(
+                pending.SocietyEvent,
+                pending.Template);
             bool equivalent =
                 string.Equals(existing.CaseId, pending.Template.CaseId, StringComparison.Ordinal) &&
                 string.Equals(existing.IssueId, pending.Template.IssueId, StringComparison.Ordinal) &&
@@ -393,6 +416,21 @@ namespace Desk42.Institutional
         {
             return values != null && values.Count == 1 &&
                    string.Equals(values[0], expected, StringComparison.Ordinal);
+        }
+
+        private static string ResolvePropositionId(
+            SocietyEvent societyEvent,
+            ScenarioEvidenceTemplateDefinition template)
+        {
+            if (!string.IsNullOrWhiteSpace(societyEvent.EvidencePropositionId))
+                return societyEvent.EvidencePropositionId;
+            if (!string.IsNullOrWhiteSpace(template.RequiredPropositionId))
+                return template.RequiredPropositionId;
+            if (!string.IsNullOrWhiteSpace(societyEvent.EvidenceId))
+                return societyEvent.EvidenceId;
+            if (!string.IsNullOrWhiteSpace(societyEvent.EvidenceSourceId))
+                return societyEvent.EvidenceSourceId;
+            return $"proposition:{template.EvidenceTemplateId}";
         }
 
         private static bool SequenceEquals(

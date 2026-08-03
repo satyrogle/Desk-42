@@ -533,7 +533,7 @@ namespace Desk42.Institutional
             }
         }
 
-        private static string BuildMaterialConsequenceId(
+        internal static string BuildMaterialConsequenceId(
             InstitutionalConsequenceReport report,
             Ruling ruling,
             ExclusiveEntitlementState state,

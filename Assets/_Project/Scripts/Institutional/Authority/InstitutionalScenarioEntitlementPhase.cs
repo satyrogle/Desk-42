@@ -4,7 +4,8 @@ namespace Desk42.Institutional
 {
     /// <summary>
     /// Registers authored conserved resources and applies only transfers caused by a
-    /// ruling that actually cited the declared scoped holding.
+    /// ruling that actually cited the declared scoped holding and reached the
+    /// disposition required by the transfer declaration.
     /// </summary>
     internal static class InstitutionalScenarioEntitlementPhase
     {
@@ -76,7 +77,7 @@ namespace Desk42.Institutional
             if (!InstitutionalScenarioLookup.Equal(
                     cause.CaseId,
                     declaration.CauseCaseId) ||
-                cause.Cycle > declaration.Cycle)
+                cause.Cycle != declaration.Cycle)
             {
                 throw new InvalidOperationException(
                     $"Transfer '{declaration.TransferId}' exact cause ruling is inconsistent.");
@@ -88,11 +89,17 @@ namespace Desk42.Institutional
             // that case the transfer branch simply does not materialise.
             if (!InstitutionalScenarioLookup.Contains(
                     cause.CitedHoldingIds,
-                    declaration.CauseHoldingId))
+                    declaration.CauseHoldingId) ||
+                cause.Disposition != declaration.RequiredRulingDisposition)
             {
                 return null;
             }
             return cause;
+        }
+
+        internal static string BuildConnectedOutcomePairId(string transferId)
+        {
+            return InstitutionalScenarioDerivedIds.ConnectedOutcomePair(transferId);
         }
 
         private static void PublishConnectedOutcome(
@@ -106,7 +113,7 @@ namespace Desk42.Institutional
             InstitutionalServiceResult<ConnectedOutcomePair> projection =
                 InstitutionalConnectedOutcomeProjector.Project(
                     context.Run,
-                    $"connected:{declaration.TransferId}",
+                    BuildConnectedOutcomePairId(declaration.TransferId),
                     holding.RuleId,
                     transfer.ResourceId,
                     transfer.CurrentHolderAgentId,

@@ -180,15 +180,19 @@ Assert-ScenarioCodeAssetTree $scenarioTestRoot 'Scenario tests'
 Assert-NamedChildRoot $presentationRoot 'Scenario presentation'
 Assert-PresentationAssetTree $presentationRoot
 
-$transitionTypes = (Get-InstitutionalTransitionTypeNames | ForEach-Object {
-    [regex]::Escape($_)
-}) -join '|'
+$transitionTypes = ConvertTo-InstitutionalRegexAlternation `
+    (Get-InstitutionalTransitionTypeNames)
+$outcomeTypes = ConvertTo-InstitutionalRegexAlternation `
+    (Get-InstitutionalOutcomeTypeNames)
+$reportCollections = ConvertTo-InstitutionalRegexAlternation `
+    (Get-InstitutionalReportCollectionNames)
 $forbiddenPatterns = [ordered]@{
     'institutional transition service' = "\b(?:$transitionTypes)\b"
     'engine execution from scenario content' = '\b(?:InstitutionalScenarioEngine|RunScenario)\b'
     'authority-state access' = '\b(?:InstitutionalConsequenceRun|ExclusiveEntitlementRegistry|ExclusiveEntitlementTransferResult|StatusMutationResult)\b'
-    'public report access or mutation' = '\bInstitutionalConsequenceReport\b|\.Report\b|\.(?:ObservedAgentActions|EvidenceArtifacts|OfficialFindings|Rulings|OfficialStatusMutations|DescendantCases|Appeals|Holdings|RelianceObservations|MaterialConsequences|ConnectedOutcomes|ExclusiveEntitlements|WorkAllocations|Timeline)\b'
-    'institutional outcome construction' = '\bnew\s+(?:EvidenceArtifact|OfficialFinding|Ruling|OfficialStatusMutation|DescendantCase|Appeal|Holding|RelianceObservation|MaterialConsequence|ConnectedOutcomePair|ExclusiveEntitlementObservation|InstitutionalTimelineEntry)\b'
+    'public report access or mutation' =
+        "\bInstitutionalConsequenceReport\b|\.Report\b|\.(?:$reportCollections)\b"
+    'institutional outcome construction' = "\bnew\s+(?:$outcomeTypes)\b"
     'reflection escape hatch' = '\b(?:System\.Reflection|BindingFlags|Activator\.CreateInstance|Assembly\.Load|GetField|GetMethod|MethodInfo|FieldInfo|dynamic)\b'
 }
 
@@ -212,37 +216,29 @@ if ($violations.Count -gt 0) {
     throw "Scenario source crossed the data-only authoring boundary:`n$($violations -join "`n")"
 }
 
-$outcomeTypes = (Get-InstitutionalOutcomeTypeNames | ForEach-Object {
-    [regex]::Escape($_)
-}) -join '|'
-$reportCollections = (Get-InstitutionalReportCollectionNames | ForEach-Object {
-    [regex]::Escape($_)
-}) -join '|'
-$testForbiddenPatterns = [ordered]@{
-    'direct transition-service use' = "\b(?:$transitionTypes)\b"
-    'institutional outcome construction' = "\bnew\s+(?:$outcomeTypes)\b"
-    'report collection replacement' = "\.(?:$reportCollections)\s*="
-    'report outcome replacement' = "\.(?:$reportCollections)\s*\[[^\]]+\](?:\.[A-Za-z_][A-Za-z0-9_]*)?\s*="
-    'report outcome mutation' = "\.(?:$reportCollections)\b.*\.(?:Add|AddRange|Clear|Insert|Remove|RemoveAll|RemoveAt|Reverse|Sort)\s*\("
-    'reflection escape hatch' = '\b(?:System\.Reflection|BindingFlags|Activator\.CreateInstance|Assembly\.Load|GetField|GetMethod|MethodInfo|FieldInfo|dynamic)\b'
-}
-
 $testViolations = [System.Collections.Generic.List[string]]::new()
 $scenarioTestSources = @(if (Test-Path -LiteralPath $scenarioTestRoot -PathType Container) {
     Get-ChildItem -LiteralPath $scenarioTestRoot -Recurse -File -Filter '*.cs'
 })
 foreach ($source in $scenarioTestSources) {
-    $lineNumber = 0
-    foreach ($line in Get-Content -LiteralPath $source.FullName) {
-        $lineNumber++
-        foreach ($entry in $testForbiddenPatterns.GetEnumerator()) {
-            if ($line -match $entry.Value) {
-                $relative = $source.FullName.Substring(
-                    $resolvedRoot.Length + 1).Replace('\', '/')
-                $testViolations.Add(
-                    "$relative`:$lineNumber [$($entry.Key)] $($line.Trim())")
-            }
+    $sourceText = Get-Content -LiteralPath $source.FullName -Raw
+    foreach ($violation in @(Get-InstitutionalScenarioTestViolations $sourceText)) {
+        $prefix = if ($violation.Index -gt 0) {
+            $sourceText.Substring(0, $violation.Index)
+        } else {
+            ''
         }
+        $lineNumber = 1 + [regex]::Matches(
+            $prefix,
+            "`r`n|`n|`r").Count
+        $relative = $source.FullName.Substring(
+            $resolvedRoot.Length + 1).Replace('\', '/')
+        $display = [regex]::Replace(
+            $violation.Text,
+            '\s+',
+            ' ').Trim()
+        $testViolations.Add(
+            "$relative`:$lineNumber [$($violation.Reason)] $display")
     }
 }
 if ($testViolations.Count -gt 0) {
