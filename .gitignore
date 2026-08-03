@@ -85,3 +85,7 @@ __pycache__/
 *.py[cod]
 /output/pdf/
 /output/art-design/
+
+# One-off design-doc exports generated during review
+Desk42_Complete_GDD_v1.2.pdf
+Desk42_Complete_GDD_v1.2.html
