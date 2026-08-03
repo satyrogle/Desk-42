@@ -12,6 +12,7 @@ namespace Desk42.Product.Automation
         private const string CaptureArgument = "--desk42-automation-capture";
         private const string CaptureDelayArgument = "--desk42-automation-capture-delay";
         private const string AutoAuxArgument = "--desk42-automation-auto-aux";
+        private const string PolicyArgument = "--desk42-automation-policy";
 
         private AutomationFloorController _floor;
         private bool _paused;
@@ -36,6 +37,11 @@ namespace Desk42.Product.Automation
             string[] arguments = Environment.GetCommandLineArgs();
             string capturePath = ArgumentValue(arguments, CaptureArgument);
             if (string.IsNullOrWhiteSpace(capturePath)) yield break;
+
+            string requestedPolicy = ArgumentValue(arguments, PolicyArgument);
+            if (int.TryParse(requestedPolicy, NumberStyles.Integer,
+                    CultureInfo.InvariantCulture, out int policyNumber))
+                _floor?.SetPolicy(policyNumber);
 
             float captureDelay = 4f;
             string requestedDelay = ArgumentValue(arguments, CaptureDelayArgument);
@@ -76,6 +82,9 @@ namespace Desk42.Product.Automation
             if (Input.GetKeyDown(KeyCode.Tab)) _flowOverlay = !_flowOverlay;
             if (Input.GetKeyDown(KeyCode.B)) _floor?.TogglePlacementMode();
             if (Input.GetKeyDown(KeyCode.R)) _floor?.ToggleRouteMode();
+            if (Input.GetKeyDown(KeyCode.Alpha1)) _floor?.SetPolicy(1);
+            if (Input.GetKeyDown(KeyCode.Alpha2)) _floor?.SetPolicy(2);
+            if (Input.GetKeyDown(KeyCode.Alpha3)) _floor?.SetPolicy(3);
             if (Input.GetMouseButtonDown(0))
                 _floor?.TryPlaceAuxVerifier(Input.mousePosition);
             _floor?.SetFlowOverlayVisible(_flowOverlay);
@@ -104,7 +113,7 @@ namespace Desk42.Product.Automation
             Metric("APPEALS", (_floor?.AppealsReturned ?? 0).ToString("00") +
                 "/" + (_floor?.AppealsResolved ?? 0).ToString("00"));
             Metric("ROUTE", _floor?.RouteMode ?? "PRIMARY");
-            Metric("POLICY", "RUBBER MILL");
+            Metric("POLICY", _floor?.PolicyHudName ?? "RUBBER");
             GUILayout.FlexibleSpace();
             string status = _paused
                 ? "PAUSED"
@@ -113,6 +122,22 @@ namespace Desk42.Product.Automation
                     : "OPERATING";
             GUILayout.Label(status, _pill,
                 GUILayout.Width(118f), GUILayout.Height(28f));
+            GUILayout.EndHorizontal();
+            GUILayout.EndArea();
+
+            GUILayout.BeginArea(new Rect(16f, Screen.height - 112f,
+                    Mathf.Min(Screen.width - 32f, 1080f), 44f), GUI.skin.box);
+            GUILayout.BeginHorizontal();
+            PolicyButton(1, "1  PROOF FORTRESS");
+            PolicyButton(2, "2  RUBBER MILL");
+            PolicyButton(3, "3  APPEAL REFINERY");
+            string eventText = _floor?.LastEvent;
+            string readout = string.IsNullOrEmpty(eventText)
+                ? (_floor?.PolicyDescription ?? string.Empty)
+                : "EVENT  " + eventText;
+            GUILayout.Label(readout, _small, GUILayout.ExpandWidth(true));
+            GUILayout.Label("PRECEDENTS " + (_floor?.PrecedentsInstalled ?? 0).ToString("D2"),
+                _small, GUILayout.Width(105f));
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
 
@@ -147,6 +172,15 @@ namespace Desk42.Product.Automation
             GUILayout.Label(label, _small);
             GUILayout.Label(value, _metric);
             GUILayout.EndVertical();
+        }
+
+        private void PolicyButton(int number, string label)
+        {
+            string decorated = _floor?.PolicyNumber == number
+                ? "[ " + label + " ]"
+                : label;
+            if (GUILayout.Button(decorated, GUILayout.Width(150f), GUILayout.Height(27f)))
+                _floor?.SetPolicy(number);
         }
 
         private void EnsureStyles()

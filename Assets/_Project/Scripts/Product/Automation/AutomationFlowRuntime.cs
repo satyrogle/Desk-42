@@ -15,6 +15,24 @@ namespace Desk42.Product.Automation
         Legal,
     }
 
+    internal enum AutomationPolicyKind
+    {
+        ProofFortress = 1,
+        RubberStampMill = 2,
+        AppealRefinery = 3,
+    }
+
+    internal enum AutomationFeedbackKind
+    {
+        ClaimArrived,
+        EvidenceSplit,
+        RulingStamped,
+        AppealReturned,
+        AppealResolved,
+        Jammed,
+        PolicyChanged,
+    }
+
     internal sealed class AutomationFlowRuntime : IDisposable
     {
         private readonly Transform _root;
@@ -29,7 +47,9 @@ namespace Desk42.Product.Automation
         private AutomationStationRuntime _output;
         private AutomationStationRuntime _legal;
         private float _spawnClock = 0.4f;
+        private float _spawnInterval = 1.1f;
         private int _routeOrdinal;
+        private bool _jamReported;
 
         internal AutomationFlowRuntime(
             Transform root,
@@ -44,6 +64,7 @@ namespace Desk42.Product.Automation
         internal int Completed { get; private set; }
         internal int AppealsReturned { get; private set; }
         internal int AppealsResolved { get; private set; }
+        internal int PrecedentsInstalled { get; private set; }
         internal int InFlight => _items.Count;
         internal int VerificationBacklog =>
             (_primaryVerifier?.Workload ?? 0) + (_auxVerifier?.Workload ?? 0);
@@ -63,6 +84,27 @@ namespace Desk42.Product.Automation
 
         internal bool AuxVerifierInstalled => _auxVerifier != null;
         internal bool ParallelRouting { get; private set; }
+        internal AutomationPolicyKind Policy { get; private set; } =
+            AutomationPolicyKind.RubberStampMill;
+        internal string PolicyName => Policy switch
+        {
+            AutomationPolicyKind.ProofFortress => "PROOF FORTRESS",
+            AutomationPolicyKind.RubberStampMill => "RUBBER MILL",
+            AutomationPolicyKind.AppealRefinery => "APPEAL REFINERY",
+            _ => "UNKNOWN",
+        };
+        internal string PolicyDescription => Policy switch
+        {
+            AutomationPolicyKind.ProofFortress =>
+                "Narrow holdings. Slow verification. No new scope appeals.",
+            AutomationPolicyKind.RubberStampMill =>
+                "Broad holdings. Fast intake. Appeals become the bottleneck.",
+            AutomationPolicyKind.AppealRefinery =>
+                "Broad holdings. Fast Legal. Resolved appeals accelerate verification.",
+            _ => string.Empty,
+        };
+
+        internal event Action<AutomationFeedbackKind, string> Feedback;
 
         internal void Register(AutomationStationRuntime station)
         {
@@ -76,6 +118,7 @@ namespace Desk42.Product.Automation
                 case AutomationStationKind.Verification when station.IsAuxiliary:
                     _auxVerifier = station;
                     ParallelRouting = true;
+                    ApplyPolicyTuning();
                     break;
                 case AutomationStationKind.Verification: _primaryVerifier = station; break;
                 case AutomationStationKind.Adjudication: _adjudicator = station; break;
@@ -90,6 +133,27 @@ namespace Desk42.Product.Automation
             ParallelRouting = !ParallelRouting;
         }
 
+        internal void SetPolicy(AutomationPolicyKind policy)
+        {
+            if (!Enum.IsDefined(typeof(AutomationPolicyKind), policy))
+                throw new ArgumentOutOfRangeException(nameof(policy));
+            Policy = policy;
+            switch (policy)
+            {
+                case AutomationPolicyKind.ProofFortress:
+                    _spawnInterval = 1.75f;
+                    break;
+                case AutomationPolicyKind.RubberStampMill:
+                    _spawnInterval = 1.05f;
+                    break;
+                case AutomationPolicyKind.AppealRefinery:
+                    _spawnInterval = 1.30f;
+                    break;
+            }
+            ApplyPolicyTuning();
+            Emit(AutomationFeedbackKind.PolicyChanged, PolicyName + " BOUND");
+        }
+
         internal void Tick(float deltaTime)
         {
             if (deltaTime <= 0f) return;
@@ -98,11 +162,17 @@ namespace Desk42.Product.Automation
                 _spawnClock <= 0f && _intake != null)
             {
                 SpawnClaim();
-                _spawnClock = 1.35f;
+                _spawnClock = _spawnInterval;
             }
 
             for (int i = 0; i < _stations.Count; i++)
                 _stations[i].Tick(deltaTime);
+
+            bool jammed = VerificationBacklog >= 6;
+            if (jammed && !_jamReported)
+                Emit(AutomationFeedbackKind.Jammed, "VERIFICATION JAM / QUEUE " +
+                    VerificationBacklog.ToString("D2"));
+            _jamReported = jammed;
         }
 
         public void Dispose()
@@ -133,6 +203,8 @@ namespace Desk42.Product.Automation
             var item = new AutomationFlowItem(claim, token, view);
             _items.Add(item);
             _intake.Enqueue(item);
+            Emit(AutomationFeedbackKind.ClaimArrived,
+                claim.DisplayId + " ENTERED INTAKE");
         }
 
         private void HandleStationCompleted(
@@ -145,6 +217,8 @@ namespace Desk42.Product.Automation
                     break;
                 case AutomationStationKind.EvidenceSplit:
                     item.RevealEvidencePacket();
+                    Emit(AutomationFeedbackKind.EvidenceSplit,
+                        item.Claim.DisplayId + " / RECORD SEPARATED FROM ALLEGATION");
                     SelectVerifier().Enqueue(item);
                     break;
                 case AutomationStationKind.Verification:
@@ -159,9 +233,13 @@ namespace Desk42.Product.Automation
                     {
                         AutomationRulingResult ruling = _institution.Commit(
                             item.Claim.AutomationClaimId,
-                            PlayerScopeChoice.Broad,
+                            Policy == AutomationPolicyKind.ProofFortress
+                                ? PlayerScopeChoice.Narrow
+                                : PlayerScopeChoice.Broad,
                             PlayerRulingDisposition.Recognised);
                         item.ApplyRuling(ruling);
+                        Emit(AutomationFeedbackKind.RulingStamped,
+                            item.Claim.DisplayId + " / " + PolicyName + " RULING");
                     }
                     _output.Enqueue(item);
                     break;
@@ -170,12 +248,27 @@ namespace Desk42.Product.Automation
                     bool wasAppeal = item.IsAppeal;
                     _items.Remove(item);
                     item.Dispose();
-                    if (wasAppeal) AppealsResolved++;
+                    if (wasAppeal)
+                    {
+                        AppealsResolved++;
+                        if (Policy == AutomationPolicyKind.AppealRefinery)
+                        {
+                            PrecedentsInstalled++;
+                            ApplyPolicyTuning();
+                        }
+                        Emit(AutomationFeedbackKind.AppealResolved,
+                            "APPEAL RESOLVED / PRECEDENT " +
+                            PrecedentsInstalled.ToString("D2"));
+                    }
                     else Completed++;
                     if (appeal != null) SpawnAppeal(appeal);
                     break;
                 case AutomationStationKind.Legal:
-                    _primaryVerifier.Enqueue(item);
+                    if (Policy == AutomationPolicyKind.AppealRefinery &&
+                        _auxVerifier != null && ParallelRouting)
+                        SelectVerifier().Enqueue(item);
+                    else
+                        _primaryVerifier.Enqueue(item);
                     break;
             }
         }
@@ -193,6 +286,42 @@ namespace Desk42.Product.Automation
             var item = new AutomationFlowItem(appeal, token, view);
             _items.Add(item);
             _legal.Enqueue(item);
+            Emit(AutomationFeedbackKind.AppealReturned,
+                label + " RETURNED THROUGH LEGAL");
+        }
+
+        private void ApplyPolicyTuning()
+        {
+            float verificationMultiplier;
+            float legalMultiplier;
+            switch (Policy)
+            {
+                case AutomationPolicyKind.ProofFortress:
+                    verificationMultiplier = 1.22f;
+                    legalMultiplier = 1f;
+                    break;
+                case AutomationPolicyKind.RubberStampMill:
+                    verificationMultiplier = 0.88f;
+                    legalMultiplier = 1.18f;
+                    break;
+                case AutomationPolicyKind.AppealRefinery:
+                    verificationMultiplier = Mathf.Max(
+                        0.38f, 0.76f - PrecedentsInstalled * 0.08f);
+                    legalMultiplier = 0.36f;
+                    break;
+                default:
+                    verificationMultiplier = 1f;
+                    legalMultiplier = 1f;
+                    break;
+            }
+            _primaryVerifier?.SetDurationMultiplier(verificationMultiplier);
+            _auxVerifier?.SetDurationMultiplier(verificationMultiplier);
+            _legal?.SetDurationMultiplier(legalMultiplier);
+        }
+
+        private void Emit(AutomationFeedbackKind kind, string message)
+        {
+            Feedback?.Invoke(kind, message ?? string.Empty);
         }
 
         private AutomationStationRuntime SelectVerifier()
@@ -214,6 +343,7 @@ namespace Desk42.Product.Automation
         private readonly Color _idleColour = new(0.83f, 0.58f, 0.17f);
         private AutomationFlowItem _active;
         private float _remaining;
+        private float _durationMultiplier = 1f;
 
         internal AutomationStationRuntime(
             AutomationStationKind kind,
@@ -243,6 +373,11 @@ namespace Desk42.Product.Automation
         internal bool IsAuxiliary { get; }
         internal int Workload => _queue.Count + (_active != null ? 1 : 0);
 
+        internal void SetDurationMultiplier(float multiplier)
+        {
+            _durationMultiplier = Mathf.Clamp(multiplier, 0.25f, 3f);
+        }
+
         internal void Enqueue(AutomationFlowItem item)
         {
             if (item == null) throw new ArgumentNullException(nameof(item));
@@ -261,7 +396,7 @@ namespace Desk42.Product.Automation
                 _active = _queue[0];
                 _queue.RemoveAt(0);
                 _active.BeginProcessing(WorktopPosition());
-                _remaining = ProcessDuration;
+                _remaining = ProcessDuration * _durationMultiplier;
                 RefreshVisualState();
             }
 
@@ -269,7 +404,8 @@ namespace Desk42.Product.Automation
             _active.MoveTowards(WorktopPosition(), deltaTime, 5f);
             if (!_active.AtTarget) return;
             _remaining -= deltaTime;
-            _active.SetProcessingPulse(1f - Mathf.Clamp01(_remaining / ProcessDuration));
+            float duration = ProcessDuration * _durationMultiplier;
+            _active.SetProcessingPulse(1f - Mathf.Clamp01(_remaining / duration));
             if (_remaining > 0f) return;
 
             AutomationFlowItem completed = _active;

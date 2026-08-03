@@ -13,9 +13,12 @@ namespace Desk42.Product.Automation
         private readonly List<Renderer> _auxRouteRenderers = new();
         private readonly List<Renderer> _appealRouteRenderers = new();
         private AutomationFlowRuntime _flow;
+        private AutomationAudioSystem _audio;
         private GameObject _auxSocket;
         private bool _placementArmed;
         private bool _flowOverlayVisible = true;
+        private string _lastEvent = "FLOOR INITIALISING";
+        private float _lastEventVisibleUntil;
 
         private static readonly Vector3 IntakePosition = new(-10.4f, 0.45f, 2.6f);
         private static readonly Vector3 SplitterPosition = new(-5.3f, 0.45f, 2.6f);
@@ -39,16 +42,35 @@ namespace Desk42.Product.Automation
         internal bool AuxVerifierPlaced => _flow?.AuxVerifierInstalled ?? false;
         internal bool PlacementArmed => _placementArmed;
         internal string RouteMode => _flow?.ParallelRouting == true ? "PARALLEL" : "PRIMARY";
+        internal int PolicyNumber => (int)(_flow?.Policy ??
+            AutomationPolicyKind.RubberStampMill);
+        internal string PolicyName => _flow?.PolicyName ?? "RUBBER MILL";
+        internal string PolicyHudName => PolicyNumber switch
+        {
+            1 => "PROOF",
+            2 => "RUBBER",
+            3 => "REFINERY",
+            _ => "RUBBER",
+        };
+        internal string PolicyDescription => _flow?.PolicyDescription ?? string.Empty;
+        internal int PrecedentsInstalled => _flow?.PrecedentsInstalled ?? 0;
+        internal string LastEvent => Time.unscaledTime <= _lastEventVisibleUntil
+            ? _lastEvent
+            : string.Empty;
         internal bool FlowStabilised => ClaimsCompleted >= 5 &&
-            AppealsResolved >= 1 && VerificationBacklog <= 3;
+            VerificationBacklog <= 3 &&
+            (PolicyNumber == 1 || AppealsResolved >= 1);
 
         internal void BuildVisualFloor()
         {
             CreateCamera();
             CreateLighting();
             CreateRoom();
+            GameObject audioObject = Own(new GameObject("Institutional Audio"));
+            _audio = audioObject.AddComponent<AutomationAudioSystem>();
             _flow = new AutomationFlowRuntime(
                 _root, InstitutionalAutomationSession.Create(12));
+            _flow.Feedback += HandleFeedback;
             _flow.Register(CreateStation(AutomationStationKind.Intake,
                 "PUBLIC INTAKE", IntakePosition, new Color(0.25f, 0.47f, 0.47f),
                 "RECEIVE", 0.65f));
@@ -67,6 +89,7 @@ namespace Desk42.Product.Automation
             _flow.Register(CreateStation(AutomationStationKind.Legal,
                 "LEGAL / APPEALS", LegalPosition,
                 new Color(0.39f, 0.31f, 0.42f), "RETURN", 2.5f));
+            _flow.SetPolicy(AutomationPolicyKind.RubberStampMill);
 
             CreateRoute(new[]
             {
@@ -106,6 +129,12 @@ namespace Desk42.Product.Automation
             RefreshAuxRouteAppearance();
         }
 
+        internal void SetPolicy(int policyNumber)
+        {
+            if (policyNumber < 1 || policyNumber > 3) return;
+            _flow?.SetPolicy((AutomationPolicyKind)policyNumber);
+        }
+
         internal bool TryPlaceAuxVerifier(Vector3 screenPosition)
         {
             if (!_placementArmed || AuxVerifierPlaced || Camera.main == null) return false;
@@ -141,6 +170,7 @@ namespace Desk42.Product.Automation
 
         public void Dispose()
         {
+            if (_flow != null) _flow.Feedback -= HandleFeedback;
             _flow?.Dispose();
             _flow = null;
             for (int i = _owned.Count - 1; i >= 0; i--)
@@ -293,6 +323,15 @@ namespace Desk42.Product.Automation
                 renderer.enabled = _flowOverlayVisible && AuxVerifierPlaced;
                 renderer.material.color = colour;
             }
+        }
+
+        private void HandleFeedback(AutomationFeedbackKind kind, string message)
+        {
+            _lastEvent = message ?? string.Empty;
+            _lastEventVisibleUntil = Time.unscaledTime +
+                (kind == AutomationFeedbackKind.Jammed ||
+                 kind == AutomationFeedbackKind.AppealReturned ? 3.2f : 1.8f);
+            _audio?.Play(kind);
         }
 
         private GameObject Own(GameObject value)
