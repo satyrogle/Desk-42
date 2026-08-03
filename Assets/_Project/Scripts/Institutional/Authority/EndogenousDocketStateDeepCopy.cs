@@ -117,6 +117,24 @@ namespace Desk42.Institutional
                     RulesetVersion = value.RulesetVersion,
                 });
             }
+            for (int i = 0; i < source.ScopeApplicationTraces.Count; i++)
+            {
+                EndogenousScopeApplicationTrace value = source.ScopeApplicationTraces[i];
+                copy.ScopeApplicationTraces.Add(new EndogenousScopeApplicationTrace
+                {
+                    TraceId = value.TraceId,
+                    RulingId = value.RulingId,
+                    HoldingRuleId = value.HoldingRuleId,
+                    ActorId = value.ActorId,
+                    OpportunityId = value.OpportunityId,
+                    IssueId = value.IssueId,
+                    JurisdictionId = value.JurisdictionId,
+                    ScopeMatched = value.ScopeMatched,
+                    AffectedOfficialStatusId = value.AffectedOfficialStatusId,
+                    StatusBefore = value.StatusBefore,
+                    StatusAfter = value.StatusAfter,
+                });
+            }
             return copy;
         }
 

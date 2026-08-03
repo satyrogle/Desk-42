@@ -23,7 +23,7 @@ namespace Desk42.Institutional
                     "The endogenous proof state must keep the Director disabled.");
             if (state.IncidentCandidates == null || state.Observations == null ||
                 state.DocketCandidates == null || state.OpenCases == null ||
-                state.Rulings == null)
+                state.Rulings == null || state.ScopeApplicationTraces == null)
             {
                 throw new InvalidOperationException(
                     "Endogenous docket state requires every committed collection.");
@@ -38,6 +38,7 @@ namespace Desk42.Institutional
             HashSet<string> caseIds = ValidateCases(
                 state, agentIds, docketIds, observationIds);
             ValidateRulings(state, caseIds);
+            ValidateScopeApplicationTraces(state, agentIds);
             ValidateLineage(state);
         }
 
@@ -277,6 +278,28 @@ namespace Desk42.Institutional
                     state.OpenCases[i].OriginatingRulingId,
                     state.OpenCases[i].CausalAgentActionId,
                     state.OpenCases[i].CaseId);
+        }
+
+        private static void ValidateScopeApplicationTraces(
+            EndogenousDocketState state,
+            HashSet<string> agentIds)
+        {
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < state.ScopeApplicationTraces.Count; i++)
+            {
+                EndogenousScopeApplicationTrace trace = state.ScopeApplicationTraces[i];
+                if (trace == null || !Stable(trace.TraceId) || !ids.Add(trace.TraceId) ||
+                    FindRuling(state, trace.RulingId) == null ||
+                    !Stable(trace.HoldingRuleId) || !agentIds.Contains(trace.ActorId) ||
+                    !Stable(trace.OpportunityId) || !Stable(trace.IssueId) ||
+                    !Stable(trace.JurisdictionId) ||
+                    !Stable(trace.AffectedOfficialStatusId) ||
+                    trace.StatusAfter != (trace.StatusBefore || trace.ScopeMatched))
+                {
+                    throw new InvalidOperationException(
+                        "Every scope application trace requires a unique deterministic transition.");
+                }
+            }
         }
 
         private static void ValidateLineageTuple(

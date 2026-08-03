@@ -79,6 +79,20 @@ namespace Desk42.Institutional
                             JurisdictionId = jurisdictionId,
                             ActivityId = "physical-possession-transfer",
                         };
+                        string traceId =
+                            $"scope-match:{ruling.RulingId}:{opportunity.OpportunityId}:" +
+                            actor.SimulationOrdinal;
+                        EndogenousScopeApplicationTrace replay = FindTrace(state, traceId);
+                        if (replay != null)
+                        {
+                            if (replay.ScopeMatched)
+                            {
+                                opportunity.EnablingRulingId = ruling.RulingId;
+                                opportunity.ParentCaseId = ruling.CaseId;
+                            }
+                            traces.Add(replay);
+                            continue;
+                        }
                         bool before = actor.Standing.IsRecognised(
                             ProtectedPossessionStatusId);
                         bool matched = ScopeExpressionEvaluator.Matches(
@@ -92,11 +106,9 @@ namespace Desk42.Institutional
                         }
                         bool after = actor.Standing.IsRecognised(
                             ProtectedPossessionStatusId);
-                        traces.Add(new EndogenousScopeApplicationTrace
+                        var trace = new EndogenousScopeApplicationTrace
                         {
-                            TraceId =
-                                $"scope-match:{ruling.RulingId}:{opportunity.OpportunityId}:" +
-                                actor.SimulationOrdinal,
+                            TraceId = traceId,
                             RulingId = ruling.RulingId,
                             HoldingRuleId = ruling.HoldingRuleId,
                             ActorId = actor.StableId,
@@ -107,12 +119,32 @@ namespace Desk42.Institutional
                             AffectedOfficialStatusId = ProtectedPossessionStatusId,
                             StatusBefore = before,
                             StatusAfter = after,
-                        });
+                        };
+                        state.ScopeApplicationTraces.Add(trace);
+                        traces.Add(trace);
                     }
                 }
             }
             SocietyStateValidator.Validate(society);
+            EndogenousDocketValidator.Validate(state, society);
             return traces;
+        }
+
+        private static EndogenousScopeApplicationTrace FindTrace(
+            EndogenousDocketState state,
+            string traceId)
+        {
+            for (int i = 0; i < state.ScopeApplicationTraces.Count; i++)
+            {
+                if (string.Equals(
+                        state.ScopeApplicationTraces[i].TraceId,
+                        traceId,
+                        StringComparison.Ordinal))
+                {
+                    return state.ScopeApplicationTraces[i];
+                }
+            }
+            return null;
         }
     }
 }

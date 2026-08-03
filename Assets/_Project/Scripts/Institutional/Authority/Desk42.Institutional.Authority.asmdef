@@ -2,13 +2,16 @@
     "name": "Desk42.Institutional.Authority",
     "rootNamespace": "Desk42.Institutional",
     "references": [
-        "Desk42.Institutional.Domain"
+        "Desk42.Institutional.Domain",
+        "Newtonsoft.Json"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
-    "precompiledReferences": [],
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],
