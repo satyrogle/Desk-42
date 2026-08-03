@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Desk42.Institutional.Player;
 using UnityEngine;
 
 namespace Desk42.Product.Automation
@@ -41,7 +42,8 @@ namespace Desk42.Product.Automation
             CreateCamera();
             CreateLighting();
             CreateRoom();
-            _flow = new AutomationFlowRuntime(_root);
+            _flow = new AutomationFlowRuntime(
+                _root, InstitutionalAutomationSession.Create(12));
             _flow.Register(CreateStation(AutomationStationKind.Intake,
                 "PUBLIC INTAKE", IntakePosition, new Color(0.25f, 0.47f, 0.47f),
                 "RECEIVE", 0.65f));

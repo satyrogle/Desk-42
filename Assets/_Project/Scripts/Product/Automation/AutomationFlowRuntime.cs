@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Desk42.Institutional.Player;
 using UnityEngine;
 
 namespace Desk42.Product.Automation
@@ -16,8 +17,8 @@ namespace Desk42.Product.Automation
 
     internal sealed class AutomationFlowRuntime : IDisposable
     {
-        private const int ClaimLimit = 12;
         private readonly Transform _root;
+        private readonly InstitutionalAutomationSession _institution;
         private readonly List<AutomationStationRuntime> _stations = new();
         private readonly List<AutomationFlowItem> _items = new();
         private AutomationStationRuntime _intake;
@@ -29,9 +30,13 @@ namespace Desk42.Product.Automation
         private float _spawnClock = 0.4f;
         private int _routeOrdinal;
 
-        internal AutomationFlowRuntime(Transform root)
+        internal AutomationFlowRuntime(
+            Transform root,
+            InstitutionalAutomationSession institution)
         {
             _root = root != null ? root : throw new ArgumentNullException(nameof(root));
+            _institution = institution ??
+                throw new ArgumentNullException(nameof(institution));
         }
 
         internal int Spawned { get; private set; }
@@ -85,7 +90,8 @@ namespace Desk42.Product.Automation
         {
             if (deltaTime <= 0f) return;
             _spawnClock -= deltaTime;
-            if (Spawned < ClaimLimit && _spawnClock <= 0f && _intake != null)
+            if (Spawned < _institution.Claims.Count &&
+                _spawnClock <= 0f && _intake != null)
             {
                 SpawnClaim();
                 _spawnClock = 1.35f;
@@ -108,6 +114,7 @@ namespace Desk42.Product.Automation
         private void SpawnClaim()
         {
             Spawned++;
+            AutomationPublicClaim claim = _institution.Claims[Spawned - 1];
             Color[] folders =
             {
                 new(0.82f, 0.70f, 0.43f),
@@ -115,12 +122,11 @@ namespace Desk42.Product.Automation
                 new(0.66f, 0.47f, 0.38f),
                 new(0.48f, 0.55f, 0.67f),
             };
-            string claimId = "CLAIM 42-" + Spawned.ToString("00");
             GameObject token = AutomationVisualFactory.CreateFolderToken(
-                _root, claimId, folders[(Spawned - 1) % folders.Length]);
+                _root, claim.DisplayId, folders[(Spawned - 1) % folders.Length]);
             token.transform.position = new Vector3(-13f, 0.42f, 2.6f);
             var view = token.AddComponent<AutomationDossierView>();
-            var item = new AutomationFlowItem(claimId, token, view);
+            var item = new AutomationFlowItem(claim, token, view);
             _items.Add(item);
             _intake.Enqueue(item);
         }
@@ -134,12 +140,18 @@ namespace Desk42.Product.Automation
                     _splitter.Enqueue(item);
                     break;
                 case AutomationStationKind.EvidenceSplit:
+                    item.RevealEvidencePacket();
                     SelectVerifier().Enqueue(item);
                     break;
                 case AutomationStationKind.Verification:
                     _adjudicator.Enqueue(item);
                     break;
                 case AutomationStationKind.Adjudication:
+                    AutomationRulingResult ruling = _institution.Commit(
+                        item.Claim.AutomationClaimId,
+                        PlayerScopeChoice.Broad,
+                        PlayerRulingDisposition.Recognised);
+                    item.ApplyRuling(ruling);
                     _output.Enqueue(item);
                     break;
                 case AutomationStationKind.Output:
@@ -264,15 +276,33 @@ namespace Desk42.Product.Automation
         private readonly AutomationDossierView _view;
 
         internal AutomationFlowItem(
-            string claimId, GameObject root, AutomationDossierView view)
+            AutomationPublicClaim claim,
+            GameObject root,
+            AutomationDossierView view)
         {
-            ClaimId = claimId;
+            Claim = claim ?? throw new ArgumentNullException(nameof(claim));
             _root = root;
             _view = view;
         }
 
-        internal string ClaimId { get; }
+        internal AutomationPublicClaim Claim { get; }
+        internal AutomationRulingResult Ruling { get; private set; }
+        internal string ClaimId => Claim.DisplayId;
         internal bool AtTarget => _view.AtTarget;
+
+        internal void RevealEvidencePacket()
+        {
+            _view.RevealEvidencePacket(
+                Claim.OfficialFactCount,
+                Claim.AllegationCount,
+                Claim.MissingEvidenceCount);
+        }
+
+        internal void ApplyRuling(AutomationRulingResult result)
+        {
+            Ruling = result ?? throw new ArgumentNullException(nameof(result));
+            _view.ApplyRuling(result.Disposition);
+        }
 
         internal void BeginTransit(AutomationStationRuntime station)
         {
@@ -313,6 +343,8 @@ namespace Desk42.Product.Automation
         private Vector3 _baseScale;
         private TextMesh _label;
         private bool _processing;
+        private bool _evidenceVisible;
+        private bool _rulingVisible;
 
         internal bool AtTarget => (transform.position - _target).sqrMagnitude < 0.003f;
 
@@ -347,6 +379,45 @@ namespace Desk42.Product.Automation
             _processing = progress > 0f;
             float pulse = _processing ? Mathf.Sin(Time.time * 11f) * 0.045f : 0f;
             transform.localScale = _baseScale * (1f + pulse);
+        }
+
+        internal void RevealEvidencePacket(
+            int officialFacts, int allegations, int missingEvidence)
+        {
+            if (_evidenceVisible) return;
+            _evidenceVisible = true;
+            if (officialFacts > 0)
+                AutomationVisualFactory.CreateBlock(transform, "Official Record Tab",
+                    new Vector3(-0.26f, 0.18f, -0.43f),
+                    new Vector3(0.24f, 0.08f, 0.30f),
+                    new Color(0.25f, 0.67f, 0.59f));
+            if (allegations > 0)
+                AutomationVisualFactory.CreateBlock(transform, "Allegation Tab",
+                    new Vector3(0f, 0.19f, -0.45f),
+                    new Vector3(0.24f, 0.09f, 0.34f),
+                    new Color(0.86f, 0.57f, 0.17f));
+            if (missingEvidence > 0)
+                AutomationVisualFactory.CreateBlock(transform, "Missing Evidence Tab",
+                    new Vector3(0.27f, 0.18f, -0.42f),
+                    new Vector3(0.24f, 0.08f, 0.28f),
+                    new Color(0.62f, 0.21f, 0.19f));
+        }
+
+        internal void ApplyRuling(string disposition)
+        {
+            if (_rulingVisible) return;
+            _rulingVisible = true;
+            bool recognised = disposition.IndexOf(
+                "recogn", StringComparison.OrdinalIgnoreCase) >= 0;
+            AutomationVisualFactory.CreateBlock(transform, "Ruling Stamp",
+                new Vector3(0f, 0.25f, 0.04f),
+                new Vector3(0.46f, 0.08f, 0.46f),
+                recognised
+                    ? new Color(0.35f, 0.68f, 0.35f)
+                    : new Color(0.72f, 0.22f, 0.18f));
+            if (_label != null) _label.color = recognised
+                ? new Color(0.55f, 0.88f, 0.48f)
+                : new Color(0.95f, 0.43f, 0.34f);
         }
     }
 }

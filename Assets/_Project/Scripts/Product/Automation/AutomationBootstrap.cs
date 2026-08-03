@@ -102,7 +102,7 @@ namespace Desk42.Product.Automation
             Metric("COMPLETED", (_floor?.ClaimsCompleted ?? 0).ToString("00"));
             Metric("BACKLOG", (_floor?.VerificationBacklog ?? 0).ToString("00"));
             Metric("ROUTE", "INTAKE → OUTPUT");
-            Metric("POLICY", "PROOF FORTRESS");
+            Metric("POLICY", "RUBBER-STAMP MILL");
             GUILayout.FlexibleSpace();
             GUILayout.Label(_paused ? "PAUSED" : "OPERATING", _pill,
                 GUILayout.Width(92f), GUILayout.Height(28f));
