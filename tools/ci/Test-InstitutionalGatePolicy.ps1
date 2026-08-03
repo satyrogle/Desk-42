@@ -166,10 +166,10 @@ foreach ($scriptPath in $scriptPaths) {
 
 $gatePath = Join-Path $PSScriptRoot 'Assert-InstitutionalGeneralisationGate.ps1'
 $gateText = Get-Content -LiteralPath $gatePath -Raw
-Assert-True ($gateText.Contains("'institutional-engine-candidate-v0.4.1'")) `
+Assert-True ($gateText.Contains("'institutional-engine-candidate-v0.4.2'")) `
     'candidate tag is not pinned'
 Assert-True ($gateText.Contains(
-        "'evidence/InstitutionalEngine/v0.4.1/engine-manifest.sha256'")) `
+        "'evidence/InstitutionalEngine/v0.4.2/engine-manifest.sha256'")) `
     'candidate baseline path is not pinned'
 Assert-False ($gateText.Contains('EngineManifestPath')) `
     'gate still accepts an external manifest path'
@@ -211,5 +211,17 @@ Assert-False ($workflowText.Contains('PACKAGES_LOCK_SHA256')) `
 Assert-False ($workflowText.Contains(
         'if ($actualHash -ne $env:PACKAGES_LOCK_SHA256)')) `
     'workflow still compares the raw package-lock checkout hash'
+Assert-True ($workflowText.Contains('runAsHostUser: true')) `
+    'Unity tests do not preserve host ownership for result artifacts'
+Assert-True ($workflowText.Contains('--ignore-cr-at-eol --exit-code HEAD')) `
+    'workflow does not distinguish newline conversion from package-content mutation'
+Assert-True ($workflowText.Contains(
+        "':(exclude)Packages/manifest.json'")) `
+    'workflow does not narrowly exclude the separately verified manifest path'
+Assert-True ($workflowText.Contains(
+        "':(exclude)Packages/packages-lock.json'")) `
+    'workflow does not narrowly exclude the separately verified lock path'
+Assert-True ($workflowText.Contains('package-input-diff.patch')) `
+    'workflow does not retain semantic package-mutation diagnostics'
 
 Write-Output 'Institutional gate policy self-tests passed.'

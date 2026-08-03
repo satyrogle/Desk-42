@@ -127,6 +127,7 @@ jobs:
           testMode: EditMode
           artifactsPath: TestResults/${{ matrix.suite }}
           customParameters: ${{ matrix.custom_parameters }}
+          runAsHostUser: true
 
       - name: Reject failures and unexpected skips
         shell: pwsh
@@ -161,10 +162,26 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $changes = git status --porcelain=v1 --untracked-files=all
+          $packageDiff = @(& git diff --no-ext-diff --ignore-cr-at-eol --exit-code HEAD -- `
+            'Packages/manifest.json' `
+            'Packages/packages-lock.json' 2>&1)
+          $packageDiffExit = $LASTEXITCODE
+          if ($packageDiffExit -gt 1) {
+            throw "Unable to compare package inputs (git exit $packageDiffExit)."
+          }
+          if ($packageDiffExit -eq 1) {
+            $diagnostic = 'TestResults/${{ matrix.suite }}/package-input-diff.patch'
+            $packageDiff | Set-Content -LiteralPath $diagnostic
+            $packageDiff | Write-Host
+            throw 'Unity or Package Manager changed package input content.'
+          }
+
+          $changes = @(& git status --porcelain=v1 --untracked-files=all -- . `
+            ':(exclude)Packages/manifest.json' `
+            ':(exclude)Packages/packages-lock.json')
           if ($changes) {
             $changes | Write-Host
-            throw 'Unity or Package Manager modified or created repository inputs.'
+            throw 'Unity or Package Manager modified or created other repository inputs.'
           }
 
       - name: Upload Unity results and metadata
