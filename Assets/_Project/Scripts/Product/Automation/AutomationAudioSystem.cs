@@ -37,6 +37,20 @@ namespace Desk42.Product.Automation
                 CreateTone("Appeal Resolved", 0.22f, 620f, 0.36f, 0.02f));
             _clips.Add(AutomationFeedbackKind.Jammed,
                 CreateTone("Queue Jam", 0.36f, 118f, 0.25f, 0.08f, true));
+            _clips.Add(AutomationFeedbackKind.Repaired,
+                CreateTone("Machine Repaired", 0.20f, 560f, 0.32f, 0.03f));
+            _clips.Add(AutomationFeedbackKind.Misclassified,
+                CreateTone("Classification Fault", 0.28f, 245f, 0.24f, 0.08f, true));
+            _clips.Add(AutomationFeedbackKind.DeadlineMissed,
+                CreateTone("Deadline Missed", 0.34f, 180f, 0.20f, 0.03f, true));
+            _clips.Add(AutomationFeedbackKind.UpgradeInstalled,
+                CreateTone("Upgrade Installed", 0.24f, 720f, 0.35f, 0.02f));
+            _clips.Add(AutomationFeedbackKind.PriorityChanged,
+                CreateTone("Priority Changed", 0.14f, 470f, 0.30f, 0.02f));
+            _clips.Add(AutomationFeedbackKind.AppealModeChanged,
+                CreateTone("Appeal Mode Changed", 0.18f, 390f, 0.30f, 0.03f));
+            _clips.Add(AutomationFeedbackKind.ProcedureBound,
+                CreateTone("Procedure Bound", 0.26f, 650f, 0.34f, 0.02f, true));
             _clips.Add(AutomationFeedbackKind.PolicyChanged,
                 CreateTone("Policy Bound", 0.18f, 430f, 0.30f, 0.03f));
         }

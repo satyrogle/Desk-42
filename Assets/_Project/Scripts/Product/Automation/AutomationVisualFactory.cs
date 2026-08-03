@@ -30,6 +30,8 @@ namespace Desk42.Product.Automation
             GameObject root = new(name);
             root.transform.SetParent(parent, false);
             root.transform.position = position;
+            CreateBlock(root.transform, "Selection Plinth", new Vector3(0f, 0.06f, 0f),
+                new Vector3(2.95f, 0.08f, 2.05f), new Color(0.16f, 0.18f, 0.17f));
             CreateBlock(root.transform, "Cabinet", new Vector3(0f, 0.55f, 0f),
                 new Vector3(2.5f, 1.1f, 1.65f), colour);
             CreateBlock(root.transform, "Worktop", new Vector3(0f, 1.18f, 0f),

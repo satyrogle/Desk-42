@@ -34,6 +34,8 @@ namespace Desk42.Product.Automation
         }
 
         internal int ClaimsInFlight => _flow?.InFlight ?? 0;
+        internal int UrgentInFlight => _flow?.UrgentInFlight ?? 0;
+        internal float NearestDeadline => _flow?.NearestDeadline ?? 0f;
         internal int ClaimsCompleted => _flow?.Completed ?? 0;
         internal int AppealsReturned => _flow?.AppealsReturned ?? 0;
         internal int AppealsResolved => _flow?.AppealsResolved ?? 0;
@@ -54,6 +56,25 @@ namespace Desk42.Product.Automation
         };
         internal string PolicyDescription => _flow?.PolicyDescription ?? string.Empty;
         internal int PrecedentsInstalled => _flow?.PrecedentsInstalled ?? 0;
+        internal int OverdueCount => _flow?.OverdueCount ?? 0;
+        internal int ReworkCount => _flow?.ReworkCount ?? 0;
+        internal int JamCount => _flow?.JamCount ?? 0;
+        internal int SecondaryChecks => _flow?.SecondaryChecks ?? 0;
+        internal int Credits => _flow?.Credits ?? 0;
+        internal int ShiftOrdinal => _flow?.ShiftOrdinal ?? 1;
+        internal float ClaimsPerMinute => _flow?.ClaimsPerMinute ?? 0f;
+        internal string PriorityName => _flow?.RoutePriorityName ?? "BALANCED";
+        internal string AppealModeName => _flow?.AppealModeName ?? "FULL REHEARING";
+        internal int ProceduresBound => _flow?.ProceduresBound ?? 0;
+        internal string SelectedStationName =>
+            _flow?.SelectedStation?.DisplayName?.ToUpperInvariant() ?? "NONE";
+        internal string SelectedStationState => _flow?.SelectedStation == null
+            ? string.Empty
+            : (_flow.SelectedStation.IsJammed ? "JAMMED / " : string.Empty) +
+              "HEAT " + Mathf.RoundToInt(_flow.SelectedStation.Heat) + "% / " +
+              _flow.SelectedStation.UpgradeSummary + " / COST " +
+              _flow.SelectedStation.UpgradeCost;
+        internal bool SelectedStationJammed => _flow?.SelectedStation?.IsJammed == true;
         internal string LastEvent => Time.unscaledTime <= _lastEventVisibleUntil
             ? _lastEvent
             : string.Empty;
@@ -129,6 +150,49 @@ namespace Desk42.Product.Automation
             RefreshAuxRouteAppearance();
         }
 
+        internal void CycleRoutePriority()
+        {
+            _flow?.CycleRoutePriority();
+        }
+
+        internal void CycleAppealMode()
+        {
+            _flow?.CycleAppealMode();
+        }
+
+        internal void SelectNextStation()
+        {
+            _flow?.SelectNextStation();
+        }
+
+        internal bool SelectFirstJammedStation()
+        {
+            return _flow?.SelectFirstJammedStation() == true;
+        }
+
+        internal bool UpgradeSelected(AutomationUpgradeKind kind)
+        {
+            return _flow?.UpgradeSelected(kind) == true;
+        }
+
+        internal bool RepairSelected()
+        {
+            return _flow?.RepairSelected() == true;
+        }
+
+        internal bool BindProcedure(int procedureNumber)
+        {
+            if (procedureNumber < 1 || procedureNumber > 6) return false;
+            return _flow?.BindProcedure((AutomationProcedureKind)procedureNumber) == true;
+        }
+
+        internal bool IsProcedureBound(int procedureNumber)
+        {
+            if (procedureNumber < 1 || procedureNumber > 6) return false;
+            return _flow?.IsProcedureBound(
+                (AutomationProcedureKind)procedureNumber) == true;
+        }
+
         internal void SetPolicy(int policyNumber)
         {
             if (policyNumber < 1 || policyNumber > 3) return;
@@ -147,6 +211,15 @@ namespace Desk42.Product.Automation
                 return false;
             InstallAuxVerifier();
             return true;
+        }
+
+        internal bool TrySelectStation(Vector3 screenPosition)
+        {
+            if (_placementArmed || Camera.main == null) return false;
+            Ray ray = Camera.main.ScreenPointToRay(screenPosition);
+            var floor = new Plane(Vector3.up, Vector3.zero);
+            if (!floor.Raycast(ray, out float distance)) return false;
+            return _flow?.SelectStationNear(ray.GetPoint(distance)) == true;
         }
 
         internal void InstallAuxVerifierForCapture()
@@ -260,10 +333,12 @@ namespace Desk42.Product.Automation
                 colour * 0.9f));
             Renderer light = station.transform.Find("Machine Light")
                 ?.GetComponent<Renderer>();
+            Renderer selection = station.transform.Find("Selection Plinth")
+                ?.GetComponent<Renderer>();
             TextMesh queue = station.transform.Find("Label Q 00")
                 ?.GetComponent<TextMesh>();
             return new AutomationStationRuntime(kind, name, position,
-                processDuration, isAuxiliary, light, queue);
+                processDuration, isAuxiliary, light, selection, queue);
         }
 
         private void CreateRoute(
@@ -331,6 +406,8 @@ namespace Desk42.Product.Automation
             _lastEvent = message ?? string.Empty;
             _lastEventVisibleUntil = Time.unscaledTime +
                 (kind == AutomationFeedbackKind.Jammed ||
+                 kind == AutomationFeedbackKind.Misclassified ||
+                 kind == AutomationFeedbackKind.DeadlineMissed ||
                  kind == AutomationFeedbackKind.AppealReturned ? 3.2f : 1.8f);
             _audio?.Play(kind);
         }
