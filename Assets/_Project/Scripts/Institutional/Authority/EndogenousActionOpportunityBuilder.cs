@@ -213,6 +213,10 @@ namespace Desk42.Institutional
                         continue;
                     }
 
+                    string collectiveId = $"collective:{commitment.TargetId}";
+                    if (world.GetCollectiveCommitment(collectiveId) != null)
+                        continue;
+
                     MaterialAccessGrantState communication = FindCommunicationAccess(
                         world, actor.StableId, tick);
                     if (communication == null) continue;
@@ -220,7 +224,7 @@ namespace Desk42.Institutional
                     {
                         OpportunityId =
                             $"organise:{commitment.TargetId}:{actor.StableId}:{tick}",
-                        CollectiveCommitmentId = $"collective:{commitment.TargetId}",
+                        CollectiveCommitmentId = collectiveId,
                         IssueId = commitment.TargetId,
                         IntentionId = $"seek-remedy:{commitment.TargetId}",
                         CommunicationContextId = communication.TargetId,
@@ -230,6 +234,10 @@ namespace Desk42.Institutional
                         Secrecy = 30,
                     };
                     opportunity.EligibleActorIds.Add(actor.StableId);
+                    opportunity.DirectWitnessAgentIds.Add(actor.StableId);
+                    if (!string.IsNullOrWhiteSpace(communication.SourceRecordId))
+                        opportunity.PotentialRecordSourceIds.Add(
+                            communication.SourceRecordId);
                     input.OrganiseOpportunities.Add(opportunity);
                 }
             }

@@ -15,11 +15,31 @@ namespace Desk42.Institutional
             SocietyState society,
             EndogenousDocketState state)
         {
+            return DetectCore(world, society, state, validateBoundary: true);
+        }
+
+        internal static List<IncidentCandidate> DetectWithinValidatedTransaction(
+            InstitutionalMaterialWorld world,
+            SocietyState society,
+            EndogenousDocketState state)
+        {
+            return DetectCore(world, society, state, validateBoundary: false);
+        }
+
+        private static List<IncidentCandidate> DetectCore(
+            InstitutionalMaterialWorld world,
+            SocietyState society,
+            EndogenousDocketState state,
+            bool validateBoundary)
+        {
             if (world == null) throw new ArgumentNullException(nameof(world));
             if (society == null) throw new ArgumentNullException(nameof(society));
             if (state == null) throw new ArgumentNullException(nameof(state));
-            InstitutionalMaterialWorldValidator.Validate(world, society);
-            EndogenousDocketValidator.Validate(state, society);
+            if (validateBoundary)
+            {
+                InstitutionalMaterialWorldValidator.Validate(world, society);
+                EndogenousDocketValidator.Validate(state, society);
+            }
 
             var added = new List<IncidentCandidate>();
             for (int i = 0; i < world.EventLedger.Count; i++)
@@ -31,7 +51,8 @@ namespace Desk42.Institutional
                 added.Add(candidate);
             }
 
-            EndogenousDocketValidator.Validate(state, society);
+            if (validateBoundary)
+                EndogenousDocketValidator.Validate(state, society);
             return added;
         }
 

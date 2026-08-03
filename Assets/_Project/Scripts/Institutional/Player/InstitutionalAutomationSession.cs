@@ -9,7 +9,7 @@ namespace Desk42.Institutional.Player
     /// released in operational batches, but every batch shares the same agents,
     /// material world, docket, rulings and later consequences.
     /// </summary>
-    public sealed class InstitutionalAutomationSession
+    public sealed partial class InstitutionalAutomationSession
     {
         private readonly Dictionary<string, ClaimEnvelope> _byAutomationId =
             new(StringComparer.Ordinal);
@@ -32,6 +32,16 @@ namespace Desk42.Institutional.Player
         public long SocietyTick => _current.Society.CurrentTick;
         public int CommittedRulingCount => _current.Docket.Rulings.Count;
         public int HoldingCount => _current.Docket.Holdings.Count;
+        public int PendingAppealCount
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < _current.Docket.Appeals.Count; i++)
+                    if (!_current.Docket.Appeals[i].Resolved) count++;
+                return count;
+            }
+        }
 
         public static InstitutionalAutomationSession Create(int claimCount)
         {
@@ -107,6 +117,21 @@ namespace Desk42.Institutional.Player
             PlayerRulingDisposition disposition,
             IReadOnlyList<AutomationInstitutionalProcedure> procedures)
         {
+            return Commit(
+                automationClaimId,
+                scope,
+                disposition,
+                procedures,
+                humanPrecedentReviewCompleted: false);
+        }
+
+        public AutomationRulingResult Commit(
+            string automationClaimId,
+            PlayerScopeChoice scope,
+            PlayerRulingDisposition disposition,
+            IReadOnlyList<AutomationInstitutionalProcedure> procedures,
+            bool humanPrecedentReviewCompleted)
+        {
             if (string.IsNullOrWhiteSpace(automationClaimId))
                 throw new ArgumentException(
                     "An automation claim id is required.", nameof(automationClaimId));
@@ -125,11 +150,10 @@ namespace Desk42.Institutional.Player
                 throw new InvalidOperationException("The released case is already ruled.");
 
             procedures ??= Array.Empty<AutomationInstitutionalProcedure>();
-            List<string> citedHoldingIds = ContainsProcedure(
-                    procedures, AutomationInstitutionalProcedure.PrecedentReuse)
-                ? EndogenousAppellateService.ApplyMatchingHoldings(
-                    _current.Society, _current.Docket, opened.CaseId)
-                : new List<string>();
+            List<string> citedHoldingIds = ApplyConfiguredHoldings(
+                opened,
+                procedures,
+                humanPrecedentReviewCompleted);
 
             var command = new PlayerRulingCommand
             {
@@ -151,12 +175,13 @@ namespace Desk42.Institutional.Player
                 },
                 AppliedProcedureIds = ProcedureIds(procedures),
             };
-            CommittedPlayerRuling committed = EndogenousPlayerRulingService.Commit(
+            CommittedPlayerRuling committed = EndogenousPlayerRulingService.
+                CommitWithinValidatedTransaction(
                 _current.Society, _current.Docket, command);
 
             SimulationInput input = CausalLegibilitySliceSeed.QuietInput();
             input.IncidentId = "automation-ruling-pulse:" + committed.RulingId;
-            if (string.Equals(
+            if (disposition != PlayerRulingDisposition.Denied && string.Equals(
                     opened.IssueId,
                     EndogenousIssueKindIds.PossessionDispute,
                     StringComparison.Ordinal))
@@ -167,7 +192,7 @@ namespace Desk42.Institutional.Player
                     _current.Docket,
                     committed);
             }
-            else if (string.Equals(
+            else if (disposition != PlayerRulingDisposition.Denied && string.Equals(
                          opened.IssueId,
                          EndogenousIssueKindIds.AccessWithdrawal,
                          StringComparison.Ordinal))
@@ -178,13 +203,24 @@ namespace Desk42.Institutional.Player
                     _current.Docket,
                     committed);
             }
+            else if (disposition != PlayerRulingDisposition.Denied && string.Equals(
+                         opened.IssueId,
+                         EndogenousIssueKindIds.CollectiveGrievance,
+                         StringComparison.Ordinal))
+            {
+                EndogenousCollectiveRemedyEffectService.Execute(
+                    _current.Society,
+                    _current.MaterialWorld,
+                    _current.Docket,
+                    committed);
+            }
             EndogenousActionOpportunityBuilder.Populate(
                 _current.Society, _current.MaterialWorld, input);
-            EndogenousScopeEffectService.Apply(
+            EndogenousScopeEffectService.ApplyWithinValidatedTransaction(
                 _current.Society, _current.Docket, input);
             new EndogenousSocietyStepService().Advance(
                 _current.Society, _current.MaterialWorld, input);
-            EndogenousIncidentDocketPipeline.Process(
+            EndogenousIncidentDocketPipeline.ProcessWithinValidatedTransaction(
                 _current.MaterialWorld,
                 _current.Society,
                 _current.Docket,
@@ -212,23 +248,22 @@ namespace Desk42.Institutional.Player
             }
             CaptureCurrent("persistent-automation.after-ruling");
 
-            PlayerInstitutionView ruled = CurrentView();
-            PublicRulingRecord ruling = FindPublicRuling(ruled, committed.RulingId);
-            PublicCaseRecord descendant = internalDescendant == null
-                ? null
-                : FindCase(ruled, internalDescendant.CaseId);
+            PublicRulingRecord ruling = PlayerInstitutionProjector.ProjectRuling(
+                committed, _current.Docket);
             AutomationAppealPacket appeal = null;
-            if (descendant != null)
+            if (internalDescendant != null)
             {
-                _reservedAppealCaseIds.Add(descendant.CaseId);
+                _reservedAppealCaseIds.Add(internalDescendant.CaseId);
                 appeal = new AutomationAppealPacket(
                     appealId,
                     automationClaimId,
-                    descendant.CaseId,
+                    internalDescendant.CaseId,
                     committed.RulingId,
                     "A later autonomous action contests how the holding was applied.",
-                    descendant.EvidenceIds.Count,
-                    descendant.MissingEvidence.Count);
+                    internalDescendant.ObservationIds.Count,
+                    PlayerInstitutionProjector.MissingEvidenceCountForCase(
+                        internalDescendant,
+                        _current.Docket));
             }
             envelope.Result = new AutomationRulingResult(
                 automationClaimId,
@@ -242,6 +277,7 @@ namespace Desk42.Institutional.Player
                 citedHoldingIds.Count);
             return envelope.Result;
         }
+
 
         public AutomationAppealResolutionResult ResolveAppeal(
             AutomationAppealPacket packet,
@@ -295,16 +331,27 @@ namespace Desk42.Institutional.Player
                     _current.Docket,
                     resolution.Ruling);
             }
+            else if (string.Equals(
+                         opened.IssueId,
+                         EndogenousIssueKindIds.CollectiveGrievance,
+                         StringComparison.Ordinal))
+            {
+                EndogenousCollectiveRemedyEffectService.Execute(
+                    _current.Society,
+                    _current.MaterialWorld,
+                    _current.Docket,
+                    resolution.Ruling);
+            }
 
             SimulationInput input = CausalLegibilitySliceSeed.QuietInput();
             input.IncidentId = "automation-appeal-pulse:" + appeal.AppealId;
             EndogenousActionOpportunityBuilder.Populate(
                 _current.Society, _current.MaterialWorld, input);
-            EndogenousScopeEffectService.Apply(
+            EndogenousScopeEffectService.ApplyWithinValidatedTransaction(
                 _current.Society, _current.Docket, input);
             new EndogenousSocietyStepService().Advance(
                 _current.Society, _current.MaterialWorld, input);
-            EndogenousIncidentDocketPipeline.Process(
+            EndogenousIncidentDocketPipeline.ProcessWithinValidatedTransaction(
                 _current.MaterialWorld,
                 _current.Society,
                 _current.Docket,
@@ -359,12 +406,10 @@ namespace Desk42.Institutional.Player
 
         private void CaptureCurrent(string snapshotId)
         {
-            _current = EndogenousRunSnapshotService.Capture(
+            EndogenousRunSnapshotService.RefreshMetadataInPlace(
+                _current,
                 snapshotId,
-                EndogenousCommitPhase.ScopeEffectsCommitted,
-                _current.Society,
-                _current.MaterialWorld,
-                _current.Docket);
+                EndogenousCommitPhase.ScopeEffectsCommitted);
         }
 
         private CommittedPlayerRuling FindRuling(string caseId)

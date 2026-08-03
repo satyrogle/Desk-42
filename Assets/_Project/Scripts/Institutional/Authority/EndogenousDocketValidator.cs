@@ -25,6 +25,7 @@ namespace Desk42.Institutional
                 state.DocketCandidates == null || state.OpenCases == null ||
                 state.Rulings == null || state.RemedyApplicationTraces == null ||
                 state.AccessRemedyApplicationTraces == null ||
+                state.CollectiveRemedyApplicationTraces == null ||
                 state.ScopeApplicationTraces == null || state.Appeals == null ||
                 state.Holdings == null)
             {
@@ -45,8 +46,69 @@ namespace Desk42.Institutional
             ValidateRemedyApplicationTraces(state, society.CurrentTick);
             ValidateAccessRemedyApplicationTraces(
                 state, agentIds, society.CurrentTick);
+            ValidateCollectiveRemedyApplicationTraces(
+                state, society, agentIds, society.CurrentTick);
             ValidateScopeApplicationTraces(state, agentIds, society.CurrentTick);
             ValidateLineage(state);
+        }
+
+        private static void ValidateCollectiveRemedyApplicationTraces(
+            EndogenousDocketState state,
+            SocietyState society,
+            HashSet<string> agentIds,
+            long currentTick)
+        {
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0;
+                 i < state.CollectiveRemedyApplicationTraces.Count;
+                 i++)
+            {
+                EndogenousCollectiveRemedyApplicationTrace trace =
+                    state.CollectiveRemedyApplicationTraces[i];
+                CommittedPlayerRuling ruling = trace == null
+                    ? null
+                    : FindRuling(state, trace.RulingId);
+                if (trace == null || !Stable(trace.TraceId) ||
+                    !ids.Add(trace.TraceId) || ruling == null ||
+                    !string.Equals(trace.CaseId, ruling.CaseId,
+                        StringComparison.Ordinal) ||
+                    trace.AppliedTick < ruling.CommittedTick ||
+                    trace.AppliedTick > currentTick ||
+                    !Stable(trace.CollectiveCommitmentId) ||
+                    !Stable(trace.RecognisedStatusId) ||
+                    trace.MemberAgentIds == null ||
+                    trace.ChangedAgentIds == null ||
+                    trace.MemberAgentIds.Count < 2)
+                {
+                    throw new InvalidOperationException(
+                        "Every collective remedy trace requires an exact group transition.");
+                }
+                var members = new HashSet<string>(StringComparer.Ordinal);
+                for (int memberIndex = 0;
+                     memberIndex < trace.MemberAgentIds.Count;
+                     memberIndex++)
+                {
+                    string memberId = trace.MemberAgentIds[memberIndex];
+                    AgentState member = society.GetAgent(memberId);
+                    if (!agentIds.Contains(memberId) || !members.Add(memberId) ||
+                        member == null || !member.Standing.IsRecognised(
+                            trace.RecognisedStatusId))
+                    {
+                        throw new InvalidOperationException(
+                            "Collective remedy members must retain recognised standing.");
+                    }
+                }
+                var changed = new HashSet<string>(StringComparer.Ordinal);
+                for (int changedIndex = 0;
+                     changedIndex < trace.ChangedAgentIds.Count;
+                     changedIndex++)
+                {
+                    string changedId = trace.ChangedAgentIds[changedIndex];
+                    if (!members.Contains(changedId) || !changed.Add(changedId))
+                        throw new InvalidOperationException(
+                            "Collective remedy changes must be a unique member subset.");
+                }
+            }
         }
 
         private static void ValidateAccessRemedyApplicationTraces(

@@ -15,9 +15,25 @@ namespace Desk42.Institutional
             SocietyState society,
             EndogenousDocketState state)
         {
+            return ComposeCore(society, state, validateBoundary: true);
+        }
+
+        internal static List<DocketCandidate> ComposeWithinValidatedTransaction(
+            SocietyState society,
+            EndogenousDocketState state)
+        {
+            return ComposeCore(society, state, validateBoundary: false);
+        }
+
+        private static List<DocketCandidate> ComposeCore(
+            SocietyState society,
+            EndogenousDocketState state,
+            bool validateBoundary)
+        {
             if (society == null) throw new ArgumentNullException(nameof(society));
             if (state == null) throw new ArgumentNullException(nameof(state));
-            EndogenousDocketValidator.Validate(state, society);
+            if (validateBoundary)
+                EndogenousDocketValidator.Validate(state, society);
             var added = new List<DocketCandidate>();
 
             var incidentIds = new List<string>();
@@ -64,6 +80,14 @@ namespace Desk42.Institutional
                             candidate.PotentialPartyIds,
                             observation.AllegedSubjectAgentId);
                 }
+                IncidentCandidate incident = state.GetIncident(incidentId);
+                if (incident != null)
+                    for (int affectedIndex = 0;
+                         affectedIndex < incident.AffectedAgentIds.Count;
+                         affectedIndex++)
+                        AddUnique(
+                            candidate.PotentialPartyIds,
+                            incident.AffectedAgentIds[affectedIndex]);
                 candidate.ObservableEvidenceIds.Sort(StringComparer.Ordinal);
                 candidate.AllegingAgentIds.Sort(StringComparer.Ordinal);
                 candidate.PotentialPartyIds.Sort(StringComparer.Ordinal);
@@ -71,7 +95,8 @@ namespace Desk42.Institutional
                 added.Add(candidate);
             }
 
-            EndogenousDocketValidator.Validate(state, society);
+            if (validateBoundary)
+                EndogenousDocketValidator.Validate(state, society);
             return added;
         }
 
@@ -85,6 +110,67 @@ namespace Desk42.Institutional
             if (state.DirectorEnabled)
                 throw new InvalidOperationException(
                     "The endogenous proof path requires the Director to remain disabled.");
+
+            EndogenousInstitutionalCase admitted =
+                AdmitNextWithoutValidation(society, state);
+            if (admitted != null)
+                EndogenousDocketValidator.Validate(state, society);
+            return admitted;
+        }
+
+        internal static List<EndogenousInstitutionalCase> AdmitAll(
+            SocietyState society,
+            EndogenousDocketState state)
+        {
+            if (society == null) throw new ArgumentNullException(nameof(society));
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            EndogenousDocketValidator.Validate(state, society);
+            if (state.DirectorEnabled)
+                throw new InvalidOperationException(
+                    "The endogenous proof path requires the Director to remain disabled.");
+            var admitted = new List<EndogenousInstitutionalCase>();
+            EndogenousInstitutionalCase next;
+            while ((next = AdmitNextWithoutValidation(society, state)) != null)
+                admitted.Add(next);
+            if (admitted.Count > 0)
+                EndogenousDocketValidator.Validate(state, society);
+            return admitted;
+        }
+
+        internal static List<EndogenousInstitutionalCase>
+            AdmitAllWithinValidatedTransaction(
+                SocietyState society,
+                EndogenousDocketState state)
+        {
+            if (society == null) throw new ArgumentNullException(nameof(society));
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (state.DirectorEnabled)
+                throw new InvalidOperationException(
+                    "The endogenous proof path requires the Director to remain disabled.");
+            var admitted = new List<EndogenousInstitutionalCase>();
+            EndogenousInstitutionalCase next;
+            while ((next = AdmitNextWithoutValidation(society, state)) != null)
+                admitted.Add(next);
+            return admitted;
+        }
+
+        internal static EndogenousInstitutionalCase
+            AdmitNextWithinValidatedTransaction(
+                SocietyState society,
+                EndogenousDocketState state)
+        {
+            if (society == null) throw new ArgumentNullException(nameof(society));
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (state.DirectorEnabled)
+                throw new InvalidOperationException(
+                    "The endogenous proof path requires the Director to remain disabled.");
+            return AdmitNextWithoutValidation(society, state);
+        }
+
+        private static EndogenousInstitutionalCase AdmitNextWithoutValidation(
+            SocietyState society,
+            EndogenousDocketState state)
+        {
 
             DocketCandidate selected = null;
             for (int i = 0; i < state.DocketCandidates.Count; i++)
@@ -126,7 +212,6 @@ namespace Desk42.Institutional
             selected.Admitted = true;
             selected.AdmittedCaseId = opened.CaseId;
             state.OpenCases.Add(opened);
-            EndogenousDocketValidator.Validate(state, society);
             return opened;
         }
 

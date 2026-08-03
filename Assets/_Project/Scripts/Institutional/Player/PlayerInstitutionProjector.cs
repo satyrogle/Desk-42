@@ -299,27 +299,44 @@ namespace Desk42.Institutional.Player
         {
             var result = new List<PublicRulingRecord>(docket.Rulings.Count);
             for (int i = 0; i < docket.Rulings.Count; i++)
-            {
-                CommittedPlayerRuling ruling = docket.Rulings[i];
-                result.Add(new PublicRulingRecord(
-                    ruling.RulingId,
-                    ruling.CaseId,
-                    ruling.CommittedTick,
-                    Humanise(ruling.Disposition.ToString()),
-                    IsDenial(ruling.Disposition)
-                        ? "Proposed but not established: " +
-                          Humanise(ruling.HoldingRuleId)
-                        : Humanise(ruling.HoldingRuleId),
-                    IsDenial(ruling.Disposition)
-                        ? "Not applied; proposed " + ScopeLabel(ruling.Scope)
-                        : ScopeLabel(ruling.Scope),
-                    Humanise(ruling.TemporalReach.ToString()),
-                    HumaniseAll(ruling.RecognisedFactIds),
-                    ruling.CitedEvidenceArtifactIds,
-                    HumaniseAll(ruling.RemedyDefinitionIds),
-                    DirectChanges(ruling, docket)));
-            }
+                result.Add(ProjectRuling(docket.Rulings[i], docket));
             return result;
+        }
+
+        internal static PublicRulingRecord ProjectRuling(
+            CommittedPlayerRuling ruling,
+            EndogenousDocketState docket)
+        {
+            if (ruling == null) throw new ArgumentNullException(nameof(ruling));
+            if (docket == null) throw new ArgumentNullException(nameof(docket));
+            return new PublicRulingRecord(
+                ruling.RulingId,
+                ruling.CaseId,
+                ruling.CommittedTick,
+                Humanise(ruling.Disposition.ToString()),
+                IsDenial(ruling.Disposition)
+                    ? "Proposed but not established: " +
+                      Humanise(ruling.HoldingRuleId)
+                    : Humanise(ruling.HoldingRuleId),
+                IsDenial(ruling.Disposition)
+                    ? "Not applied; proposed " + ScopeLabel(ruling.Scope)
+                    : ScopeLabel(ruling.Scope),
+                Humanise(ruling.TemporalReach.ToString()),
+                HumaniseAll(ruling.RecognisedFactIds),
+                ruling.CitedEvidenceArtifactIds,
+                HumaniseAll(ruling.RemedyDefinitionIds),
+                DirectChanges(ruling, docket));
+        }
+
+        internal static int MissingEvidenceCountForCase(
+            EndogenousInstitutionalCase opened,
+            EndogenousDocketState docket)
+        {
+            if (opened == null) throw new ArgumentNullException(nameof(opened));
+            if (docket == null) throw new ArgumentNullException(nameof(docket));
+            return MissingEvidence(
+                opened.IssueId,
+                ObservationsFor(opened, docket)).Count;
         }
 
         private static List<PublicTimelineEntry> ProjectTimeline(
@@ -668,6 +685,13 @@ namespace Desk42.Institutional.Player
                     "Execute remedy: restore access for " +
                     Humanise(accessTrace.BeneficiaryAgentId));
             }
+            else if (CollectiveRemedyTraceForRuling(
+                         docket, ruling.RulingId) is { } collectiveTrace)
+            {
+                result.Add(
+                    "Execute remedy: recognise collective standing for " +
+                    collectiveTrace.MemberAgentIds.Count + " members");
+            }
             else
             {
                 EndogenousRemedyApplicationTrace trace = RemedyTraceForRuling(
@@ -691,6 +715,22 @@ namespace Desk42.Institutional.Player
                         rulingId,
                         StringComparison.Ordinal))
                     return docket.AccessRemedyApplicationTraces[i];
+            return null;
+        }
+
+        private static EndogenousCollectiveRemedyApplicationTrace
+            CollectiveRemedyTraceForRuling(
+                EndogenousDocketState docket,
+                string rulingId)
+        {
+            for (int i = 0;
+                 i < docket.CollectiveRemedyApplicationTraces.Count;
+                 i++)
+                if (string.Equals(
+                        docket.CollectiveRemedyApplicationTraces[i].RulingId,
+                        rulingId,
+                        StringComparison.Ordinal))
+                    return docket.CollectiveRemedyApplicationTraces[i];
             return null;
         }
 

@@ -65,6 +65,19 @@ namespace Desk42.Institutional
             return JsonConvert.SerializeObject(snapshot, Settings);
         }
 
+        internal static EndogenousRunSnapshot DeserializePayload(string payload)
+        {
+            if (string.IsNullOrWhiteSpace(payload))
+                throw new ArgumentException(
+                    "A snapshot payload is required.", nameof(payload));
+            EndogenousRunSnapshot snapshot =
+                JsonConvert.DeserializeObject<EndogenousRunSnapshot>(
+                    payload, Settings) ?? throw new InvalidDataException(
+                    "Snapshot payload is empty or unsupported.");
+            EndogenousRunSnapshotValidator.Validate(snapshot);
+            return snapshot;
+        }
+
         internal static string PayloadSha256(EndogenousRunSnapshot snapshot)
             => Sha256(SerializePayload(snapshot));
 

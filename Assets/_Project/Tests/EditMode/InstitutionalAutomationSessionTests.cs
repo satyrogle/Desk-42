@@ -228,6 +228,94 @@ namespace Desk42.Tests.EditMode
                 Has.Some.Contains("restore access"));
         }
 
+        [Test]
+        public void CollectiveGrievanceExecutesGroupStandingRemedy()
+        {
+            InstitutionalAutomationSession session =
+                InstitutionalAutomationSession.Create(12);
+            AutomationPublicClaim collective = null;
+            for (int i = 0; i < session.Claims.Count; i++)
+                if (session.Claims[i].Issue.Contains("Collective"))
+                    collective = session.Claims[i];
+
+            Assert.IsNotNull(collective,
+                "The third active family should originate from generic organisation.");
+            Assert.GreaterOrEqual(collective.Parties.Count, 2);
+            AutomationRulingResult result = session.Commit(
+                collective.AutomationClaimId,
+                PlayerScopeChoice.Broad,
+                PlayerRulingDisposition.Recognised);
+
+            Assert.That(result.Remedies, Has.Some.Contains("Recognise collective"));
+            Assert.That(result.DirectInstitutionalChanges,
+                Has.Some.Contains("collective standing"));
+            Assert.GreaterOrEqual(
+                session.SocietyMetrics.RecognisedCollectiveMembers, 2);
+        }
+
+        [Test]
+        public void CheckpointRestoresContinuingDocketAndPrecedentModes()
+        {
+            InstitutionalAutomationSession session =
+                InstitutionalAutomationSession.Create(8);
+            AutomationRulingResult initial = session.Commit(
+                FirstPossession(session.Claims).AutomationClaimId,
+                PlayerScopeChoice.Broad,
+                PlayerRulingDisposition.Recognised);
+            session.ResolveAppeal(
+                initial.Appeal,
+                AutomationAppealProcedure.FastTrack,
+                establishHolding: true);
+            string holdingId = session.Precedents[0].HoldingId;
+            session.SetPrecedentMode(
+                holdingId, AutomationPrecedentMode.HumanReviewRequired);
+
+            InstitutionalAutomationCheckpoint checkpoint =
+                session.CreateCheckpoint();
+            InstitutionalAutomationSession restored =
+                InstitutionalAutomationSession.Restore(checkpoint);
+
+            Assert.AreEqual(session.SocietyTick, restored.SocietyTick);
+            Assert.AreEqual(session.CommittedRulingCount,
+                restored.CommittedRulingCount);
+            Assert.AreEqual(1, restored.Precedents.Count);
+            Assert.AreEqual(AutomationPrecedentMode.HumanReviewRequired,
+                restored.Precedents[0].Mode);
+            Assert.AreEqual(session.Claims[0].SourceCaseId,
+                restored.Claims[0].SourceCaseId);
+        }
+
+        [Test]
+        [Category("LongRunningProduct")]
+        public void EightProofFortressBatchesRetainOneSocietyThroughNinetySixRulings()
+        {
+            InstitutionalAutomationSession session =
+                InstitutionalAutomationSession.Create(12);
+            for (int shift = 1; shift <= 8; shift++)
+            {
+                var batch = new List<AutomationPublicClaim>(session.Claims);
+                for (int i = 0; i < batch.Count; i++)
+                {
+                    AutomationPublicClaim claim = batch[i];
+                    PlayerRulingDisposition disposition =
+                        claim.CitableEvidenceCount > 0 &&
+                        claim.EvidenceSupportMinimum >= 52
+                            ? PlayerRulingDisposition.Recognised
+                            : PlayerRulingDisposition.Denied;
+                    session.Commit(
+                        claim.AutomationClaimId,
+                        PlayerScopeChoice.Narrow,
+                        disposition);
+                }
+                if (shift < 8) session.ReleaseNextShift(12);
+            }
+
+            session.ValidateCurrentState();
+            Assert.That(session.CommittedRulingCount,
+                Is.GreaterThanOrEqualTo(96));
+            Assert.That(session.SocietyTick, Is.GreaterThan(8));
+        }
+
         private static AutomationPublicClaim FirstPossession(
             IReadOnlyList<AutomationPublicClaim> claims)
         {

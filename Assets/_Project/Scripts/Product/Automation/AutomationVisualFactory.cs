@@ -40,12 +40,18 @@ namespace Desk42.Product.Automation
                 new Vector3(0.75f, 0.16f, 1.1f), new Color(0.18f, 0.20f, 0.19f));
             CreateBlock(root.transform, "Machine Light", new Vector3(0.9f, 1.45f, 0f),
                 new Vector3(0.22f, 0.22f, 0.22f), new Color(0.86f, 0.58f, 0.18f));
-            CreateWorldLabel(root.transform, name, new Vector3(0f, 2.05f, 0f),
-                0.105f, new Color(0.88f, 0.84f, 0.67f), TextAnchor.MiddleCenter);
-            CreateWorldLabel(root.transform, verb, new Vector3(0f, 1.72f, 0f),
-                0.075f, new Color(0.58f, 0.65f, 0.60f), TextAnchor.MiddleCenter);
-            CreateWorldLabel(root.transform, "Q 00", new Vector3(0.94f, 1.72f, 0f),
-                0.06f, new Color(0.95f, 0.64f, 0.22f), TextAnchor.MiddleCenter);
+            CreateWorldLabel(root.transform, StationLabel(name),
+                new Vector3(0f, 2.18f, 0.14f),
+                0.068f, new Color(0.88f, 0.84f, 0.67f),
+                TextAnchor.MiddleCenter);
+            CreateWorldLabel(root.transform, verb,
+                new Vector3(-0.52f, 1.72f, 0f),
+                0.046f, new Color(0.58f, 0.65f, 0.60f),
+                TextAnchor.MiddleCenter);
+            CreateWorldLabel(root.transform, "Q 00",
+                new Vector3(0.72f, 1.72f, 0f),
+                0.043f, new Color(0.95f, 0.64f, 0.22f),
+                TextAnchor.MiddleCenter);
             return root;
         }
 
@@ -89,9 +95,24 @@ namespace Desk42.Product.Automation
                 new Vector3(0.68f, 0.06f, 0.86f), new Color(0.91f, 0.86f, 0.70f));
             CreateBlock(root.transform, "Urgency Tab", new Vector3(0.29f, 0.18f, 0.38f),
                 new Vector3(0.18f, 0.09f, 0.25f), new Color(0.68f, 0.23f, 0.20f));
-            CreateWorldLabel(root.transform, label, new Vector3(0f, 0.65f, 0f),
-                0.045f, new Color(0.95f, 0.90f, 0.73f), TextAnchor.MiddleCenter);
+            CreateWorldLabel(root.transform, label,
+                new Vector3(0f, 0.46f, -0.08f),
+                0.030f, new Color(0.95f, 0.90f, 0.73f),
+                TextAnchor.MiddleCenter);
             return root;
+        }
+
+        private static string StationLabel(string value)
+        {
+            return value switch
+            {
+                "PUBLIC INTAKE" => "PUBLIC\nINTAKE",
+                "EVIDENCE SPLIT" => "EVIDENCE\nSPLIT",
+                "OUTPUT GATE" => "OUTPUT\nGATE",
+                "AUX VERIFICATION" => "AUX\nVERIFICATION",
+                "LEGAL / APPEALS" => "LEGAL\nAPPEALS",
+                _ => value,
+            };
         }
 
         internal static GameObject CreateWorldLabel(

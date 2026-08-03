@@ -177,6 +177,25 @@ namespace Desk42.Institutional
                         MaterialStateChanged = value.MaterialStateChanged,
                     });
             }
+            for (int i = 0;
+                 i < source.CollectiveRemedyApplicationTraces.Count;
+                 i++)
+            {
+                EndogenousCollectiveRemedyApplicationTrace value =
+                    source.CollectiveRemedyApplicationTraces[i];
+                copy.CollectiveRemedyApplicationTraces.Add(
+                    new EndogenousCollectiveRemedyApplicationTrace
+                    {
+                        TraceId = value.TraceId,
+                        RulingId = value.RulingId,
+                        CaseId = value.CaseId,
+                        AppliedTick = value.AppliedTick,
+                        CollectiveCommitmentId = value.CollectiveCommitmentId,
+                        RecognisedStatusId = value.RecognisedStatusId,
+                        MemberAgentIds = Strings(value.MemberAgentIds),
+                        ChangedAgentIds = Strings(value.ChangedAgentIds),
+                    });
+            }
             for (int i = 0; i < source.Appeals.Count; i++)
             {
                 EndogenousAppealRecord value = source.Appeals[i];

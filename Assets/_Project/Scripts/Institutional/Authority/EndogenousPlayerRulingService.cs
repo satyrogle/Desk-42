@@ -23,10 +23,30 @@ namespace Desk42.Institutional
             EndogenousDocketState state,
             PlayerRulingCommand command)
         {
+            return CommitCore(
+                society, state, command, validateBoundary: true);
+        }
+
+        internal static CommittedPlayerRuling CommitWithinValidatedTransaction(
+            SocietyState society,
+            EndogenousDocketState state,
+            PlayerRulingCommand command)
+        {
+            return CommitCore(
+                society, state, command, validateBoundary: false);
+        }
+
+        private static CommittedPlayerRuling CommitCore(
+            SocietyState society,
+            EndogenousDocketState state,
+            PlayerRulingCommand command,
+            bool validateBoundary)
+        {
             if (society == null) throw new ArgumentNullException(nameof(society));
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (command == null) throw new ArgumentNullException(nameof(command));
-            EndogenousDocketValidator.Validate(state, society);
+            if (validateBoundary)
+                EndogenousDocketValidator.Validate(state, society);
 
             CommittedPlayerRuling replay = FindByCommandId(state, command.CommandId);
             if (replay != null)
@@ -59,6 +79,7 @@ namespace Desk42.Institutional
                 RulesetVersion = CurrentRulesetVersion,
             };
             state.Rulings.Add(committed);
+            if (!validateBoundary) return committed;
             try
             {
                 EndogenousDocketValidator.Validate(state, society);

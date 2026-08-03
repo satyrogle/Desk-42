@@ -35,5 +35,30 @@ namespace Desk42.Institutional
                 pulse.AdmittedCase = EndogenousDocketService.AdmitNext(society, state);
             return pulse;
         }
+
+        internal static EndogenousDocketPulse ProcessWithinValidatedTransaction(
+            InstitutionalMaterialWorld world,
+            SocietyState society,
+            EndogenousDocketState state,
+            bool admitOneCase = true)
+        {
+            if (world == null) throw new ArgumentNullException(nameof(world));
+            if (society == null) throw new ArgumentNullException(nameof(society));
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            var pulse = new EndogenousDocketPulse
+            {
+                DetectedIncidents =
+                    EndogenousIncidentDetector.DetectWithinValidatedTransaction(
+                        world, society, state),
+                ProjectedObservations = EndogenousObservationProjector.
+                    ProjectWithinValidatedTransaction(world, society, state),
+                ComposedDocketCandidates = EndogenousDocketService.
+                    ComposeWithinValidatedTransaction(society, state),
+            };
+            if (admitOneCase)
+                pulse.AdmittedCase = EndogenousDocketService.
+                    AdmitNextWithinValidatedTransaction(society, state);
+            return pulse;
+        }
     }
 }

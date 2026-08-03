@@ -83,6 +83,7 @@ namespace Desk42.Institutional.Player
                     recordPrefix + "." + (resourceIndex + 1).ToString("D2"));
             }
             AddRetaliatoryAuthorityPressure(society, world);
+            AddCollectiveGrievancePressure(society, world);
 
             var docket = new EndogenousDocketState { DirectorEnabled = false };
             AdvanceAutomationPulse(society, world, docket, "automation-origin");
@@ -114,7 +115,7 @@ namespace Desk42.Institutional.Player
                 : pulseId;
             EndogenousActionOpportunityBuilder.Populate(society, world, input);
             new EndogenousSocietyStepService().Advance(society, world, input);
-            EndogenousIncidentDocketPipeline.Process(
+            EndogenousIncidentDocketPipeline.ProcessWithinValidatedTransaction(
                 world, society, docket, admitOneCase: false);
         }
 
@@ -122,10 +123,8 @@ namespace Desk42.Institutional.Player
             SocietyState society,
             EndogenousDocketState docket)
         {
-            while (EndogenousDocketService.AdmitNext(society, docket) != null)
-            {
-                // Deterministic admission order is owned by EndogenousDocketService.
-            }
+            EndogenousDocketService.AdmitAllWithinValidatedTransaction(
+                society, docket);
         }
 
         internal static SimulationInput QuietInput()
@@ -383,6 +382,41 @@ namespace Desk42.Institutional.Player
                 SourceRecordId = "record.authority.branch42-supervision",
                 ValidFromTick = 0,
             });
+        }
+
+        private static void AddCollectiveGrievancePressure(
+            SocietyState society,
+            InstitutionalMaterialWorld world)
+        {
+            const string issueId = "workplace.shared-access-withdrawal";
+            string[] memberIds = { "agent.ollo-seven", "agent.sera-vale" };
+            for (int i = 0; i < memberIds.Length; i++)
+            {
+                AgentState member = society.GetAgent(memberIds[i]) ??
+                    throw new InvalidOperationException(
+                        "The collective product seed requires both generic members.");
+                member.Disposition.Solidarity = 100;
+                member.Disposition.RiskTolerance = 100;
+                member.GetNeed(NeedKind.Belonging).Pressure = 100;
+                member.GetNeed(NeedKind.Autonomy).Pressure = 100;
+                member.Commitments.Add(new CommitmentState
+                {
+                    CommitmentId = "commitment.collective:" + member.StableId,
+                    Kind = "grievance",
+                    TargetId = issueId,
+                    Strength = 100,
+                });
+                world.AccessGrants.Add(new MaterialAccessGrantState
+                {
+                    GrantId = "communication.collective:" + member.StableId,
+                    AgentId = member.StableId,
+                    AccessKindId =
+                        EndogenousActionOpportunityBuilder.CommunicationAccessKind,
+                    TargetId = "branch42.shared-channel",
+                    SourceRecordId = "record.access-log.collective-channel",
+                    ValidFromTick = 0,
+                });
+            }
         }
     }
 }

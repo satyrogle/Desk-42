@@ -103,6 +103,39 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void Validator_AllowsPrunedSameTickSocietyCauseButRejectsFutureCause()
+        {
+            SocietyState society = CreateSociety();
+            society.CurrentTick = 2;
+            society.EventLedger.Clear();
+            society.EventLedger.Add(new SocietyEvent
+            {
+                EventId = "event:2:agent.witness:WorkPerformed",
+                Tick = 2,
+                Kind = SocietyEventKind.WorkPerformed,
+                ActorId = "agent.witness",
+            });
+            PossessionTransferRequest historical = TransferRequest();
+            historical.CauseEventIds = new List<string>
+            {
+                "event:2:agent.patient:PossessionTransferRequested",
+            };
+
+            Assert.DoesNotThrow(() =>
+                InstitutionalMaterialWorldService.TransferPossession(
+                    CreateWorld(), society, historical));
+
+            PossessionTransferRequest future = TransferRequest();
+            future.CauseEventIds = new List<string>
+            {
+                "event:3:agent.patient:PossessionTransferRequested",
+            };
+            Assert.Throws<InvalidOperationException>(() =>
+                InstitutionalMaterialWorldService.TransferPossession(
+                    CreateWorld(), society, future));
+        }
+
+        [Test]
         public void PrivateTransfer_CanExistWithoutWitnessOrRecordSource()
         {
             SocietyState society = CreateSociety();

@@ -351,8 +351,8 @@ namespace Desk42.Institutional
             for (int i = 0; i < request.CauseEventIds.Count; i++)
             {
                 string causeId = request.CauseEventIds[i];
-                if (world.GetEvent(causeId) == null &&
-                    !HasSocietyEvent(society, causeId))
+                if (!HasAvailableCause(
+                        world, society, causeId, request.Tick))
                 {
                     throw new InvalidOperationException(
                         $"Possession transfer references unavailable cause {causeId}.");
@@ -382,6 +382,7 @@ namespace Desk42.Institutional
             ValidateObservabilityAndCauses(
                 world,
                 society,
+                request.Tick,
                 request.DirectWitnessAgentIds,
                 request.PotentialRecordSourceIds,
                 request.CauseEventIds,
@@ -409,6 +410,7 @@ namespace Desk42.Institutional
             ValidateObservabilityAndCauses(
                 world,
                 society,
+                request.Tick,
                 request.DirectWitnessAgentIds,
                 request.PotentialRecordSourceIds,
                 request.CauseEventIds,
@@ -418,6 +420,7 @@ namespace Desk42.Institutional
         private static void ValidateObservabilityAndCauses(
             InstitutionalMaterialWorld world,
             SocietyState society,
+            long ownerTick,
             IReadOnlyList<string> witnesses,
             IReadOnlyList<string> recordSources,
             IReadOnlyList<string> causes,
@@ -434,7 +437,8 @@ namespace Desk42.Institutional
             UniqueStable(causes, "cause event");
             for (int i = 0; i < causes.Count; i++)
             {
-                if (world.GetEvent(causes[i]) == null && !HasSocietyEvent(society, causes[i]))
+                if (!HasAvailableCause(
+                        world, society, causes[i], ownerTick))
                     throw new InvalidOperationException(
                         $"{description} references unavailable cause {causes[i]}.");
             }
@@ -535,6 +539,24 @@ namespace Desk42.Institutional
             }
 
             return false;
+        }
+
+        private static bool HasAvailableCause(
+            InstitutionalMaterialWorld world,
+            SocietyState society,
+            string causeId,
+            long ownerTick)
+        {
+            if (world.GetEvent(causeId) != null ||
+                HasSocietyEvent(society, causeId)) return true;
+            long oldestRetainedSocietyTick = society.EventLedger.Count == 0
+                ? long.MaxValue
+                : society.EventLedger[0].Tick;
+            return InstitutionalMaterialWorldValidator.
+                IsPrunedHistoricalSocietyCause(
+                    causeId,
+                    ownerTick,
+                    oldestRetainedSocietyTick);
         }
 
         private static List<string> Clone(IReadOnlyList<string> source)

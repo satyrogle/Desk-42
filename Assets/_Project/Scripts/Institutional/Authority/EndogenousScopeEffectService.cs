@@ -35,12 +35,56 @@ namespace Desk42.Institutional
             SimulationInput input,
             string jurisdictionId = "branch-42")
         {
+            return ApplyCore(
+                society, state, input, jurisdictionId, validateBoundary: true);
+        }
+
+        internal static List<EndogenousScopeApplicationTrace>
+            ApplyWithinValidatedTransaction(
+                SocietyState society,
+                EndogenousDocketState state,
+                SimulationInput input,
+                string jurisdictionId = "branch-42")
+        {
+            return ApplyCore(
+                society, state, input, jurisdictionId, validateBoundary: false);
+        }
+
+        private static List<EndogenousScopeApplicationTrace> ApplyCore(
+            SocietyState society,
+            EndogenousDocketState state,
+            SimulationInput input,
+            string jurisdictionId,
+            bool validateBoundary)
+        {
             if (society == null) throw new ArgumentNullException(nameof(society));
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (input == null) throw new ArgumentNullException(nameof(input));
-            EndogenousDocketValidator.Validate(state, society);
+            if (validateBoundary)
+                EndogenousDocketValidator.Validate(state, society);
             var traces = new List<EndogenousScopeApplicationTrace>();
             if (input.StealOpportunities == null) return traces;
+            var traceById = new Dictionary<string, EndogenousScopeApplicationTrace>(
+                state.ScopeApplicationTraces.Count,
+                StringComparer.Ordinal);
+            for (int i = 0; i < state.ScopeApplicationTraces.Count; i++)
+            {
+                EndogenousScopeApplicationTrace existing =
+                    state.ScopeApplicationTraces[i];
+                if (existing != null && !string.IsNullOrWhiteSpace(existing.TraceId))
+                    traceById[existing.TraceId] = existing;
+            }
+            var possessionRulings = new List<CommittedPlayerRuling>();
+            for (int i = 0; i < state.Rulings.Count; i++)
+            {
+                CommittedPlayerRuling ruling = state.Rulings[i];
+                if (string.Equals(
+                        ruling.HoldingRuleId,
+                        EndogenousPlayerRulingService.PossessionHoldingRule,
+                        StringComparison.Ordinal) &&
+                    EstablishesHolding(ruling.Disposition))
+                    possessionRulings.Add(ruling);
+            }
 
             for (int opportunityIndex = 0;
                  opportunityIndex < input.StealOpportunities.Count;
@@ -61,17 +105,12 @@ namespace Desk42.Institutional
                     AgentState actor = society.GetAgent(
                         opportunity.EligibleActorIds[actorIndex]);
                     if (actor == null) continue;
-                    for (int rulingIndex = 0; rulingIndex < state.Rulings.Count; rulingIndex++)
+                    for (int rulingIndex = 0;
+                         rulingIndex < possessionRulings.Count;
+                         rulingIndex++)
                     {
-                        CommittedPlayerRuling ruling = state.Rulings[rulingIndex];
-                        if (!string.Equals(
-                                ruling.HoldingRuleId,
-                                EndogenousPlayerRulingService.PossessionHoldingRule,
-                                StringComparison.Ordinal) ||
-                            !EstablishesHolding(ruling.Disposition))
-                        {
-                            continue;
-                        }
+                        CommittedPlayerRuling ruling =
+                            possessionRulings[rulingIndex];
 
                         var context = new ScopeMatchContext
                         {
@@ -83,8 +122,9 @@ namespace Desk42.Institutional
                         string traceId =
                             $"scope-match:{ruling.RulingId}:{opportunity.OpportunityId}:" +
                             actor.SimulationOrdinal;
-                        EndogenousScopeApplicationTrace replay = FindTrace(state, traceId);
-                        if (replay != null)
+                        if (traceById.TryGetValue(
+                                traceId,
+                                out EndogenousScopeApplicationTrace replay))
                         {
                             if (replay.ScopeMatched)
                             {
@@ -123,12 +163,16 @@ namespace Desk42.Institutional
                             StatusAfter = after,
                         };
                         state.ScopeApplicationTraces.Add(trace);
+                        traceById.Add(trace.TraceId, trace);
                         traces.Add(trace);
                     }
                 }
             }
-            SocietyStateValidator.Validate(society);
-            EndogenousDocketValidator.Validate(state, society);
+            if (validateBoundary)
+            {
+                SocietyStateValidator.Validate(society);
+                EndogenousDocketValidator.Validate(state, society);
+            }
             return traces;
         }
 
@@ -140,21 +184,5 @@ namespace Desk42.Institutional
                    disposition == RulingDisposition.ReversedAndRecognised;
         }
 
-        private static EndogenousScopeApplicationTrace FindTrace(
-            EndogenousDocketState state,
-            string traceId)
-        {
-            for (int i = 0; i < state.ScopeApplicationTraces.Count; i++)
-            {
-                if (string.Equals(
-                        state.ScopeApplicationTraces[i].TraceId,
-                        traceId,
-                        StringComparison.Ordinal))
-                {
-                    return state.ScopeApplicationTraces[i];
-                }
-            }
-            return null;
-        }
     }
 }

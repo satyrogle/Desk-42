@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Desk42.Institutional
 {
@@ -193,6 +194,9 @@ namespace Desk42.Institutional
             var availableCauseIds = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < society.EventLedger.Count; i++)
                 availableCauseIds.Add(society.EventLedger[i].EventId);
+            long oldestRetainedSocietyTick = society.EventLedger.Count == 0
+                ? long.MaxValue
+                : society.EventLedger[0].Tick;
 
             long previousTick = -1;
             for (int i = 0; i < world.EventLedger.Count; i++)
@@ -238,7 +242,10 @@ namespace Desk42.Institutional
                 UniqueStable(
                     materialEvent.PotentialRecordSourceIds,
                     $"{materialEvent.EventId}.record-source");
-                UniqueKnownCauses(materialEvent, availableCauseIds);
+                UniqueKnownCauses(
+                    materialEvent,
+                    availableCauseIds,
+                    oldestRetainedSocietyTick);
                 ValidateKindSpecificState(world, materialEvent);
                 availableCauseIds.Add(materialEvent.EventId);
             }
@@ -253,6 +260,9 @@ namespace Desk42.Institutional
                 causeTicks.Add(society.EventLedger[i].EventId, society.EventLedger[i].Tick);
             for (int i = 0; i < world.EventLedger.Count; i++)
                 causeTicks.Add(world.EventLedger[i].EventId, world.EventLedger[i].Tick);
+            long oldestRetainedSocietyTick = society.EventLedger.Count == 0
+                ? long.MaxValue
+                : society.EventLedger[0].Tick;
 
             for (int commitmentIndex = 0;
                  commitmentIndex < world.CollectiveCommitments.Count;
@@ -265,8 +275,15 @@ namespace Desk42.Institutional
                      causeIndex++)
                 {
                     string causeId = commitment.FormationCauseEventIds[causeIndex];
-                    if (!causeTicks.TryGetValue(causeId, out long causeTick) ||
-                        causeTick > commitment.FormedTick)
+                    bool retained = causeTicks.TryGetValue(
+                        causeId, out long causeTick);
+                    bool prunedHistoricalSocietyCause = !retained &&
+                        IsPrunedHistoricalSocietyCause(
+                            causeId,
+                            commitment.FormedTick,
+                            oldestRetainedSocietyTick);
+                    if ((!retained && !prunedHistoricalSocietyCause) ||
+                        retained && causeTick > commitment.FormedTick)
                     {
                         throw new InvalidOperationException(
                             $"Collective {commitment.CommitmentId} references a missing or " +
@@ -325,19 +342,46 @@ namespace Desk42.Institutional
 
         private static void UniqueKnownCauses(
             MaterialWorldEvent materialEvent,
-            HashSet<string> availableCauseIds)
+            HashSet<string> availableCauseIds,
+            long oldestRetainedSocietyTick)
         {
             var seen = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < materialEvent.CauseEventIds.Count; i++)
             {
                 string causeId = materialEvent.CauseEventIds[i];
+                bool retained = availableCauseIds.Contains(causeId);
+                bool prunedHistoricalSocietyCause = !retained &&
+                    IsPrunedHistoricalSocietyCause(
+                        causeId,
+                        materialEvent.Tick,
+                        oldestRetainedSocietyTick);
                 if (!Stable(causeId) || !seen.Add(causeId) ||
-                    !availableCauseIds.Contains(causeId))
+                    (!retained && !prunedHistoricalSocietyCause))
                 {
                     throw new InvalidOperationException(
                         $"Material event {materialEvent.EventId} has an invalid or future cause.");
                 }
             }
+        }
+
+        internal static bool IsPrunedHistoricalSocietyCause(
+            string causeId,
+            long ownerTick,
+            long oldestRetainedSocietyTick)
+        {
+            if (oldestRetainedSocietyTick == long.MaxValue ||
+                string.IsNullOrWhiteSpace(causeId) ||
+                !causeId.StartsWith("event:", StringComparison.Ordinal))
+                return false;
+            int tickStart = "event:".Length;
+            int tickEnd = causeId.IndexOf(':', tickStart);
+            if (tickEnd <= tickStart || !long.TryParse(
+                    causeId.Substring(tickStart, tickEnd - tickStart),
+                    NumberStyles.None,
+                    CultureInfo.InvariantCulture,
+                    out long causeTick)) return false;
+            return causeTick <= ownerTick &&
+                   causeTick <= oldestRetainedSocietyTick;
         }
 
         private static void UniqueKnown(

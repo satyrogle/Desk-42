@@ -44,30 +44,46 @@ namespace Desk42.Product.Automation
         internal bool AuxVerifierPlaced => _flow?.AuxVerifierInstalled ?? false;
         internal bool PlacementArmed => _placementArmed;
         internal string RouteMode => _flow?.ParallelRouting == true ? "PARALLEL" : "PRIMARY";
-        internal int PolicyNumber => (int)(_flow?.Policy ??
-            AutomationPolicyKind.RubberStampMill);
+        internal int PolicyNumber => _flow?.DoctrineLocked == true
+            ? (int)_flow.Policy
+            : 0;
         internal string PolicyName => _flow?.PolicyName ?? "RUBBER MILL";
         internal string PolicyHudName => PolicyNumber switch
         {
             1 => "PROOF",
             2 => "RUBBER",
             3 => "REFINERY",
-            _ => "RUBBER",
+            _ => "SELECT",
         };
         internal string PolicyDescription => _flow?.PolicyDescription ?? string.Empty;
         internal int PrecedentsInstalled => _flow?.PrecedentsInstalled ?? 0;
         internal int OverdueCount => _flow?.OverdueCount ?? 0;
         internal int ReworkCount => _flow?.ReworkCount ?? 0;
         internal int JamCount => _flow?.JamCount ?? 0;
+        internal int ActiveJamCount => _flow?.ActiveJamCount ?? 0;
         internal int SecondaryChecks => _flow?.SecondaryChecks ?? 0;
+        internal int CollectiveCompleted => _flow?.CollectiveCompleted ?? 0;
         internal int Credits => _flow?.Credits ?? 0;
         internal int ShiftOrdinal => _flow?.ShiftOrdinal ?? 1;
         internal long SocietyTick => _flow?.SocietyTick ?? 0;
         internal int InstitutionalRulings => _flow?.InstitutionalRulings ?? 0;
+        internal int PendingAppeals => _flow?.PendingAppeals ?? 0;
         internal float ClaimsPerMinute => _flow?.ClaimsPerMinute ?? 0f;
         internal string PriorityName => _flow?.RoutePriorityName ?? "BALANCED";
         internal string AppealModeName => _flow?.AppealModeName ?? "FULL REHEARING";
         internal int ProceduresBound => _flow?.ProceduresBound ?? 0;
+        internal AutomationRunPhase RunPhase => _flow?.Phase ??
+            AutomationRunPhase.DoctrineSelection;
+        internal bool DoctrineLocked => _flow?.DoctrineLocked == true;
+        internal IReadOnlyList<AutomationProcedureDraftChoiceCheckpoint>
+            DraftChoices => _flow?.DraftChoices ??
+            Array.Empty<AutomationProcedureDraftChoiceCheckpoint>();
+        internal AutomationShiftSummaryCheckpoint ShiftSummary =>
+            _flow?.ShiftSummary;
+        internal AutomationBranchReviewCheckpoint BranchReview =>
+            _flow?.BranchReview;
+        internal IReadOnlyList<AutomationPrecedentRecord> Precedents =>
+            _flow?.Precedents ?? Array.Empty<AutomationPrecedentRecord>();
         internal string SelectedStationName =>
             _flow?.SelectedStation?.DisplayName?.ToUpperInvariant() ?? "NONE";
         internal string SelectedStationState => _flow?.SelectedStation == null
@@ -112,8 +128,6 @@ namespace Desk42.Product.Automation
             _flow.Register(CreateStation(AutomationStationKind.Legal,
                 "LEGAL / APPEALS", LegalPosition,
                 new Color(0.39f, 0.31f, 0.42f), "RETURN", 2.5f));
-            _flow.SetPolicy(AutomationPolicyKind.RubberStampMill);
-
             CreateRoute(new[]
             {
                 new Vector3(-13f, 0.42f, 2.6f), IntakePosition,
@@ -182,10 +196,18 @@ namespace Desk42.Product.Automation
             return _flow?.RepairSelected() == true;
         }
 
+#if UNITY_INCLUDE_TESTS
+        internal bool CreateValidationJamOnSelected()
+        {
+            return _flow?.CreateValidationJamOnSelected() == true;
+        }
+#endif
+
         internal bool BindProcedure(int procedureNumber)
         {
             if (procedureNumber < 1 || procedureNumber > 6) return false;
-            return _flow?.BindProcedure((AutomationProcedureKind)procedureNumber) == true;
+            return _flow?.ForceBindProcedureForTest(
+                (AutomationProcedureKind)procedureNumber) == true;
         }
 
         internal bool IsProcedureBound(int procedureNumber)
@@ -195,10 +217,59 @@ namespace Desk42.Product.Automation
                 (AutomationProcedureKind)procedureNumber) == true;
         }
 
-        internal void SetPolicy(int policyNumber)
+        internal int ProcedureTier(int procedureNumber)
         {
-            if (policyNumber < 1 || policyNumber > 3) return;
-            _flow?.SetPolicy((AutomationPolicyKind)policyNumber);
+            if (procedureNumber < 1 || procedureNumber > 6) return 0;
+            return _flow?.ProcedureTier(
+                (AutomationProcedureKind)procedureNumber) ?? 0;
+        }
+
+        internal bool SetPolicy(int policyNumber)
+        {
+            if (policyNumber < 1 || policyNumber > 3) return false;
+            return _flow?.ChooseDoctrine(
+                (AutomationPolicyKind)policyNumber) == true;
+        }
+
+        internal bool ChooseProcedureDraft(int choiceIndex)
+        {
+            return _flow?.ChooseProcedureDraft(choiceIndex) == true;
+        }
+
+        internal bool ContinueAfterShift()
+        {
+            return _flow?.ContinueAfterShift() == true;
+        }
+
+        internal bool CyclePrecedentMode(int ledgerIndex)
+        {
+            return _flow?.CyclePrecedentMode(ledgerIndex) == true;
+        }
+
+        internal void SaveRun(string path)
+        {
+            if (_flow == null) throw new InvalidOperationException(
+                "The automation floor is not ready to save.");
+            AutomationRunStore.Save(path, _flow.CaptureCheckpoint());
+            HandleFeedback(AutomationFeedbackKind.RunSaved,
+                "RUN SAVED / " + System.IO.Path.GetFileName(path));
+        }
+
+        internal void LoadRun(string path)
+        {
+            AutomationRunCheckpoint checkpoint = AutomationRunStore.Load(path);
+            bool savedAuxiliary = false;
+            for (int i = 0; i < checkpoint.Flow.Stations.Count; i++)
+                if (checkpoint.Flow.Stations[i].Kind ==
+                        AutomationStationKind.Verification &&
+                    checkpoint.Flow.Stations[i].IsAuxiliary)
+                    savedAuxiliary = true;
+            if (savedAuxiliary && !AuxVerifierPlaced) InstallAuxVerifier();
+            _flow.RestoreCheckpoint(checkpoint);
+            RefreshAuxRouteAppearance();
+            SetFlowOverlayVisible(_flowOverlayVisible);
+            HandleFeedback(AutomationFeedbackKind.RunLoaded,
+                "RUN LOADED / " + System.IO.Path.GetFileName(path));
         }
 
         internal bool TryPlaceAuxVerifier(Vector3 screenPosition)
@@ -314,7 +385,7 @@ namespace Desk42.Product.Automation
                 new Vector3(28f, 2.8f, 0.4f), new Color(0.15f, 0.19f, 0.18f)));
             _owned.Add(AutomationVisualFactory.CreateWorldLabel(
                 _root, "BRANCH 42 / AUTOMATED CLAIMS DIVISION",
-                new Vector3(0f, 2.1f, 6.55f), 0.18f,
+                new Vector3(0f, 2.1f, 6.55f), 0.115f,
                 new Color(0.73f, 0.74f, 0.59f), TextAnchor.MiddleCenter));
         }
 

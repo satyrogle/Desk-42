@@ -38,6 +38,14 @@ namespace Desk42.Product.Automation
         AppealModeChanged,
         ProcedureBound,
         PolicyChanged,
+        ShiftClosed,
+        ProcedureDrafted,
+        ProcedureUpgraded,
+        HoldingCreated,
+        PrecedentCited,
+        BranchReviewed,
+        RunSaved,
+        RunLoaded,
     }
 
     internal sealed class AutomationFlowRuntime : IDisposable
@@ -45,7 +53,14 @@ namespace Desk42.Product.Automation
         private readonly Transform _root;
         private readonly List<AutomationStationRuntime> _stations = new();
         private readonly List<AutomationFlowItem> _items = new();
-        private readonly HashSet<AutomationProcedureKind> _procedures = new();
+        private readonly Dictionary<AutomationProcedureKind, int>
+            _procedureTiers = new();
+        private readonly List<AutomationProcedureDraftChoiceCheckpoint>
+            _draftChoices = new();
+        private readonly HashSet<string> _verificationPatterns =
+            new(StringComparer.Ordinal);
+        private readonly HashSet<string> _adverseReviewPatterns =
+            new(StringComparer.Ordinal);
         private InstitutionalAutomationSession _activeInstitution;
         private AutomationStationRuntime _intake;
         private AutomationStationRuntime _splitter;
@@ -61,6 +76,16 @@ namespace Desk42.Product.Automation
         private int _shiftOrdinal = 1;
         private int _routeOrdinal;
         private int _stationSelectionIndex;
+        private int _repairCount;
+        private int _shiftStartCompleted;
+        private int _shiftStartOverdue;
+        private int _shiftStartAppealsReturned;
+        private int _shiftStartAppealsResolved;
+        private int _shiftStartRulings;
+        private int _shiftStartHoldings;
+        private long _shiftStartSocietyTick;
+        private AutomationShiftSummaryCheckpoint _shiftSummary;
+        private AutomationBranchReviewCheckpoint _branchReview;
         private const int ClaimsPerShift = 12;
         private const int MaximumShifts = 8;
 
@@ -81,12 +106,18 @@ namespace Desk42.Product.Automation
         internal int OverdueCount { get; private set; }
         internal int ReworkCount { get; private set; }
         internal int JamCount { get; private set; }
+        internal int RepairCount => _repairCount;
         internal int SecondaryChecks { get; private set; }
+        internal int PossessionCompleted { get; private set; }
+        internal int AccessCompleted { get; private set; }
+        internal int CollectiveCompleted { get; private set; }
         internal int Credits { get; private set; } = 5;
         internal int ShiftOrdinal => _shiftOrdinal;
         internal long SocietyTick => _activeInstitution?.SocietyTick ?? 0;
         internal int InstitutionalRulings =>
             _activeInstitution?.CommittedRulingCount ?? 0;
+        internal int PendingAppeals =>
+            _activeInstitution?.PendingAppealCount ?? 0;
         internal float ClaimsPerMinute => _elapsed <= 0.01f
             ? 0f
             : Completed / _elapsed * 60f;
@@ -114,6 +145,16 @@ namespace Desk42.Product.Automation
         }
         internal int VerificationBacklog =>
             (_primaryVerifier?.Workload ?? 0) + (_auxVerifier?.Workload ?? 0);
+        internal int ActiveJamCount
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < _stations.Count; i++)
+                    if (_stations[i].IsJammed) count++;
+                return count;
+            }
+        }
         internal string Bottleneck
         {
             get
@@ -137,8 +178,18 @@ namespace Desk42.Product.Automation
         internal AutomationStationRuntime SelectedStation =>
             _stations.Count == 0 ? null : _stations[
                 Mathf.Clamp(_stationSelectionIndex, 0, _stations.Count - 1)];
-        internal int ProceduresBound => _procedures.Count;
+        internal int ProceduresBound => _procedureTiers.Count;
         internal const int MaximumProcedures = 2;
+        internal AutomationRunPhase Phase { get; private set; } =
+            AutomationRunPhase.DoctrineSelection;
+        internal bool DoctrineLocked { get; private set; }
+        internal IReadOnlyList<AutomationProcedureDraftChoiceCheckpoint>
+            DraftChoices => _draftChoices;
+        internal AutomationShiftSummaryCheckpoint ShiftSummary => _shiftSummary;
+        internal AutomationBranchReviewCheckpoint BranchReview => _branchReview;
+        internal IReadOnlyList<AutomationPrecedentRecord> Precedents =>
+            _activeInstitution?.Precedents ??
+            Array.Empty<AutomationPrecedentRecord>();
         internal AutomationPolicyKind Policy { get; private set; } =
             AutomationPolicyKind.RubberStampMill;
         internal string PolicyName => Policy switch
@@ -242,36 +293,63 @@ namespace Desk42.Product.Automation
 
         internal bool IsProcedureBound(AutomationProcedureKind kind)
         {
-            return _procedures.Contains(kind);
+            return _procedureTiers.ContainsKey(kind);
         }
 
-        internal bool BindProcedure(AutomationProcedureKind kind)
+        internal int ProcedureTier(AutomationProcedureKind kind)
         {
-            if (!Enum.IsDefined(typeof(AutomationProcedureKind), kind) ||
-                _procedures.Contains(kind)) return false;
-            if (_procedures.Count >= MaximumProcedures)
-            {
-                Emit(AutomationFeedbackKind.Jammed,
-                    "PROCEDURE SLOTS FULL / 2 BINDING");
-                return false;
-            }
-            const int cost = 4;
-            if (Credits < cost)
-            {
-                Emit(AutomationFeedbackKind.Jammed,
-                    "PROCEDURE BLOCKED / NEED 4 CREDITS");
-                return false;
-            }
-            Credits -= cost;
-            _procedures.Add(kind);
+            return _procedureTiers.TryGetValue(kind, out int tier) ? tier : 0;
+        }
+
+        internal bool ForceBindProcedureForTest(AutomationProcedureKind kind)
+        {
+            if (!Enum.IsDefined(typeof(AutomationProcedureKind), kind)) return false;
+            if (!_procedureTiers.ContainsKey(kind) &&
+                _procedureTiers.Count >= MaximumProcedures) return false;
+            int tier = Mathf.Clamp(ProcedureTier(kind) + 1, 1, 3);
+            _procedureTiers[kind] = tier;
             if (kind == AutomationProcedureKind.AppealFastTrack)
                 AppealMode = AutomationAppealMode.FastTrack;
             for (int i = 0; i < _items.Count; i++)
                 ConfigureItemProcedures(_items[i]);
             ApplyPolicyTuning();
             Emit(AutomationFeedbackKind.ProcedureBound,
-                AutomationProcedureNames.ShortName(kind) + " BOUND / " +
-                AutomationProcedureNames.Effect(kind));
+                AutomationProcedureNames.ShortName(kind) + " T" + tier +
+                " / " + AutomationProcedureNames.Effect(kind, tier));
+            return true;
+        }
+
+        internal bool ChooseProcedureDraft(int choiceIndex)
+        {
+            if (Phase != AutomationRunPhase.ShiftClose ||
+                choiceIndex < 0 || choiceIndex >= _draftChoices.Count) return false;
+            AutomationProcedureDraftChoiceCheckpoint choice =
+                _draftChoices[choiceIndex];
+            int current = ProcedureTier(choice.Kind);
+            if (current == 0 && _procedureTiers.Count >= MaximumProcedures)
+                return false;
+            _procedureTiers[choice.Kind] = choice.ResultingTier;
+            if (choice.Kind == AutomationProcedureKind.AppealFastTrack)
+                AppealMode = AutomationAppealMode.FastTrack;
+            for (int i = 0; i < _items.Count; i++)
+                ConfigureItemProcedures(_items[i]);
+            ApplyPolicyTuning();
+            Emit(current == 0
+                    ? AutomationFeedbackKind.ProcedureBound
+                    : AutomationFeedbackKind.ProcedureUpgraded,
+                AutomationProcedureNames.ShortName(choice.Kind) + " T" +
+                choice.ResultingTier + " / " +
+                AutomationProcedureNames.Effect(
+                    choice.Kind, choice.ResultingTier));
+            BeginNextShift();
+            return true;
+        }
+
+        internal bool ContinueAfterShift()
+        {
+            if (Phase != AutomationRunPhase.ShiftClose ||
+                _draftChoices.Count != 0) return false;
+            BeginNextShift();
             return true;
         }
 
@@ -333,9 +411,12 @@ namespace Desk42.Product.Automation
             ApplyPolicyTuning();
             string effect = kind switch
             {
-                AutomationUpgradeKind.Throughput => "+14% CYCLE SPEED",
-                AutomationUpgradeKind.Capacity => "+2 SAFE QUEUE / COOLING",
-                AutomationUpgradeKind.Reliability => "-4.5% FAULT RISK",
+                AutomationUpgradeKind.Throughput =>
+                    "+14% CYCLE SPEED / +13% HEAT / +1.8% FAULT",
+                AutomationUpgradeKind.Capacity =>
+                    "+2 SAFE QUEUE / FASTER COOLING",
+                AutomationUpgradeKind.Reliability =>
+                    "-4.5% FAULT / +5.5% CYCLE TIME",
                 _ => string.Empty,
             };
             Emit(AutomationFeedbackKind.UpgradeInstalled,
@@ -348,16 +429,33 @@ namespace Desk42.Product.Automation
         {
             AutomationStationRuntime station = SelectedStation;
             if (station == null || !station.Repair()) return false;
+            _repairCount++;
             Emit(AutomationFeedbackKind.Repaired,
                 station.DisplayName.ToUpperInvariant() + " CLEARED / HEAT 25%");
             return true;
         }
 
-        internal void SetPolicy(AutomationPolicyKind policy)
+#if UNITY_INCLUDE_TESTS
+        internal bool CreateValidationJamOnSelected()
+        {
+            AutomationStationRuntime station = SelectedStation;
+            return station != null && station.CreateValidationJam();
+        }
+#endif
+
+        internal bool ChooseDoctrine(AutomationPolicyKind policy)
         {
             if (!Enum.IsDefined(typeof(AutomationPolicyKind), policy))
                 throw new ArgumentOutOfRangeException(nameof(policy));
+            if (DoctrineLocked || Phase != AutomationRunPhase.DoctrineSelection)
+            {
+                Emit(AutomationFeedbackKind.Jammed,
+                    "DOCTRINE IS BINDING FOR THIS RUN");
+                return false;
+            }
             Policy = policy;
+            DoctrineLocked = true;
+            Phase = AutomationRunPhase.ActiveProcessing;
             switch (policy)
             {
                 case AutomationPolicyKind.ProofFortress:
@@ -371,12 +469,16 @@ namespace Desk42.Product.Automation
                     break;
             }
             ApplyPolicyTuning();
-            Emit(AutomationFeedbackKind.PolicyChanged, PolicyName + " BOUND");
+            CaptureShiftBaseline();
+            Emit(AutomationFeedbackKind.PolicyChanged,
+                PolicyName + " / DOCTRINE BOUND FOR EIGHT SHIFTS");
+            return true;
         }
 
         internal void Tick(float deltaTime)
         {
-            if (deltaTime <= 0f) return;
+            if (deltaTime <= 0f ||
+                Phase != AutomationRunPhase.ActiveProcessing) return;
             _elapsed += deltaTime;
             for (int i = 0; i < _items.Count; i++)
                 if (_items[i].TickAge(deltaTime))
@@ -386,23 +488,9 @@ namespace Desk42.Product.Automation
                         _items[i].ClaimId + " MISSED DEADLINE");
                 }
             _spawnClock -= deltaTime;
-            if (_spawnClock <= 0f && _intake != null &&
-                _shiftOrdinal <= MaximumShifts)
+            if (_spawnClock <= 0f && _intake != null)
             {
-                if (_batchSpawned >= _activeInstitution.Claims.Count)
-                {
-                    _shiftOrdinal++;
-                    if (_shiftOrdinal <= MaximumShifts)
-                    {
-                        _activeInstitution.ReleaseNextShift(ClaimsPerShift);
-                        _batchSpawned = 0;
-                        _spawnClock = 8f;
-                        Emit(AutomationFeedbackKind.PolicyChanged,
-                            "SHIFT " + _shiftOrdinal.ToString("D2") +
-                            " / SAME SOCIETY / DOCKET RELEASED");
-                    }
-                }
-                else
+                if (_batchSpawned < _activeInstitution.Claims.Count)
                 {
                     SpawnClaim();
                     _spawnClock = _spawnInterval;
@@ -411,6 +499,481 @@ namespace Desk42.Product.Automation
 
             for (int i = 0; i < _stations.Count; i++)
                 _stations[i].Tick(deltaTime);
+            if (_batchSpawned >= _activeInstitution.Claims.Count &&
+                _items.Count == 0)
+                CloseShift();
+        }
+
+        internal bool CyclePrecedentMode(int ledgerIndex)
+        {
+            IReadOnlyList<AutomationPrecedentRecord> precedents = Precedents;
+            if (ledgerIndex < 0 || ledgerIndex >= precedents.Count) return false;
+            AutomationPrecedentRecord precedent = precedents[ledgerIndex];
+            AutomationPrecedentMode next = precedent.Mode switch
+            {
+                AutomationPrecedentMode.MandatoryCitation =>
+                    AutomationPrecedentMode.PermittedCitation,
+                AutomationPrecedentMode.PermittedCitation =>
+                    AutomationPrecedentMode.HumanReviewRequired,
+                AutomationPrecedentMode.HumanReviewRequired =>
+                    AutomationPrecedentMode.DoNotAutomate,
+                _ => AutomationPrecedentMode.MandatoryCitation,
+            };
+            _activeInstitution.SetPrecedentMode(precedent.HoldingId, next);
+            Emit(AutomationFeedbackKind.PrecedentCited,
+                "LEDGER / " + precedent.Issue.ToUpperInvariant() + " / " +
+                next.ToString().ToUpperInvariant());
+            return true;
+        }
+
+        private void CaptureShiftBaseline()
+        {
+            _shiftStartCompleted = Completed;
+            _shiftStartOverdue = OverdueCount;
+            _shiftStartAppealsReturned = AppealsReturned;
+            _shiftStartAppealsResolved = AppealsResolved;
+            _shiftStartRulings = InstitutionalRulings;
+            _shiftStartHoldings = PrecedentsInstalled;
+            _shiftStartSocietyTick = SocietyTick;
+        }
+
+        private void CloseShift()
+        {
+            if (Phase != AutomationRunPhase.ActiveProcessing) return;
+            PrecedentsInstalled = _activeInstitution.HoldingCount;
+            _shiftSummary = new AutomationShiftSummaryCheckpoint
+            {
+                ShiftOrdinal = _shiftOrdinal,
+                ClaimsCompleted = Completed - _shiftStartCompleted,
+                DeadlinesMissed = OverdueCount - _shiftStartOverdue,
+                AppealsCreated = AppealsReturned - _shiftStartAppealsReturned,
+                AppealsResolved = AppealsResolved - _shiftStartAppealsResolved,
+                HoldingsEstablished = PrecedentsInstalled - _shiftStartHoldings,
+                SocietyChanges = Mathf.Max(0,
+                    (int)(SocietyTick - _shiftStartSocietyTick)),
+            };
+            Emit(AutomationFeedbackKind.ShiftClosed,
+                "SHIFT " + _shiftOrdinal.ToString("D2") +
+                " CLOSED / " + _shiftSummary.ClaimsCompleted +
+                " CLAIMS / " + _shiftSummary.AppealsCreated + " APPEALS");
+
+            if (_shiftOrdinal >= MaximumShifts)
+            {
+                BuildBranchReview();
+                Phase = AutomationRunPhase.BranchReview;
+                Emit(AutomationFeedbackKind.BranchReviewed,
+                    "BRANCH REVIEW / " + _branchReview.Outcome.ToString().ToUpperInvariant());
+                return;
+            }
+
+            Phase = AutomationRunPhase.ShiftClose;
+            _draftChoices.Clear();
+            if (ShouldDraftAfterShift(_shiftOrdinal)) GenerateProcedureDraft();
+        }
+
+        private void GenerateProcedureDraft()
+        {
+            var eligible = new List<AutomationProcedureKind>();
+            for (int number = 1; number <= 6; number++)
+            {
+                var kind = (AutomationProcedureKind)number;
+                int tier = ProcedureTier(kind);
+                if (tier > 0 && tier < 3 ||
+                    tier == 0 && _procedureTiers.Count < MaximumProcedures)
+                    eligible.Add(kind);
+            }
+            if (eligible.Count == 0) return;
+            int start = (_shiftOrdinal * 2 + (int)Policy) % eligible.Count;
+            int offered = Mathf.Min(3, eligible.Count);
+            for (int offset = 0; offset < offered; offset++)
+            {
+                AutomationProcedureKind kind =
+                    eligible[(start + offset) % eligible.Count];
+                _draftChoices.Add(new AutomationProcedureDraftChoiceCheckpoint
+                {
+                    Kind = kind,
+                    ResultingTier = Mathf.Clamp(ProcedureTier(kind) + 1, 1, 3),
+                });
+            }
+            Emit(AutomationFeedbackKind.ProcedureDrafted,
+                "INSTITUTIONAL DEVELOPMENT / CHOOSE ONE OF " +
+                _draftChoices.Count);
+        }
+
+        private void BeginNextShift()
+        {
+            if (Phase != AutomationRunPhase.ShiftClose ||
+                _shiftOrdinal >= MaximumShifts) return;
+            _shiftOrdinal++;
+            _activeInstitution.ReleaseNextShift(ClaimsPerShift);
+            _batchSpawned = 0;
+            _spawnClock = 2.5f;
+            _shiftSummary = null;
+            _draftChoices.Clear();
+            Phase = AutomationRunPhase.ActiveProcessing;
+            CaptureShiftBaseline();
+            Emit(AutomationFeedbackKind.PolicyChanged,
+                "SHIFT " + _shiftOrdinal.ToString("D2") +
+                " / SAME SOCIETY / DOCKET RELEASED");
+        }
+
+        private void BuildBranchReview()
+        {
+            _activeInstitution.ValidateCurrentState();
+            AutomationSocietyMetrics society = _activeInstitution.SocietyMetrics;
+            IReadOnlyList<AutomationPrecedentRecord> precedents = Precedents;
+            int liability = _activeInstitution.PendingAppealCount * 8;
+            int conflicts = 0;
+            for (int i = 0; i < precedents.Count; i++)
+            {
+                liability += precedents[i].LiabilityExposure;
+                conflicts += precedents[i].ConflictingHoldingCount;
+            }
+            int throughput = Spawned == 0
+                ? 0
+                : Mathf.RoundToInt(Completed * 100f / Spawned);
+            int deadlineCompliance = Completed == 0
+                ? 0
+                : Mathf.Clamp(100 - Mathf.RoundToInt(
+                    OverdueCount * 100f / Completed), 0, 100);
+            int error = Completed == 0
+                ? 0
+                : Mathf.Clamp(Mathf.RoundToInt(
+                    ReworkCount * 100f / Completed), 0, 100);
+            int reversal = AppealsResolved == 0
+                ? 0
+                : Mathf.Clamp(Mathf.RoundToInt(
+                    _activeInstitution.AppealReversalCount * 100f /
+                    AppealsResolved), 0, 100);
+            int stability = Mathf.Clamp(
+                society.AverageInstitutionalTrust -
+                society.TotalRelationshipFear / Mathf.Max(1, society.AgentCount * 4) +
+                society.RecognisedCollectiveMembers * 3,
+                0,
+                100);
+            int legitimacy = Mathf.Clamp(
+                (deadlineCompliance + stability + (100 - reversal)) / 3,
+                0,
+                100);
+            int consistency = Mathf.Clamp(100 - conflicts * 18, 0, 100);
+            int resilience = Mathf.Clamp(
+                72 + RepairCount * 5 - JamCount * 4 +
+                TotalStationUpgradeLevel() * 2,
+                0,
+                100);
+
+            AutomationBranchOutcome outcome;
+            if (conflicts >= 2) outcome = AutomationBranchOutcome.PrecedentCollapse;
+            else if (throughput >= 78 && stability < 42)
+                outcome = AutomationBranchOutcome.EfficientButHarmful;
+            else if (stability >= 68 && Credits < 3)
+                outcome = AutomationBranchOutcome.HumaneButInsolvent;
+            else if (Policy == AutomationPolicyKind.RubberStampMill &&
+                     precedents.Count >= 3)
+                outcome = AutomationBranchOutcome.Captured;
+            else if (throughput >= 72 && legitimacy < 50)
+                outcome = AutomationBranchOutcome.AdministrativeBlindness;
+            else outcome = AutomationBranchOutcome.Certified;
+
+            _branchReview = new AutomationBranchReviewCheckpoint
+            {
+                Outcome = outcome,
+                Throughput = throughput,
+                DeadlineCompliance = deadlineCompliance,
+                AvoidableError = error,
+                AppealReversalRate = reversal,
+                UnresolvedLiability = liability,
+                SocietyStability = stability,
+                InstitutionalLegitimacy = legitimacy,
+                PrecedentConsistency = consistency,
+                MachineResilience = resilience,
+            };
+        }
+
+        private int TotalStationUpgradeLevel()
+        {
+            int total = 0;
+            for (int i = 0; i < _stations.Count; i++)
+                total += _stations[i].TotalUpgradeLevel;
+            return total;
+        }
+
+        private static bool ShouldDraftAfterShift(int shiftOrdinal)
+        {
+            return shiftOrdinal == 1 || shiftOrdinal == 2 ||
+                   shiftOrdinal == 4 || shiftOrdinal == 6;
+        }
+
+        internal AutomationRunCheckpoint CaptureCheckpoint()
+        {
+            var flow = new AutomationFlowCheckpoint
+            {
+                Phase = Phase,
+                Policy = Policy,
+                DoctrineLocked = DoctrineLocked,
+                Spawned = Spawned,
+                Completed = Completed,
+                AppealsReturned = AppealsReturned,
+                AppealsResolved = AppealsResolved,
+                OverdueCount = OverdueCount,
+                ReworkCount = ReworkCount,
+                JamCount = JamCount,
+                RepairCount = _repairCount,
+                SecondaryChecks = SecondaryChecks,
+                PossessionCompleted = PossessionCompleted,
+                AccessCompleted = AccessCompleted,
+                CollectiveCompleted = CollectiveCompleted,
+                Credits = Credits,
+                Elapsed = _elapsed,
+                SpawnClock = _spawnClock,
+                SpawnInterval = _spawnInterval,
+                BatchSpawned = _batchSpawned,
+                ShiftOrdinal = _shiftOrdinal,
+                RouteOrdinal = _routeOrdinal,
+                StationSelectionIndex = _stationSelectionIndex,
+                ParallelRouting = ParallelRouting,
+                RoutePriority = RoutePriority,
+                AppealMode = AppealMode,
+                ShiftStartCompleted = _shiftStartCompleted,
+                ShiftStartOverdue = _shiftStartOverdue,
+                ShiftStartAppealsReturned = _shiftStartAppealsReturned,
+                ShiftStartAppealsResolved = _shiftStartAppealsResolved,
+                ShiftStartRulings = _shiftStartRulings,
+                ShiftStartHoldings = _shiftStartHoldings,
+                ShiftStartSocietyTick = _shiftStartSocietyTick,
+                ShiftSummary = _shiftSummary,
+                BranchReview = _branchReview,
+            };
+            foreach (KeyValuePair<AutomationProcedureKind, int> procedure in
+                     _procedureTiers)
+                flow.Procedures.Add(new AutomationProcedureTierCheckpoint
+                {
+                    Kind = procedure.Key,
+                    Tier = procedure.Value,
+                });
+            flow.Procedures.Sort((left, right) =>
+                left.Kind.CompareTo(right.Kind));
+            flow.VerificationPatternIssues.AddRange(_verificationPatterns);
+            flow.VerificationPatternIssues.Sort(StringComparer.Ordinal);
+            flow.AdverseReviewPatternIssues.AddRange(_adverseReviewPatterns);
+            flow.AdverseReviewPatternIssues.Sort(StringComparer.Ordinal);
+            for (int i = 0; i < _draftChoices.Count; i++)
+                flow.DraftChoices.Add(new AutomationProcedureDraftChoiceCheckpoint
+                {
+                    Kind = _draftChoices[i].Kind,
+                    ResultingTier = _draftChoices[i].ResultingTier,
+                });
+            for (int i = 0; i < _stations.Count; i++)
+                flow.Stations.Add(_stations[i].CaptureCheckpoint());
+            for (int i = 0; i < _items.Count; i++)
+                flow.Items.Add(_items[i].CaptureCheckpoint());
+            flow.Items.Sort((left, right) =>
+                left.Sequence.CompareTo(right.Sequence));
+            return new AutomationRunCheckpoint
+            {
+                Institution = _activeInstitution.CreateCheckpoint(),
+                Flow = flow,
+            };
+        }
+
+        internal void RestoreCheckpoint(AutomationRunCheckpoint checkpoint)
+        {
+            if (checkpoint?.Flow == null || checkpoint.Institution == null)
+                throw new ArgumentException(
+                    "A complete automation checkpoint is required.",
+                    nameof(checkpoint));
+            AutomationFlowCheckpoint saved = checkpoint.Flow;
+            for (int i = 0; i < _stations.Count; i++)
+                _stations[i].ResetRuntime();
+            for (int i = _items.Count - 1; i >= 0; i--)
+                _items[i].Dispose();
+            _items.Clear();
+
+            _activeInstitution = InstitutionalAutomationSession.Restore(
+                checkpoint.Institution);
+            Phase = saved.Phase;
+            Policy = saved.Policy;
+            DoctrineLocked = saved.DoctrineLocked;
+            Spawned = saved.Spawned;
+            Completed = saved.Completed;
+            AppealsReturned = saved.AppealsReturned;
+            AppealsResolved = saved.AppealsResolved;
+            PrecedentsInstalled = _activeInstitution.HoldingCount;
+            OverdueCount = saved.OverdueCount;
+            ReworkCount = saved.ReworkCount;
+            JamCount = saved.JamCount;
+            _repairCount = saved.RepairCount;
+            SecondaryChecks = saved.SecondaryChecks;
+            PossessionCompleted = saved.PossessionCompleted;
+            AccessCompleted = saved.AccessCompleted;
+            CollectiveCompleted = saved.CollectiveCompleted;
+            Credits = saved.Credits;
+            _elapsed = saved.Elapsed;
+            _spawnClock = saved.SpawnClock;
+            _spawnInterval = saved.SpawnInterval;
+            _batchSpawned = saved.BatchSpawned;
+            _shiftOrdinal = saved.ShiftOrdinal;
+            _routeOrdinal = saved.RouteOrdinal;
+            _stationSelectionIndex = Mathf.Clamp(
+                saved.StationSelectionIndex, 0, Mathf.Max(0, _stations.Count - 1));
+            ParallelRouting = saved.ParallelRouting;
+            RoutePriority = saved.RoutePriority;
+            AppealMode = saved.AppealMode;
+            _shiftStartCompleted = saved.ShiftStartCompleted;
+            _shiftStartOverdue = saved.ShiftStartOverdue;
+            _shiftStartAppealsReturned = saved.ShiftStartAppealsReturned;
+            _shiftStartAppealsResolved = saved.ShiftStartAppealsResolved;
+            _shiftStartRulings = saved.ShiftStartRulings;
+            _shiftStartHoldings = saved.ShiftStartHoldings;
+            _shiftStartSocietyTick = saved.ShiftStartSocietyTick;
+            _shiftSummary = saved.ShiftSummary;
+            _branchReview = saved.BranchReview;
+
+            _procedureTiers.Clear();
+            for (int i = 0; i < saved.Procedures.Count; i++)
+            {
+                AutomationProcedureTierCheckpoint procedure = saved.Procedures[i];
+                if (procedure == null || !Enum.IsDefined(
+                        typeof(AutomationProcedureKind), procedure.Kind) ||
+                    procedure.Tier < 1 || procedure.Tier > 3 ||
+                    _procedureTiers.ContainsKey(procedure.Kind))
+                    throw new InvalidOperationException(
+                        "Run save contains an invalid procedure build.");
+                _procedureTiers.Add(procedure.Kind, procedure.Tier);
+            }
+            if (_procedureTiers.Count > MaximumProcedures)
+                throw new InvalidOperationException(
+                    "Run save exceeds the binding procedure slots.");
+            RestoreStableSet(
+                saved.VerificationPatternIssues, _verificationPatterns);
+            RestoreStableSet(
+                saved.AdverseReviewPatternIssues, _adverseReviewPatterns);
+            _draftChoices.Clear();
+            for (int i = 0; i < saved.DraftChoices.Count; i++)
+                _draftChoices.Add(new AutomationProcedureDraftChoiceCheckpoint
+                {
+                    Kind = saved.DraftChoices[i].Kind,
+                    ResultingTier = saved.DraftChoices[i].ResultingTier,
+                });
+
+            var itemById = new Dictionary<string, AutomationFlowItem>(
+                StringComparer.Ordinal);
+            for (int i = 0; i < saved.Items.Count; i++)
+            {
+                AutomationFlowItem item = CreateRestoredItem(saved.Items[i]);
+                if (itemById.ContainsKey(item.FlowItemId))
+                    throw new InvalidOperationException(
+                        "Run save contains a duplicate flow item identity.");
+                itemById.Add(item.FlowItemId, item);
+                _items.Add(item);
+            }
+            for (int i = 0; i < saved.Stations.Count; i++)
+            {
+                AutomationStationCheckpoint stationState = saved.Stations[i];
+                AutomationStationRuntime station = FindStation(
+                    stationState.Kind, stationState.IsAuxiliary) ??
+                    throw new InvalidOperationException(
+                        "Run save references an unavailable station.");
+                station.RestoreCheckpoint(stationState, itemById);
+            }
+            for (int i = 0; i < _stations.Count; i++)
+            {
+                _stations[i].SetRoutePriority(RoutePriority);
+                _stations[i].SetSelected(i == _stationSelectionIndex);
+            }
+            for (int i = 0; i < _items.Count; i++)
+                ConfigureItemProcedures(_items[i]);
+            ApplyPolicyTuning();
+            Emit(AutomationFeedbackKind.RunLoaded,
+                "RUN RESTORED / SHIFT " + _shiftOrdinal.ToString("D2") +
+                " / " + _items.Count + " DOSSIERS LIVE");
+        }
+
+        private AutomationFlowItem CreateRestoredItem(
+            AutomationFlowItemCheckpoint saved)
+        {
+            if (saved == null || string.IsNullOrWhiteSpace(saved.FlowItemId))
+                throw new InvalidOperationException(
+                    "Run save contains an invalid flow item.");
+            AutomationFlowItem item;
+            if (saved.IsAppeal)
+            {
+                AutomationAppealPacket appeal =
+                    _activeInstitution.GetAppealPacket(saved.AppealId) ??
+                    throw new InvalidOperationException(
+                        "Run save appeal is missing from the continuing docket.");
+                GameObject token = AutomationVisualFactory.CreateFolderToken(
+                    _root,
+                    saved.DisplayId,
+                    new Color(0.68f, 0.22f, 0.18f));
+                token.transform.position = new Vector3(13f, 0.42f, -3.2f);
+                var view = token.AddComponent<AutomationDossierView>();
+                view.MarkAppeal(appeal.OriginatingRulingId);
+                item = new AutomationFlowItem(
+                    _activeInstitution,
+                    appeal,
+                    AutomationClaimProfile.ForAppeal(appeal),
+                    token,
+                    view,
+                    saved.DisplayId);
+            }
+            else
+            {
+                AutomationPublicClaim claim = _activeInstitution.FindClaim(
+                    saved.AutomationClaimId) ?? throw new InvalidOperationException(
+                    "Run save claim is missing from the current docket batch.");
+                Color colour = claim.Issue.IndexOf(
+                    "Collective", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? new Color(0.50f, 0.26f, 0.48f)
+                    : claim.Issue.IndexOf(
+                        "Access", StringComparison.OrdinalIgnoreCase) >= 0
+                        ? new Color(0.30f, 0.50f, 0.66f)
+                        : new Color(0.82f, 0.70f, 0.43f);
+                GameObject token = AutomationVisualFactory.CreateFolderToken(
+                    _root, saved.DisplayId, colour);
+                token.transform.position = new Vector3(-13f, 0.42f, 2.6f);
+                var view = token.AddComponent<AutomationDossierView>();
+                item = new AutomationFlowItem(
+                    _activeInstitution,
+                    claim,
+                    AutomationClaimProfile.Create(claim, _shiftOrdinal),
+                    token,
+                    view,
+                    saved.DisplayId);
+            }
+            item.RestoreCheckpoint(
+                saved,
+                saved.IsAppeal
+                    ? null
+                    : _activeInstitution.GetRulingResult(
+                        saved.AutomationClaimId),
+                saved.IsAppeal
+                    ? _activeInstitution.GetAppealResolutionResult(saved.AppealId)
+                    : null);
+            return item;
+        }
+
+        private AutomationStationRuntime FindStation(
+            AutomationStationKind kind,
+            bool isAuxiliary)
+        {
+            for (int i = 0; i < _stations.Count; i++)
+                if (_stations[i].Kind == kind &&
+                    _stations[i].IsAuxiliary == isAuxiliary)
+                    return _stations[i];
+            return null;
+        }
+
+        private static void RestoreStableSet(
+            IReadOnlyList<string> source,
+            HashSet<string> destination)
+        {
+            destination.Clear();
+            for (int i = 0; i < source.Count; i++)
+                if (string.IsNullOrWhiteSpace(source[i]) ||
+                    !destination.Add(source[i]))
+                    throw new InvalidOperationException(
+                        "Run save contains an invalid retained issue pattern.");
         }
 
         public void Dispose()
@@ -438,9 +1001,16 @@ namespace Desk42.Product.Automation
                 new(0.66f, 0.47f, 0.38f),
                 new(0.48f, 0.55f, 0.67f),
             };
+            Color folderColour = claim.Issue.IndexOf(
+                "Collective", StringComparison.OrdinalIgnoreCase) >= 0
+                ? new Color(0.50f, 0.26f, 0.48f)
+                : claim.Issue.IndexOf(
+                    "Access", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? new Color(0.30f, 0.50f, 0.66f)
+                    : folders[(Spawned - 1) % folders.Length];
             GameObject token = AutomationVisualFactory.CreateFolderToken(
                 _root, "S" + _shiftOrdinal + "-" + claim.DisplayId,
-                folders[(Spawned - 1) % folders.Length]);
+                folderColour);
             token.transform.position = new Vector3(-13f, 0.42f, 2.6f);
             var view = token.AddComponent<AutomationDossierView>();
             AutomationClaimProfile profile = AutomationClaimProfile.Create(
@@ -471,6 +1041,13 @@ namespace Desk42.Product.Automation
                     break;
                 case AutomationStationKind.Verification:
                     item.RecordVerificationPass();
+                    if (item.VerificationPasses >= 2 && ProcedureTier(
+                            AutomationProcedureKind.
+                                MandatorySecondaryVerification) >= 3 &&
+                        _verificationPatterns.Add(item.Profile.IssueFamily))
+                        Emit(AutomationFeedbackKind.PrecedentCited,
+                            item.Profile.IssueFamily.ToUpperInvariant() +
+                            " / VERIFICATION PATTERN RETAINED");
                     if (item.ConsumeMisclassificationForRework())
                     {
                         ReworkCount++;
@@ -485,6 +1062,10 @@ namespace Desk42.Product.Automation
                         item.VerificationPasses < 2)
                     {
                         SecondaryChecks++;
+                        if (item.IsUrgent && ProcedureTier(
+                                AutomationProcedureKind.
+                                    MandatorySecondaryVerification) >= 2)
+                            item.GrantDeadlineGrace(8f);
                         AutomationStationRuntime secondary =
                             station == _primaryVerifier && _auxVerifier != null
                                 ? _auxVerifier
@@ -498,6 +1079,9 @@ namespace Desk42.Product.Automation
                             AutomationProcedureKind.AutomaticAdverseReview) &&
                         item.IsOverdue && item.BeginAdverseReview())
                     {
+                        if (ProcedureTier(
+                                AutomationProcedureKind.AutomaticAdverseReview) >= 2)
+                            item.PauseDeadline(10f);
                         _legal.Enqueue(item);
                         Emit(AutomationFeedbackKind.AppealReturned,
                             item.ClaimId + " / AUTOMATIC ADVERSE REVIEW");
@@ -512,6 +1096,30 @@ namespace Desk42.Product.Automation
                     }
                     else
                     {
+                        if (ProcedureTier(
+                                AutomationProcedureKind.ProtectedEvidenceChannel) >= 3 &&
+                            item.Claim.Issue.IndexOf(
+                                "Access", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                            !item.AdverseReviewCompleted &&
+                            item.BeginAdverseReview())
+                        {
+                            _legal.Enqueue(item);
+                            Emit(AutomationFeedbackKind.AppealReturned,
+                                item.ClaimId +
+                                " / PROTECTED ACCESS RESTORATION REVIEW");
+                            break;
+                        }
+                        if (_activeInstitution.RequiresHumanPrecedentReview(
+                                item.Claim.AutomationClaimId) &&
+                            !item.AdverseReviewCompleted &&
+                            item.BeginAdverseReview())
+                        {
+                            _legal.Enqueue(item);
+                            Emit(AutomationFeedbackKind.PrecedentCited,
+                                item.ClaimId +
+                                " / HOLDING REQUIRES HUMAN REVIEW");
+                            break;
+                        }
                         if (Policy == AutomationPolicyKind.ProofFortress &&
                             NeedsLegalHold(item) && item.BeginAdverseReview())
                         {
@@ -528,8 +1136,14 @@ namespace Desk42.Product.Automation
                                 ? PlayerScopeChoice.Narrow
                                 : PlayerScopeChoice.Broad,
                             disposition,
-                            InstitutionalProcedures());
+                            InstitutionalProcedures(),
+                            item.AdverseReviewCompleted);
                         item.ApplyRuling(ruling);
+                        if (ruling.CitedHoldingCount > 0)
+                            Emit(AutomationFeedbackKind.PrecedentCited,
+                                item.Claim.DisplayId + " / " +
+                                ruling.CitedHoldingCount +
+                                " HOLDING(S) CITED");
                         Emit(AutomationFeedbackKind.RulingStamped,
                             item.Claim.DisplayId + " / " + PolicyName + " / " +
                             disposition.ToString().ToUpperInvariant());
@@ -545,16 +1159,24 @@ namespace Desk42.Product.Automation
                     {
                         AppealsResolved++;
                         Credits++;
+                        if (ProcedureTier(
+                                AutomationProcedureKind.AppealFastTrack) >= 3 &&
+                            item.AppealResolution?.EstablishedHolding == true)
+                            Credits++;
                         PrecedentsInstalled = item.Institution?.HoldingCount ??
                             PrecedentsInstalled;
                         ApplyPolicyTuning();
                         Emit(AutomationFeedbackKind.AppealResolved,
                             "APPEAL RESOLVED / PRECEDENT " +
                             PrecedentsInstalled.ToString("D2"));
+                        if (item.AppealResolution?.EstablishedHolding == true)
+                            Emit(AutomationFeedbackKind.HoldingCreated,
+                                "HOLDING CREATED / LEDGER UPDATED");
                     }
                     else
                     {
                         Completed++;
+                        RecordCompletedFamily(item.Claim);
                         if (!item.IsOverdue) Credits++;
                     }
                     if (appeal != null) SpawnAppeal(appeal);
@@ -565,6 +1187,11 @@ namespace Desk42.Product.Automation
                         if (item.AdverseReviewPending)
                         {
                             item.CompleteAdverseReview();
+                            if (ProcedureTier(
+                                    AutomationProcedureKind.
+                                        AutomaticAdverseReview) >= 3)
+                                _adverseReviewPatterns.Add(
+                                    item.Profile.IssueFamily);
                             _adjudicator.Enqueue(item);
                         }
                         else
@@ -603,7 +1230,7 @@ namespace Desk42.Product.Automation
                 _root, label, new Color(0.68f, 0.22f, 0.18f));
             token.transform.position = new Vector3(13f, 0.42f, -3.2f);
             var view = token.AddComponent<AutomationDossierView>();
-            view.MarkAppeal();
+            view.MarkAppeal(appeal.OriginatingRulingId);
             var item = new AutomationFlowItem(
                 _activeInstitution,
                 appeal,
@@ -636,7 +1263,9 @@ namespace Desk42.Product.Automation
                     item.Appeal,
                     procedure,
                     establishHolding:
-                        Policy == AutomationPolicyKind.AppealRefinery);
+                        Policy == AutomationPolicyKind.AppealRefinery ||
+                        IsProcedureBound(
+                            AutomationProcedureKind.PrecedentReuse));
             item.ApplyAppealResolution(resolution);
             PrecedentsInstalled = item.Institution.HoldingCount;
             ApplyPolicyTuning();
@@ -646,7 +1275,7 @@ namespace Desk42.Product.Automation
             InstitutionalProcedures()
         {
             var result = new List<AutomationInstitutionalProcedure>();
-            foreach (AutomationProcedureKind procedure in _procedures)
+            foreach (AutomationProcedureKind procedure in _procedureTiers.Keys)
             {
                 result.Add(procedure switch
                 {
@@ -741,9 +1370,26 @@ namespace Desk42.Product.Automation
                 legalMultiplier *= 0.56f;
             else if (AppealMode == AutomationAppealMode.Settlement)
                 legalMultiplier *= 0.38f;
-            if (IsProcedureBound(AutomationProcedureKind.PrecedentReuse))
+            int precedentTier = ProcedureTier(
+                AutomationProcedureKind.PrecedentReuse);
+            if (precedentTier > 0)
                 verificationMultiplier *= Mathf.Max(
                     0.48f, 1f - PrecedentsInstalled * 0.055f);
+            if (precedentTier >= 2)
+                verificationMultiplier *= Mathf.Max(
+                    0.62f, 1f - PrecedentsInstalled * 0.035f);
+            if (precedentTier >= 3 && PrecedentsInstalled >= 2)
+            {
+                verificationMultiplier *= 0.78f;
+                reliabilityModifier *= 1.16f;
+                heatModifier *= 1.14f;
+            }
+            if (ProcedureTier(
+                    AutomationProcedureKind.PresumptionOfValidity) >= 3)
+            {
+                reliabilityModifier *= 1.12f;
+                heatModifier *= 1.18f;
+            }
             for (int i = 0; i < _stations.Count; i++)
             {
                 AutomationStationRuntime station = _stations[i];
@@ -752,8 +1398,13 @@ namespace Desk42.Product.Automation
                     : station.Kind == AutomationStationKind.Legal
                         ? legalMultiplier
                         : 1f;
+                float stationHeat = heatModifier;
+                if (station.Kind == AutomationStationKind.Legal &&
+                    ProcedureTier(
+                        AutomationProcedureKind.AppealFastTrack) >= 2)
+                    stationHeat *= 0.68f;
                 station.SetPolicyModifiers(
-                    duration, reliabilityModifier, heatModifier);
+                    duration, reliabilityModifier, stationHeat);
             }
         }
 
@@ -781,7 +1432,11 @@ namespace Desk42.Product.Automation
             if (item == null) return;
             item.ConfigureProcedures(
                 IsProcedureBound(AutomationProcedureKind.PresumptionOfValidity),
-                IsProcedureBound(AutomationProcedureKind.ProtectedEvidenceChannel));
+                IsProcedureBound(AutomationProcedureKind.ProtectedEvidenceChannel),
+                ProcedureTier(AutomationProcedureKind.PresumptionOfValidity),
+                ProcedureTier(AutomationProcedureKind.ProtectedEvidenceChannel),
+                _verificationPatterns.Contains(item.Profile.IssueFamily),
+                _adverseReviewPatterns.Contains(item.Profile.IssueFamily));
         }
 
         private void HandleStationJammed(AutomationStationRuntime station)
@@ -799,6 +1454,19 @@ namespace Desk42.Product.Automation
             Emit(AutomationFeedbackKind.Misclassified,
                 station.DisplayName.ToUpperInvariant() + " MISCLASSIFIED " +
                 item.ClaimId);
+        }
+
+        private void RecordCompletedFamily(AutomationPublicClaim claim)
+        {
+            string issue = claim?.Issue ?? string.Empty;
+            if (issue.IndexOf(
+                    "Collective", StringComparison.OrdinalIgnoreCase) >= 0)
+                CollectiveCompleted++;
+            else if (issue.IndexOf(
+                         "Access", StringComparison.OrdinalIgnoreCase) >= 0)
+                AccessCompleted++;
+            else
+                PossessionCompleted++;
         }
     }
 
@@ -919,6 +1587,89 @@ namespace Desk42.Product.Automation
             return true;
         }
 
+#if UNITY_INCLUDE_TESTS
+        internal bool CreateValidationJam()
+        {
+            if (_isJammed) return false;
+            _heat = 100f;
+            _isJammed = true;
+            RefreshVisualState();
+            Jammed?.Invoke(this);
+            return true;
+        }
+#endif
+
+        internal AutomationStationCheckpoint CaptureCheckpoint()
+        {
+            var checkpoint = new AutomationStationCheckpoint
+            {
+                Kind = Kind,
+                IsAuxiliary = IsAuxiliary,
+                ThroughputLevel = _throughputLevel,
+                CapacityLevel = _capacityLevel,
+                ReliabilityLevel = _reliabilityLevel,
+                IsJammed = _isJammed,
+                Heat = _heat,
+                Remaining = _remaining,
+                ActiveItemId = _active?.FlowItemId ?? string.Empty,
+            };
+            for (int i = 0; i < _queue.Count; i++)
+                checkpoint.QueuedItemIds.Add(_queue[i].FlowItemId);
+            return checkpoint;
+        }
+
+        internal void ResetRuntime()
+        {
+            _queue.Clear();
+            _active = null;
+            _remaining = 0f;
+            _isJammed = false;
+            _heat = 0f;
+            RefreshVisualState();
+        }
+
+        internal void RestoreCheckpoint(
+            AutomationStationCheckpoint checkpoint,
+            IReadOnlyDictionary<string, AutomationFlowItem> itemById)
+        {
+            if (checkpoint == null) throw new ArgumentNullException(nameof(checkpoint));
+            if (checkpoint.Kind != Kind || checkpoint.IsAuxiliary != IsAuxiliary ||
+                checkpoint.ThroughputLevel < 0 || checkpoint.ThroughputLevel > 3 ||
+                checkpoint.CapacityLevel < 0 || checkpoint.CapacityLevel > 3 ||
+                checkpoint.ReliabilityLevel < 0 || checkpoint.ReliabilityLevel > 3 ||
+                checkpoint.Heat < 0f || checkpoint.Heat > 110f ||
+                checkpoint.QueuedItemIds == null)
+            {
+                throw new InvalidOperationException(
+                    "Station checkpoint is incompatible with the floor.");
+            }
+            ResetRuntime();
+            _throughputLevel = checkpoint.ThroughputLevel;
+            _capacityLevel = checkpoint.CapacityLevel;
+            _reliabilityLevel = checkpoint.ReliabilityLevel;
+            _heat = checkpoint.Heat;
+            _isJammed = checkpoint.IsJammed;
+            _remaining = Mathf.Max(0f, checkpoint.Remaining);
+            if (!string.IsNullOrWhiteSpace(checkpoint.ActiveItemId))
+            {
+                if (!itemById.TryGetValue(
+                        checkpoint.ActiveItemId, out _active))
+                    throw new InvalidOperationException(
+                        "Station checkpoint lost its active dossier.");
+                _active.BeginProcessing(WorktopPosition());
+            }
+            for (int i = 0; i < checkpoint.QueuedItemIds.Count; i++)
+            {
+                if (!itemById.TryGetValue(
+                        checkpoint.QueuedItemIds[i], out AutomationFlowItem item))
+                    throw new InvalidOperationException(
+                        "Station checkpoint lost a queued dossier.");
+                _queue.Add(item);
+                item.BeginTransit(this);
+            }
+            RefreshVisualState();
+        }
+
         internal void SetSelected(bool selected)
         {
             if (_selectionPlinth != null)
@@ -941,7 +1692,8 @@ namespace Desk42.Product.Automation
             float overload = Mathf.Max(0, Workload - SafeWorkload);
             if (_active != null)
                 _heat = Mathf.Min(110f, _heat + deltaTime *
-                    (1.4f + overload * 2.8f) * _heatModifier);
+                    (1.4f + overload * 2.8f) * _heatModifier *
+                    (1f + _throughputLevel * 0.13f));
             else
                 _heat = Mathf.Max(0f, _heat - deltaTime *
                     (5f + _capacityLevel * 2.2f));
@@ -1028,6 +1780,7 @@ namespace Desk42.Product.Automation
         {
             float speed = 1f - _throughputLevel * 0.14f;
             return Mathf.Max(0.18f, ProcessDuration * _durationMultiplier * speed *
+                (1f + _reliabilityLevel * 0.055f) *
                 item.WorkMultiplier(Kind));
         }
 
@@ -1038,6 +1791,7 @@ namespace Desk42.Product.Automation
             float chance = (0.025f + overload * 0.055f +
                 Mathf.Clamp01(_heat / 100f) * 0.11f) * _reliabilityModifier -
                 _reliabilityLevel * 0.045f;
+            chance += _throughputLevel * 0.018f;
             chance *= item.MisclassificationRiskMultiplier;
             if (chance <= 0f) return false;
             uint hash = 2166136261;
@@ -1074,7 +1828,12 @@ namespace Desk42.Product.Automation
         private bool _deadlineReported;
         private bool _presumptionOfValidity;
         private bool _protectedEvidenceChannel;
+        private bool _reusableVerificationPattern;
+        private bool _repeatedAdversePattern;
+        private int _presumptionTier;
+        private int _protectedChannelTier;
         private bool _adverseReviewCompleted;
+        private bool _evidenceRevealed;
         private float _age;
 
         internal AutomationFlowItem(
@@ -1092,7 +1851,7 @@ namespace Desk42.Product.Automation
             _view = view;
             DisplayId = displayId ?? claim.DisplayId;
             Sequence = ++_nextSequence;
-            _view.ConfigureProfile(Profile);
+            _view.ConfigureClaim(claim, Profile);
         }
 
         internal AutomationFlowItem(
@@ -1121,33 +1880,56 @@ namespace Desk42.Product.Automation
         internal AutomationAppealResolutionResult AppealResolution { get; private set; }
         internal bool IsAppeal => Appeal != null;
         internal string DisplayId { get; }
+        internal string FlowItemId => DisplayId;
         internal string ClaimId => DisplayId;
         internal bool AtTarget => _view.AtTarget;
         internal bool IsUrgent => Profile.Urgency == AutomationUrgency.Urgent;
         internal bool IsOverdue => _age >= Profile.DeadlineSeconds;
         internal float TimeRemaining => Profile.DeadlineSeconds - _age;
         internal int ReworkAttempts { get; private set; }
-        internal int Sequence { get; }
+        internal int Sequence { get; private set; }
         internal int VerificationPasses { get; private set; }
         internal bool AdverseReviewPending { get; private set; }
         internal bool AdverseReviewCompleted => _adverseReviewCompleted;
         internal bool NeedsProtectedChannel =>
             (Profile.EvidenceNeeds & AutomationEvidenceNeed.ChainOfCustody) != 0;
         internal float MisclassificationRiskMultiplier =>
-            (_presumptionOfValidity ? 1.65f : 1f) *
-            (_protectedEvidenceChannel && NeedsProtectedChannel ? 0.52f : 1f);
+            (_presumptionOfValidity
+                ? _presumptionTier >= 3 ? 1.90f : 1.65f
+                : 1f) *
+            (_protectedEvidenceChannel && NeedsProtectedChannel
+                ? _protectedChannelTier >= 2 ? 0.35f : 0.52f
+                : 1f);
 
         internal void ConfigureProcedures(
             bool presumptionOfValidity,
-            bool protectedEvidenceChannel)
+            bool protectedEvidenceChannel,
+            int presumptionTier,
+            int protectedChannelTier,
+            bool reusableVerificationPattern,
+            bool repeatedAdversePattern)
         {
             _presumptionOfValidity = presumptionOfValidity;
             _protectedEvidenceChannel = protectedEvidenceChannel;
+            _presumptionTier = presumptionTier;
+            _protectedChannelTier = protectedChannelTier;
+            _reusableVerificationPattern = reusableVerificationPattern;
+            _repeatedAdversePattern = repeatedAdversePattern;
         }
 
         internal void RecordVerificationPass()
         {
             VerificationPasses++;
+        }
+
+        internal void GrantDeadlineGrace(float seconds)
+        {
+            _age = Mathf.Max(0f, _age - Mathf.Max(0f, seconds));
+        }
+
+        internal void PauseDeadline(float seconds)
+        {
+            GrantDeadlineGrace(seconds);
         }
 
         internal bool BeginAdverseReview()
@@ -1186,7 +1968,13 @@ namespace Desk42.Product.Automation
             if (kind == AutomationStationKind.Verification &&
                 _presumptionOfValidity) value *= 0.66f;
             if (kind == AutomationStationKind.Verification &&
+                _presumptionTier >= 2 && !IsUrgent) value *= 0.78f;
+            if (kind == AutomationStationKind.Verification &&
+                _reusableVerificationPattern) value *= 0.76f;
+            if (kind == AutomationStationKind.Verification &&
                 _protectedEvidenceChannel && NeedsProtectedChannel) value *= 0.78f;
+            if (kind == AutomationStationKind.Legal &&
+                _repeatedAdversePattern) value *= 0.72f;
             return value;
         }
 
@@ -1206,6 +1994,7 @@ namespace Desk42.Product.Automation
 
         internal void RevealEvidencePacket()
         {
+            _evidenceRevealed = true;
             _view.RevealEvidencePacket(
                 Claim?.OfficialFactCount ?? 0,
                 Claim?.AllegationCount ?? 0,
@@ -1215,7 +2004,7 @@ namespace Desk42.Product.Automation
         internal void ApplyRuling(AutomationRulingResult result)
         {
             Ruling = result ?? throw new ArgumentNullException(nameof(result));
-            _view.ApplyRuling(result.Disposition);
+            _view.ApplyRuling(result.Disposition, result.CitedHoldingCount);
         }
 
         internal void ApplyAppealResolution(
@@ -1253,6 +2042,82 @@ namespace Desk42.Product.Automation
         internal void EndProcessing()
         {
             _view.SetProcessingPulse(0f);
+        }
+
+        internal AutomationFlowItemCheckpoint CaptureCheckpoint()
+        {
+            return new AutomationFlowItemCheckpoint
+            {
+                FlowItemId = FlowItemId,
+                IsAppeal = IsAppeal,
+                AutomationClaimId = Claim?.AutomationClaimId ?? string.Empty,
+                AppealId = Appeal?.AppealId ?? string.Empty,
+                DisplayId = DisplayId,
+                Sequence = Sequence,
+                Age = _age,
+                DeadlineReported = _deadlineReported,
+                Misclassified = _misclassified,
+                ReworkAttempts = ReworkAttempts,
+                VerificationPasses = VerificationPasses,
+                AdverseReviewPending = AdverseReviewPending,
+                AdverseReviewCompleted = _adverseReviewCompleted,
+                PresumptionOfValidity = _presumptionOfValidity,
+                ProtectedEvidenceChannel = _protectedEvidenceChannel,
+                PresumptionTier = _presumptionTier,
+                ProtectedChannelTier = _protectedChannelTier,
+                RulingApplied = Ruling != null,
+                AppealResolutionApplied = AppealResolution != null,
+                EvidenceRevealed = _evidenceRevealed,
+            };
+        }
+
+        internal void RestoreCheckpoint(
+            AutomationFlowItemCheckpoint checkpoint,
+            AutomationRulingResult ruling,
+            AutomationAppealResolutionResult appealResolution)
+        {
+            if (checkpoint == null || checkpoint.FlowItemId != FlowItemId ||
+                checkpoint.Sequence < 1 || checkpoint.Age < 0f ||
+                checkpoint.ReworkAttempts < 0 ||
+                checkpoint.VerificationPasses < 0)
+                throw new InvalidOperationException(
+                    "Flow item checkpoint is incompatible with its dossier.");
+            Sequence = checkpoint.Sequence;
+            _nextSequence = Mathf.Max(_nextSequence, Sequence);
+            _age = checkpoint.Age;
+            _deadlineReported = checkpoint.DeadlineReported;
+            _misclassified = checkpoint.Misclassified;
+            ReworkAttempts = checkpoint.ReworkAttempts;
+            VerificationPasses = checkpoint.VerificationPasses;
+            AdverseReviewPending = checkpoint.AdverseReviewPending;
+            _adverseReviewCompleted = checkpoint.AdverseReviewCompleted;
+            _presumptionOfValidity = checkpoint.PresumptionOfValidity;
+            _protectedEvidenceChannel = checkpoint.ProtectedEvidenceChannel;
+            _presumptionTier = checkpoint.PresumptionTier;
+            _protectedChannelTier = checkpoint.ProtectedChannelTier;
+            _view.SetDeadlineProgress(
+                _age / Profile.DeadlineSeconds, IsOverdue);
+            if (checkpoint.EvidenceRevealed) RevealEvidencePacket();
+            for (int attempt = 1; attempt <= ReworkAttempts; attempt++)
+                _view.MarkRework(attempt);
+            if (AdverseReviewPending || _adverseReviewCompleted)
+                _view.MarkAdverseReview();
+            if (checkpoint.RulingApplied)
+            {
+                Ruling = ruling ?? throw new InvalidOperationException(
+                    "Committed flow item lost its institutional ruling.");
+                _view.ApplyRuling(
+                    Ruling.Disposition, Ruling.CitedHoldingCount);
+            }
+            if (checkpoint.AppealResolutionApplied)
+            {
+                AppealResolution = appealResolution ??
+                    throw new InvalidOperationException(
+                        "Resolved appeal flow item lost its appellate ruling.");
+                _view.ApplyAppealResolution(
+                    AppealResolution.Disposition,
+                    AppealResolution.EstablishedHolding);
+            }
         }
 
         public void Dispose()
@@ -1329,6 +2194,41 @@ namespace Desk42.Product.Automation
             }
         }
 
+        internal void ConfigureClaim(
+            AutomationPublicClaim claim,
+            AutomationClaimProfile profile)
+        {
+            ConfigureProfile(profile);
+            if (claim == null || profile == null) return;
+            Color issueColour = claim.Issue.IndexOf(
+                "Collective", StringComparison.OrdinalIgnoreCase) >= 0
+                ? new Color(0.82f, 0.30f, 0.70f)
+                : claim.Issue.IndexOf(
+                    "Access", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? new Color(0.24f, 0.64f, 0.90f)
+                    : new Color(0.88f, 0.66f, 0.24f);
+            AutomationVisualFactory.CreateBlock(transform, "Issue Family Band",
+                new Vector3(0f, 0.22f, 0.42f),
+                new Vector3(0.72f, 0.055f, 0.08f), issueColour);
+            int linked = Mathf.Min(4, profile.LinkedDossierCount);
+            for (int i = 1; i < linked; i++)
+                AutomationVisualFactory.CreateBlock(transform,
+                    "Linked Dossier " + i,
+                    new Vector3(-0.28f + i * 0.18f, 0.10f + i * 0.025f, 0.04f),
+                    new Vector3(0.13f, 0.04f, 0.68f),
+                    new Color(issueColour.r * 0.72f,
+                        issueColour.g * 0.72f,
+                        issueColour.b * 0.72f));
+            if (profile.Descendant)
+                AutomationVisualFactory.CreateBlock(transform,
+                    "Descendant Lineage Marker",
+                    new Vector3(0.30f, 0.27f, -0.24f),
+                    new Vector3(0.12f, 0.13f, 0.34f),
+                    new Color(0.91f, 0.39f, 0.18f));
+            if (_label != null)
+                _label.text += "\n" + ShortIssue(claim.Issue);
+        }
+
         internal void SetDeadlineProgress(float progress, bool overdue)
         {
             if (_deadlineFill == null) return;
@@ -1390,7 +2290,7 @@ namespace Desk42.Product.Automation
                     new Color(0.62f, 0.21f, 0.19f));
         }
 
-        internal void ApplyRuling(string disposition)
+        internal void ApplyRuling(string disposition, int citedHoldingCount)
         {
             if (_rulingVisible) return;
             _rulingVisible = true;
@@ -1405,9 +2305,19 @@ namespace Desk42.Product.Automation
             if (_label != null) _label.color = recognised
                 ? new Color(0.55f, 0.88f, 0.48f)
                 : new Color(0.95f, 0.43f, 0.34f);
+            if (citedHoldingCount > 0)
+            {
+                AutomationVisualFactory.CreateBlock(transform,
+                    "Precedent Citation Pulse",
+                    new Vector3(0f, 0.34f, 0.32f),
+                    new Vector3(0.60f, 0.07f, 0.12f),
+                    new Color(1f, 0.77f, 0.16f));
+                if (_label != null)
+                    _label.text += "\nCITE x" + citedHoldingCount;
+            }
         }
 
-        internal void MarkAppeal()
+        internal void MarkAppeal(string originatingRulingId)
         {
             if (_appealVisible) return;
             _appealVisible = true;
@@ -1416,6 +2326,8 @@ namespace Desk42.Product.Automation
                 new Vector3(0.76f, 0.08f, 0.20f),
                 new Color(0.18f, 0.055f, 0.045f));
             if (_label != null) _label.color = new Color(1f, 0.45f, 0.34f);
+            if (_label != null && !string.IsNullOrWhiteSpace(originatingRulingId))
+                _label.text += "\nFROM " + CompactId(originatingRulingId);
         }
 
         internal void ApplyAppealResolution(
@@ -1452,6 +2364,22 @@ namespace Desk42.Product.Automation
                 new Vector3(-0.31f, 0.30f, 0.30f),
                 new Vector3(0.14f, 0.12f, 0.28f),
                 new Color(0.98f, 0.30f, 0.08f));
+        }
+
+        private static string ShortIssue(string issue)
+        {
+            if (string.IsNullOrWhiteSpace(issue)) return "UNCLASSIFIED";
+            if (issue.IndexOf("Collective", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "COLLECTIVE";
+            if (issue.IndexOf("Access", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "ACCESS";
+            return "POSSESSION";
+        }
+
+        private static string CompactId(string value)
+        {
+            if (value.Length <= 16) return value.ToUpperInvariant();
+            return value.Substring(value.Length - 16).ToUpperInvariant();
         }
     }
 }

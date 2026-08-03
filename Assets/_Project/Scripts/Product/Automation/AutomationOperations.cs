@@ -69,20 +69,50 @@ namespace Desk42.Product.Automation
 
         internal static string Effect(AutomationProcedureKind kind)
         {
+            return Effect(kind, 1);
+        }
+
+        internal static string Effect(AutomationProcedureKind kind, int tier)
+        {
+            tier = Mathf.Clamp(tier, 1, 3);
             return kind switch
             {
                 AutomationProcedureKind.MandatorySecondaryVerification =>
-                    "Two physical verification passes: slower, safer, more machine load.",
+                    tier == 1
+                        ? "Two physical verification passes: slower, safer, more machine load."
+                        : tier == 2
+                            ? "Urgent second checks gain deadline grace and reserve the faster verifier."
+                            : "Verified issue families create reusable same-issue scan patterns.",
                 AutomationProcedureKind.PresumptionOfValidity =>
-                    "Verification work -34%; machine fault risk +65%.",
+                    tier == 1
+                        ? "Verification work -34%; machine fault risk +65%."
+                        : tier == 2
+                            ? "Routine claims bypass one evidence need; weak recognition exposure rises."
+                            : "Recognised claimants gain trust; accelerated verification runs hotter.",
                 AutomationProcedureKind.AutomaticAdverseReview =>
-                    "Overdue dossiers automatically detour through Legal before ruling.",
+                    tier == 1
+                        ? "Overdue dossiers automatically detour through Legal before ruling."
+                        : tier == 2
+                            ? "Legal review pauses the deadline but adds Legal heat."
+                            : "Repeated reviews accelerate later adverse files and increase liability scrutiny.",
                 AutomationProcedureKind.ProtectedEvidenceChannel =>
-                    "Chain-of-custody packets reserve the auxiliary lane; fault risk -48%.",
+                    tier == 1
+                        ? "Chain-of-custody packets reserve the auxiliary lane; fault risk -48%."
+                        : tier == 2
+                            ? "Protected evidence suppresses retaliation pulses and slows intake release."
+                            : "Protected access files trigger restoration review and consume Legal capacity.",
                 AutomationProcedureKind.AppealFastTrack =>
-                    "Appeals skip full re-verification and bind the fast-track route.",
+                    tier == 1
+                        ? "Appeals skip full re-verification and bind the fast-track route."
+                        : tier == 2
+                            ? "Fast-track appeals produce less Legal heat but weaker holdings."
+                            : "Upheld fast-track appeals grant credit and increase precedent exposure.",
                 AutomationProcedureKind.PrecedentReuse =>
-                    "Each installed precedent accelerates verification of later claims.",
+                    tier == 1
+                        ? "Permitted real holdings accelerate matching later claims."
+                        : tier == 2
+                            ? "Matching holdings also reduce evidence work and increase citation exposure."
+                            : "Compatible holdings synthesise broader automation with conflict risk.",
                 _ => string.Empty,
             };
         }
@@ -98,18 +128,27 @@ namespace Desk42.Product.Automation
             AutomationUrgency urgency,
             AutomationEvidenceNeed evidenceNeeds,
             float deadlineSeconds,
-            float verificationWork)
+            float verificationWork,
+            string issueFamily,
+            int linkedDossierCount,
+            bool descendant)
         {
             Urgency = urgency;
             EvidenceNeeds = evidenceNeeds;
             DeadlineSeconds = deadlineSeconds;
             VerificationWork = verificationWork;
+            IssueFamily = issueFamily ?? string.Empty;
+            LinkedDossierCount = Mathf.Max(1, linkedDossierCount);
+            Descendant = descendant;
         }
 
         internal AutomationUrgency Urgency { get; }
         internal AutomationEvidenceNeed EvidenceNeeds { get; }
         internal float DeadlineSeconds { get; }
         internal float VerificationWork { get; }
+        internal string IssueFamily { get; }
+        internal int LinkedDossierCount { get; }
+        internal bool Descendant { get; }
         internal int EvidenceNeedCount => CountFlags(EvidenceNeeds);
 
         internal static AutomationClaimProfile Create(
@@ -119,6 +158,8 @@ namespace Desk42.Product.Automation
             if (claim == null) throw new ArgumentNullException(nameof(claim));
 
             int pressureKey = claim.BatchOrdinal + shiftOrdinal * 3;
+            bool collective = claim.Issue.IndexOf(
+                "Collective", StringComparison.OrdinalIgnoreCase) >= 0;
             AutomationEvidenceNeed needs = AutomationEvidenceNeed.Identity;
             if ((claim.OfficialFactCount > 0 || claim.EvidencePacketCount > 1) &&
                 pressureKey % 2 == 0)
@@ -128,6 +169,10 @@ namespace Desk42.Product.Automation
             if ((claim.MissingEvidenceCount > 0 && pressureKey % 4 != 1) ||
                 claim.CitableEvidenceCount == 0)
                 needs |= AutomationEvidenceNeed.ChainOfCustody;
+            if (collective)
+                needs |= AutomationEvidenceNeed.OfficialRecord |
+                    AutomationEvidenceNeed.Witness |
+                    AutomationEvidenceNeed.ChainOfCustody;
 
             bool urgent = claim.EvidenceSupportMinimum < 25 || pressureKey % 5 == 0;
             float deadline = urgent
@@ -135,12 +180,16 @@ namespace Desk42.Product.Automation
                 : 88f + pressureKey % 5 * 7f;
             float verificationWork = 0.72f + CountFlags(needs) * 0.28f +
                 Mathf.Clamp(claim.EvidencePacketCount - 1, 0, 4) * 0.09f;
+            if (collective) verificationWork += 0.55f;
 
             return new AutomationClaimProfile(
                 urgent ? AutomationUrgency.Urgent : AutomationUrgency.Routine,
                 needs,
                 deadline,
-                verificationWork);
+                verificationWork,
+                claim.Issue,
+                collective ? Mathf.Max(2, claim.Parties.Count) : 1,
+                !string.IsNullOrWhiteSpace(claim.ParentCaseId));
         }
 
         internal static AutomationClaimProfile ForAppeal(
@@ -155,7 +204,10 @@ namespace Desk42.Product.Automation
                 AutomationUrgency.Urgent,
                 needs,
                 48f,
-                1.05f + appeal.EvidencePacketCount * 0.08f);
+                1.05f + appeal.EvidencePacketCount * 0.08f,
+                "Appeal",
+                1,
+                true);
         }
 
         private static int CountFlags(AutomationEvidenceNeed value)

@@ -56,19 +56,50 @@ namespace Desk42.Institutional
             {
                 SnapshotId = snapshotId,
                 Phase = phase,
-                CurrentTick = society.CurrentTick,
-                SocietyEventLedgerCursor = society.EventLedger.Count,
-                MaterialEventLedgerCursor = materialWorld.EventLedger.Count,
                 Society = SocietyStateDeepCopy.Copy(society),
                 MaterialWorld = InstitutionalMaterialWorldDeepCopy.Copy(materialWorld),
                 Docket = EndogenousDocketStateDeepCopy.Copy(docket),
             };
+            RefreshInPlace(snapshot, snapshotId, phase);
+            return snapshot;
+        }
+
+        internal static void RefreshInPlace(
+            EndogenousRunSnapshot snapshot,
+            string snapshotId,
+            EndogenousCommitPhase phase)
+        {
+            RefreshMetadataInPlace(snapshot, snapshotId, phase);
+            EndogenousRunSnapshotValidator.Validate(snapshot);
+        }
+
+        internal static void RefreshMetadataInPlace(
+            EndogenousRunSnapshot snapshot,
+            string snapshotId,
+            EndogenousCommitPhase phase)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (string.IsNullOrWhiteSpace(snapshotId))
+                throw new ArgumentException(
+                    "A stable snapshot id is required.", nameof(snapshotId));
+            if (snapshot.Society == null || snapshot.MaterialWorld == null ||
+                snapshot.Docket == null)
+                throw new InvalidOperationException(
+                    "A live snapshot requires society, material and docket state.");
+            snapshot.SnapshotId = snapshotId;
+            snapshot.Phase = phase;
+            snapshot.CurrentTick = snapshot.Society.CurrentTick;
+            snapshot.SocietyEventLedgerCursor =
+                snapshot.Society.EventLedger.Count;
+            snapshot.MaterialEventLedgerCursor =
+                snapshot.MaterialWorld.EventLedger.Count;
             snapshot.AppliedCommandIds = AppliedCommandIds(snapshot.Docket);
             snapshot.AppliedTransitionIds = AppliedTransitionIds(
                 snapshot.Society, snapshot.MaterialWorld, snapshot.Docket);
             snapshot.PendingAppealIds = PendingAppealIds(snapshot.Docket);
-            EndogenousRunSnapshotValidator.Validate(snapshot);
-            return snapshot;
+            snapshot.RelianceEventIds ??= new List<string>();
+            snapshot.PendingPublicObservationIds ??= new List<string>();
+            snapshot.ExclusiveEntitlementIds ??= new List<string>();
         }
 
         internal static List<string> AppliedCommandIds(EndogenousDocketState docket)
@@ -105,6 +136,11 @@ namespace Desk42.Institutional
             for (int i = 0; i < docket.AccessRemedyApplicationTraces.Count; i++)
                 result.Add(
                     $"access-remedy:{docket.AccessRemedyApplicationTraces[i].TraceId}");
+            for (int i = 0;
+                 i < docket.CollectiveRemedyApplicationTraces.Count;
+                 i++)
+                result.Add(
+                    $"collective-remedy:{docket.CollectiveRemedyApplicationTraces[i].TraceId}");
             for (int i = 0; i < docket.ScopeApplicationTraces.Count; i++)
                 result.Add($"scope:{docket.ScopeApplicationTraces[i].TraceId}");
             for (int i = 0; i < docket.Appeals.Count; i++)

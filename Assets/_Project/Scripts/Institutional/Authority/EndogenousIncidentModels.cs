@@ -26,8 +26,8 @@ namespace Desk42.Institutional
     [Serializable]
     internal sealed class EndogenousDocketState
     {
-        internal const int CurrentSchemaVersion = 3;
-        internal const string CurrentRulesetVersion = "endogenous-docket-v3";
+        internal const int CurrentSchemaVersion = 4;
+        internal const string CurrentRulesetVersion = "endogenous-docket-v4";
 
         internal int SchemaVersion = CurrentSchemaVersion;
         internal string RulesetVersion = CurrentRulesetVersion;
@@ -40,6 +40,8 @@ namespace Desk42.Institutional
         internal List<EndogenousRemedyApplicationTrace> RemedyApplicationTraces = new();
         internal List<EndogenousAccessRemedyApplicationTrace>
             AccessRemedyApplicationTraces = new();
+        internal List<EndogenousCollectiveRemedyApplicationTrace>
+            CollectiveRemedyApplicationTraces = new();
         internal List<EndogenousScopeApplicationTrace> ScopeApplicationTraces = new();
         internal List<EndogenousAppealRecord> Appeals = new();
         internal List<EndogenousHoldingRecord> Holdings = new();
@@ -89,6 +91,19 @@ namespace Desk42.Institutional
         internal bool StateAfter;
         internal string MaterialEventId;
         internal bool MaterialStateChanged;
+    }
+
+    [Serializable]
+    internal sealed class EndogenousCollectiveRemedyApplicationTrace
+    {
+        internal string TraceId;
+        internal string RulingId;
+        internal string CaseId;
+        internal long AppliedTick;
+        internal string CollectiveCommitmentId;
+        internal string RecognisedStatusId;
+        internal List<string> MemberAgentIds = new();
+        internal List<string> ChangedAgentIds = new();
     }
 
     [Serializable]

@@ -195,6 +195,16 @@ namespace Desk42.Institutional
             EndogenousDocketState state,
             string caseId)
         {
+            return ApplyMatchingHoldings(
+                society, state, caseId, allowedHoldingIds: null);
+        }
+
+        internal static List<string> ApplyMatchingHoldings(
+            SocietyState society,
+            EndogenousDocketState state,
+            string caseId,
+            IReadOnlyList<string> allowedHoldingIds)
+        {
             if (society == null) throw new ArgumentNullException(nameof(society));
             if (state == null) throw new ArgumentNullException(nameof(state));
             EndogenousDocketValidator.Validate(state, society);
@@ -204,6 +214,8 @@ namespace Desk42.Institutional
             for (int i = 0; i < state.Holdings.Count; i++)
             {
                 EndogenousHoldingRecord holding = state.Holdings[i];
+                if (allowedHoldingIds != null &&
+                    !Contains(allowedHoldingIds, holding.HoldingId)) continue;
                 if (!string.Equals(
                         holding.IssueId,
                         opened.IssueId,
@@ -215,6 +227,16 @@ namespace Desk42.Institutional
             matches.Sort(StringComparer.Ordinal);
             EndogenousDocketValidator.Validate(state, society);
             return matches;
+        }
+
+        private static bool Contains(
+            IReadOnlyList<string> values,
+            string expected)
+        {
+            for (int i = 0; i < values.Count; i++)
+                if (string.Equals(values[i], expected, StringComparison.Ordinal))
+                    return true;
+            return false;
         }
 
         private static bool ScopeMatchesAnyParty(
