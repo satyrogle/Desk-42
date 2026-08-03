@@ -166,10 +166,10 @@ foreach ($scriptPath in $scriptPaths) {
 
 $gatePath = Join-Path $PSScriptRoot 'Assert-InstitutionalGeneralisationGate.ps1'
 $gateText = Get-Content -LiteralPath $gatePath -Raw
-Assert-True ($gateText.Contains("'institutional-engine-candidate-v0.2'")) `
+Assert-True ($gateText.Contains("'institutional-engine-candidate-v0.3'")) `
     'candidate tag is not pinned'
 Assert-True ($gateText.Contains(
-        "'evidence/InstitutionalEngine/v0.2/engine-manifest.sha256'")) `
+        "'evidence/InstitutionalEngine/v0.3/engine-manifest.sha256'")) `
     'candidate baseline path is not pinned'
 Assert-False ($gateText.Contains('EngineManifestPath')) `
     'gate still accepts an external manifest path'

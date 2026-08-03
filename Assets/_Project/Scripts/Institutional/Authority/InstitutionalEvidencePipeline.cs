@@ -146,23 +146,39 @@ namespace Desk42.Institutional
             for (int i = 0; i < evidence.Count; i++)
             {
                 EvidenceArtifact artifact = evidence[i];
-                int fullWeight = artifact.BaseWeight * policy.WeightPercent(artifact) / 100;
-                int reliableWeight = fullWeight * artifact.Reliability / 100;
+                // Preserve the v0.2 truncation order, then append the policy's
+                // explicit class-reliability treatment. Combining the factors into
+                // one division would change existing integer-score semantics.
+                int fullWeight = ApplyPercent(
+                    artifact.BaseWeight,
+                    policy.WeightPercent(artifact));
+                int sourceReliableWeight = ApplyPercent(
+                    fullWeight,
+                    artifact.Reliability);
+                int reliableWeight = ApplyPercent(
+                    sourceReliableWeight,
+                    policy.PolicyReliabilityPercent(artifact));
                 if (artifact.Effect == EvidenceEffect.SupportsFinding)
                 {
-                    score += reliableWeight;
-                    minimum += reliableWeight;
-                    maximum += fullWeight;
+                    score = checked(score + reliableWeight);
+                    minimum = checked(minimum + reliableWeight);
+                    maximum = checked(maximum + fullWeight);
                 }
                 else if (artifact.Effect == EvidenceEffect.OpposesFinding)
                 {
-                    score -= reliableWeight;
-                    minimum -= fullWeight;
-                    maximum -= reliableWeight;
+                    score = checked(score - reliableWeight);
+                    minimum = checked(minimum - fullWeight);
+                    maximum = checked(maximum - reliableWeight);
                 }
             }
 
             return new EvidenceEvaluation(score, minimum, maximum, evidence);
+        }
+
+        private static int ApplyPercent(int value, int percent)
+        {
+            long product = checked((long)value * percent);
+            return checked((int)(product / 100L));
         }
 
         internal static List<EvidenceArtifact> ForCase(

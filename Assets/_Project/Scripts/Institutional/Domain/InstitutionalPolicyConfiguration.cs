@@ -8,6 +8,9 @@ namespace Desk42.Institutional
     {
         public string EvidenceClassId;
         public int WeightPercent;
+        // Policy treatment of this evidence class. This is deliberately separate
+        // from the source/event reliability retained on each evidence artifact.
+        public int PolicyReliabilityPercent = 100;
     }
 
     /// <summary>
@@ -91,6 +94,32 @@ namespace Desk42.Institutional
                     $"'{artifact.EvidenceClassId}'.");
             }
             return WeightPercent(artifact.Kind);
+        }
+
+        public int PolicyReliabilityPercent(EvidenceArtifact artifact)
+        {
+            if (artifact == null) throw new ArgumentNullException(nameof(artifact));
+            if (string.IsNullOrWhiteSpace(artifact.EvidenceClassId)) return 100;
+            if (EvidenceClassWeights == null)
+                throw new InvalidOperationException(
+                    "Opaque evidence classes require configured class rules.");
+            for (int i = 0; i < EvidenceClassWeights.Count; i++)
+            {
+                EvidenceClassWeight configured = EvidenceClassWeights[i];
+                if (configured != null && string.Equals(
+                    configured.EvidenceClassId,
+                    artifact.EvidenceClassId,
+                    StringComparison.Ordinal))
+                {
+                    ValidatePercent(
+                        configured.PolicyReliabilityPercent,
+                        nameof(EvidenceClassWeight.PolicyReliabilityPercent));
+                    return configured.PolicyReliabilityPercent;
+                }
+            }
+            throw new InvalidOperationException(
+                $"No policy reliability is configured for opaque evidence class " +
+                $"'{artifact.EvidenceClassId}'.");
         }
 
         public void ValidateEvidenceClassCoverage(IEnumerable<string> evidenceClassIds)
@@ -216,6 +245,9 @@ namespace Desk42.Institutional
                         $"Duplicate evidence class weight '{configured.EvidenceClassId}'.");
                 ValidatePercent(configured.WeightPercent,
                     $"EvidenceClassWeights[{configured.EvidenceClassId}]");
+                ValidatePercent(configured.PolicyReliabilityPercent,
+                    $"EvidenceClassWeights[{configured.EvidenceClassId}]." +
+                    nameof(EvidenceClassWeight.PolicyReliabilityPercent));
             }
         }
 
@@ -232,6 +264,7 @@ namespace Desk42.Institutional
                 {
                     EvidenceClassId = configured.EvidenceClassId,
                     WeightPercent = configured.WeightPercent,
+                    PolicyReliabilityPercent = configured.PolicyReliabilityPercent,
                 });
             }
             return clone;

@@ -1,6 +1,6 @@
 # Institutional Engine Candidate Boundary
 
-Status: v0.2 extraction and freeze contract.
+Status: v0.3 extraction and freeze contract.
 
 This document compares the preserved Workplace Identity proof with the Glass
 Canal discharge specification. It defines ownership and dependency direction;
@@ -30,7 +30,20 @@ special-case the scenario. Candidate v0.2 adds two generic capabilities:
 - any case, including the primary case, may be activated by a declared causal
   agent action while the exact trigger evidence can enter before activation.
 
-The v0.2 candidate is not established until its protected manifest and
+The immutable tag `institutional-engine-candidate-v0.2` is preserved at commit
+`55e507b5a623573dacb2df38b0bf790411c3b325`, together with its original
+`evidence/InstitutionalEngine/v0.2/` package. Before Scenario 02 source was
+authored, a literal contract audit found that its opaque evidence rules could
+vary class weight but not the policy's reliability treatment of that class.
+Source-event reliability existed, but it was not configuration-specific as the
+frozen Glass Canal specification requires.
+
+Candidate v0.3 preserves source reliability and adds an independently validated
+policy-reliability percentage to every opaque evidence-class rule. Adjudication
+applies it after the existing weight and source-reliability truncation stages;
+the default value of 100 reproduces every v0.2 score and bound exactly.
+
+The v0.3 candidate is not established until its protected manifest and
 immutable tag both exist. The gate fails closed while either is absent.
 
 ## Preserved pulse order
@@ -174,18 +187,18 @@ Linux CI runner.
 
 ## Engine freeze rule
 
-The immutable tag `institutional-engine-candidate-v0.2` names the candidate
+The immutable tag `institutional-engine-candidate-v0.3` names the candidate
 commit. That commit tracks
-`evidence/InstitutionalEngine/v0.2/engine-manifest.sha256`. The baseline is
+`evidence/InstitutionalEngine/v0.3/engine-manifest.sha256`. The baseline is
 mandatory, and its Git blob at every later scenario commit and its checked-out
 file must remain clean relative to the byte-identical blob at the tag. The
 candidate commit's own CI verifies the baseline without demanding a second
 scenario.
 
-The v0.1 tag and evidence directory remain historical evidence and are never
-used as an alias for v0.2. The v0.2 manifest must be generated from the fixed
-candidate itself; no v0.1 hash or test result may be copied forward as v0.2
-evidence.
+The v0.1 and v0.2 tags and evidence directories remain historical evidence and
+are never used as aliases for v0.3. The v0.3 manifest must be generated from
+the fixed candidate itself; no earlier hash or test result may be copied
+forward as v0.3 evidence.
 
 After the freeze, Glass Canal may add only its scenario definition, its tests and
 optional non-executable presentation fixtures. The gate requires a clean worktree

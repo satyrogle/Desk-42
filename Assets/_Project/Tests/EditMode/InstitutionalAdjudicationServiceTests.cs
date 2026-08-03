@@ -83,6 +83,47 @@ namespace Desk42.Tests.EditMode
             Assert.AreEqual(expectedFinding, result.Finding.Disposition);
         }
 
+        [Test]
+        public void PolicyClassReliabilityAloneCanChangeFindingAndRuling()
+        {
+            InstitutionalConsequenceReport trustedReport =
+                CreateReportWithSupportEvidence(baseWeight: 100, reliability: 100);
+            InstitutionalAdjudicationRequest trustedRequest = CreateRequest(
+                cycle: 3,
+                maximumEvidenceCycle: 2,
+                requiredEvidenceScore: 60);
+            trustedRequest.PolicyConfiguration.EvidenceClassWeights[0]
+                .PolicyReliabilityPercent = 100;
+
+            InstitutionalConsequenceReport discountedReport =
+                CreateReportWithSupportEvidence(baseWeight: 100, reliability: 100);
+            InstitutionalAdjudicationRequest discountedRequest = CreateRequest(
+                cycle: 3,
+                maximumEvidenceCycle: 2,
+                requiredEvidenceScore: 60);
+            discountedRequest.PolicyConfiguration.EvidenceClassWeights[0]
+                .PolicyReliabilityPercent = 50;
+
+            InstitutionalAdjudicationResult trusted =
+                InstitutionalAdjudicationService.IssueInitial(
+                    trustedReport,
+                    trustedRequest);
+            InstitutionalAdjudicationResult discounted =
+                InstitutionalAdjudicationService.IssueInitial(
+                    discountedReport,
+                    discountedRequest);
+
+            Assert.AreEqual(80, trusted.EvidenceScore);
+            Assert.AreEqual(RulingDisposition.Recognised, trusted.Ruling.Disposition);
+            Assert.AreEqual(FindingDisposition.Established, trusted.Finding.Disposition);
+            Assert.AreEqual(40, discounted.EvidenceScore);
+            Assert.AreEqual(RulingDisposition.Denied, discounted.Ruling.Disposition);
+            Assert.AreEqual(FindingDisposition.NotEstablished,
+                discounted.Finding.Disposition);
+            Assert.AreEqual(40, discounted.Ruling.ConfidenceMinimum);
+            Assert.AreEqual(80, discounted.Ruling.ConfidenceMaximum);
+        }
+
         [TestCase(false, false, RulingDisposition.Affirmed, AppealDisposition.Affirmed)]
         [TestCase(true, true, RulingDisposition.Affirmed, AppealDisposition.Affirmed)]
         [TestCase(false, true, RulingDisposition.ReversedAndRecognised,
