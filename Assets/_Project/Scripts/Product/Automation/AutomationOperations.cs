@@ -159,7 +159,7 @@ namespace Desk42.Product.Automation
             AutomationEvidenceNeed evidenceNeeds,
             float deadlineSeconds,
             float verificationWork,
-            string issueFamily,
+            string issueId,
             int linkedDossierCount,
             bool descendant)
         {
@@ -167,7 +167,7 @@ namespace Desk42.Product.Automation
             EvidenceNeeds = evidenceNeeds;
             DeadlineSeconds = deadlineSeconds;
             VerificationWork = verificationWork;
-            IssueFamily = issueFamily ?? string.Empty;
+            IssueId = issueId ?? string.Empty;
             LinkedDossierCount = Mathf.Max(1, linkedDossierCount);
             Descendant = descendant;
         }
@@ -176,7 +176,7 @@ namespace Desk42.Product.Automation
         internal AutomationEvidenceNeed EvidenceNeeds { get; }
         internal float DeadlineSeconds { get; }
         internal float VerificationWork { get; }
-        internal string IssueFamily { get; }
+        internal string IssueId { get; }
         internal int LinkedDossierCount { get; }
         internal bool Descendant { get; }
         internal int EvidenceNeedCount => CountFlags(EvidenceNeeds);
@@ -188,14 +188,18 @@ namespace Desk42.Product.Automation
             if (claim == null) throw new ArgumentNullException(nameof(claim));
 
             int pressureKey = claim.BatchOrdinal + shiftOrdinal * 3;
-            bool collective = claim.Issue.IndexOf(
-                "Collective", StringComparison.OrdinalIgnoreCase) >= 0;
-            bool access = claim.Issue.IndexOf(
-                "Access", StringComparison.OrdinalIgnoreCase) >= 0;
-            bool identity = claim.Issue.IndexOf(
-                "Identity", StringComparison.OrdinalIgnoreCase) >= 0;
-            bool dependency = claim.Issue.IndexOf(
-                "Dependency", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool collective = string.Equals(
+                claim.IssueId, AutomationIssueIds.Collective,
+                StringComparison.Ordinal);
+            bool access = string.Equals(
+                claim.IssueId, AutomationIssueIds.Access,
+                StringComparison.Ordinal);
+            bool identity = string.Equals(
+                claim.IssueId, AutomationIssueIds.Identity,
+                StringComparison.Ordinal);
+            bool dependency = string.Equals(
+                claim.IssueId, AutomationIssueIds.Dependency,
+                StringComparison.Ordinal);
             AutomationEvidenceNeed needs = AutomationEvidenceNeed.Identity;
             if ((claim.OfficialFactCount > 0 || claim.EvidencePacketCount > 1) &&
                 pressureKey % 2 == 0)
@@ -237,7 +241,7 @@ namespace Desk42.Product.Automation
                 needs,
                 deadline,
                 verificationWork,
-                claim.Issue,
+                claim.IssueId,
                 collective ? Mathf.Max(2, claim.Parties.Count) : 1,
                 !string.IsNullOrWhiteSpace(claim.ParentCaseId));
         }
@@ -255,7 +259,7 @@ namespace Desk42.Product.Automation
                 needs,
                 48f,
                 1.05f + appeal.EvidencePacketCount * 0.08f,
-                "Appeal",
+                "appeal",
                 1,
                 true);
         }

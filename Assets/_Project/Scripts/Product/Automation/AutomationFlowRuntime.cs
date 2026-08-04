@@ -958,7 +958,7 @@ namespace Desk42.Product.Automation
                 AutomationPublicClaim claim = _activeInstitution.FindClaim(
                     saved.AutomationClaimId) ?? throw new InvalidOperationException(
                     "Run save claim is missing from the current docket batch.");
-                Color colour = AutomationVisualFactory.IssueColour(claim.Issue);
+                Color colour = AutomationVisualFactory.IssueColour(claim.IssueId);
                 GameObject token = AutomationVisualFactory.CreateFolderToken(
                     _root, saved.DisplayId, colour);
                 token.transform.position = new Vector3(-13f, 0.42f, 2.6f);
@@ -1024,7 +1024,7 @@ namespace Desk42.Product.Automation
         {
             Spawned++;
             AutomationPublicClaim claim = _activeInstitution.Claims[_batchSpawned++];
-            Color folderColour = AutomationVisualFactory.IssueColour(claim.Issue);
+            Color folderColour = AutomationVisualFactory.IssueColour(claim.IssueId);
             GameObject token = AutomationVisualFactory.CreateFolderToken(
                 _root, "S" + _shiftOrdinal + "-" + claim.DisplayId,
                 folderColour);
@@ -1061,9 +1061,9 @@ namespace Desk42.Product.Automation
                     if (item.VerificationPasses >= 2 && ProcedureTier(
                             AutomationProcedureKind.
                                 MandatorySecondaryVerification) >= 3 &&
-                        _verificationPatterns.Add(item.Profile.IssueFamily))
+                            _verificationPatterns.Add(item.Profile.IssueId))
                         Emit(AutomationFeedbackKind.PrecedentCited,
-                            item.Profile.IssueFamily.ToUpperInvariant() +
+                            item.Claim.Issue.ToUpperInvariant() +
                             " / VERIFICATION PATTERN RETAINED");
                     if (item.ConsumeMisclassificationForRework())
                     {
@@ -1128,8 +1128,10 @@ namespace Desk42.Product.Automation
                         }
                         if (ProcedureTier(
                                 AutomationProcedureKind.ProtectedEvidenceChannel) >= 3 &&
-                            item.Claim.Issue.IndexOf(
-                                "Access", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                            string.Equals(
+                                item.Claim.IssueId,
+                                AutomationIssueIds.Access,
+                                StringComparison.Ordinal) &&
                             !item.AdverseReviewCompleted &&
                             item.BeginAdverseReview())
                         {
@@ -1246,7 +1248,7 @@ namespace Desk42.Product.Automation
                                     AutomationProcedureKind.
                                         AutomaticAdverseReview) >= 3)
                                 _adverseReviewPatterns.Add(
-                                    item.Profile.IssueFamily);
+                                    item.Profile.IssueId);
                             _adjudicator.Enqueue(item);
                         }
                         else
@@ -1548,8 +1550,8 @@ namespace Desk42.Product.Automation
                 IsProcedureBound(AutomationProcedureKind.ProtectedEvidenceChannel),
                 ProcedureTier(AutomationProcedureKind.PresumptionOfValidity),
                 ProcedureTier(AutomationProcedureKind.ProtectedEvidenceChannel),
-                _verificationPatterns.Contains(item.Profile.IssueFamily),
-                _adverseReviewPatterns.Contains(item.Profile.IssueFamily));
+                _verificationPatterns.Contains(item.Profile.IssueId),
+                _adverseReviewPatterns.Contains(item.Profile.IssueId));
         }
 
         private void HandleStationJammed(AutomationStationRuntime station)
@@ -1571,21 +1573,24 @@ namespace Desk42.Product.Automation
 
         private void RecordCompletedFamily(AutomationPublicClaim claim)
         {
-            string issue = claim?.Issue ?? string.Empty;
-            if (issue.IndexOf(
-                    "Collective", StringComparison.OrdinalIgnoreCase) >= 0)
-                CollectiveCompleted++;
-            else if (issue.IndexOf(
-                         "Identity", StringComparison.OrdinalIgnoreCase) >= 0)
-                IdentityCompleted++;
-            else if (issue.IndexOf(
-                         "Dependency", StringComparison.OrdinalIgnoreCase) >= 0)
-                DependencyCompleted++;
-            else if (issue.IndexOf(
-                         "Access", StringComparison.OrdinalIgnoreCase) >= 0)
-                AccessCompleted++;
-            else
-                PossessionCompleted++;
+            switch (claim?.IssueId)
+            {
+                case AutomationIssueIds.Collective:
+                    CollectiveCompleted++;
+                    break;
+                case AutomationIssueIds.Identity:
+                    IdentityCompleted++;
+                    break;
+                case AutomationIssueIds.Dependency:
+                    DependencyCompleted++;
+                    break;
+                case AutomationIssueIds.Access:
+                    AccessCompleted++;
+                    break;
+                case AutomationIssueIds.Possession:
+                    PossessionCompleted++;
+                    break;
+            }
         }
     }
 
@@ -2325,9 +2330,9 @@ namespace Desk42.Product.Automation
         {
             ConfigureProfile(profile);
             if (claim == null || profile == null) return;
-            Color issueColour = AutomationVisualFactory.IssueColour(claim.Issue);
+            Color issueColour = AutomationVisualFactory.IssueColour(claim.IssueId);
             AutomationVisualFactory.CreateIssueGlyph(
-                transform, claim.Issue, issueColour);
+                transform, claim.IssueId, issueColour);
             AutomationVisualFactory.CreateBlock(transform, "Issue Family Band",
                 new Vector3(0f, 0.22f, 0.42f),
                 new Vector3(0.72f, 0.055f, 0.08f), issueColour);
@@ -2347,7 +2352,7 @@ namespace Desk42.Product.Automation
                     new Vector3(0.12f, 0.13f, 0.34f),
                     new Color(0.91f, 0.39f, 0.18f));
             if (_label != null)
-                _label.text += "\n" + ShortIssue(claim.Issue);
+                _label.text += "\n" + ShortIssue(claim.IssueId);
         }
 
         internal void SetDeadlineProgress(float progress, bool overdue)
@@ -2487,18 +2492,17 @@ namespace Desk42.Product.Automation
                 new Color(0.98f, 0.30f, 0.08f));
         }
 
-        private static string ShortIssue(string issue)
+        private static string ShortIssue(string issueId)
         {
-            if (string.IsNullOrWhiteSpace(issue)) return "UNCLASSIFIED";
-            if (issue.IndexOf("Collective", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "COLLECTIVE";
-            if (issue.IndexOf("Access", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "ACCESS";
-            if (issue.IndexOf("Identity", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "IDENTITY";
-            if (issue.IndexOf("Dependency", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "DEPENDENCY";
-            return "POSSESSION";
+            return issueId switch
+            {
+                AutomationIssueIds.Collective => "COLLECTIVE",
+                AutomationIssueIds.Access => "ACCESS",
+                AutomationIssueIds.Identity => "IDENTITY",
+                AutomationIssueIds.Dependency => "DEPENDENCY",
+                AutomationIssueIds.Possession => "POSSESSION",
+                _ => "UNCLASSIFIED",
+            };
         }
 
         private static string CompactId(string value)

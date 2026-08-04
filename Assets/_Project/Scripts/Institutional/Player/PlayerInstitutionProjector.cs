@@ -194,6 +194,7 @@ namespace Desk42.Institutional.Player
                 int supportMinimum = Math.Max(0, supportMaximum - missing.Count * 12);
                 result.Add(new PublicCaseRecord(
                     opened.CaseId,
+                    opened.IssueId,
                     Humanise(opened.IssueId),
                     opened.OpenedTick,
                     opened.CaseVersion,

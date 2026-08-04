@@ -21,6 +21,10 @@ namespace Desk42.Tests.EditMode
                 Assert.IsNotEmpty(claim.AutomationClaimId);
                 Assert.IsNotEmpty(claim.DisplayId);
                 Assert.IsNotEmpty(claim.SourceCaseId);
+                Assert.That(AutomationIssueIds.IsKnown(claim.IssueId), Is.True);
+                Assert.IsNotEmpty(claim.Issue);
+                Assert.AreNotEqual(claim.IssueId, claim.Issue,
+                    "Automation must not use the localisable label as family identity.");
                 Assert.Greater(claim.EvidencePacketCount, 0);
                 Assert.Greater(claim.AllegationCount, 0);
                 Assert.IsNotNull(claim.UnknownsSummary);
@@ -216,7 +220,10 @@ namespace Desk42.Tests.EditMode
                 InstitutionalAutomationSession.Create(8);
             AutomationPublicClaim access = null;
             for (int i = 0; i < session.Claims.Count; i++)
-                if (session.Claims[i].Issue.Contains("Access"))
+                if (string.Equals(
+                        session.Claims[i].IssueId,
+                        AutomationIssueIds.Access,
+                        StringComparison.Ordinal))
                     access = session.Claims[i];
             Assert.IsNotNull(access);
 
@@ -237,7 +244,10 @@ namespace Desk42.Tests.EditMode
                 InstitutionalAutomationSession.Create(12);
             AutomationPublicClaim collective = null;
             for (int i = 0; i < session.Claims.Count; i++)
-                if (session.Claims[i].Issue.Contains("Collective"))
+                if (string.Equals(
+                        session.Claims[i].IssueId,
+                        AutomationIssueIds.Collective,
+                        StringComparison.Ordinal))
                     collective = session.Claims[i];
 
             Assert.IsNotNull(collective,
@@ -268,8 +278,14 @@ namespace Desk42.Tests.EditMode
                 for (int i = 0; i < session.Claims.Count; i++)
                 {
                     AutomationPublicClaim claim = session.Claims[i];
-                    if (claim.Issue.Contains("Identity")) identity = claim;
-                    if (claim.Issue.Contains("Dependency")) dependency = claim;
+                    if (string.Equals(
+                            claim.IssueId,
+                            AutomationIssueIds.Identity,
+                            StringComparison.Ordinal)) identity = claim;
+                    if (string.Equals(
+                            claim.IssueId,
+                            AutomationIssueIds.Dependency,
+                            StringComparison.Ordinal)) dependency = claim;
                 }
                 if (identity == null || dependency == null)
                     session.ReleaseNextShift(12);
@@ -396,7 +412,10 @@ namespace Desk42.Tests.EditMode
             IReadOnlyList<AutomationPublicClaim> claims)
         {
             for (int i = 0; i < claims.Count; i++)
-                if (claims[i].Issue.Contains("Possession")) return claims[i];
+                if (string.Equals(
+                        claims[i].IssueId,
+                        AutomationIssueIds.Possession,
+                        StringComparison.Ordinal)) return claims[i];
             throw new AssertionException("The persistent feed has no possession case.");
         }
 
@@ -404,7 +423,7 @@ namespace Desk42.Tests.EditMode
             IReadOnlyList<AutomationPublicClaim> claims)
         {
             for (int i = 0; i < claims.Count; i++)
-                yield return claims[i].Issue + ":" +
+                yield return claims[i].IssueId + ":" +
                     (claims[i].OriginatingRulingId ?? "primary");
         }
     }

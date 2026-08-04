@@ -131,6 +131,7 @@ namespace Desk42.Institutional.Player
     {
         internal PublicCaseRecord(
             string caseId,
+            string issueId,
             string issue,
             long openedCycle,
             int caseRevision,
@@ -151,6 +152,7 @@ namespace Desk42.Institutional.Player
             string originatingRulingId)
         {
             CaseId = caseId ?? string.Empty;
+            IssueId = issueId ?? string.Empty;
             Issue = issue ?? string.Empty;
             OpenedCycle = openedCycle;
             CaseRevision = caseRevision;
@@ -172,6 +174,7 @@ namespace Desk42.Institutional.Player
         }
 
         public string CaseId { get; }
+        public string IssueId { get; }
         public string Issue { get; }
         public long OpenedCycle { get; }
         public int CaseRevision { get; }

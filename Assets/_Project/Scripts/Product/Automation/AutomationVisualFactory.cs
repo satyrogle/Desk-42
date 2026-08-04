@@ -1,3 +1,5 @@
+using System;
+using Desk42.Institutional.Player;
 using UnityEngine;
 
 namespace Desk42.Product.Automation
@@ -121,24 +123,25 @@ namespace Desk42.Product.Automation
             return root;
         }
 
-        internal static Color IssueColour(string issue)
+        internal static Color IssueColour(string issueId)
         {
-            issue ??= string.Empty;
-            if (issue.IndexOf("Collective", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return new Color(0.73f, 0.27f, 0.64f);
-            if (issue.IndexOf("Access", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return new Color(0.22f, 0.59f, 0.82f);
-            if (issue.IndexOf("Identity", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return new Color(0.55f, 0.38f, 0.86f);
-            if (issue.IndexOf("Dependency", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return new Color(0.91f, 0.38f, 0.27f);
-            return new Color(0.88f, 0.66f, 0.24f);
+            return issueId switch
+            {
+                AutomationIssueIds.Collective => new Color(0.73f, 0.27f, 0.64f),
+                AutomationIssueIds.Access => new Color(0.22f, 0.59f, 0.82f),
+                AutomationIssueIds.Identity => new Color(0.55f, 0.38f, 0.86f),
+                AutomationIssueIds.Dependency => new Color(0.91f, 0.38f, 0.27f),
+                _ => new Color(0.88f, 0.66f, 0.24f),
+            };
         }
 
-        internal static void CreateIssueGlyph(Transform parent, string issue, Color colour)
+        internal static void CreateIssueGlyph(
+            Transform parent,
+            string issueId,
+            Color colour)
         {
-            issue ??= string.Empty;
-            if (issue.IndexOf("Identity", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (string.Equals(issueId, AutomationIssueIds.Identity,
+                    StringComparison.Ordinal))
             {
                 CreateBlock(parent, "Identity Before", new Vector3(-0.11f, 0.30f, 0.15f),
                     new Vector3(0.16f, 0.05f, 0.24f), colour);
@@ -146,7 +149,8 @@ namespace Desk42.Product.Automation
                     new Vector3(0.16f, 0.05f, 0.24f), colour * 1.16f);
                 return;
             }
-            if (issue.IndexOf("Dependency", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (string.Equals(issueId, AutomationIssueIds.Dependency,
+                    StringComparison.Ordinal))
             {
                 CreateBlock(parent, "Dependent", new Vector3(-0.10f, 0.30f, 0.15f),
                     new Vector3(0.13f, 0.05f, 0.15f), colour * 1.14f);
@@ -154,7 +158,8 @@ namespace Desk42.Product.Automation
                     new Vector3(0.20f, 0.05f, 0.28f), colour);
                 return;
             }
-            if (issue.IndexOf("Collective", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (string.Equals(issueId, AutomationIssueIds.Collective,
+                    StringComparison.Ordinal))
             {
                 for (int i = 0; i < 3; i++)
                     CreateBlock(parent, "Collective Member " + i,
@@ -162,7 +167,8 @@ namespace Desk42.Product.Automation
                         new Vector3(0.11f, 0.05f, 0.20f), colour);
                 return;
             }
-            if (issue.IndexOf("Access", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (string.Equals(issueId, AutomationIssueIds.Access,
+                    StringComparison.Ordinal))
             {
                 CreateBlock(parent, "Access Gate L", new Vector3(-0.12f, 0.30f, 0.15f),
                     new Vector3(0.08f, 0.05f, 0.30f), colour);

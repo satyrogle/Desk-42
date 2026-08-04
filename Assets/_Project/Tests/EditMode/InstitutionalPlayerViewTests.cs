@@ -25,6 +25,11 @@ namespace Desk42.Tests.EditMode
             Assert.AreEqual(2, view.ScopePreviews.Count);
             Assert.IsNotEmpty(view.UnknownsSummary);
             PublicCaseRecord opened = view.Cases.Single();
+            Assert.AreEqual(
+                EndogenousIssueKindIds.PossessionDispute,
+                opened.IssueId);
+            Assert.AreNotEqual(opened.IssueId, opened.Issue,
+                "Stable issue identity must remain separate from display copy.");
             Assert.IsNotEmpty(opened.DocketBasis);
             Assert.IsNotEmpty(opened.MissingEvidence);
             Assert.Greater(opened.EvidenceSupportMaximum,

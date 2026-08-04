@@ -131,11 +131,11 @@ namespace Desk42.Institutional.Player
             for (int i = 0; i < view.Cases.Count && selected.Count < claimCount; i++)
             {
                 PublicCaseRecord record = view.Cases[i];
-                if (selectedIssues.Contains(record.Issue) ||
+                if (selectedIssues.Contains(record.IssueId) ||
                     record.RulingCommitted ||
                     _releasedCaseIds.Contains(record.CaseId) ||
                     _reservedAppealCaseIds.Contains(record.CaseId)) continue;
-                selectedIssues.Add(record.Issue);
+                selectedIssues.Add(record.IssueId);
                 selected.Add(record);
             }
         }
@@ -543,6 +543,7 @@ namespace Desk42.Institutional.Player
                 ordinal,
                 "CLAIM 42-" + ordinal.ToString("D3"),
                 record.CaseId,
+                record.IssueId,
                 record.Issue,
                 record.Parties,
                 record.EvidenceIds.Count,
@@ -784,6 +785,29 @@ namespace Desk42.Institutional.Player
         Denied,
     }
 
+    /// <summary>
+    /// Public-safe stable identifiers for product routing, metrics and presentation
+    /// lookup. Display labels remain independently localisable.
+    /// </summary>
+    public static class AutomationIssueIds
+    {
+        public const string Possession = EndogenousIssueKindIds.PossessionDispute;
+        public const string Access = EndogenousIssueKindIds.AccessWithdrawal;
+        public const string Collective = EndogenousIssueKindIds.CollectiveGrievance;
+        public const string Identity = EndogenousIssueKindIds.IdentityContinuity;
+        public const string Dependency =
+            EndogenousIssueKindIds.DependencyEmergencySupport;
+
+        public static bool IsKnown(string issueId)
+        {
+            return string.Equals(issueId, Possession, StringComparison.Ordinal) ||
+                   string.Equals(issueId, Access, StringComparison.Ordinal) ||
+                   string.Equals(issueId, Collective, StringComparison.Ordinal) ||
+                   string.Equals(issueId, Identity, StringComparison.Ordinal) ||
+                   string.Equals(issueId, Dependency, StringComparison.Ordinal);
+        }
+    }
+
     public sealed class AutomationPublicClaim
     {
         internal AutomationPublicClaim(
@@ -791,6 +815,7 @@ namespace Desk42.Institutional.Player
             int batchOrdinal,
             string displayId,
             string sourceCaseId,
+            string issueId,
             string issue,
             IEnumerable<string> parties,
             int evidencePacketCount,
@@ -808,6 +833,7 @@ namespace Desk42.Institutional.Player
             BatchOrdinal = batchOrdinal;
             DisplayId = displayId ?? string.Empty;
             SourceCaseId = sourceCaseId ?? string.Empty;
+            IssueId = issueId ?? string.Empty;
             Issue = issue ?? string.Empty;
             Parties = Freeze(parties);
             EvidencePacketCount = evidencePacketCount;
@@ -826,6 +852,7 @@ namespace Desk42.Institutional.Player
         public int BatchOrdinal { get; }
         public string DisplayId { get; }
         public string SourceCaseId { get; }
+        public string IssueId { get; }
         public string Issue { get; }
         public IReadOnlyList<string> Parties { get; }
         public int EvidencePacketCount { get; }
