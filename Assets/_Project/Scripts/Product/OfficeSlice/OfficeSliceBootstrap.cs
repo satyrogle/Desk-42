@@ -44,6 +44,10 @@ namespace Desk42.Product.OfficeSlice
         private Transform _wardenView;
         private Transform _supervisorStampView;
         private Camera _camera;
+        private OfficeSpriteCatalog _m4Catalog;
+        private OfficeVisualDirector _m4Director;
+        private OfficeVisualStateProjector _m4Projector;
+        private OfficeVisualSnapshot _m4Snapshot;
         private bool _built;
         private string _lastDebugMessage = "BOOTING OFFICE SLICE";
 
@@ -53,6 +57,8 @@ namespace Desk42.Product.OfficeSlice
         public bool Ready => _built && _simulationState != null && _caseRepository != null;
         public bool CriticalRoutesValid => Ready && ValidateCriticalRoutes();
         public int VisibleFolderCount => _folderViews.Count;
+        public OfficeVisualDirector VisualDirector => _m4Director;
+        public OfficeVisualSnapshot VisualSnapshot => _m4Snapshot;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void RouteDevelopmentPlayerToOfficeSlice()
@@ -257,10 +263,13 @@ namespace Desk42.Product.OfficeSlice
             OfficeCell wardenCell = _simulationState.Warden.Cell(_simulationState.Grid);
             if (_wardenView != null)
             {
-                _wardenView.position = new Vector3(
-                    _simulationState.Warden.XSubunits / (float)OfficeGrid.LogicalSubunitsPerCell,
-                    0.52f,
-                    _simulationState.Warden.ZSubunits / (float)OfficeGrid.LogicalSubunitsPerCell);
+                float wardenX = _simulationState.Warden.XSubunits /
+                    (float)OfficeGrid.LogicalSubunitsPerCell;
+                float wardenZ = _simulationState.Warden.ZSubunits /
+                    (float)OfficeGrid.LogicalSubunitsPerCell;
+                _wardenView.position = PresentationPosition(wardenX, wardenZ, 0.52f);
+                if (_wardenView.TryGetComponent(out SpriteRenderer wardenRenderer))
+                    wardenRenderer.sortingOrder = OfficeVisualDirector.SortingOrder(wardenZ);
             }
 
             IReadOnlyList<string> folderIds = _simulationState.Queues.FolderIds;
@@ -308,13 +317,17 @@ namespace Desk42.Product.OfficeSlice
                 if (_folderRenderers.TryGetValue(caseId, out Renderer renderer))
                 {
                     OfficeCase sourceCase = _caseRepository.Get(folder.SourceCaseId);
-                    renderer.sharedMaterial.color = IsHighlightedFolder(folder)
+                    Color folderColour = IsHighlightedFolder(folder)
                         ? new Color(1f, 0.88f, 0.22f)
                         : folder.IsCopy
                             ? caseId.StartsWith("time-slip.", StringComparison.Ordinal)
                                 ? new Color(0.52f, 0.72f, 0.95f)
                                 : new Color(0.92f, 0.35f, 0.32f)
                             : FolderColor(sourceCase.Urgency);
+                    if (renderer is SpriteRenderer spriteRenderer)
+                        spriteRenderer.color = folderColour;
+                    else
+                        renderer.sharedMaterial.color = folderColour;
                 }
             }
 
@@ -325,6 +338,10 @@ namespace Desk42.Product.OfficeSlice
             RefreshCustomerViews();
             RefreshStaffViews();
             UpdateBillboards(wardenCell);
+            if (_m4Projector != null &&
+                (_m4Snapshot == null || _m4Snapshot.Tick != _simulationState.CurrentTick))
+                _m4Snapshot = _m4Projector.Project(_simulationState, _campaignState);
+            _m4Director?.Apply(_m4Snapshot);
         }
 
         public void ForceAllFoldersThroughM1Route()
@@ -407,6 +424,9 @@ namespace Desk42.Product.OfficeSlice
             _customerViews.Clear();
             _staffViews.Clear();
             _supervisorStampView = null;
+            _m4Catalog = null;
+            _m4Director = null;
+            _m4Snapshot = null;
             _runtimeRoot = new GameObject("Office Slice Runtime").transform;
             _runtimeRoot.SetParent(transform, false);
             BuildGreybox();
@@ -453,6 +473,13 @@ namespace Desk42.Product.OfficeSlice
 
         private void BuildGreybox()
         {
+            _m4Catalog = OfficeSpriteCatalog.LoadRequired();
+            if (_m4Catalog != null)
+            {
+                BuildM4TargetFrame();
+                return;
+            }
+            Debug.LogWarning("OFFICE_M4_CATALOG_UNAVAILABLE LEGACY_GREYBOX_FALLBACK", this);
             CreateCamera();
             CreateLighting();
             CreateFloorAndWalls();
@@ -462,6 +489,41 @@ namespace Desk42.Product.OfficeSlice
             CreateFolderViews();
             CreateCustomerViews();
             CreateStaffViews();
+        }
+
+        private void BuildM4TargetFrame()
+        {
+            _m4Director = new OfficeVisualDirector(_runtimeRoot, _m4Catalog);
+            _m4Projector ??= new OfficeVisualStateProjector();
+            CreateM4Camera();
+            _m4Director.BuildEnvironment();
+            CreateM4ZoneLabels();
+            CreateWarden();
+            CreateFolderViews();
+            CreateCustomerViews();
+            CreateStaffViews();
+        }
+
+        private void CreateM4Camera()
+        {
+            GameObject cameraObject = new("Office Slice M4 Camera");
+            cameraObject.transform.SetParent(_runtimeRoot, false);
+            cameraObject.transform.position = new Vector3(0f, 0f, -10f);
+            _camera = cameraObject.AddComponent<Camera>();
+            _camera.orthographic = true;
+            _camera.orthographicSize = 4.5f;
+            _camera.clearFlags = CameraClearFlags.SolidColor;
+            _camera.backgroundColor = new Color(0.91f, 0.85f, 0.71f);
+            if (Camera.main == null) cameraObject.tag = "MainCamera";
+        }
+
+        private void CreateM4ZoneLabels()
+        {
+            CreateLabel("FRONT DESK", new Vector3(-9f, 0f, 6.9f), 0.055f);
+            CreateLabel("WAITING AREA", new Vector3(-1f, 0f, -6.5f), 0.055f);
+            CreateLabel("PAPER ROOM", new Vector3(0f, 0f, 6.9f), 0.055f);
+            CreateLabel("MONEY ROOM", new Vector3(8.5f, 0f, 6.9f), 0.055f);
+            CreateLabel("WEIRD ROOM", new Vector3(8.5f, 0f, -6.5f), 0.055f);
         }
 
         private void CreateCamera()
@@ -551,6 +613,14 @@ namespace Desk42.Product.OfficeSlice
 
         private void CreateWarden()
         {
+            if (_m4Director != null)
+            {
+                GameObject m4Warden = _m4Director.CreateSpriteObject(
+                    "Warden", "character.warden.idle", Vector3.zero,
+                    Vector3.one, 100);
+                _wardenView = m4Warden.transform;
+                return;
+            }
             GameObject warden = CreateCube("Warden", Vector3.zero,
                 new Vector3(0.55f, 0.9f, 0.55f), new Color(0.91f, 0.72f, 0.25f));
             _wardenView = warden.transform;
@@ -574,19 +644,39 @@ namespace Desk42.Product.OfficeSlice
                 if (officeCase == null)
                     throw new InvalidOperationException(
                         "Authored folder has no public case: " + caseId);
-                GameObject folder = CreateCube("Folder " + officeCase.DisplayId,
-                    Vector3.zero, new Vector3(0.62f, 0.16f, 0.42f),
-                    FolderColor(officeCase.Urgency));
+                GameObject folder = _m4Director != null
+                    ? _m4Director.CreateSpriteObject(
+                        "Folder " + officeCase.DisplayId,
+                        "folder.original." + ((i % 6) + 1),
+                        Vector3.zero, Vector3.one, 120)
+                    : CreateCube("Folder " + officeCase.DisplayId,
+                        Vector3.zero, new Vector3(0.62f, 0.16f, 0.42f),
+                        FolderColor(officeCase.Urgency));
                 _folderViews.Add(caseId, folder.transform);
-                TextMesh label = CreateLabel(officeCase.DisplayId,
-                    Vector3.up * 0.18f, 0.055f, folder.transform);
-                _folderLabels.Add(caseId, label);
+                if (_m4Director == null)
+                {
+                    TextMesh label = CreateLabel(officeCase.DisplayId,
+                        Vector3.up * 0.18f, 0.055f, folder.transform);
+                    _folderLabels.Add(caseId, label);
+                }
                 _folderRenderers.Add(caseId, folder.GetComponent<Renderer>());
             }
         }
 
         private void CreateCopyFolderView(OfficeFolderState folder)
         {
+            if (_m4Director != null)
+            {
+                GameObject m4Copy = _m4Director.CreateSpriteObject(
+                    "Copied Folder " + folder.CaseId,
+                    "folder.original.6",
+                    Vector3.zero,
+                    Vector3.one,
+                    121);
+                _folderViews.Add(folder.CaseId, m4Copy.transform);
+                _folderRenderers.Add(folder.CaseId, m4Copy.GetComponent<Renderer>());
+                return;
+            }
             GameObject copy = CreateCube("Copied Folder " + folder.CaseId,
                 Vector3.zero, new Vector3(0.62f, 0.16f, 0.42f),
                 folder.CaseId.StartsWith("time-slip.", StringComparison.Ordinal)
@@ -665,11 +755,25 @@ namespace Desk42.Product.OfficeSlice
             for (int i = 0; i < customers.Count; i++)
             {
                 OfficeCustomerState customer = customers[i];
-                GameObject body = CreateCube("Customer " + customer.DisplayName,
-                    Vector3.zero, new Vector3(0.62f, 1.05f, 0.62f),
-                    new Color(0.42f, 0.63f, 0.78f));
-                CreateLabel(customer.DisplayName, Vector3.up * 1.25f,
-                    0.065f, body.transform);
+                GameObject body;
+                if (_m4Director != null &&
+                    string.Equals(customer.DisplayName, "NIA BELL", StringComparison.Ordinal))
+                    body = _m4Director.CreateSpriteObject(
+                        "Customer " + customer.DisplayName,
+                        "character.nia-bell.idle", Vector3.zero, Vector3.one, 105);
+                else if (_m4Director != null)
+                {
+                    body = new GameObject("Customer " + customer.DisplayName + " Visual Anchor");
+                    body.transform.SetParent(_runtimeRoot, false);
+                }
+                else
+                {
+                    body = CreateCube("Customer " + customer.DisplayName,
+                        Vector3.zero, new Vector3(0.62f, 1.05f, 0.62f),
+                        new Color(0.42f, 0.63f, 0.78f));
+                    CreateLabel(customer.DisplayName, Vector3.up * 1.25f,
+                        0.065f, body.transform);
+                }
                 _customerViews.Add(customer.CustomerId, body.transform);
             }
             RefreshCustomerViews();
@@ -690,9 +794,12 @@ namespace Desk42.Product.OfficeSlice
                     customer.QueueState == OfficeCustomerQueueState.Waiting;
                 view.gameObject.SetActive(visible);
                 if (!visible) continue;
-                view.position = customer.QueueState == OfficeCustomerQueueState.AtDesk
-                    ? new Vector3(-10f, 0.55f, 7f)
-                    : new Vector3(-3f + waitingIndex++ * 1.1f, 0.55f, -3f);
+                float x = customer.QueueState == OfficeCustomerQueueState.AtDesk
+                    ? -10f : -3f + waitingIndex++ * 1.1f;
+                float z = customer.QueueState == OfficeCustomerQueueState.AtDesk ? 7f : -3f;
+                view.position = PresentationPosition(x, z, 0.55f);
+                if (view.TryGetComponent(out SpriteRenderer renderer))
+                    renderer.sortingOrder = OfficeVisualDirector.SortingOrder(z);
             }
         }
 
@@ -714,6 +821,16 @@ namespace Desk42.Product.OfficeSlice
             for (int i = 0; i < _simulationState.Staff.Staff.Count; i++)
             {
                 OfficeStaffState staff = _simulationState.Staff.Staff[i];
+                if (_m4Director != null)
+                {
+                    string id = staff.Role == OfficeStaffRole.Runner
+                        ? "character.runner.idle"
+                        : "character.talker.idle";
+                    GameObject m4Body = _m4Director.CreateSpriteObject(
+                        staff.DisplayName, id, Vector3.zero, Vector3.one, 104);
+                    _staffViews.Add(staff.StaffId, m4Body.transform);
+                    continue;
+                }
                 Color color = staff.Role == OfficeStaffRole.Runner
                     ? new Color(0.38f, 0.75f, 0.45f)
                     : new Color(0.72f, 0.48f, 0.82f);
@@ -733,10 +850,11 @@ namespace Desk42.Product.OfficeSlice
             {
                 OfficeStaffState staff = _simulationState.Staff.Staff[i];
                 if (!_staffViews.TryGetValue(staff.StaffId, out Transform view)) continue;
-                view.position = new Vector3(
-                    staff.XSubunits / (float)OfficeGrid.LogicalSubunitsPerCell,
-                    0.43f,
-                    staff.ZSubunits / (float)OfficeGrid.LogicalSubunitsPerCell);
+                float x = staff.XSubunits / (float)OfficeGrid.LogicalSubunitsPerCell;
+                float z = staff.ZSubunits / (float)OfficeGrid.LogicalSubunitsPerCell;
+                view.position = PresentationPosition(x, z, 0.43f);
+                if (view.TryGetComponent(out SpriteRenderer renderer))
+                    renderer.sortingOrder = OfficeVisualDirector.SortingOrder(z);
             }
         }
 
@@ -765,14 +883,29 @@ namespace Desk42.Product.OfficeSlice
         {
             GameObject labelObject = new(text);
             labelObject.transform.SetParent(parent ?? _runtimeRoot, false);
-            labelObject.transform.position = position;
+            if (_m4Director != null)
+            {
+                labelObject.transform.position = parent == null
+                    ? PresentationPosition(position.x, position.z, -0.1f)
+                    : parent.position + new Vector3(0f, 0.7f, -0.1f);
+            }
+            else
+            {
+                labelObject.transform.position = position;
+            }
             TextMesh label = labelObject.AddComponent<TextMesh>();
             label.text = text;
             label.fontSize = 48;
             label.characterSize = characterSize;
             label.anchor = TextAnchor.MiddleCenter;
             label.alignment = TextAlignment.Center;
-            label.color = Color.white;
+            label.color = _m4Director == null ? Color.white : new Color(0.08f, 0.08f, 0.1f);
+            if (_m4Director != null)
+            {
+                label.fontStyle = FontStyle.Bold;
+                MeshRenderer meshRenderer = label.GetComponent<MeshRenderer>();
+                meshRenderer.sortingOrder = 210;
+            }
             return label;
         }
 
@@ -795,7 +928,14 @@ namespace Desk42.Product.OfficeSlice
 
         private Vector3 CellToWorld(OfficeCell cell, float y)
         {
-            return new Vector3(cell.X, y, cell.Z);
+            return PresentationPosition(cell.X, cell.Z, y);
+        }
+
+        private Vector3 PresentationPosition(float x, float z, float legacyHeight)
+        {
+            return _m4Director == null
+                ? new Vector3(x, legacyHeight, z)
+                : OfficeVisualDirector.SimulationToVisual(x, z, 0f);
         }
 
         private int QueueIndex(OfficeRoomId room, string caseId)
@@ -808,6 +948,7 @@ namespace Desk42.Product.OfficeSlice
 
         private void UpdateBillboards(OfficeCell wardenCell)
         {
+            if (_m4Director != null) return;
             if (_camera == null) return;
             for (int i = 0; i < _runtimeRoot.childCount; i++)
             {

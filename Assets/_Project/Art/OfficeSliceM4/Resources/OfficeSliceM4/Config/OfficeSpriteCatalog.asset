@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7919515b32726c344b197c0eab16383e, type: 3}
+  m_Name: OfficeSpriteCatalog
+  m_EditorClassIdentifier:
+  theme: {fileID: 11400000, guid: bcc19f529b77dc24b8e5365f795ea1b9, type: 2}
+  entries:
+  - id: character.nia-bell.idle
+    sprite: {fileID: 21300000, guid: ccda0875da1292a4d8a96b7fc4782332, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.runner.idle
+    sprite: {fileID: 21300000, guid: f09e0feafbe8d084685eec27e1ab5e63, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.talker.idle
+    sprite: {fileID: 21300000, guid: 2e38cf15a5b5b7045bd38d8e976bd1f1, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.idle
+    sprite: {fileID: 21300000, guid: b213080292c718a4481750ec049b893c, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: environment.office.base
+    sprite: {fileID: 21300000, guid: c6ffc3ed16838094daa8cbcf146574f2, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: fallback.explicit
+    sprite: {fileID: 21300000, guid: f404fc054ad983942a6b500e39b56f25, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.original.1
+    sprite: {fileID: 21300000, guid: e282dbd57de3f9b4795414bd7cc44301, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.original.2
+    sprite: {fileID: 21300000, guid: 4334331ee2925df4c8753f8f669889f2, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.original.3
+    sprite: {fileID: 21300000, guid: 288db0ad13ddec743aedc07e6fc7963a, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.original.4
+    sprite: {fileID: 21300000, guid: 4d54ff99036aa124590f91f1e403032e, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.original.5
+    sprite: {fileID: 21300000, guid: ac0662931c77d384aa8ef8f66b05d0be, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.original.6
+    sprite: {fileID: 21300000, guid: b9820b9d748f8904e94c25a3f37b53d5, type: 3}
+    anchor: {x: 0.5, y: 0.5}

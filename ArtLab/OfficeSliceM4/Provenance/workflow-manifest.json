@@ -1,0 +1,61 @@
+{
+  "schema": "desk42.office-slice-m4.workflow-manifest.v1",
+  "comfyui_version": "0.24.1",
+  "blender_version": "5.1.2",
+  "normaliser": "tools/art/office_slice_m4/normalise_assets.py",
+  "normaliser_version": "1.0.0",
+  "workflows": [
+    {
+      "path": "ArtLab/OfficeSliceM4/ComfyUI/break_vfx_controlnet.json",
+      "sha256": "10f41971470eaa4010168d58a82d6941de7024e187647a4d476fa39a16e8779f",
+      "checkpoint": "sd_xl_base_1.0.safetensors",
+      "controlnet": "controlnet-union-sdxl-promax.safetensors",
+      "seed": 420405,
+      "positive_prompt_sha256": "eb7d4f4158ae579f4319be423d116d6af02bd998a55da1c3606b211bd1d11056",
+      "negative_prompt_sha256": "2a30d271b827166deef02cbebac5e4cbe7635a525de6ee4af1d167d31b53dcc0",
+      "status": "schema-validated"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ComfyUI/character_turnaround_controlnet.json",
+      "sha256": "7025c04fc929dba29b8f40867f75294b7b749daee78dcdfa3ca803e27b5a0cb8",
+      "checkpoint": "sd_xl_base_1.0.safetensors",
+      "controlnet": "controlnet-union-sdxl-promax.safetensors",
+      "seed": 420403,
+      "positive_prompt_sha256": "c2b2ec56ad5255f3684b7b4d4af040dfa485d2b4fcfb58792b53c2adc14c8a81",
+      "negative_prompt_sha256": "65a586558f2e90aba6fc4f23d630f8c9b307fe67fd5e04d540e55faecaea44bd",
+      "status": "schema-validated"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ComfyUI/machine_prop_controlnet.json",
+      "sha256": "fd198da91c8ff8af0a07c3484aaf65a41e711893f23f3b61747a8dd0d34d4442",
+      "checkpoint": "sd_xl_base_1.0.safetensors",
+      "controlnet": "controlnet-union-sdxl-promax.safetensors",
+      "seed": 420402,
+      "positive_prompt_sha256": "caad20b07c9413e5bba9f318af7b25039b6ad014296ed9eb287096b0553662ac",
+      "negative_prompt_sha256": "e7331b2b79a093b027c9c86e6fc3ce0b16c49c25a7e81b8b9becca2bff02a011",
+      "status": "schema-validated"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ComfyUI/office_environment_controlnet.json",
+      "sha256": "35c5efaf6e891d939cc5e20c7f8e7420ae2a547e6961ebbb386324095226e769",
+      "checkpoint": "sd_xl_base_1.0.safetensors",
+      "controlnet": "controlnet-union-sdxl-promax.safetensors",
+      "seed": 420401,
+      "positive_prompt_sha256": "c27e64a49466dc6a6ec3fcccc964d51f6c25b00b552b7caa533d0845e86b9bfc",
+      "negative_prompt_sha256": "2880c3f65930ff3954f250ef592c5fb96f44394d4fae390ddbd9a700c9c8691e",
+      "status": "executed-success"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ComfyUI/portrait_expression_controlnet.json",
+      "sha256": "9aa2b8a48556562f5d8e9d440b09e3db393af817eacc7a4f511273cd3623dcc2",
+      "checkpoint": "sd_xl_base_1.0.safetensors",
+      "controlnet": "controlnet-union-sdxl-promax.safetensors",
+      "seed": 420404,
+      "positive_prompt_sha256": "52a385ec2824159a5f3af23589115068aefa24b6c0a9cd00b1f866f839672ce4",
+      "negative_prompt_sha256": "568bb6bc9428c13cb0b940e79ab071ad3e60fc8996a3b1a1a4ba22976a7013fa",
+      "status": "schema-validated"
+    }
+  ],
+  "executed_prompt_id": "4a3903a3-53c4-4277-92fa-c061376727a4",
+  "blender_rgba_pixel_sha256": "913e18ff71ec67eed7c88825ea9f2a1328f04bd9347d8283308af5689630f904"
+}

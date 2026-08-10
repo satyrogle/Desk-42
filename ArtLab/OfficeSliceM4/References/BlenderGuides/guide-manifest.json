@@ -1,0 +1,12 @@
+{
+  "schema": "desk42.office-slice-m4.blender-guides.v1",
+  "blend": "ArtLab/OfficeSliceM4/Blender/office_slice_m4_master.blend",
+  "render": "ArtLab/OfficeSliceM4/References/BlenderGuides/office_m4_flat_colour.png",
+  "sha256": "d80887ee43bc0ea35eead3c5ca9ad6ef0b861b62e67982b96fe3f63d13de0ca6",
+  "resolution": [
+    1600,
+    900
+  ],
+  "camera": "M4_Locked_Orthographic_Camera",
+  "engine": "BLENDER_WORKBENCH"
+}
