@@ -1,0 +1,16 @@
+DESK42_OFFICE_SLICE_M5_WINDOWS_BUILD_V1
+validated_implementation=d519723d900bdad232b8a01c982c8fbc2ac9ec87
+unity=2022.3.62f3
+target=StandaloneWindows64
+result=Success
+unity_log_marker=Build Finished, Result: Success.
+local_full_log=Logs/M5/Windows-x64-Build-Final.log
+full_log_sha256=E898161903A21C49576EE8538A622FACE86D157CC6BF4909D5BF50E138AEA2E6
+executable=Builds/M5/Desk42.exe
+executable_bytes=666624
+executable_sha256=F5F73D8616A2500E0FB0223D83774E2D7F6A74C1BBDAD772F4FEFC9BF5812036
+build_file_count=203
+build_total_bytes=126889123
+protected_scene_modified=false
+package_changes=0
+render_pipeline_changes=0

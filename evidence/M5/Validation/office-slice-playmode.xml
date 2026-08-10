@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="27" result="Passed" total="27" passed="27" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-10 17:17:25Z" end-time="2026-08-10 17:17:44Z" duration="18.8932492">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-10 17:17:25Z" end-time="2026-08-10 17:17:44Z" duration="18.893249" total="27" passed="27" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1046" name="Desk42.Tests.PlayMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.PlayMode.dll" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-10 17:17:25Z" end-time="2026-08-10 17:17:44Z" duration="18.887493" total="27" passed="27" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="45088" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1047" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-10 17:17:25Z" end-time="2026-08-10 17:17:44Z" duration="18.886565" total="27" passed="27" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="PlayMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1048" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-10 17:17:25Z" end-time="2026-08-10 17:17:44Z" duration="18.885855" total="27" passed="27" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="PlayMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1049" name="PlayMode" fullname="Desk42.Tests.PlayMode" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-10 17:17:25Z" end-time="2026-08-10 17:17:44Z" duration="18.885159" total="27" passed="27" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="PlayMode" />
+            </properties>
+            <test-suite type="TestSuite" id="1050" name="OfficeSlice" fullname="Desk42.Tests.PlayMode.OfficeSlice" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-10 17:17:25Z" end-time="2026-08-10 17:17:26Z" duration="0.697631" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="PlayMode" />
+              </properties>
+              <test-suite type="TestFixture" id="1044" name="OfficeM4VisualPlayModeTests" fullname="Desk42.Tests.PlayMode.OfficeSlice.OfficeM4VisualPlayModeTests" classname="Desk42.Tests.PlayMode.OfficeSlice.OfficeM4VisualPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-10 17:17:25Z" end-time="2026-08-10 17:17:26Z" duration="0.696570" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="PlayMode" />
+                </properties>
+                <test-case id="1045" name="RestartBuildsExactlyOneActiveVisualRoot" fullname="Desk42.Tests.PlayMode.OfficeSlice.OfficeM4VisualPlayModeTests.RestartBuildsExactlyOneActiveVisualRoot" methodname="RestartBuildsExactlyOneActiveVisualRoot" classname="Desk42.Tests.PlayMode.OfficeSlice.OfficeM4VisualPlayModeTests" runstate="Runnable" seed="1762767525" result="Passed" start-time="2026-08-10 17:17:25Z" end-time="2026-08-10 17:17:26Z" duration="0.685859" asserts="0">
+                  <properties>
+                    <property name="_JOINTYPE" value="UnityCombinatorial" />
+                    <property name="platform" value="PlayMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+            <test-suite type="TestFixture" id="1017" name="OfficeSlicePlayModeTests" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-08-10 17:17:26Z" end-time="2026-08-10 17:17:44Z" duration="18.186200" total="26" passed="26" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="PlayMode" />
+              </properties>
+              <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              <test-case id="1021" name="AutomationClearsTwoKnownCases" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.AutomationClearsTwoKnownCases" methodname="AutomationClearsTwoKnownCases" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="180551441" result="Passed" start-time="2026-08-10 17:17:26Z" end-time="2026-08-10 17:17:26Z" duration="0.382742" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1027" name="CampaignCaptureRebuildsGeneratedFolderViews" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.CampaignCaptureRebuildsGeneratedFolderViews" methodname="CampaignCaptureRebuildsGeneratedFolderViews" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1248656905" result="Passed" start-time="2026-08-10 17:17:26Z" end-time="2026-08-10 17:17:27Z" duration="0.768413" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1041" name="ControllerCanCompleteCriticalPath" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.ControllerCanCompleteCriticalPath" methodname="ControllerCanCompleteCriticalPath" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1798032143" result="Passed" start-time="2026-08-10 17:17:27Z" end-time="2026-08-10 17:17:27Z" duration="0.349299" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1039" name="ControllerCompletesAtLeastOneFullShift" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.ControllerCompletesAtLeastOneFullShift" methodname="ControllerCompletesAtLeastOneFullShift" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="437422296" result="Passed" start-time="2026-08-10 17:17:27Z" end-time="2026-08-10 17:17:28Z" duration="0.504362" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1022" name="CopyEchoEdgeCaseTriggersDeterministicBreak" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.CopyEchoEdgeCaseTriggersDeterministicBreak" methodname="CopyEchoEdgeCaseTriggersDeterministicBreak" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1337608433" result="Passed" start-time="2026-08-10 17:17:28Z" end-time="2026-08-10 17:17:28Z" duration="0.395174" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1040" name="FailureRestartReturnsToCleanCheckpoint" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.FailureRestartReturnsToCleanCheckpoint" methodname="FailureRestartReturnsToCleanCheckpoint" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1166721674" result="Passed" start-time="2026-08-10 17:17:28Z" end-time="2026-08-10 17:17:28Z" duration="0.427605" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1018" name="FirstCustomerStartsWithoutDebugInput" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.FirstCustomerStartsWithoutDebugInput" methodname="FirstCustomerStartsWithoutDebugInput" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="234983605" result="Passed" start-time="2026-08-10 17:17:28Z" end-time="2026-08-10 17:17:29Z" duration="0.340251" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1024" name="FullShiftReachesResultWithoutDebugControls" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.FullShiftReachesResultWithoutDebugControls" methodname="FullShiftReachesResultWithoutDebugControls" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1677499123" result="Passed" start-time="2026-08-10 17:17:29Z" end-time="2026-08-10 17:17:30Z" duration="0.692993" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+M2_FULL_SHIFT_CHECKSUM 3029419092C85330
+]]></output>
+              </test-case>
+              <test-case id="1030" name="GhostClockIsVisibleBoundedAndRecoverable" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.GhostClockIsVisibleBoundedAndRecoverable" methodname="GhostClockIsVisibleBoundedAndRecoverable" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1547595153" result="Passed" start-time="2026-08-10 17:17:30Z" end-time="2026-08-10 17:17:30Z" duration="0.767852" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1019" name="ManualCaseCompletesThroughPaperMoneyAndDecision" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.ManualCaseCompletesThroughPaperMoneyAndDecision" methodname="ManualCaseCompletesThroughPaperMoneyAndDecision" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1141306650" result="Passed" start-time="2026-08-10 17:17:30Z" end-time="2026-08-10 17:17:31Z" duration="0.387650" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1031" name="MissingRoomAccessIsVisibleAndRecoverable" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.MissingRoomAccessIsVisibleAndRecoverable" methodname="MissingRoomAccessIsVisibleAndRecoverable" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1760190978" result="Passed" start-time="2026-08-10 17:17:31Z" end-time="2026-08-10 17:17:31Z" duration="0.702364" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1043" name="OfficeSliceRoutesFoldersWithoutDuplicateOwnership" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.OfficeSliceRoutesFoldersWithoutDuplicateOwnership" methodname="OfficeSliceRoutesFoldersWithoutDuplicateOwnership" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="195979099" result="Passed" start-time="2026-08-10 17:17:31Z" end-time="2026-08-10 17:17:32Z" duration="0.343678" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1042" name="OfficeSliceSceneBootsAsOneRootWithSixCases" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.OfficeSliceSceneBootsAsOneRootWithSixCases" methodname="OfficeSliceSceneBootsAsOneRootWithSixCases" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1729325010" result="Passed" start-time="2026-08-10 17:17:32Z" end-time="2026-08-10 17:17:32Z" duration="0.357022" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1034" name="PromotionCascadeMachineFirstRecoveryWorks" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.PromotionCascadeMachineFirstRecoveryWorks" methodname="PromotionCascadeMachineFirstRecoveryWorks" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="471823579" result="Passed" start-time="2026-08-10 17:17:32Z" end-time="2026-08-10 17:17:33Z" duration="1.044003" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1035" name="PromotionCascadePeopleFirstRecoveryWorks" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.PromotionCascadePeopleFirstRecoveryWorks" methodname="PromotionCascadePeopleFirstRecoveryWorks" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="620210895" result="Passed" start-time="2026-08-10 17:17:33Z" end-time="2026-08-10 17:17:34Z" duration="0.999860" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1033" name="PromotionCascadeTriggersFromExactPlayerState" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.PromotionCascadeTriggersFromExactPlayerState" methodname="PromotionCascadeTriggersFromExactPlayerState" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1971976946" result="Passed" start-time="2026-08-10 17:17:34Z" end-time="2026-08-10 17:17:35Z" duration="1.003895" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1029" name="SecondRuleClearsTwoKnownCases" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.SecondRuleClearsTwoKnownCases" methodname="SecondRuleClearsTwoKnownCases" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="456477864" result="Passed" start-time="2026-08-10 17:17:35Z" end-time="2026-08-10 17:17:36Z" duration="0.573603" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1032" name="SecondUpgradeChoiceEntersShiftThree" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.SecondUpgradeChoiceEntersShiftThree" methodname="SecondUpgradeChoiceEntersShiftThree" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="376531453" result="Passed" start-time="2026-08-10 17:17:36Z" end-time="2026-08-10 17:17:37Z" duration="0.875369" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1025" name="ShiftOneCompletesIntoUpgradeChoiceWithoutDebugControls" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.ShiftOneCompletesIntoUpgradeChoiceWithoutDebugControls" methodname="ShiftOneCompletesIntoUpgradeChoiceWithoutDebugControls" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1260393355" result="Passed" start-time="2026-08-10 17:17:37Z" end-time="2026-08-10 17:17:37Z" duration="0.599164" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1036" name="ShiftThreeFailureRestartReturnsToCleanCheckpoint" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.ShiftThreeFailureRestartReturnsToCleanCheckpoint" methodname="ShiftThreeFailureRestartReturnsToCleanCheckpoint" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1444211113" result="Passed" start-time="2026-08-10 17:17:37Z" end-time="2026-08-10 17:17:38Z" duration="1.112449" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1028" name="ShiftTwoHeadlineCaseCompletesWithNormalControls" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.ShiftTwoHeadlineCaseCompletesWithNormalControls" methodname="ShiftTwoHeadlineCaseCompletesWithNormalControls" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="694964884" result="Passed" start-time="2026-08-10 17:17:38Z" end-time="2026-08-10 17:17:39Z" duration="0.748267" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1026" name="ShiftTwoLoadsNewClaimsAndSameCustomers" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.ShiftTwoLoadsNewClaimsAndSameCustomers" methodname="ShiftTwoLoadsNewClaimsAndSameCustomers" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="513337755" result="Passed" start-time="2026-08-10 17:17:39Z" end-time="2026-08-10 17:17:40Z" duration="0.571877" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1020" name="StaffAndWardenCanShareWorkWithoutDuplicateOwnership" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.StaffAndWardenCanShareWorkWithoutDuplicateOwnership" methodname="StaffAndWardenCanShareWorkWithoutDuplicateOwnership" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1315739832" result="Passed" start-time="2026-08-10 17:17:40Z" end-time="2026-08-10 17:17:40Z" duration="0.349887" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1037" name="ThreeShiftCampaignReachesResultWithoutDebugControls" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.ThreeShiftCampaignReachesResultWithoutDebugControls" methodname="ThreeShiftCampaignReachesResultWithoutDebugControls" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1266893479" result="Passed" start-time="2026-08-10 17:17:40Z" end-time="2026-08-10 17:17:41Z" duration="1.230885" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1038" name="ThreeShiftCampaignReplayMatchesChecksum" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.ThreeShiftCampaignReplayMatchesChecksum" methodname="ThreeShiftCampaignReplayMatchesChecksum" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1779570463" result="Passed" start-time="2026-08-10 17:17:41Z" end-time="2026-08-10 17:17:43Z" duration="2.180042" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1023" name="TwoRecoveryOrdersReachValidClosingState" fullname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests.TwoRecoveryOrdersReachValidClosingState" methodname="TwoRecoveryOrdersReachValidClosingState" classname="Desk42.Tests.PlayMode.OfficeSlicePlayModeTests" runstate="Runnable" seed="1062536665" result="Passed" start-time="2026-08-10 17:17:43Z" end-time="2026-08-10 17:17:44Z" duration="0.470532" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

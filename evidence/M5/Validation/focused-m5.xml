@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="34" result="Passed" total="34" passed="34" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-10 17:15:33Z" end-time="2026-08-10 17:15:40Z" duration="6.8548309">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="568" result="Passed" start-time="2026-08-10 17:15:33Z" end-time="2026-08-10 17:15:40Z" duration="6.854831" total="34" passed="34" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1647" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="567" result="Passed" start-time="2026-08-10 17:15:33Z" end-time="2026-08-10 17:15:40Z" duration="6.833224" total="34" passed="34" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="46360" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1648" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="567" result="Passed" start-time="2026-08-10 17:15:33Z" end-time="2026-08-10 17:15:40Z" duration="6.811330" total="34" passed="34" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1649" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="567" result="Passed" start-time="2026-08-10 17:15:33Z" end-time="2026-08-10 17:15:40Z" duration="6.774899" total="34" passed="34" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1650" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="567" result="Passed" start-time="2026-08-10 17:15:33Z" end-time="2026-08-10 17:15:40Z" duration="6.764451" total="34" passed="34" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-suite type="TestSuite" id="1654" name="OfficeSlice" fullname="Desk42.Tests.EditMode.OfficeSlice" runstate="Runnable" testcasecount="81" result="Passed" start-time="2026-08-10 17:15:33Z" end-time="2026-08-10 17:15:40Z" duration="6.719134" total="34" passed="34" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-suite type="TestFixture" id="1567" name="OfficeM5GateATests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-10 17:15:33Z" end-time="2026-08-10 17:15:34Z" duration="0.404938" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1568" name="AudioDirectorDoesNotMutateSimulationChecksum" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests.AudioDirectorDoesNotMutateSimulationChecksum" methodname="AudioDirectorDoesNotMutateSimulationChecksum" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests" runstate="Runnable" seed="980183680" result="Passed" start-time="2026-08-10 17:15:33Z" end-time="2026-08-10 17:15:33Z" duration="0.213281" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1572" name="AudioRootsDoNotDuplicateAfterRestart" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests.AudioRootsDoNotDuplicateAfterRestart" methodname="AudioRootsDoNotDuplicateAfterRestart" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests" runstate="Runnable" seed="889831999" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.002757" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1571" name="AudioVoiceCountIsBounded" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests.AudioVoiceCountIsBounded" methodname="AudioVoiceCountIsBounded" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests" runstate="Runnable" seed="508338486" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.004604" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1570" name="MissingOptionalCueDoesNotBreakGameplay" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests.MissingOptionalCueDoesNotBreakGameplay" methodname="MissingOptionalCueDoesNotBreakGameplay" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests" runstate="Runnable" seed="1516652197" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.020524" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1569" name="MutedAudioProducesIdenticalCampaignChecksum" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests.MutedAudioProducesIdenticalCampaignChecksum" methodname="MutedAudioProducesIdenticalCampaignChecksum" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests" runstate="Runnable" seed="917585341" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.141812" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1573" name="RuntimeAudioManifestHasProvenance" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests.RuntimeAudioManifestHasProvenance" methodname="RuntimeAudioManifestHasProvenance" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateATests" runstate="Runnable" seed="1044666389" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.007315" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1574" name="OfficeM5GateBTests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.025669" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1575" name="EveryPrimaryActionHasMappedCue" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests.EveryPrimaryActionHasMappedCue" methodname="EveryPrimaryActionHasMappedCue" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests" runstate="Runnable" seed="481828856" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.001923" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1578" name="InvalidActionHasNonSuccessCue" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests.InvalidActionHasNonSuccessCue" methodname="InvalidActionHasNonSuccessCue" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests" runstate="Runnable" seed="317286041" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.000960" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1577" name="MoneyResultsAreAudiblyDistinct" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests.MoneyResultsAreAudiblyDistinct" methodname="MoneyResultsAreAudiblyDistinct" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests" runstate="Runnable" seed="474892786" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.000899" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1576" name="PaperResultsAreAudiblyDistinct" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests.PaperResultsAreAudiblyDistinct" methodname="PaperResultsAreAudiblyDistinct" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests" runstate="Runnable" seed="663334252" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.000735" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1579" name="PrimaryCueRoutingDoesNotChangeCommandLog" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests.PrimaryCueRoutingDoesNotChangeCommandLog" methodname="PrimaryCueRoutingDoesNotChangeCommandLog" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateBTests" runstate="Runnable" seed="486908743" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.018865" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1580" name="OfficeM5GateCTests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.028257" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1582" name="AllSevenMachinesResolveRequiredAudioStates" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests.AllSevenMachinesResolveRequiredAudioStates" methodname="AllSevenMachinesResolveRequiredAudioStates" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests" runstate="Runnable" seed="349833601" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.001101" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1583" name="AutomationEnableMatchAndRejectAreDistinct" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests.AutomationEnableMatchAndRejectAreDistinct" methodname="AutomationEnableMatchAndRejectAreDistinct" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests" runstate="Runnable" seed="1417127723" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.001676" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1581" name="CustomerMoodTransitionsMapToOrderedCues" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests.CustomerMoodTransitionsMapToOrderedCues" methodname="CustomerMoodTransitionsMapToOrderedCues" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests" runstate="Runnable" seed="529635929" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.001747" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1585" name="PositionalCueFallbackRemainsAudible" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests.PositionalCueFallbackRemainsAudible" methodname="PositionalCueFallbackRemainsAudible" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests" runstate="Runnable" seed="52607678" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.001560" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1584" name="RushStateRaisesPressureWithoutChangingSimulation" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests.RushStateRaisesPressureWithoutChangingSimulation" methodname="RushStateRaisesPressureWithoutChangingSimulation" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateCTests" runstate="Runnable" seed="702064199" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.019615" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1586" name="OfficeM5GateDTests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:36Z" duration="2.456172" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1591" name="CampaignReplayDoesNotDuplicateOneShotEvents" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests.CampaignReplayDoesNotDuplicateOneShotEvents" methodname="CampaignReplayDoesNotDuplicateOneShotEvents" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests" runstate="Runnable" seed="673656264" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.058099" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1587" name="CopyEchoAudioSequenceFollowsObservableEventOrder" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests.CopyEchoAudioSequenceFollowsObservableEventOrder" methodname="CopyEchoAudioSequenceFollowsObservableEventOrder" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests" runstate="Runnable" seed="625507769" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:34Z" duration="0.252714" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1588" name="PromotionCascadeAudioSequenceFollowsObservableEventOrder" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests.PromotionCascadeAudioSequenceFollowsObservableEventOrder" methodname="PromotionCascadeAudioSequenceFollowsObservableEventOrder" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests" runstate="Runnable" seed="992985214" result="Passed" start-time="2026-08-10 17:15:34Z" end-time="2026-08-10 17:15:36Z" duration="2.104474" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1589" name="RecoverySilencesBreakLayersOnlyAfterRecoveryState" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests.RecoverySilencesBreakLayersOnlyAfterRecoveryState" methodname="RecoverySilencesBreakLayersOnlyAfterRecoveryState" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests" runstate="Runnable" seed="1091932154" result="Passed" start-time="2026-08-10 17:15:36Z" end-time="2026-08-10 17:15:36Z" duration="0.019770" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1590" name="ShiftRestartClearsAllTransientAudio" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests.ShiftRestartClearsAllTransientAudio" methodname="ShiftRestartClearsAllTransientAudio" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateDTests" runstate="Runnable" seed="1028398096" result="Passed" start-time="2026-08-10 17:15:36Z" end-time="2026-08-10 17:15:36Z" duration="0.018358" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1592" name="OfficeM5GateETests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-10 17:15:36Z" end-time="2026-08-10 17:15:36Z" duration="0.097572" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1595" name="BreakFeedbackDoesNotObscureRequiredInteractionTargets" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests.BreakFeedbackDoesNotObscureRequiredInteractionTargets" methodname="BreakFeedbackDoesNotObscureRequiredInteractionTargets" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests" runstate="Runnable" seed="1858129751" result="Passed" start-time="2026-08-10 17:15:36Z" end-time="2026-08-10 17:15:36Z" duration="0.002668" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1594" name="ControllerRumbleCanBeDisabled" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests.ControllerRumbleCanBeDisabled" methodname="ControllerRumbleCanBeDisabled" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests" runstate="Runnable" seed="640448463" result="Passed" start-time="2026-08-10 17:15:36Z" end-time="2026-08-10 17:15:36Z" duration="0.000455" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1593" name="FeedbackDisabledDoesNotChangeSimulation" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests.FeedbackDisabledDoesNotChangeSimulation" methodname="FeedbackDisabledDoesNotChangeSimulation" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests" runstate="Runnable" seed="2021011664" result="Passed" start-time="2026-08-10 17:15:36Z" end-time="2026-08-10 17:15:36Z" duration="0.017897" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1596" name="FeedbackRootsRemainBoundedAcrossRestart" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests.FeedbackRootsRemainBoundedAcrossRestart" methodname="FeedbackRootsRemainBoundedAcrossRestart" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests" runstate="Runnable" seed="498265578" result="Passed" start-time="2026-08-10 17:15:36Z" end-time="2026-08-10 17:15:36Z" duration="0.000490" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1597" name="SustainedFeedbackRecyclesTheBoundedVisualPool" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests.SustainedFeedbackRecyclesTheBoundedVisualPool" methodname="SustainedFeedbackRecyclesTheBoundedVisualPool" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateETests" runstate="Runnable" seed="774468437" result="Passed" start-time="2026-08-10 17:15:36Z" end-time="2026-08-10 17:15:36Z" duration="0.072323" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1598" name="OfficeM5GateFTests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-08-10 17:15:36Z" end-time="2026-08-10 17:15:40Z" duration="3.697971" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1606" name="AudioMuteAndFeedbackModesShareCampaignChecksum" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests.AudioMuteAndFeedbackModesShareCampaignChecksum" methodname="AudioMuteAndFeedbackModesShareCampaignChecksum" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests" runstate="Runnable" seed="530415686" result="Passed" start-time="2026-08-10 17:15:36Z" end-time="2026-08-10 17:15:40Z" duration="3.572647" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1604" name="AudioTelemetryRemainsBounded" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests.AudioTelemetryRemainsBounded" methodname="AudioTelemetryRemainsBounded" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests" runstate="Runnable" seed="707496281" result="Passed" start-time="2026-08-10 17:15:40Z" end-time="2026-08-10 17:15:40Z" duration="0.002267" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1601" name="DefaultMixMeetsReadabilityAndHeadroomChecks" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests.DefaultMixMeetsReadabilityAndHeadroomChecks" methodname="DefaultMixMeetsReadabilityAndHeadroomChecks" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests" runstate="Runnable" seed="396896739" result="Passed" start-time="2026-08-10 17:15:40Z" end-time="2026-08-10 17:15:40Z" duration="0.002151" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1600" name="MuteAndIndividualBusesApplyIndependently" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests.MuteAndIndividualBusesApplyIndependently" methodname="MuteAndIndividualBusesApplyIndependently" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests" runstate="Runnable" seed="163414060" result="Passed" start-time="2026-08-10 17:15:40Z" end-time="2026-08-10 17:15:40Z" duration="0.000365" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1599" name="PresentationSettingsPersistOutsideSimulation" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests.PresentationSettingsPersistOutsideSimulation" methodname="PresentationSettingsPersistOutsideSimulation" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests" runstate="Runnable" seed="1893315767" result="Passed" start-time="2026-08-10 17:15:40Z" end-time="2026-08-10 17:15:40Z" duration="0.030648" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1602" name="ResultMixClearsOperationalBreakLayers" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests.ResultMixClearsOperationalBreakLayers" methodname="ResultMixClearsOperationalBreakLayers" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests" runstate="Runnable" seed="791808663" result="Passed" start-time="2026-08-10 17:15:40Z" end-time="2026-08-10 17:15:40Z" duration="0.004013" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1603" name="RuntimePayloadAndProvenanceStayWithinBudget" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests.RuntimePayloadAndProvenanceStayWithinBudget" methodname="RuntimePayloadAndProvenanceStayWithinBudget" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests" runstate="Runnable" seed="147263264" result="Passed" start-time="2026-08-10 17:15:40Z" end-time="2026-08-10 17:15:40Z" duration="0.008601" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1605" name="SteadyAudioPresentationAllocatesZeroBytes" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests.SteadyAudioPresentationAllocatesZeroBytes" methodname="SteadyAudioPresentationAllocatesZeroBytes" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM5GateFTests" runstate="Runnable" seed="1619050463" result="Passed" start-time="2026-08-10 17:15:40Z" end-time="2026-08-10 17:15:40Z" duration="0.070227" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\Logs\M5\Focused-M5-Final.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

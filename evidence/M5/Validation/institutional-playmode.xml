@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Passed" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-10 17:18:13Z" end-time="2026-08-10 17:18:52Z" duration="38.9478896">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-10 17:18:13Z" end-time="2026-08-10 17:18:52Z" duration="38.947890" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1046" name="Desk42.Tests.PlayMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.PlayMode.dll" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-10 17:18:13Z" end-time="2026-08-10 17:18:52Z" duration="38.942217" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="27472" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1047" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-10 17:18:13Z" end-time="2026-08-10 17:18:52Z" duration="38.941528" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="PlayMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1048" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-10 17:18:13Z" end-time="2026-08-10 17:18:52Z" duration="38.940993" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="PlayMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1049" name="PlayMode" fullname="Desk42.Tests.PlayMode" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-08-10 17:18:13Z" end-time="2026-08-10 17:18:52Z" duration="38.940431" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="PlayMode" />
+            </properties>
+            <test-suite type="TestFixture" id="1005" name="InstitutionalAutomationPlayModeTests" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-08-10 17:18:13Z" end-time="2026-08-10 17:18:52Z" duration="38.938797" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="PlayMode" />
+              </properties>
+              <test-case id="1014" name="ActiveRunSaveRestoresFactorySocietyAppealAndHolding" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.ActiveRunSaveRestoresFactorySocietyAppealAndHolding" methodname="ActiveRunSaveRestoresFactorySocietyAppealAndHolding" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="143051492" result="Passed" start-time="2026-08-10 17:18:13Z" end-time="2026-08-10 17:18:16Z" duration="3.161309" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1016" name="AppealRefineryProducesAndResolvesPhysicalReturnWork" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.AppealRefineryProducesAndResolvesPhysicalReturnWork" methodname="AppealRefineryProducesAndResolvesPhysicalReturnWork" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="1162793005" result="Passed" start-time="2026-08-10 17:18:16Z" end-time="2026-08-10 17:18:19Z" duration="3.355737" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1006" name="AutomationSceneBootsAndAcceptsPlayerBuildChanges" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.AutomationSceneBootsAndAcceptsPlayerBuildChanges" methodname="AutomationSceneBootsAndAcceptsPlayerBuildChanges" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="595731405" result="Passed" start-time="2026-08-10 17:18:19Z" end-time="2026-08-10 17:18:20Z" duration="0.475044" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1013" name="CollectiveGrievanceTravelsThroughSharedFactoryFloor" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.CollectiveGrievanceTravelsThroughSharedFactoryFloor" methodname="CollectiveGrievanceTravelsThroughSharedFactoryFloor" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="1908652731" result="Passed" start-time="2026-08-10 17:18:20Z" end-time="2026-08-10 17:18:22Z" duration="1.790976" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1010" name="DoctrineSelectionLocksInstitutionalIdentityForRun" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.DoctrineSelectionLocksInstitutionalIdentityForRun" methodname="DoctrineSelectionLocksInstitutionalIdentityForRun" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="376352287" result="Passed" start-time="2026-08-10 17:18:22Z" end-time="2026-08-10 17:18:22Z" duration="0.456146" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1015" name="EightShiftRunEndsInDerivedBranchReview" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.EightShiftRunEndsInDerivedBranchReview" methodname="EightShiftRunEndsInDerivedBranchReview" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="257956836" result="Passed" start-time="2026-08-10 17:18:22Z" end-time="2026-08-10 17:18:39Z" duration="17.173325" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="Category" value="LongRunningProduct" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1009" name="MandatorySecondaryVerificationAddsASecondPhysicalPass" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.MandatorySecondaryVerificationAddsASecondPhysicalPass" methodname="MandatorySecondaryVerificationAddsASecondPhysicalPass" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="1330032856" result="Passed" start-time="2026-08-10 17:18:39Z" end-time="2026-08-10 17:18:41Z" duration="1.937213" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1008" name="ProcedureLoadoutBindsToThePhysicalAppealRoute" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.ProcedureLoadoutBindsToThePhysicalAppealRoute" methodname="ProcedureLoadoutBindsToThePhysicalAppealRoute" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="211600089" result="Passed" start-time="2026-08-10 17:18:41Z" end-time="2026-08-10 17:18:42Z" duration="0.446445" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1012" name="ShiftCloseDraftCreatesCompoundingProcedureBuild" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.ShiftCloseDraftCreatesCompoundingProcedureBuild" methodname="ShiftCloseDraftCreatesCompoundingProcedureBuild" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="1637260322" result="Passed" start-time="2026-08-10 17:18:42Z" end-time="2026-08-10 17:18:46Z" duration="4.204153" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1007" name="SustainedUnmanagedPressureCreatesVisibleOperationalFailures" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.SustainedUnmanagedPressureCreatesVisibleOperationalFailures" methodname="SustainedUnmanagedPressureCreatesVisibleOperationalFailures" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="509457630" result="Passed" start-time="2026-08-10 17:18:46Z" end-time="2026-08-10 17:18:50Z" duration="4.170674" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1011" name="WelfareDoctrineConvertsUrgencyIntoReliefAndReliance" fullname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests.WelfareDoctrineConvertsUrgencyIntoReliefAndReliance" methodname="WelfareDoctrineConvertsUrgencyIntoReliefAndReliance" classname="Desk42.Tests.PlayMode.InstitutionalAutomationPlayModeTests" runstate="Runnable" seed="901549709" result="Passed" start-time="2026-08-10 17:18:50Z" end-time="2026-08-10 17:18:52Z" duration="1.754302" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="platform" value="PlayMode" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
