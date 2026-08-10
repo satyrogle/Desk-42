@@ -60,6 +60,8 @@ namespace Desk42.Product.OfficeSlice
         private readonly OfficeM6HudPresenter _m6HudPresenter = new();
         private OfficeM6HudModel _m6HudModel;
         private OfficeM6Onboarding _m6Onboarding;
+        private OfficeM6PresentationSettings _m6Settings;
+        private readonly OfficeM6PauseController _m6PauseController = new();
         private OfficeM6ControlScheme _m6ControlScheme =
             OfficeM6ControlScheme.Keyboard;
         private bool _m6TutorialCompletionSaved;
@@ -82,6 +84,8 @@ namespace Desk42.Product.OfficeSlice
         public OfficeM6HudPresenter M6HudPresenter => _m6HudPresenter;
         public OfficeM6HudModel M6HudModel => _m6HudModel;
         public OfficeM6Onboarding Onboarding => _m6Onboarding;
+        public OfficeM6PresentationSettings PresentationSettings => _m6Settings;
+        public OfficeM6PauseController PauseController => _m6PauseController;
         public OfficeAudioDirector AudioDirector => _m5AudioDirector;
         public OfficeAudioSettings AudioSettings => _m5AudioSettings;
         public OfficeFeedbackDirector FeedbackDirector => _m5FeedbackDirector;
@@ -103,9 +107,12 @@ namespace Desk42.Product.OfficeSlice
             if (_built) return;
             name = "Office Slice Bootstrap";
             _m5AudioSettings = OfficeAudioSettings.Load();
+            _m6Settings = new OfficeM6PresentationSettings(_m5AudioSettings);
+            _m6Settings.Load();
             _m5AudioSettings.ApplyCommandLine(Environment.GetCommandLineArgs());
             _m6Onboarding = new OfficeM6Onboarding(
                 PlayerPrefs.GetInt(TutorialCompleteKey, 0) != 0);
+            _m6Onboarding.SetHintsEnabled(_m6Settings.TutorialHints);
             _campaignState = OfficeCampaignState.Create();
             _simulationState = _campaignState.CurrentSimulation;
             _caseRepository = _simulationState.Cases;
@@ -682,7 +689,88 @@ namespace Desk42.Product.OfficeSlice
         public void SetTutorialHintsEnabled(bool enabled)
         {
             _m6Onboarding?.SetHintsEnabled(enabled);
+            _m6Settings?.SetTutorialHints(enabled);
             _m6HudModel = null;
+        }
+
+        public bool TogglePauseMenu()
+        {
+            _m6PauseController.Toggle();
+            return _m6PauseController.Paused;
+        }
+
+        public void NavigatePauseMenu(int delta)
+        {
+            _m6PauseController.MoveSelection(delta);
+        }
+
+        public bool ConfirmPauseMenu()
+        {
+            OfficeM6MenuAction action = _m6PauseController.Confirm();
+            if (action == OfficeM6MenuAction.RestartShift)
+            {
+                if (_simulationState.TryQueueCommand(
+                        _simulationState.CreateRestartCommand(),
+                        out OfficeCommandFailure _))
+                    _m6PauseController.Resume();
+            }
+            else
+                _m6PauseController.Apply(action);
+            return _m6PauseController.Paused;
+        }
+
+        public void AdjustPauseSetting(int delta)
+        {
+            if (!_m6PauseController.Paused ||
+                _m6PauseController.Page != OfficeM6MenuPage.Settings ||
+                delta == 0) return;
+            int direction = Math.Sign(delta);
+            OfficeAudioSettings audio = _m6Settings.Audio;
+            switch (_m6PauseController.Selection)
+            {
+                case 0:
+                    audio.SetVolumes(audio.Master + direction * 0.05f,
+                        audio.Music, audio.Sfx, audio.Ambience);
+                    break;
+                case 1:
+                    audio.SetVolumes(audio.Master,
+                        audio.Music + direction * 0.05f,
+                        audio.Sfx, audio.Ambience);
+                    break;
+                case 2:
+                    audio.SetVolumes(audio.Master, audio.Music,
+                        audio.Sfx + direction * 0.05f, audio.Ambience);
+                    break;
+                case 3:
+                    audio.SetVolumes(audio.Master, audio.Music,
+                        audio.Sfx, audio.Ambience + direction * 0.05f);
+                    break;
+                case 4:
+                    audio.SetRumble(!audio.Rumble);
+                    break;
+                case 5:
+                    audio.SetReducedFlash(!audio.ReducedFlash);
+                    _m4HudPresenter.SetReducedFlash(audio.ReducedFlash);
+                    break;
+                case 6:
+                    SetTutorialHintsEnabled(!_m6Settings.TutorialHints);
+                    break;
+                case 7:
+                    _m6Settings.AdjustTextScale(direction);
+                    _m4TitleStyle = null;
+                    _m4ActionStyle = null;
+                    _m4BodyStyle = null;
+                    break;
+                case 8:
+                    _m6Settings.SetFullscreen(!_m6Settings.Fullscreen);
+                    _m6Settings.ApplyDisplay();
+                    break;
+                case 9:
+                    _m6Settings.AdjustResolution(direction);
+                    _m6Settings.ApplyDisplay();
+                    break;
+            }
+            _m6Settings.Save();
         }
 
         public bool ToggleWhatHappened()
@@ -1518,10 +1606,87 @@ namespace Desk42.Product.OfficeSlice
             if (_m4Director != null)
             {
                 DrawM6Hud();
+                if (_m6PauseController.Paused)
+                    DrawM6PauseMenu();
                 return;
             }
             DrawLegacyHud();
         }
+
+        private void DrawM6PauseMenu()
+        {
+            float panelHeight = _m6PauseController.Page ==
+                OfficeM6MenuPage.Settings ? 600f : 360f;
+            Rect panel = new(
+                (Screen.width - 560f) * 0.5f,
+                (Screen.height - panelHeight) * 0.5f,
+                560f,
+                panelHeight);
+            DrawM4PaperCard(panel);
+            GUILayout.BeginArea(Inset(panel, 22f));
+            if (_m6PauseController.Page == OfficeM6MenuPage.Settings)
+                DrawM6SettingsMenu();
+            else if (_m6PauseController.Page == OfficeM6MenuPage.About)
+            {
+                GUILayout.Label("ABOUT DESK 42", _m4TitleStyle);
+                GUILayout.Space(16f);
+                GUILayout.Label("M6 EVALUATION CANDIDATE", _m4ActionStyle);
+                GUILayout.Label("A THREE-SHIFT WORK-IN-PROGRESS.", _m4BodyStyle);
+                GUILayout.FlexibleSpace();
+                GUILayout.Label("> BACK", _m4BodyStyle);
+            }
+            else
+            {
+                GUILayout.Label("PAUSED", _m4TitleStyle);
+                GUILayout.Space(16f);
+                DrawM6MenuLine(0, "RESUME");
+                DrawM6MenuLine(1, "SETTINGS");
+                DrawM6MenuLine(2, "RESTART SHIFT");
+                DrawM6MenuLine(3, "ABOUT");
+                GUILayout.FlexibleSpace();
+                GUILayout.Label(
+                    "ARROWS / STICK: MOVE   ENTER / A: CHOOSE",
+                    _m4BodyStyle);
+            }
+            GUILayout.EndArea();
+        }
+
+        private void DrawM6SettingsMenu()
+        {
+            OfficeAudioSettings audio = _m6Settings.Audio;
+            GUILayout.Label("SETTINGS", _m4TitleStyle);
+            GUILayout.Space(10f);
+            DrawM6MenuLine(0, "MASTER VOLUME " + Percent(audio.Master));
+            DrawM6MenuLine(1, "MUSIC VOLUME " + Percent(audio.Music));
+            DrawM6MenuLine(2, "SFX VOLUME " + Percent(audio.Sfx));
+            DrawM6MenuLine(3, "AMBIENCE VOLUME " + Percent(audio.Ambience));
+            DrawM6MenuLine(4, "RUMBLE " + OnOff(audio.Rumble));
+            DrawM6MenuLine(5, "REDUCED FLASH " + OnOff(audio.ReducedFlash));
+            DrawM6MenuLine(6, "TUTORIAL HINTS " +
+                OnOff(_m6Settings.TutorialHints));
+            DrawM6MenuLine(7, "TEXT SCALE " +
+                _m6Settings.TextScale.ToString().ToUpperInvariant());
+            DrawM6MenuLine(8, "FULLSCREEN " + OnOff(_m6Settings.Fullscreen));
+            DrawM6MenuLine(9, "RESOLUTION " + _m6Settings.Resolution);
+            DrawM6MenuLine(10, "BACK");
+            GUILayout.FlexibleSpace();
+            GUILayout.Label(
+                "UP / DOWN: SELECT   LEFT / RIGHT: CHANGE   ENTER / A: CHOOSE",
+                _m4BodyStyle);
+        }
+
+        private void DrawM6MenuLine(int index, string text)
+        {
+            GUILayout.Label(
+                (_m6PauseController.Selection == index ? "> " : "  ") + text,
+                _m6PauseController.Selection == index
+                    ? _m4ActionStyle : _m4BodyStyle);
+        }
+
+        private static string Percent(float value) =>
+            Mathf.RoundToInt(value * 100f) + "%";
+
+        private static string OnOff(bool value) => value ? "ON" : "OFF";
 
         private void DrawM6Hud()
         {
@@ -1770,21 +1935,22 @@ namespace Desk42.Product.OfficeSlice
         private void EnsureM4HudStyles()
         {
             if (_m4TitleStyle != null) return;
+            float textScale = _m6Settings?.TextScaleMultiplier ?? 1f;
             _m4TitleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 14,
+                fontSize = Mathf.RoundToInt(14f * textScale),
                 fontStyle = FontStyle.Bold,
                 wordWrap = true,
             };
             _m4ActionStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 18,
+                fontSize = Mathf.RoundToInt(18f * textScale),
                 fontStyle = FontStyle.Bold,
                 wordWrap = true,
             };
             _m4BodyStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 11,
+                fontSize = Mathf.RoundToInt(11f * textScale),
                 wordWrap = true,
             };
             Color ink = new(0.08f, 0.08f, 0.1f, 1f);

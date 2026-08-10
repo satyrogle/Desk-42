@@ -40,6 +40,12 @@ namespace Desk42.Product.OfficeSlice
             if (!_initialized || _state == null) return;
             Keyboard keyboard = Keyboard.current;
             Gamepad gamepad = Gamepad.current;
+            if (HandlePauseMenuInput(keyboard, gamepad))
+            {
+                _bootstrap.RefreshPresentation();
+                return;
+            }
+            if (_bootstrap.PauseController.Paused) return;
             SampleDeviceIntent(keyboard, gamepad);
 
             if (keyboard != null)
@@ -68,6 +74,65 @@ namespace Desk42.Product.OfficeSlice
                 return;
             }
             _bootstrap.RefreshPresentation();
+        }
+
+        private bool HandlePauseMenuInput(Keyboard keyboard, Gamepad gamepad)
+        {
+            bool keyboardToggle = keyboard != null &&
+                keyboard.escapeKey.wasPressedThisFrame;
+            bool controllerToggle = gamepad != null &&
+                gamepad.startButton.wasPressedThisFrame;
+            if (keyboardToggle || controllerToggle)
+            {
+                _bootstrap.NotifyControlScheme(controllerToggle
+                    ? OfficeM6ControlScheme.Controller
+                    : OfficeM6ControlScheme.Keyboard);
+                _clock.SetPaused(_bootstrap.TogglePauseMenu());
+                return true;
+            }
+            if (!_bootstrap.PauseController.Paused) return false;
+
+            int vertical = 0;
+            if (keyboard != null)
+            {
+                if (keyboard.upArrowKey.wasPressedThisFrame) vertical = -1;
+                else if (keyboard.downArrowKey.wasPressedThisFrame) vertical = 1;
+            }
+            if (vertical == 0 && gamepad != null)
+            {
+                if (gamepad.dpad.up.wasPressedThisFrame) vertical = -1;
+                else if (gamepad.dpad.down.wasPressedThisFrame) vertical = 1;
+            }
+            if (vertical != 0)
+                _bootstrap.NavigatePauseMenu(vertical);
+
+            int horizontal = 0;
+            if (keyboard != null)
+            {
+                if (keyboard.leftArrowKey.wasPressedThisFrame) horizontal = -1;
+                else if (keyboard.rightArrowKey.wasPressedThisFrame) horizontal = 1;
+            }
+            if (horizontal == 0 && gamepad != null)
+            {
+                if (gamepad.dpad.left.wasPressedThisFrame) horizontal = -1;
+                else if (gamepad.dpad.right.wasPressedThisFrame) horizontal = 1;
+            }
+            if (horizontal != 0)
+                _bootstrap.AdjustPauseSetting(horizontal);
+
+            bool confirm = keyboard != null &&
+                (keyboard.enterKey.wasPressedThisFrame ||
+                 keyboard.spaceKey.wasPressedThisFrame);
+            confirm |= gamepad != null &&
+                gamepad.buttonSouth.wasPressedThisFrame;
+            if (confirm)
+                _clock.SetPaused(_bootstrap.ConfirmPauseMenu());
+
+            if (gamepad != null && (vertical != 0 || horizontal != 0 || confirm))
+                _bootstrap.NotifyControlScheme(OfficeM6ControlScheme.Controller);
+            else if (vertical != 0 || horizontal != 0 || confirm)
+                _bootstrap.NotifyControlScheme(OfficeM6ControlScheme.Keyboard);
+            return true;
         }
 
         private void SampleDeviceIntent(Keyboard keyboard, Gamepad gamepad)

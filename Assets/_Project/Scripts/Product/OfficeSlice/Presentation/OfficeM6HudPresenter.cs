@@ -286,6 +286,14 @@ namespace Desk42.Product.OfficeSlice
             return true;
         }
 
+        public bool FitsAtTextScale(int width, int height, float textScale)
+        {
+            return textScale >= 0.85f && textScale <= 1.3f &&
+                Fits(width, height) &&
+                ActionRect(width, height).height >= 96f * textScale &&
+                BreakCardRect(width, height).height >= 148f * textScale;
+        }
+
         public bool CriticalTargetsRemainVisible(
             OfficeM6HudModel model,
             int width,
