@@ -686,7 +686,10 @@ namespace Desk42.Product.OfficeSlice
 
         private void BuildM4TargetFrame()
         {
-            _m4Director = new OfficeVisualDirector(_runtimeRoot, _m4Catalog);
+            Transform visualRoot = new GameObject(
+                OfficeVisualDirector.RootName).transform;
+            visualRoot.SetParent(_runtimeRoot, false);
+            _m4Director = new OfficeVisualDirector(visualRoot, _m4Catalog);
             _m4Projector ??= new OfficeVisualStateProjector();
             CreateM4Camera();
             _m4Director.BuildEnvironment();

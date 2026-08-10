@@ -241,7 +241,7 @@ namespace Desk42.Product.OfficeSlice
                 SimulationToVisual(5.5f, -3.5f), new Vector3(0.8f, 0.8f, 1f), 36);
             _ghostClock = CreateSpriteObject("Ghost Clock Terminal", "machine.ghost-clock.idle",
                 SimulationToVisual(2.2f, 5f), new Vector3(0.7f, 0.7f, 1f), 36);
-            _supervisorStamp = CreateSpriteObject("Supervisor Stamp Mount",
+            _supervisorStamp = CreateSpriteObject("Supervisor Stamp",
                 "machine.supervisor-stamp.idle", SimulationToVisual(5.5f, -3.5f),
                 new Vector3(0.58f, 0.58f, 1f), 37);
         }

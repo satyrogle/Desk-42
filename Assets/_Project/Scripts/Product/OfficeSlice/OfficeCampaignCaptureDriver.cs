@@ -40,6 +40,7 @@ namespace Desk42.Product.OfficeSlice
                         DriveShiftOneToUpgradeChoice(campaign);
                         return;
                     case "break":
+                    case "rush":
                     case "05-shift-1-copy-echo-break":
                         DriveShiftOneToBreak(campaign.CurrentSimulation);
                         return;
