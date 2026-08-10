@@ -64,7 +64,10 @@ namespace Desk42.Product.OfficeSlice
             Campaign = campaign;
             Grid = OfficeGrid.CreateM1();
             Warden = new OfficeWardenState(Grid.SpawnCell);
-            Queues = new OfficeQueueService(Cases);
+            Queues = new OfficeQueueService(
+                Cases,
+                Campaign?.Upgrades.TransferDurationTicks ??
+                    OfficeQueueService.DefaultTransferDurationTicks);
             Carry = new OfficeCarryState(Queues);
             CommandLog = commandLog ?? new OfficeCommandLog();
             ReplayMode = replayMode;
@@ -76,12 +79,28 @@ namespace Desk42.Product.OfficeSlice
                 RoomWork = new OfficeRoomWorkState();
                 Staff = new OfficeStaffSystem(Grid, Queues, RoomWork, Customers);
                 CustomerPressure = new OfficeCustomerPressureState(
-                    Customers, Queues, ManualTasks);
+                    Customers,
+                    Queues,
+                    ManualTasks,
+                    Campaign?.Upgrades.MoodThresholdBonusTicks ?? 0);
                 AutomationRule = new OfficeAutomationRuleState(
-                    _m2Scenario, Queues, ManualTasks);
+                    _m2Scenario,
+                    Queues,
+                    ManualTasks,
+                    Campaign?.Rules.Rule1Taught ?? false,
+                    Campaign?.Rules.Rule1Enabled ?? false);
+                PayrollRule = new OfficePayrollRuleState(
+                    _m2Scenario,
+                    Queues,
+                    ManualTasks,
+                    Campaign?.Rules.Rule2Taught ?? false,
+                    Campaign?.Rules.Rule2Enabled ?? false);
                 BreakState = new OfficeBreakState(_m2Scenario, Queues);
+                GhostClock = new OfficeGhostClockState(_m2Scenario, Queues);
+                MissingRoomAccess = new OfficeMissingRoomAccessState(
+                    _m2Scenario, Queues);
                 CausalEvents = new OfficeCausalEventLog();
-                Shift = new OfficeShiftState();
+                Shift = new OfficeShiftState(_m2Scenario.ShiftOrdinal);
             }
         }
 
@@ -97,7 +116,10 @@ namespace Desk42.Product.OfficeSlice
         public OfficeStaffSystem Staff { get; }
         public OfficeCustomerPressureState CustomerPressure { get; }
         public OfficeAutomationRuleState AutomationRule { get; }
+        public OfficePayrollRuleState PayrollRule { get; }
         public OfficeBreakState BreakState { get; }
+        public OfficeGhostClockState GhostClock { get; }
+        public OfficeMissingRoomAccessState MissingRoomAccess { get; }
         public OfficeCausalEventLog CausalEvents { get; }
         public OfficeShiftState Shift { get; }
         public OfficeCommandLog CommandLog { get; }
@@ -125,6 +147,15 @@ namespace Desk42.Product.OfficeSlice
                 }
                 OfficeInteractionPoint point = CurrentInteractionPoint();
                 if (point == null) return "MOVE TO A WORK POINT";
+                if (GhostClock.Active && point.Room == OfficeRoomId.PaperRoom &&
+                    (GhostClock.ClockTerminalActive ||
+                     GhostClock.ActiveSlipCount > 0))
+                    return GhostClock.ClockTerminalActive
+                        ? "STOP CLOCK"
+                        : "CLEAR TIME SLIP";
+                if (MissingRoomAccess.Active &&
+                    point.Room == OfficeRoomId.WeirdRoom)
+                    return "CLOSE MISSING ROOM";
                 if (BreakState.Active && point.Room == OfficeRoomId.WeirdRoom &&
                     BreakState.CopierActive) return "FIX MACHINE";
                 OfficeRoomWorkJobState roomJob = RoomWork.ActiveJobAt(point.Room);
@@ -139,16 +170,25 @@ namespace Desk42.Product.OfficeSlice
                         Queues.FirstActiveCopyAt(point.Room))) return "FIX COPY";
                 if (Carry.IsCarrying)
                 {
-                    OfficeCaseWorkRecord record = ManualTasks.RecordFor(
-                        Carry.CarriedFolderId);
+                    string carriedCaseId = Carry.CarriedFolderId;
+                    OfficeManualTaskKind? next = ManualTasks.NextRequiredTask(
+                        carriedCaseId);
                     if (point.Room == OfficeRoomId.FrontDesk)
-                        return record.CompareComplete && record.TraceComplete
+                        return !next.HasValue
                             ? "PUT DOWN"
-                            : "SEND TO PAPERS";
+                            : "SEND TO " + WorkRoomLabel(next.Value);
                     if (point.Room == OfficeRoomId.PaperRoom)
-                        return record.CompareComplete ? "SEND TO MONEY" : "CHECK PAPERS";
+                        return next == OfficeManualTaskKind.Compare
+                            ? "CHECK PAPERS"
+                            : "SEND TO " + WorkRoomLabel(next);
                     if (point.Room == OfficeRoomId.MoneyRoom)
-                        return record.TraceComplete ? "SEND TO FRONT" : "TRACE MONEY";
+                        return next == OfficeManualTaskKind.Trace
+                            ? "TRACE MONEY"
+                            : "SEND TO " + WorkRoomLabel(next);
+                    if (point.Room == OfficeRoomId.WeirdRoom)
+                        return next == OfficeManualTaskKind.WeirdCheck
+                            ? "CHECK WEIRD STUFF"
+                            : "SEND TO " + WorkRoomLabel(next);
                     return "SEND TO FRONT";
                 }
                 string activeCaseId = Customers.ActiveDeskCustomer?.LinkedAutomationClaimId;
@@ -206,6 +246,17 @@ namespace Desk42.Product.OfficeSlice
                 false,
                 scenario,
                 campaign);
+        }
+
+        public static OfficeSimulationState CreateAuthoredShift(
+            OfficeM2Scenario scenario)
+        {
+            if (scenario == null) throw new ArgumentNullException(nameof(scenario));
+            return new OfficeSimulationState(
+                scenario.Cases,
+                new OfficeCommandLog(),
+                false,
+                scenario);
         }
 
         public OfficeCommand CreateMoveCommand(int x, int z)
@@ -284,6 +335,11 @@ namespace Desk42.Product.OfficeSlice
             return OfficeCommand.ToggleRule(CurrentTick + 1, _nextSequence++);
         }
 
+        public OfficeCommand CreateToggleRule2Command()
+        {
+            return OfficeCommand.ToggleRule2(CurrentTick + 1, _nextSequence++);
+        }
+
         public OfficeCommand CreateFixCommand()
         {
             return OfficeCommand.Fix(CurrentTick + 1, _nextSequence++);
@@ -328,6 +384,12 @@ namespace Desk42.Product.OfficeSlice
             OfficeInteractionPoint point = CurrentInteractionPoint();
             if (point == null) return CreateInteractCommand();
 
+            if ((GhostClock.Active && point.Room == OfficeRoomId.PaperRoom &&
+                 (GhostClock.ClockTerminalActive ||
+                  GhostClock.ActiveSlipCount > 0)) ||
+                (MissingRoomAccess.Active && point.Room == OfficeRoomId.WeirdRoom))
+                return CreateFixCommand();
+
             if (BreakState.Active && point.Room == OfficeRoomId.WeirdRoom &&
                 BreakState.CopierActive) return CreateFixCommand();
 
@@ -347,22 +409,30 @@ namespace Desk42.Product.OfficeSlice
             if (Carry.IsCarrying)
             {
                 string caseId = Carry.CarriedFolderId;
-                OfficeCaseWorkRecord record = ManualTasks.RecordFor(caseId);
+                OfficeManualTaskKind? next = ManualTasks.NextRequiredTask(caseId);
                 if (point.Room == OfficeRoomId.FrontDesk)
                 {
-                    if (record.CompareComplete && record.TraceComplete)
+                    if (!next.HasValue)
                         return CreateDropCommand();
-                    return CreateSendCommand(caseId, OfficeRoomId.PaperRoom);
+                    return CreateSendCommand(caseId, RoomForWork(next.Value));
                 }
                 if (point.Room == OfficeRoomId.PaperRoom)
-                    return record.CompareComplete
-                        ? CreateSendCommand(caseId, OfficeRoomId.MoneyRoom)
-                        : CreateStartWorkCommand(caseId, OfficeManualTaskKind.Compare);
+                    return next == OfficeManualTaskKind.Compare
+                        ? CreateStartWorkCommand(caseId, OfficeManualTaskKind.Compare)
+                        : CreateSendCommand(caseId,
+                            next.HasValue ? RoomForWork(next.Value) : OfficeRoomId.FrontDesk);
                 if (point.Room == OfficeRoomId.MoneyRoom)
-                    return record.TraceComplete
-                        ? CreateSendCommand(caseId, OfficeRoomId.FrontDesk)
-                        : CreateStartWorkCommand(caseId, OfficeManualTaskKind.Trace);
-                return CreateSendCommand(caseId, OfficeRoomId.FrontDesk);
+                    return next == OfficeManualTaskKind.Trace
+                        ? CreateStartWorkCommand(caseId, OfficeManualTaskKind.Trace)
+                        : CreateSendCommand(caseId,
+                            next.HasValue ? RoomForWork(next.Value) : OfficeRoomId.FrontDesk);
+                if (point.Room == OfficeRoomId.WeirdRoom)
+                    return next == OfficeManualTaskKind.WeirdCheck
+                        ? CreateStartWorkCommand(caseId, OfficeManualTaskKind.WeirdCheck)
+                        : CreateSendCommand(caseId,
+                            next.HasValue ? RoomForWork(next.Value) : OfficeRoomId.FrontDesk);
+                return CreateSendCommand(caseId,
+                    next.HasValue ? RoomForWork(next.Value) : OfficeRoomId.FrontDesk);
             }
 
             string activeCaseId = Customers.ActiveDeskCustomer?.LinkedAutomationClaimId;
@@ -387,7 +457,7 @@ namespace Desk42.Product.OfficeSlice
             if (!string.IsNullOrWhiteSpace(caseId))
             {
                 OfficeCaseWorkRecord record = ManualTasks.RecordFor(caseId);
-                if (record.CompareComplete && record.TraceComplete)
+                if (ManualTasks.IsCaseComplete(caseId))
                 {
                     OfficeDecisionChoice choice = oneBasedChoice == 1
                         ? OfficeDecisionChoice.HelpCustomer
@@ -472,15 +542,32 @@ namespace Desk42.Product.OfficeSlice
                 Staff.AdvanceOneTick(CurrentTick);
                 RoomWork.AdvanceOneTick(Warden.Cell(Grid));
                 CustomerPressure.AdvanceOneTick(Warden.Cell(Grid), Staff);
+                GhostClock.AdvanceOneTick(CurrentTick, Customers, ManualTasks);
+                MissingRoomAccess.AdvanceOneTick(
+                    CurrentTick, Customers, Decisions, Staff);
                 BreakState.PrepareCopyCandidate(
                     CurrentTick, Customers, AutomationRule);
                 AutomationRule.AdvanceOneTick(CurrentTick);
+                PayrollRule.AdvanceOneTick(CurrentTick);
                 BreakState.AdvanceAfterRule(
                     CurrentTick, Customers, AutomationRule);
                 CausalEvents.Capture(
-                    CurrentTick, AutomationRule, BreakState, Queues);
+                    CurrentTick,
+                    AutomationRule,
+                    BreakState,
+                    Queues,
+                    PayrollRule,
+                    GhostClock,
+                    MissingRoomAccess);
                 Shift.Advance(
-                    CurrentTick, Customers, Decisions, AutomationRule, BreakState);
+                    CurrentTick,
+                    Customers,
+                    Decisions,
+                    AutomationRule,
+                    BreakState,
+                    PayrollRule,
+                    GhostClock,
+                    MissingRoomAccess);
                 Campaign?.ObserveSimulationTick(this);
             }
         }
@@ -562,6 +649,11 @@ namespace Desk42.Product.OfficeSlice
                     if (!M2Enabled || !AutomationRule.TryToggle())
                         AddFailure(CurrentTick, command.Sequence, "RULE_LOCKED",
                             "CHECK and TRACE one folder before teaching the machine.");
+                    break;
+                case OfficeCommandKind.ToggleRule2:
+                    if (!M2Enabled || PayrollRule == null || !PayrollRule.TryToggle())
+                        AddFailure(CurrentTick, command.Sequence, "RULE_2_LOCKED",
+                            "CHECK one badge and shift log before teaching the pay rule.");
                     break;
                 case OfficeCommandKind.Fix:
                     ExecuteFix(command);
@@ -689,7 +781,7 @@ namespace Desk42.Product.OfficeSlice
         {
             if (!M2Enabled || ManualTasks.IsActive ||
                 command.Arg0 < (int)OfficeManualTaskKind.Compare ||
-                command.Arg0 > (int)OfficeManualTaskKind.Trace)
+                command.Arg0 > (int)OfficeManualTaskKind.WeirdCheck)
             {
                 AddFailure(CurrentTick, command.Sequence, "INVALID_WORK",
                     "That work cannot start now.");
@@ -697,9 +789,7 @@ namespace Desk42.Product.OfficeSlice
             }
             OfficeManualTaskKind kind = (OfficeManualTaskKind)command.Arg0;
             OfficeInteractionPoint point = CurrentInteractionPoint();
-            OfficeRoomId requiredRoom = kind == OfficeManualTaskKind.Compare
-                ? OfficeRoomId.PaperRoom
-                : OfficeRoomId.MoneyRoom;
+            OfficeRoomId requiredRoom = RoomForWork(kind);
             OfficeCustomerState active = Customers.ActiveDeskCustomer;
             if (point == null || point.Room != requiredRoom || active == null ||
                 !string.Equals(active.LinkedAutomationClaimId,
@@ -735,7 +825,7 @@ namespace Desk42.Product.OfficeSlice
             if (!completed) return;
             if (completedKind == OfficeManualTaskKind.Compare)
                 Customers.MarkPapersChecked(caseId);
-            else
+            else if (completedKind == OfficeManualTaskKind.Trace)
                 Customers.MarkMoneyTraced(caseId);
         }
 
@@ -753,7 +843,7 @@ namespace Desk42.Product.OfficeSlice
             if (active == null ||
                 !string.Equals(active.LinkedAutomationClaimId,
                     command.TargetId, StringComparison.Ordinal) ||
-                work == null || !work.CompareComplete || !work.TraceComplete ||
+                work == null || !ManualTasks.IsCaseComplete(command.TargetId) ||
                 folder == null || folder.IsMoving ||
                 folder.OwnerKind != OfficeFolderOwnerKind.RoomQueue ||
                 folder.CurrentRoom != OfficeRoomId.FrontDesk ||
@@ -829,10 +919,41 @@ namespace Desk42.Product.OfficeSlice
         private void ExecuteFix(OfficeCommand command)
         {
             OfficeInteractionPoint point = CurrentInteractionPoint();
-            if (!M2Enabled || point == null ||
-                !BreakState.TryFixAt(point.Room, out string result))
+            if (!M2Enabled || point == null)
+            {
                 AddFailure(CurrentTick, command.Sequence, "FIX_NOT_AVAILABLE",
                     "There is nothing to fix here.");
+                return;
+            }
+            bool fixedSomething = BreakState.TryFixAt(point.Room, out string result) ||
+                GhostClock.TryFixAt(point.Room, out result) ||
+                MissingRoomAccess.TryCloseAt(point.Room, Staff);
+            if (!fixedSomething)
+                AddFailure(CurrentTick, command.Sequence, "FIX_NOT_AVAILABLE",
+                    "There is nothing to fix here.");
+        }
+
+        private static OfficeRoomId RoomForWork(OfficeManualTaskKind kind)
+        {
+            return kind switch
+            {
+                OfficeManualTaskKind.Compare => OfficeRoomId.PaperRoom,
+                OfficeManualTaskKind.Trace => OfficeRoomId.MoneyRoom,
+                OfficeManualTaskKind.WeirdCheck => OfficeRoomId.WeirdRoom,
+                _ => OfficeRoomId.FrontDesk,
+            };
+        }
+
+        private static string WorkRoomLabel(OfficeManualTaskKind? kind)
+        {
+            if (!kind.HasValue) return "FRONT";
+            return kind.Value switch
+            {
+                OfficeManualTaskKind.Compare => "PAPERS",
+                OfficeManualTaskKind.Trace => "MONEY",
+                OfficeManualTaskKind.WeirdCheck => "WEIRD",
+                _ => "FRONT",
+            };
         }
 
         private OfficeInteractionPoint CurrentInteractionPoint()
@@ -933,6 +1054,8 @@ namespace Desk42.Product.OfficeSlice
                 .Append(state.Warden.ZSubunits);
             builder.Append("|commands=").Append(state.CommandLog.Commands.Count)
                 .Append('|').Append(state.AppliedCommandCount);
+            builder.Append("|transfer-duration=").Append(
+                state.Queues.TransferDurationTicks);
             foreach (OfficeRoomId room in Enum.GetValues(typeof(OfficeRoomId)))
             {
                 builder.Append("|queue=").Append(room).Append(':');
@@ -965,7 +1088,10 @@ namespace Desk42.Product.OfficeSlice
                 state.Staff.AppendSnapshot(builder);
                 state.CustomerPressure.AppendSnapshot(builder);
                 state.AutomationRule.AppendSnapshot(builder);
+                state.PayrollRule.AppendSnapshot(builder);
                 state.BreakState.AppendSnapshot(builder);
+                state.GhostClock.AppendSnapshot(builder);
+                state.MissingRoomAccess.AppendSnapshot(builder, state.Staff);
                 state.CausalEvents.AppendSnapshot(builder);
                 state.Shift.AppendSnapshot(builder);
             }

@@ -190,6 +190,45 @@ namespace Desk42.Product.OfficeSlice
         public string RulingId { get; }
     }
 
+    public sealed class OfficeCampaignAutomationState
+    {
+        public bool Rule1Taught { get; private set; }
+        public bool Rule1Enabled { get; private set; }
+        public bool Rule2Taught { get; private set; }
+        public bool Rule2Enabled { get; private set; }
+
+        internal void Observe(OfficeSimulationState simulation)
+        {
+            if (simulation == null) return;
+            Rule1Taught |= simulation.AutomationRule != null &&
+                simulation.AutomationRule.Unlocked;
+            if (simulation.AutomationRule != null)
+                Rule1Enabled = simulation.AutomationRule.Enabled;
+            Rule2Taught |= simulation.PayrollRule != null &&
+                simulation.PayrollRule.Unlocked;
+            if (simulation.PayrollRule != null)
+                Rule2Enabled = simulation.PayrollRule.Enabled;
+        }
+
+        internal OfficeCampaignAutomationState Clone()
+        {
+            return new OfficeCampaignAutomationState
+            {
+                Rule1Taught = Rule1Taught,
+                Rule1Enabled = Rule1Enabled,
+                Rule2Taught = Rule2Taught,
+                Rule2Enabled = Rule2Enabled,
+            };
+        }
+
+        public void AppendSnapshot(StringBuilder builder)
+        {
+            builder.Append("|campaign-rules=").Append(Rule1Taught).Append(':')
+                .Append(Rule1Enabled).Append(':').Append(Rule2Taught).Append(':')
+                .Append(Rule2Enabled);
+        }
+    }
+
     /// <summary>
     /// Product-owned restart boundary. It wraps, but does not alter, the public
     /// institutional checkpoint and keeps campaign progression in a separate schema.
@@ -201,7 +240,8 @@ namespace Desk42.Product.OfficeSlice
         internal OfficeCampaignCheckpoint(
             int shiftOrdinal,
             InstitutionalAutomationCheckpoint institutional,
-            OfficeCampaignUpgradeState upgrades)
+            OfficeCampaignUpgradeState upgrades,
+            OfficeCampaignAutomationState rules)
         {
             SchemaVersion = CurrentSchemaVersion;
             ShiftOrdinal = shiftOrdinal;
@@ -209,12 +249,14 @@ namespace Desk42.Product.OfficeSlice
                 throw new ArgumentNullException(nameof(institutional));
             Upgrades = upgrades?.Clone() ??
                 throw new ArgumentNullException(nameof(upgrades));
+            Rules = rules?.Clone() ?? throw new ArgumentNullException(nameof(rules));
         }
 
         public int SchemaVersion { get; }
         public int ShiftOrdinal { get; }
         public InstitutionalAutomationCheckpoint Institutional { get; }
         public OfficeCampaignUpgradeState Upgrades { get; }
+        public OfficeCampaignAutomationState Rules { get; }
     }
 
     public sealed class OfficeCampaignState
@@ -231,6 +273,7 @@ namespace Desk42.Product.OfficeSlice
         private OfficeCampaignState(
             InstitutionalAutomationSession session,
             OfficeCampaignUpgradeState upgrades,
+            OfficeCampaignAutomationState rules,
             int shiftOrdinal)
         {
             _readOnlyCompletedShiftSnapshots = _completedShiftSnapshots.AsReadOnly();
@@ -239,12 +282,14 @@ namespace Desk42.Product.OfficeSlice
             InstitutionalSession = session ??
                 throw new ArgumentNullException(nameof(session));
             Upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
+            Rules = rules ?? throw new ArgumentNullException(nameof(rules));
             CurrentShiftOrdinal = shiftOrdinal;
             StartCurrentShift(captureCheckpoint: true);
         }
 
         public InstitutionalAutomationSession InstitutionalSession { get; private set; }
         public OfficeCampaignUpgradeState Upgrades { get; private set; }
+        public OfficeCampaignAutomationState Rules { get; private set; }
         public int CurrentShiftOrdinal { get; private set; }
         public OfficeCampaignShiftDefinition CurrentShift { get; private set; }
         public OfficeSimulationState CurrentSimulation { get; private set; }
@@ -268,6 +313,7 @@ namespace Desk42.Product.OfficeSlice
                         InstitutionalSession.SocietyTick.ToString(
                             CultureInfo.InvariantCulture));
                 Upgrades.AppendSnapshot(builder);
+                Rules.AppendSnapshot(builder);
                 for (int i = 0; i < _completedShiftSnapshots.Count; i++)
                     builder.Append("|completed-shift=").Append(i + 1).Append(':')
                         .Append(_completedShiftChecksums[i]).Append(':')
@@ -292,14 +338,16 @@ namespace Desk42.Product.OfficeSlice
             return new OfficeCampaignState(
                 InstitutionalAutomationSession.Create(6),
                 new OfficeCampaignUpgradeState(),
+                new OfficeCampaignAutomationState(),
                 1);
         }
 
         internal void ObserveSimulationTick(OfficeSimulationState simulation)
         {
             if (!ReferenceEquals(simulation, CurrentSimulation) ||
-                Phase != OfficeCampaignPhase.ActiveShift ||
-                !simulation.Shift.Success) return;
+                Phase != OfficeCampaignPhase.ActiveShift) return;
+            Rules.Observe(simulation);
+            if (!simulation.Shift.Success) return;
             Phase = CurrentShiftOrdinal < OfficeCampaignScenario.ShiftCount
                 ? OfficeCampaignPhase.ChooseUpgrade
                 : OfficeCampaignPhase.CampaignResult;
@@ -334,6 +382,7 @@ namespace Desk42.Product.OfficeSlice
             InstitutionalSession = InstitutionalAutomationSession.Restore(
                 _shiftStartCheckpoint.Institutional);
             Upgrades = _shiftStartCheckpoint.Upgrades.Clone();
+            Rules = _shiftStartCheckpoint.Rules.Clone();
             CurrentShiftOrdinal = _shiftStartCheckpoint.ShiftOrdinal;
             StartCurrentShift(captureCheckpoint: true);
             return true;
@@ -350,7 +399,8 @@ namespace Desk42.Product.OfficeSlice
                 _shiftStartCheckpoint = new OfficeCampaignCheckpoint(
                     CurrentShiftOrdinal,
                     InstitutionalSession.CreateCheckpoint(),
-                    Upgrades);
+                    Upgrades,
+                    Rules);
         }
 
         private void CaptureCompletedShift()

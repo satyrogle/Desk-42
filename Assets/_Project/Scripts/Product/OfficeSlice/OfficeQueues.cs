@@ -104,9 +104,14 @@ namespace Desk42.Product.OfficeSlice
         private readonly IReadOnlyList<string> _readOnlyFolderOrder;
         private readonly OfficeCaseRepository _cases;
 
-        public OfficeQueueService(OfficeCaseRepository cases)
+        public OfficeQueueService(
+            OfficeCaseRepository cases,
+            int transferDurationTicks = DefaultTransferDurationTicks)
         {
             _cases = cases ?? throw new ArgumentNullException(nameof(cases));
+            if (transferDurationTicks <= 0)
+                throw new ArgumentOutOfRangeException(nameof(transferDurationTicks));
+            TransferDurationTicks = transferDurationTicks;
             _queues = new Dictionary<OfficeRoomId, OfficeRoomQueueState>();
             _folders = new Dictionary<string, OfficeFolderState>(StringComparer.Ordinal);
             _folderOrder = new List<string>();
@@ -128,6 +133,7 @@ namespace Desk42.Product.OfficeSlice
         }
 
         public IReadOnlyList<string> FolderIds => _readOnlyFolderOrder;
+        public int TransferDurationTicks { get; }
         public string WardenCarriedFolderId
         {
             get
@@ -225,13 +231,14 @@ namespace Desk42.Product.OfficeSlice
             string caseId,
             OfficeRoomId destination,
             long currentTick,
-            int durationTicks = DefaultTransferDurationTicks)
+            int durationTicks = 0)
         {
             if (!_folders.TryGetValue(caseId, out OfficeFolderState folder)) return false;
             if (folder.IsMoving ||
                 folder.OwnerKind != OfficeFolderOwnerKind.RoomQueue ||
                 !IsQueuedIn(caseId, folder.CurrentRoom)) return false;
-            if (durationTicks <= 0) throw new ArgumentOutOfRangeException(nameof(durationTicks));
+            if (durationTicks == 0) durationTicks = TransferDurationTicks;
+            if (durationTicks < 0) throw new ArgumentOutOfRangeException(nameof(durationTicks));
 
             _queues[folder.CurrentRoom].Remove(caseId);
             BeginTransfer(folder, destination, currentTick, durationTicks);
@@ -316,11 +323,12 @@ namespace Desk42.Product.OfficeSlice
         public bool TrySendByWarden(
             OfficeRoomId destination,
             long currentTick,
-            int durationTicks = DefaultTransferDurationTicks)
+            int durationTicks = 0)
         {
             string caseId = WardenCarriedFolderId;
             if (string.IsNullOrWhiteSpace(caseId)) return false;
-            if (durationTicks <= 0) throw new ArgumentOutOfRangeException(nameof(durationTicks));
+            if (durationTicks == 0) durationTicks = TransferDurationTicks;
+            if (durationTicks < 0) throw new ArgumentOutOfRangeException(nameof(durationTicks));
             OfficeFolderState folder = _folders[caseId];
             BeginTransfer(folder, destination, currentTick, durationTicks);
             ValidateSingleOwnership();

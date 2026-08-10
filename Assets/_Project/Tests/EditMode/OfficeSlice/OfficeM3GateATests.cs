@@ -165,6 +165,121 @@ namespace Desk42.Tests.EditMode.OfficeM3
             Assert.That(campaign.Phase, Is.EqualTo(OfficeCampaignPhase.ActiveShift));
         }
 
+        public static void EnterShiftTwo(
+            OfficeCampaignState campaign,
+            OfficeUpgradeFamily firstUpgrade = OfficeUpgradeFamily.FastTrays)
+        {
+            DriveShiftOneToResult(campaign);
+            ChooseUpgradeAndContinue(campaign, firstUpgrade);
+            Assert.That(campaign.CurrentShiftOrdinal, Is.EqualTo(2));
+        }
+
+        public static void DriveShiftTwoToResult(OfficeCampaignState campaign)
+        {
+            Assert.That(campaign.CurrentShiftOrdinal, Is.EqualTo(2));
+            OfficeSimulationState state = campaign.CurrentSimulation;
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            while (state.Decisions.CommitCount < 6)
+            {
+                if (string.Equals(
+                        state.Customers.ActiveDeskCustomer?.DisplayName,
+                        "TOMAS REED",
+                        System.StringComparison.Ordinal) &&
+                    state.PayrollRule.Enabled)
+                {
+                    intent.BufferToggleRule2(state.CurrentTick);
+                    input.AdvanceOneTick();
+                    Assert.That(state.PayrollRule.Enabled, Is.False);
+                }
+                CompleteActiveCaseInAuthoredOrder(state, intent, input);
+                if (state.Decisions.CommitCount == 2 && !state.PayrollRule.Enabled)
+                {
+                    Assert.That(state.PayrollRule.Unlocked, Is.True);
+                    intent.BufferToggleRule2(state.CurrentTick);
+                    input.AdvanceOneTick();
+                    Assert.That(state.PayrollRule.Enabled, Is.True);
+                }
+            }
+            state.AdvanceTicks(2);
+            Assert.That(state.Shift.Phase, Is.EqualTo(OfficeShiftPhase.Result),
+                state.OrderedStateSnapshot);
+            Assert.That(campaign.Phase,
+                Is.EqualTo(OfficeCampaignPhase.ChooseUpgrade));
+        }
+
+        public static void CompleteActiveCaseInAuthoredOrder(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            OfficeCustomerState customer = state.Customers.ActiveDeskCustomer;
+            string caseId = customer.LinkedAutomationClaimId;
+            OfficeCaseWorkDefinition work = state.WorkDefinitionFor(caseId);
+            NavigateTo(state, intent, input, "front-desk.interact");
+            CalmUntilActionable(state, intent, input);
+            PressPrimary(state, intent, input); // TAKE
+
+            for (int stepIndex = 0; stepIndex < work.RequiredSequence.Count; stepIndex++)
+            {
+                OfficeManualTaskKind step = work.RequiredSequence[stepIndex];
+                string pointId = step switch
+                {
+                    OfficeManualTaskKind.Compare => "paper-room.interact",
+                    OfficeManualTaskKind.Trace => "money-room.interact",
+                    _ => "weird-room.interact",
+                };
+                PressPrimary(state, intent, input); // SEND TO REQUIRED ROOM
+                NavigateTo(state, intent, input, pointId);
+                state.AdvanceTicks(state.Queues.TransferDurationTicks);
+
+                if (string.Equals(customer.DisplayName, "TOMAS REED",
+                        System.StringComparison.Ordinal) &&
+                    step == OfficeManualTaskKind.Compare &&
+                    state.GhostClock != null && !state.GhostClock.HasTriggered)
+                {
+                    for (int tick = 0; tick < 1200 &&
+                        !state.GhostClock.HasTriggered; tick++)
+                        input.AdvanceOneTick();
+                    Assert.That(state.GhostClock.HasTriggered, Is.True,
+                        state.OrderedStateSnapshot);
+                }
+
+                ResolvePointComplications(state, intent, input);
+                PressPrimary(state, intent, input); // TAKE
+                PressPrimary(state, intent, input); // START WORK
+                int choice = step switch
+                {
+                    OfficeManualTaskKind.Compare => (int)work.PaperAnswer + 1,
+                    OfficeManualTaskKind.Trace => work.MoneyPathAnswer + 1,
+                    _ => work.WeirdChoiceAnswer + 1,
+                };
+                PressChoice(state, intent, input, choice);
+            }
+
+            PressPrimary(state, intent, input); // SEND TO FRONT
+            NavigateTo(state, intent, input, "front-desk.interact");
+            state.AdvanceTicks(state.Queues.TransferDurationTicks);
+            CalmUntilActionable(state, intent, input);
+            state.AdvanceOneTick();
+            PressChoice(state, intent, input, 1);
+            Assert.That(state.Decisions.RecordFor(caseId), Is.Not.Null,
+                state.OrderedStateSnapshot);
+        }
+
+        private static void ResolvePointComplications(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            int safety = 0;
+            while (safety++ < 12 &&
+                (state.PrimaryActionLabel == "STOP CLOCK" ||
+                 state.PrimaryActionLabel == "CLEAR TIME SLIP" ||
+                 state.PrimaryActionLabel == "CLOSE MISSING ROOM"))
+                PressPrimary(state, intent, input);
+        }
+
         private static void CompleteActiveCase(
             OfficeSimulationState state,
             OfficeInputIntent intent,
@@ -227,18 +342,22 @@ namespace Desk42.Tests.EditMode.OfficeM3
             OfficeInputCommandGenerator input)
         {
             int safety = 0;
-            while (state.PrimaryActionLabel == "CALM" && safety++ < 8)
+            OfficeCustomerState active = state.Customers.ActiveDeskCustomer;
+            while (active != null &&
+                active.VisibleMoodState >= OfficeVisibleMoodState.Upset &&
+                safety++ < 8)
             {
-                PressPrimary(state, intent, input);
-                state.AdvanceTicks(OfficeCustomerPressureState.CalmDurationTicks);
-                if (state.PrimaryActionLabel == "CALM" &&
-                    state.CustomerPressure.CalmCooldownRemainingTicks > 0)
+                if (state.CustomerPressure.CalmCooldownRemainingTicks > 0)
                     state.AdvanceTicks(
                         state.CustomerPressure.CalmCooldownRemainingTicks);
+                Assert.That(state.PrimaryActionLabel, Is.EqualTo("CALM"),
+                    state.OrderedStateSnapshot);
+                PressPrimary(state, intent, input);
+                state.AdvanceTicks(OfficeCustomerPressureState.CalmDurationTicks);
             }
         }
 
-        private static void NavigateTo(
+        public static void NavigateTo(
             OfficeSimulationState state,
             OfficeInputIntent intent,
             OfficeInputCommandGenerator input,
@@ -264,7 +383,7 @@ namespace Desk42.Tests.EditMode.OfficeM3
             intent.SetMovement(OfficeInputDirection.None);
         }
 
-        private static void PressPrimary(
+        public static void PressPrimary(
             OfficeSimulationState state,
             OfficeInputIntent intent,
             OfficeInputCommandGenerator input)
@@ -273,7 +392,7 @@ namespace Desk42.Tests.EditMode.OfficeM3
             input.AdvanceOneTick();
         }
 
-        private static void PressChoice(
+        public static void PressChoice(
             OfficeSimulationState state,
             OfficeInputIntent intent,
             OfficeInputCommandGenerator input,

@@ -48,11 +48,15 @@ namespace Desk42.Product.OfficeSlice
         public OfficeAutomationRuleState(
             OfficeM2Scenario scenario,
             OfficeQueueService queues,
-            OfficeManualTaskState manualTasks)
+            OfficeManualTaskState manualTasks,
+            bool unlocked = false,
+            bool enabled = false)
         {
             _scenario = scenario ?? throw new ArgumentNullException(nameof(scenario));
             _queues = queues ?? throw new ArgumentNullException(nameof(queues));
             _manualTasks = manualTasks ?? throw new ArgumentNullException(nameof(manualTasks));
+            Unlocked = unlocked;
+            Enabled = unlocked && enabled;
             _readOnlyMatches = _matches.AsReadOnly();
         }
 

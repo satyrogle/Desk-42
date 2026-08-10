@@ -25,6 +25,13 @@ namespace Desk42.Product.OfficeSlice
         MoneyFilled,
         MachineStopped,
         OriginalFound,
+        RuleTwoTaught,
+        PayrollFolderMatched,
+        GhostClockStarted,
+        ClockStopped,
+        TimeSlipCleared,
+        MissingRoomOpened,
+        MissingRoomClosed,
     }
 
     public sealed class OfficeCausalEvent
@@ -56,6 +63,8 @@ namespace Desk42.Product.OfficeSlice
         private readonly IReadOnlyList<OfficeCausalEvent> _readOnlyEvents;
         private readonly HashSet<string> _eventIds = new(StringComparer.Ordinal);
         private int _observedRuleMatchCount;
+        private int _observedPayrollMatchCount;
+        private int _observedClearedSlipCount;
 
         public OfficeCausalEventLog()
         {
@@ -68,7 +77,10 @@ namespace Desk42.Product.OfficeSlice
             long currentTick,
             OfficeAutomationRuleState rule,
             OfficeBreakState breakState,
-            OfficeQueueService queues)
+            OfficeQueueService queues,
+            OfficePayrollRuleState payrollRule = null,
+            OfficeGhostClockState ghostClock = null,
+            OfficeMissingRoomAccessState missingRoom = null)
         {
             if (rule.Enabled)
                 TryRecord("rule-taught", currentTick,
@@ -116,6 +128,53 @@ namespace Desk42.Product.OfficeSlice
                     OfficeCausalEventKind.OriginalFound,
                     "YOU FOUND THE ORIGINAL FOLDER",
                     breakState.OriginalFolderId);
+            if (payrollRule != null && payrollRule.Enabled)
+                TryRecord("pay-rule-taught", currentTick,
+                    OfficeCausalEventKind.RuleTwoTaught,
+                    "YOU TAUGHT THE MACHINE TO SEND MATCHING PAY RECORDS TO MONEY",
+                    "pay-sorter");
+            while (payrollRule != null &&
+                _observedPayrollMatchCount < payrollRule.Matches.Count)
+            {
+                OfficePayrollRuleMatch match =
+                    payrollRule.Matches[_observedPayrollMatchCount++];
+                if (!match.Matched) continue;
+                TryRecord("pay-match:" + match.FolderId, match.Tick,
+                    OfficeCausalEventKind.PayrollFolderMatched,
+                    "A BADGE AND SHIFT LOG MATCHED THE PAY RULE",
+                    match.FolderId);
+            }
+            if (ghostClock != null && ghostClock.HasTriggered)
+                TryRecord("ghost-clock-started", ghostClock.TriggeredTick,
+                    OfficeCausalEventKind.GhostClockStarted,
+                    "THE CLOCK MADE ANOTHER TIME SLIP",
+                    "paper-room.clock-terminal");
+            if (ghostClock != null && ghostClock.HasTriggered &&
+                !ghostClock.ClockTerminalActive)
+                TryRecord("ghost-clock-stopped", currentTick,
+                    OfficeCausalEventKind.ClockStopped,
+                    "YOU STOPPED THE CLOCK TERMINAL",
+                    "paper-room.clock-terminal");
+            while (ghostClock != null &&
+                _observedClearedSlipCount < ghostClock.ClearedSlipCount)
+            {
+                _observedClearedSlipCount++;
+                TryRecord("time-slip-cleared:" + _observedClearedSlipCount,
+                    currentTick,
+                    OfficeCausalEventKind.TimeSlipCleared,
+                    "YOU CLEARED A COPIED TIME SLIP",
+                    "time-slip." + _observedClearedSlipCount.ToString("D3"));
+            }
+            if (missingRoom != null && missingRoom.HasTriggered)
+                TryRecord("missing-room-opened", missingRoom.TriggeredTick,
+                    OfficeCausalEventKind.MissingRoomOpened,
+                    "IRIS'S OLD CARD OPENED THE MISSING ROOM",
+                    "missing-room-door");
+            if (missingRoom != null && missingRoom.Recovered)
+                TryRecord("missing-room-closed", currentTick,
+                    OfficeCausalEventKind.MissingRoomClosed,
+                    "YOU CLOSED THE MISSING ROOM",
+                    "missing-room-door");
         }
 
         public bool ContainsOnlyObservableEvents()
@@ -134,6 +193,13 @@ namespace Desk42.Product.OfficeSlice
                     case OfficeCausalEventKind.MoneyFilled:
                     case OfficeCausalEventKind.MachineStopped:
                     case OfficeCausalEventKind.OriginalFound:
+                    case OfficeCausalEventKind.RuleTwoTaught:
+                    case OfficeCausalEventKind.PayrollFolderMatched:
+                    case OfficeCausalEventKind.GhostClockStarted:
+                    case OfficeCausalEventKind.ClockStopped:
+                    case OfficeCausalEventKind.TimeSlipCleared:
+                    case OfficeCausalEventKind.MissingRoomOpened:
+                    case OfficeCausalEventKind.MissingRoomClosed:
                         break;
                     default:
                         return false;
@@ -171,6 +237,14 @@ namespace Desk42.Product.OfficeSlice
     {
         public const int FailureGraceTicks = 1800;
 
+        public OfficeShiftState(int shiftOrdinal = 1)
+        {
+            if (shiftOrdinal < 1 || shiftOrdinal > 3)
+                throw new ArgumentOutOfRangeException(nameof(shiftOrdinal));
+            ShiftOrdinal = shiftOrdinal;
+        }
+
+        public int ShiftOrdinal { get; }
         public OfficeShiftPhase Phase { get; private set; } = OfficeShiftPhase.Briefing;
         public long PhaseStartedTick { get; private set; }
         public bool Failed { get; private set; }
@@ -192,9 +266,22 @@ namespace Desk42.Product.OfficeSlice
             OfficeCustomerScheduleState customers,
             OfficeDecisionState decisions,
             OfficeAutomationRuleState rule,
-            OfficeBreakState breakState)
+            OfficeBreakState breakState,
+            OfficePayrollRuleState payrollRule = null,
+            OfficeGhostClockState ghostClock = null,
+            OfficeMissingRoomAccessState missingRoom = null)
         {
             if (Failed || Phase == OfficeShiftPhase.Result) return;
+            if (ShiftOrdinal == 2)
+            {
+                AdvanceShiftTwo(
+                    currentTick,
+                    decisions,
+                    payrollRule,
+                    ghostClock,
+                    missingRoom);
+                return;
+            }
             OfficeCustomerState active = customers.ActiveDeskCustomer;
             if (breakState.Active && !breakState.Recovered && active != null &&
                 active.VisibleMoodState == OfficeVisibleMoodState.Break &&
@@ -257,9 +344,46 @@ namespace Desk42.Product.OfficeSlice
 
         public void AppendSnapshot(StringBuilder builder)
         {
-            builder.Append("|shift=").Append(Phase).Append(':')
+            builder.Append("|shift=").Append(ShiftOrdinal).Append(':')
+                .Append(Phase).Append(':')
                 .Append(PhaseStartedTick).Append(':').Append(Failed).Append(':')
                 .Append(FailureReason).Append(':').Append(RestartRequested);
+        }
+
+        private void AdvanceShiftTwo(
+            long currentTick,
+            OfficeDecisionState decisions,
+            OfficePayrollRuleState payrollRule,
+            OfficeGhostClockState ghostClock,
+            OfficeMissingRoomAccessState missingRoom)
+        {
+            switch (Phase)
+            {
+                case OfficeShiftPhase.Briefing:
+                    break;
+                case OfficeShiftPhase.Open:
+                    if (decisions.CommitCount >= 1)
+                        Transition(OfficeShiftPhase.Learn, currentTick);
+                    break;
+                case OfficeShiftPhase.Learn:
+                    if (payrollRule != null && payrollRule.Unlocked)
+                        Transition(OfficeShiftPhase.Rush, currentTick);
+                    break;
+                case OfficeShiftPhase.Rush:
+                    if (payrollRule != null && payrollRule.Enabled)
+                        Transition(OfficeShiftPhase.Automate, currentTick);
+                    break;
+                case OfficeShiftPhase.Automate:
+                    if (decisions.CommitCount >= 6 && ghostClock != null &&
+                        ghostClock.HasTriggered && ghostClock.Recovered &&
+                        missingRoom != null && missingRoom.HasTriggered &&
+                        missingRoom.Recovered)
+                        Transition(OfficeShiftPhase.Closing, currentTick);
+                    break;
+                case OfficeShiftPhase.Closing:
+                    Transition(OfficeShiftPhase.Result, currentTick);
+                    break;
+            }
         }
 
         private void Transition(OfficeShiftPhase next, long currentTick)

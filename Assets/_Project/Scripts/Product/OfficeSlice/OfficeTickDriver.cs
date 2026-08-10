@@ -126,6 +126,13 @@ namespace Desk42.Product.OfficeSlice
             toggleRulePressed |= gamepad != null && gamepad.selectButton.wasPressedThisFrame;
             if (toggleRulePressed) _inputIntent.BufferToggleRule(_state.CurrentTick);
 
+            bool toggleRule2Pressed = keyboard != null &&
+                keyboard.tKey.wasPressedThisFrame;
+            toggleRule2Pressed |= gamepad != null &&
+                gamepad.rightStickButton.wasPressedThisFrame;
+            if (toggleRule2Pressed)
+                _inputIntent.BufferToggleRule2(_state.CurrentTick);
+
             bool restartPressed = keyboard != null && keyboard.enterKey.wasPressedThisFrame;
             restartPressed |= gamepad != null && gamepad.startButton.wasPressedThisFrame;
             if (restartPressed) _inputIntent.BufferRestart(_state.CurrentTick);

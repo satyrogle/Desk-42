@@ -179,6 +179,7 @@ namespace Desk42.Product.OfficeSlice
     {
         Compare,
         Trace,
+        WeirdCheck,
     }
 
     public sealed class OfficeCaseWorkRecord
@@ -200,6 +201,11 @@ namespace Desk42.Product.OfficeSlice
         public int SelectedMoneyPath { get; internal set; } = -1;
         public string TraceResult { get; internal set; } = string.Empty;
         public string TracePathSummary { get; internal set; } = string.Empty;
+        public bool WeirdComplete { get; internal set; }
+        public bool WeirdCorrect { get; internal set; }
+        public int WeirdAttempts { get; internal set; }
+        public int SelectedWeirdEntry { get; internal set; } = -1;
+        public string WeirdResult { get; internal set; } = string.Empty;
     }
 
     public sealed class OfficeManualTaskState
@@ -230,6 +236,28 @@ namespace Desk42.Product.OfficeSlice
             return value;
         }
 
+        public bool IsCaseComplete(string automationClaimId)
+        {
+            OfficeCaseWorkDefinition definition = _scenario.WorkFor(automationClaimId);
+            OfficeCaseWorkRecord record = RecordFor(automationClaimId);
+            if (definition == null || record == null) return false;
+            for (int i = 0; i < definition.RequiredSequence.Count; i++)
+                if (!IsStepComplete(record, definition.RequiredSequence[i]))
+                    return false;
+            return true;
+        }
+
+        public OfficeManualTaskKind? NextRequiredTask(string automationClaimId)
+        {
+            OfficeCaseWorkDefinition definition = _scenario.WorkFor(automationClaimId);
+            OfficeCaseWorkRecord record = RecordFor(automationClaimId);
+            if (definition == null || record == null) return null;
+            for (int i = 0; i < definition.RequiredSequence.Count; i++)
+                if (!IsStepComplete(record, definition.RequiredSequence[i]))
+                    return definition.RequiredSequence[i];
+            return null;
+        }
+
         public bool TryStart(
             OfficeManualTaskKind kind,
             string automationClaimId,
@@ -248,19 +276,15 @@ namespace Desk42.Product.OfficeSlice
                 failure = "UNKNOWN_FOLDER";
                 return false;
             }
-            if (kind == OfficeManualTaskKind.Compare && record.CompareComplete)
+            OfficeManualTaskKind? next = NextRequiredTask(automationClaimId);
+            if (!next.HasValue)
             {
-                failure = "PAPERS_ALREADY_CHECKED";
+                failure = "WORK_ALREADY_COMPLETE";
                 return false;
             }
-            if (kind == OfficeManualTaskKind.Trace && !record.CompareComplete)
+            if (next.Value != kind)
             {
-                failure = "CHECK_PAPERS_FIRST";
-                return false;
-            }
-            if (kind == OfficeManualTaskKind.Trace && record.TraceComplete)
-            {
-                failure = "MONEY_ALREADY_TRACED";
+                failure = "DO_" + next.Value.ToString().ToUpperInvariant() + "_FIRST";
                 return false;
             }
             IsActive = true;
@@ -294,7 +318,7 @@ namespace Desk42.Product.OfficeSlice
                 if (!record.CompareCorrect) return true;
                 record.CompareComplete = true;
             }
-            else
+            else if (ActiveKind == OfficeManualTaskKind.Trace)
             {
                 record.TraceAttempts++;
                 record.SelectedMoneyPath = choice;
@@ -309,6 +333,18 @@ namespace Desk42.Product.OfficeSlice
                 if (!record.TraceCorrect) return true;
                 record.TraceComplete = true;
             }
+            else
+            {
+                record.WeirdAttempts++;
+                record.SelectedWeirdEntry = choice;
+                record.WeirdCorrect = choice == definition.WeirdChoiceAnswer;
+                record.WeirdResult = record.WeirdCorrect
+                    ? definition.WeirdResult
+                    : "CHECK THAT WEIRD MARK AGAIN";
+                result = record.WeirdResult;
+                if (!record.WeirdCorrect) return true;
+                record.WeirdComplete = true;
+            }
             completed = true;
             Cancel();
             return true;
@@ -320,6 +356,19 @@ namespace Desk42.Product.OfficeSlice
             ActiveKind = OfficeManualTaskKind.Compare;
             ActiveCaseId = string.Empty;
             StartedTick = 0L;
+        }
+
+        private static bool IsStepComplete(
+            OfficeCaseWorkRecord record,
+            OfficeManualTaskKind kind)
+        {
+            return kind switch
+            {
+                OfficeManualTaskKind.Compare => record.CompareComplete,
+                OfficeManualTaskKind.Trace => record.TraceComplete,
+                OfficeManualTaskKind.WeirdCheck => record.WeirdComplete,
+                _ => false,
+            };
         }
 
         public void AppendSnapshot(StringBuilder builder, IReadOnlyList<OfficeCase> cases)
@@ -341,7 +390,12 @@ namespace Desk42.Product.OfficeSlice
                     .Append(record.TraceAttempts).Append(':')
                     .Append(record.SelectedMoneyPath).Append(':')
                     .Append(record.TraceResult).Append(':')
-                    .Append(record.TracePathSummary);
+                    .Append(record.TracePathSummary).Append(':')
+                    .Append(record.WeirdComplete).Append(':')
+                    .Append(record.WeirdCorrect).Append(':')
+                    .Append(record.WeirdAttempts).Append(':')
+                    .Append(record.SelectedWeirdEntry).Append(':')
+                    .Append(record.WeirdResult);
             }
         }
     }

@@ -67,7 +67,12 @@ namespace Desk42.Product.OfficeSlice
             int moneyPathAnswer,
             OfficeMoneyResult moneyResult,
             string moneyPathSummary,
-            bool refundFile)
+            bool refundFile,
+            bool badgeActive = false,
+            bool shiftLogMatches = false,
+            IReadOnlyList<OfficeManualTaskKind> requiredSequence = null,
+            int weirdChoiceAnswer = 0,
+            string weirdResult = "WEIRD STUFF CHECKED")
         {
             AutomationClaimId = Require(automationClaimId, nameof(automationClaimId));
             CustomerNameOnPaper = Require(
@@ -83,6 +88,32 @@ namespace Desk42.Product.OfficeSlice
             MoneyResult = moneyResult;
             MoneyPathSummary = Require(moneyPathSummary, nameof(moneyPathSummary));
             RefundFile = refundFile;
+            PublicBadgeActive = badgeActive;
+            PublicShiftLogMatches = shiftLogMatches;
+            if (weirdChoiceAnswer < 0 || weirdChoiceAnswer > 3)
+                throw new ArgumentOutOfRangeException(nameof(weirdChoiceAnswer));
+            WeirdChoiceAnswer = weirdChoiceAnswer;
+            WeirdResult = Require(weirdResult, nameof(weirdResult));
+            var sequence = requiredSequence == null
+                ? new List<OfficeManualTaskKind>
+                {
+                    OfficeManualTaskKind.Compare,
+                    OfficeManualTaskKind.Trace,
+                }
+                : new List<OfficeManualTaskKind>(requiredSequence);
+            if (sequence.Count < 2 || sequence.Count > 3 ||
+                !sequence.Contains(OfficeManualTaskKind.Compare) ||
+                !sequence.Contains(OfficeManualTaskKind.Trace))
+                throw new ArgumentException(
+                    "Work sequence must contain Paper and Money once.",
+                    nameof(requiredSequence));
+            var unique = new HashSet<OfficeManualTaskKind>();
+            for (int i = 0; i < sequence.Count; i++)
+                if (!unique.Add(sequence[i]))
+                    throw new ArgumentException(
+                        "Work sequence cannot repeat a room task.",
+                        nameof(requiredSequence));
+            RequiredSequence = new ReadOnlyCollection<OfficeManualTaskKind>(sequence);
         }
 
         public string AutomationClaimId { get; }
@@ -94,6 +125,11 @@ namespace Desk42.Product.OfficeSlice
         public OfficeMoneyResult MoneyResult { get; }
         public string MoneyPathSummary { get; }
         public bool RefundFile { get; }
+        public bool PublicBadgeActive { get; }
+        public bool PublicShiftLogMatches { get; }
+        public IReadOnlyList<OfficeManualTaskKind> RequiredSequence { get; }
+        public int WeirdChoiceAnswer { get; }
+        public string WeirdResult { get; }
         public bool PublicPapersMatch => PaperAnswer == OfficePaperEntry.PapersMatch;
         public bool PublicRefundPathClear => MoneyResult == OfficeMoneyResult.MoneyFound;
         public string PaperResult => PaperAnswer == OfficePaperEntry.PapersMatch
@@ -328,6 +364,8 @@ namespace Desk42.Product.OfficeSlice
             for (int i = 0; i < cases.Cases.Count; i++)
             {
                 bool payroll = i == 1 || i == 4 || i == 5;
+                IReadOnlyList<OfficeManualTaskKind> sequence =
+                    SequenceFor(shiftOrdinal, i);
                 string path = moneyResults[i] == OfficeMoneyResult.MoneyFound
                     ? "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT"
                     : moneyResults[i] == OfficeMoneyResult.MoneyMoved
@@ -342,8 +380,50 @@ namespace Desk42.Product.OfficeSlice
                     moneyPathAnswer: moneyAnswers[i],
                     moneyResult: moneyResults[i],
                     moneyPathSummary: path,
-                    refundFile: !payroll && i == 0));
+                    refundFile: !payroll && i == 0,
+                    badgeActive: payroll,
+                    shiftLogMatches: payroll,
+                    requiredSequence: sequence,
+                    weirdChoiceAnswer: i % 3,
+                    weirdResult: i == 3
+                        ? "MISSING ROOM RECORD FOUND"
+                        : i == 4
+                            ? "CLOCK RECORD DOES NOT MATCH THE PERSON"
+                            : "COPIED OFFICE MARK FOUND"));
             }
+        }
+
+        private static IReadOnlyList<OfficeManualTaskKind> SequenceFor(
+            int shiftOrdinal,
+            int customerIndex)
+        {
+            if (shiftOrdinal == 1 ||
+                (shiftOrdinal == 2 && (customerIndex == 1 || customerIndex == 5)))
+                return new[]
+                {
+                    OfficeManualTaskKind.Compare,
+                    OfficeManualTaskKind.Trace,
+                };
+            if (shiftOrdinal == 2 && (customerIndex == 0 || customerIndex == 3))
+                return new[]
+                {
+                    OfficeManualTaskKind.WeirdCheck,
+                    OfficeManualTaskKind.Compare,
+                    OfficeManualTaskKind.Trace,
+                };
+            if (shiftOrdinal == 2 && customerIndex == 2)
+                return new[]
+                {
+                    OfficeManualTaskKind.Compare,
+                    OfficeManualTaskKind.WeirdCheck,
+                    OfficeManualTaskKind.Trace,
+                };
+            return new[]
+            {
+                OfficeManualTaskKind.Compare,
+                OfficeManualTaskKind.Trace,
+                OfficeManualTaskKind.WeirdCheck,
+            };
         }
     }
 }

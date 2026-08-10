@@ -200,6 +200,7 @@ namespace Desk42.Product.OfficeSlice
         private readonly List<OfficeStaffState> _staff;
         private readonly IReadOnlyList<OfficeStaffState> _readOnlyStaff;
         private readonly Dictionary<string, OfficeStaffState> _byId;
+        private bool _runnerDiversionActive;
 
         public OfficeStaffSystem(
             OfficeGrid grid,
@@ -223,6 +224,13 @@ namespace Desk42.Product.OfficeSlice
         }
 
         public IReadOnlyList<OfficeStaffState> Staff => _readOnlyStaff;
+        public bool RunnerDiversionActive => _runnerDiversionActive;
+        public int RunnerDiversionCount { get; private set; }
+
+        public void SetRunnerDiversion(bool active)
+        {
+            _runnerDiversionActive = active;
+        }
 
         public OfficeStaffState Get(string staffId)
         {
@@ -273,7 +281,16 @@ namespace Desk42.Product.OfficeSlice
             }
             staff.AssignedTargetId = targetId;
             staff.SourceRoom = folder.CurrentRoom;
-            staff.DestinationRoom = destination;
+            if (_runnerDiversionActive && destination != OfficeRoomId.WeirdRoom)
+            {
+                staff.DestinationRoom = OfficeRoomId.WeirdRoom;
+                _runnerDiversionActive = false;
+                RunnerDiversionCount++;
+            }
+            else
+            {
+                staff.DestinationRoom = destination;
+            }
             staff.JobId = "job.runner." + targetId + "." +
                 currentTick.ToString("D8");
             staff.VisibleIntent = "GOING TO " + RoomLabel(staff.SourceRoom);
@@ -314,6 +331,8 @@ namespace Desk42.Product.OfficeSlice
                     .Append(':').Append(staff.DestinationRoom).Append(':')
                     .Append(staff.VisibleIntent);
             }
+            builder.Append("|runner-diversion=").Append(_runnerDiversionActive)
+                .Append(':').Append(RunnerDiversionCount);
         }
 
         private void AdvanceTalker(OfficeStaffState staff)
@@ -503,17 +522,22 @@ namespace Desk42.Product.OfficeSlice
         private readonly OfficeCustomerScheduleState _customers;
         private readonly OfficeQueueService _queues;
         private readonly OfficeManualTaskState _manualTasks;
+        private readonly int _moodThresholdBonusTicks;
         private readonly Dictionary<string, OfficeCustomerPressureRecord> _records =
             new(StringComparer.Ordinal);
 
         public OfficeCustomerPressureState(
             OfficeCustomerScheduleState customers,
             OfficeQueueService queues,
-            OfficeManualTaskState manualTasks)
+            OfficeManualTaskState manualTasks,
+            int moodThresholdBonusTicks = 0)
         {
             _customers = customers ?? throw new ArgumentNullException(nameof(customers));
             _queues = queues ?? throw new ArgumentNullException(nameof(queues));
             _manualTasks = manualTasks ?? throw new ArgumentNullException(nameof(manualTasks));
+            if (moodThresholdBonusTicks < 0)
+                throw new ArgumentOutOfRangeException(nameof(moodThresholdBonusTicks));
+            _moodThresholdBonusTicks = moodThresholdBonusTicks;
             for (int i = 0; i < customers.Customers.Count; i++)
             {
                 string id = customers.Customers[i].CustomerId;
@@ -616,7 +640,9 @@ namespace Desk42.Product.OfficeSlice
                 }
                 record.PressureTicks = Math.Max(0, record.PressureTicks + delta);
                 if (customer.QueueState == OfficeCustomerQueueState.Waiting)
-                    record.PressureTicks = Math.Min(899, record.PressureTicks);
+                    record.PressureTicks = Math.Min(
+                        899 + _moodThresholdBonusTicks,
+                        record.PressureTicks);
                 if (calming)
                 {
                     record.PressureTicks = Math.Max(
@@ -643,6 +669,8 @@ namespace Desk42.Product.OfficeSlice
                 .Append(CalmCustomerId).Append(':').Append(CalmRemainingTicks)
                 .Append(':').Append(CalmCooldownRemainingTicks).Append(':')
                 .Append(CalmStartCell);
+            builder.Append("|mood-threshold-bonus=").Append(
+                _moodThresholdBonusTicks);
             for (int i = 0; i < _customers.Customers.Count; i++)
             {
                 OfficeCustomerPressureRecord record = RecordFor(
@@ -655,12 +683,16 @@ namespace Desk42.Product.OfficeSlice
             }
         }
 
-        private static OfficeVisibleMoodState MoodFor(int pressure)
+        private OfficeVisibleMoodState MoodFor(int pressure)
         {
-            if (pressure >= 1800) return OfficeVisibleMoodState.Break;
-            if (pressure >= 1350) return OfficeVisibleMoodState.Strange;
-            if (pressure >= 900) return OfficeVisibleMoodState.Upset;
-            if (pressure >= 450) return OfficeVisibleMoodState.Worried;
+            if (pressure >= 1800 + _moodThresholdBonusTicks)
+                return OfficeVisibleMoodState.Break;
+            if (pressure >= 1350 + _moodThresholdBonusTicks)
+                return OfficeVisibleMoodState.Strange;
+            if (pressure >= 900 + _moodThresholdBonusTicks)
+                return OfficeVisibleMoodState.Upset;
+            if (pressure >= 450 + _moodThresholdBonusTicks)
+                return OfficeVisibleMoodState.Worried;
             return OfficeVisibleMoodState.Calm;
         }
     }

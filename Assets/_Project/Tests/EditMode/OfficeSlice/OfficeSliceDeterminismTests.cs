@@ -44,7 +44,8 @@ namespace Desk42.Tests.EditMode
             Assert.That(log.TryRecord(OfficeCommand.Move(5, 1, 0, 1), out string duplicate),
                 Is.False);
             Assert.That(duplicate, Does.Contain("Duplicate"));
-            Assert.That(log.TryRecord(new OfficeCommand(3, 6, 2,
+            Assert.That(log.TryRecord(new OfficeCommand(
+                OfficeCommandLog.CurrentSchemaVersion + 1, 6, 2,
                 OfficeCommandKind.Move, "warden", string.Empty, 1, 0, string.Empty),
                 out string futureSchema), Is.False);
             Assert.That(futureSchema, Does.Contain("Unsupported"));

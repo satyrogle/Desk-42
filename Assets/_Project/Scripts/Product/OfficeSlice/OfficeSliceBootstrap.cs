@@ -238,7 +238,9 @@ namespace Desk42.Product.OfficeSlice
                 view.position = destination;
                 if (_folderLabels.TryGetValue(caseId, out TextMesh label))
                     label.text = folder.IsCopy
-                        ? "COPY"
+                        ? caseId.StartsWith("time-slip.", StringComparison.Ordinal)
+                            ? "TIME SLIP"
+                            : "COPY"
                         : _caseRepository.Get(caseId)?.DisplayId ?? caseId;
                 if (_folderRenderers.TryGetValue(caseId, out Renderer renderer))
                 {
@@ -246,7 +248,9 @@ namespace Desk42.Product.OfficeSlice
                     renderer.sharedMaterial.color = IsHighlightedFolder(folder)
                         ? new Color(1f, 0.88f, 0.22f)
                         : folder.IsCopy
-                            ? new Color(0.92f, 0.35f, 0.32f)
+                            ? caseId.StartsWith("time-slip.", StringComparison.Ordinal)
+                                ? new Color(0.52f, 0.72f, 0.95f)
+                                : new Color(0.92f, 0.35f, 0.32f)
                             : FolderColor(sourceCase.Urgency);
                 }
             }
@@ -507,9 +511,15 @@ namespace Desk42.Product.OfficeSlice
         {
             GameObject copy = CreateCube("Copied Folder " + folder.CaseId,
                 Vector3.zero, new Vector3(0.62f, 0.16f, 0.42f),
-                new Color(0.92f, 0.35f, 0.32f));
+                folder.CaseId.StartsWith("time-slip.", StringComparison.Ordinal)
+                    ? new Color(0.52f, 0.72f, 0.95f)
+                    : new Color(0.92f, 0.35f, 0.32f));
             _folderViews.Add(folder.CaseId, copy.transform);
-            TextMesh label = CreateLabel("COPY", Vector3.up * 0.18f,
+            TextMesh label = CreateLabel(
+                folder.CaseId.StartsWith("time-slip.", StringComparison.Ordinal)
+                    ? "TIME SLIP"
+                    : "COPY",
+                Vector3.up * 0.18f,
                 0.055f, copy.transform);
             _folderLabels.Add(folder.CaseId, label);
             _folderRenderers.Add(folder.CaseId, copy.GetComponent<Renderer>());
@@ -523,6 +533,27 @@ namespace Desk42.Product.OfficeSlice
             CreateCube("Copy Echo", new Vector3(5.5f, 0.65f, -3.5f),
                 new Vector3(1.3f, 1.3f, 1.3f), new Color(0.62f, 0.35f, 0.58f));
             CreateLabel("COPY ECHO", new Vector3(5.5f, 1.55f, -3.5f), 0.07f);
+            if (_campaignState != null && _campaignState.CurrentShiftOrdinal >= 2)
+            {
+                CreateCube("Clock Terminal", new Vector3(2.2f, 0.55f, 5f),
+                    new Vector3(0.8f, 1.1f, 0.8f), new Color(0.3f, 0.52f, 0.78f));
+                CreateLabel("GHOST CLOCK", new Vector3(2.2f, 1.35f, 5f), 0.06f);
+                CreateCube("Missing Room Door", new Vector3(12f, 0.9f, -3.5f),
+                    new Vector3(0.25f, 1.8f, 1.5f), new Color(0.5f, 0.4f, 0.25f));
+                CreateLabel("MISSING ROOM", new Vector3(12f, 2f, -3.5f), 0.06f);
+            }
+            if (_campaignState?.Upgrades.FastTraysTier > 0)
+            {
+                CreateCube("Fast Tray Upgrade", new Vector3(-6.5f, 0.3f, 5f),
+                    new Vector3(1.5f, 0.25f, 0.8f), new Color(0.2f, 0.75f, 0.72f));
+                CreateLabel("FAST TRAYS", new Vector3(-6.5f, 0.75f, 5f), 0.055f);
+            }
+            if (_campaignState?.Upgrades.CalmChairsTier > 0)
+            {
+                CreateCube("Calm Chair Upgrade", new Vector3(-2f, 0.4f, -3.5f),
+                    new Vector3(0.8f, 0.8f, 0.8f), new Color(0.4f, 0.62f, 0.45f));
+                CreateLabel("CALM CHAIRS", new Vector3(-2f, 1.05f, -3.5f), 0.055f);
+            }
         }
 
         private void CreateCustomerViews()
@@ -722,8 +753,16 @@ namespace Desk42.Product.OfficeSlice
             if (_campaignState != null &&
                 _campaignState.Phase == OfficeCampaignPhase.ChooseUpgrade)
             {
-                GUILayout.Label("THE OFFICE SURVIVED.");
-                GUILayout.Label("CHOOSE ONE CHANGE FOR TOMORROW.");
+                if (_campaignState.CurrentShiftOrdinal == 1)
+                {
+                    GUILayout.Label("THE OFFICE SURVIVED.");
+                    GUILayout.Label("CHOOSE ONE CHANGE FOR TOMORROW.");
+                }
+                else
+                {
+                    GUILayout.Label("THE MACHINE NOW KNOWS TWO RULES.");
+                    GUILayout.Label("CHOOSE WHAT THIS OFFICE BECOMES BETTER AT.");
+                }
                 GUILayout.Label("1 FAST TRAYS     2 CALM CHAIRS     3 RED LABELS");
             }
             else if (_campaignState != null &&
@@ -760,6 +799,14 @@ namespace Desk42.Product.OfficeSlice
                     _simulationState.AutomationRule.Unlocked ? "OFF" : "LOCKED"));
             if (_simulationState.AutomationRule.Unlocked)
                 GUILayout.Label(OfficeAutomationRuleState.PlayerRule);
+            if (_campaignState != null && _campaignState.CurrentShiftOrdinal >= 2)
+            {
+                GUILayout.Label("T / RIGHT STICK: PAY RULE " +
+                    (_simulationState.PayrollRule.Enabled ? "ON" :
+                        _simulationState.PayrollRule.Unlocked ? "OFF" : "LOCKED"));
+                if (_simulationState.PayrollRule.Unlocked)
+                    GUILayout.Label(OfficePayrollRuleState.PlayerRule);
+            }
             GUILayout.Label("3 RUNNER     4 TALKER");
             for (int i = 0; i < _simulationState.Staff.Staff.Count; i++)
             {
@@ -773,6 +820,10 @@ namespace Desk42.Product.OfficeSlice
                 GUILayout.Label(_simulationState.BreakState.Recovered
                     ? "OFFICE FIXED"
                     : "COPY ECHO: FIX MACHINE / CLEAR COPIES / FIND ORIGINAL");
+            if (_simulationState.GhostClock.Active)
+                GUILayout.Label("GHOST CLOCK: KEEP TOMAS CALM / STOP CLOCK / CLEAR SLIPS");
+            if (_simulationState.MissingRoomAccess.Active)
+                GUILayout.Label("MISSING ROOM OPEN: CLOSE DOOR OR FINISH IRIS'S CASE");
             if (_simulationState.Shift.Failed)
                 GUILayout.Label(_simulationState.Shift.FailureReason +
                     " / ENTER OR START TO RESTART");
@@ -816,12 +867,21 @@ namespace Desk42.Product.OfficeSlice
                     GUILayout.Label("3 ACCOUNT MARK: " + work.AccountMarkOnPaper);
                     GUILayout.Label("4 THE PAPERS MATCH");
                 }
-                else
+                else if (_simulationState.ManualTasks.ActiveKind ==
+                    OfficeManualTaskKind.Trace)
                 {
                     GUILayout.Label("TRACE MONEY");
                     GUILayout.Label("1 COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT");
                     GUILayout.Label("2 COMPANY > PAYMENT RECORD > HOLDING ACCOUNT");
                     GUILayout.Label("3 COPIED FILE > NO PAYMENT RECORD > NO ACCOUNT");
+                }
+                else
+                {
+                    GUILayout.Label("CHECK WEIRD STUFF");
+                    GUILayout.Label("1 CHECK THE OFFICE MARK");
+                    GUILayout.Label("2 CHECK THE CLOCK MARK");
+                    GUILayout.Label("3 CHECK THE ACCESS MARK");
+                    GUILayout.Label("4 CHECK THE COPIER MARK");
                 }
                 return;
             }
@@ -845,9 +905,12 @@ namespace Desk42.Product.OfficeSlice
                 if (!string.IsNullOrWhiteSpace(record.TracePathSummary))
                     GUILayout.Label(record.TracePathSummary);
             }
+            if (record.WeirdAttempts > 0)
+                GUILayout.Label("WEIRD: " + record.WeirdResult);
             OfficeFolderState folder = _simulationState.Queues.GetFolder(
                 customer.LinkedAutomationClaimId);
-            if (record.CompareComplete && record.TraceComplete &&
+            if (_simulationState.ManualTasks.IsCaseComplete(
+                    customer.LinkedAutomationClaimId) &&
                 folder != null && !folder.IsMoving &&
                 folder.OwnerKind == OfficeFolderOwnerKind.RoomQueue &&
                 folder.CurrentRoom == OfficeRoomId.FrontDesk)

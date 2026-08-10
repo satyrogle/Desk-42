@@ -88,6 +88,8 @@ namespace Desk42.Product.OfficeSlice
         private long _dropExpiresAfterTick;
         private bool _toggleRuleBuffered;
         private long _toggleRuleExpiresAfterTick;
+        private bool _toggleRule2Buffered;
+        private long _toggleRule2ExpiresAfterTick;
         private bool _restartBuffered;
         private long _restartExpiresAfterTick;
 
@@ -197,6 +199,26 @@ namespace Desk42.Product.OfficeSlice
             return true;
         }
 
+        public void BufferToggleRule2(long currentTick)
+        {
+            if (currentTick < 0L) throw new ArgumentOutOfRangeException(nameof(currentTick));
+            if (_toggleRule2Buffered) return;
+            _toggleRule2Buffered = true;
+            _toggleRule2ExpiresAfterTick = currentTick + InteractionBufferTicks;
+        }
+
+        public bool TryConsumeToggleRule2(long commandTick)
+        {
+            if (!_toggleRule2Buffered) return false;
+            if (commandTick > _toggleRule2ExpiresAfterTick)
+            {
+                ClearToggleRule2();
+                return false;
+            }
+            ClearToggleRule2();
+            return true;
+        }
+
         public void BufferRestart(long currentTick)
         {
             if (currentTick < 0L) throw new ArgumentOutOfRangeException(nameof(currentTick));
@@ -224,6 +246,7 @@ namespace Desk42.Product.OfficeSlice
             ClearChoice();
             ClearDrop();
             ClearToggleRule();
+            ClearToggleRule2();
             ClearRestart();
         }
 
@@ -250,6 +273,12 @@ namespace Desk42.Product.OfficeSlice
         {
             _toggleRuleBuffered = false;
             _toggleRuleExpiresAfterTick = 0L;
+        }
+
+        private void ClearToggleRule2()
+        {
+            _toggleRule2Buffered = false;
+            _toggleRule2ExpiresAfterTick = 0L;
         }
 
         private void ClearRestart()
@@ -302,6 +331,9 @@ namespace Desk42.Product.OfficeSlice
             if (_intent.TryConsumeToggleRule(commandTick))
                 _state.TryQueueCommand(
                     _state.CreateToggleRuleCommand(), out OfficeCommandFailure ignored);
+            if (_intent.TryConsumeToggleRule2(commandTick))
+                _state.TryQueueCommand(
+                    _state.CreateToggleRule2Command(), out OfficeCommandFailure ignored);
             if (_intent.TryConsumeRestart(commandTick))
                 _state.TryQueueCommand(
                     _state.CreateRestartCommand(), out OfficeCommandFailure ignored);
