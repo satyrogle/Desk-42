@@ -316,6 +316,62 @@ def portrait(primary: str, accent: str, signature: int, mood: str) -> Image.Imag
     return im
 
 
+def machine(kind: str, state: str) -> Image.Image:
+    im = Image.new("RGBA", (192, 192), P["clear"])
+    d = ImageDraw.Draw(im)
+    base = "teal" if kind not in ("copy-echo", "supervisor-stamp") else "violet"
+    edge = "mint" if state == "idle" else "amber" if state in ("active", "warning") else "red"
+    if state == "break": edge = "ink"
+    d.rectangle((23, 31, 169, 174), fill=P[base], outline=P["ink"], width=10)
+    d.rectangle((42, 50, 150, 106), fill=P["plaster"], outline=P[edge], width=8)
+    if kind == "copy-echo":
+        for y in (60, 77, 94): d.line((52, y, 140, y), fill=P["red"], width=7)
+        d.polygon(((58, 116), (145, 116), (157, 157), (46, 157)), fill=P["cream"], outline=P["ink"])
+    elif kind == "ghost-clock":
+        d.ellipse((57, 47, 136, 126), fill=P["ink"], outline=P["cyan"], width=8)
+        d.line((96, 61, 96, 87), fill=P["cyan"], width=6); d.line((96, 87, 120, 101), fill=P["cyan"], width=6)
+    elif kind == "supervisor-stamp":
+        d.polygon(((95, 44), (108, 70), (138, 73), (116, 92), (123, 122), (95, 106), (67, 122), (74, 92), (52, 73), (82, 70)), fill=P["red"], outline=P["ink"])
+    elif kind == "money-trace":
+        d.line((55, 76, 84, 95, 110, 67, 139, 91), fill=P["mint"], width=9, joint="curve")
+    elif kind == "paper-check":
+        d.rectangle((59, 52, 132, 131), fill=P["cream"], outline=P["ink"], width=7)
+        for y in (72, 91, 110): d.line((70, y, 122, y), fill=P["coffee"], width=5)
+    elif kind == "auto-sorter":
+        for n in range(3): d.polygon(((45, 55 + n * 31), (148, 55 + n * 31), (132, 78 + n * 31), (58, 78 + n * 31)), fill=P["cream"], outline=P["ink"])
+    else:
+        d.rectangle((48, 58, 144, 123), fill=P["coffee"], outline=P["ink"], width=7)
+    if state == "active":
+        d.polygon(((17, 92), (38, 78), (38, 106)), fill=P["mint"]); d.polygon(((175, 92), (154, 78), (154, 106)), fill=P["mint"])
+    elif state == "warning":
+        d.polygon(((96, 9), (119, 46), (73, 46)), fill=P["amber"], outline=P["ink"])
+    elif state == "jammed":
+        d.line((38, 48, 155, 154), fill=P["red"], width=13); d.line((155, 48, 38, 154), fill=P["red"], width=13)
+    elif state == "break":
+        d.polygon(((21, 20), (63, 72), (47, 105), (98, 151), (77, 186)), fill=P["ink"])
+        d.line((126, 15, 109, 64, 157, 113), fill=P["red"], width=11)
+    d.rectangle((42, 172, 151, 184), fill=P["ink"])
+    return im
+
+
+def vfx(kind: str) -> Image.Image:
+    im = Image.new("RGBA", (96, 96), P["clear"])
+    d = ImageDraw.Draw(im)
+    colour = "cyan" if "clock" in kind or "money" in kind else "red" if "copy" in kind or "cross" in kind or "stamp" in kind else "mint"
+    if "trail" in kind or "pulse" in kind:
+        d.arc((8, 8, 88, 88), 195, 520, fill=P[colour], width=10)
+        d.polygon(((78, 61), (93, 76), (70, 81)), fill=P[colour])
+    elif "cross" in kind or "fracture" in kind:
+        d.line((16, 16, 80, 80), fill=P[colour], width=11); d.line((80, 16, 16, 80), fill=P["ink"], width=9)
+    elif "tick" in kind or "complete" in kind or "close" in kind:
+        d.line((12, 51, 37, 77, 84, 18), fill=P[colour], width=12, joint="curve")
+    elif "stamp" in kind or "attach" in kind or "remove" in kind:
+        d.polygon(((48, 5), (59, 31), (88, 33), (66, 52), (73, 82), (48, 65), (23, 82), (30, 52), (8, 33), (37, 31)), fill=P[colour], outline=P["ink"])
+    else:
+        for radius in (38, 25, 12): d.ellipse((48-radius, 48-radius, 48+radius, 48+radius), outline=P[colour], width=6)
+    return im
+
+
 def gate_a(records: list[dict]):
     env = environment()
     save_asset("environment.office.base", "Environment", env, "Environment/office_background.png", records)
@@ -412,6 +468,60 @@ def gate_c(records: list[dict]):
                "Characters/Portraits/tomas-reed_ghost-clock.png", records)
 
 
+def gate_d(records: list[dict]):
+    machines = [
+        "front-desk-counter", "paper-check", "money-trace", "auto-sorter",
+        "copy-echo", "ghost-clock", "supervisor-stamp",
+    ]
+    for machine_id in machines:
+        for state in ("idle", "active", "warning", "jammed", "break"):
+            save_asset(f"machine.{machine_id}.{state}", "Machines",
+                       machine(machine_id, state),
+                       f"Machines/{machine_id}_{state}.png", records)
+    for tier in (1, 2):
+        for upgrade, kind, primary, accent in (
+            ("fast-trays", "tray", "teal", "mint"),
+            ("calm-chairs", "chair", "mint", "amber"),
+            ("red-labels", "label", "red", "cream"),
+        ):
+            image = prop(kind, primary, accent)
+            if tier == 2:
+                ImageDraw.Draw(image).rectangle((10, 10, 149, 149), outline=P[accent], width=6)
+            save_asset(f"upgrade.{upgrade}.tier-{tier}", "Props", image,
+                       f"Props/{upgrade}_tier_{tier}.png", records)
+    for prop_id, kind in (("queue-post", "socket"), ("folder-rack", "tray"), ("company-poster", "label")):
+        save_asset(f"prop.{prop_id}", "Props", prop(kind, "moss", "cream"),
+                   f"Props/{prop_id}.png", records)
+
+    folder_specs = (
+        ("normal", "original", "teal"), ("original", "original", "amber"),
+        ("copy", "copy", "red"), ("time-slip", "time-slip", "cyan"),
+        ("promotion-form", "promotion", "violet"), ("carried", "original", "mint"),
+        ("rule-matched", "original", "teal"), ("returned", "original", "moss"),
+    )
+    for asset_id, kind, accent in folder_specs:
+        save_asset(f"folder.{asset_id}", "Folders", folder(kind, accent),
+                   f"Folders/folder_{asset_id}.png", records)
+    for tier in (0, 1, 2):
+        image = folder("copy", "red")
+        draw = ImageDraw.Draw(image)
+        for n in range(tier): draw.rectangle((8 + n * 10, 4, 14 + n * 10, 48), fill=P["red"])
+        save_asset(f"folder.copy.tier-{tier}", "Folders", image,
+                   f"Folders/folder_copy_tier_{tier}.png", records)
+
+    effects = [
+        "paper-pickup", "folder-send-trail", "paper-compare-snap", "money-route-pulse",
+        "rule-learned-stamp", "rule-accepted-tick", "rule-rejected-cross",
+        "customer-mood-rise", "calm-effect", "copy-spawn", "copy-clear",
+        "ghost-clock-slip", "machine-stop", "supervisor-stamp-attach",
+        "supervisor-stamp-remove", "runner-allegiance-swap",
+        "promotion-cascade-ink-fracture", "recovery-complete", "shift-close",
+    ]
+    for effect in effects:
+        save_asset(f"vfx.{effect}", "VFX", vfx(effect),
+                   f"VFX/{effect}.png", records)
+
+
 def write_outputs(records: list[dict]):
     columns = [
         "asset_id", "runtime_filename", "category", "authoring_method", "blender_source",
@@ -435,12 +545,13 @@ def write_outputs(records: list[dict]):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--gate", choices=("A", "B", "C"), default="A")
+    parser.add_argument("--gate", choices=("A", "B", "C", "D"), default="A")
     args = parser.parse_args()
     records: list[dict] = []
     gate_a(records)
-    if args.gate in ("B", "C"): gate_b(records)
-    if args.gate == "C": gate_c(records)
+    if args.gate in ("B", "C", "D"): gate_b(records)
+    if args.gate in ("C", "D"): gate_c(records)
+    if args.gate == "D": gate_d(records)
     write_outputs(records)
 
 

@@ -34,11 +34,17 @@ namespace Desk42.Product.OfficeSlice
 
         public GameObject Request(Vector3 position)
         {
+            return Request(position, null);
+        }
+
+        public GameObject Request(Vector3 position, Sprite sprite)
+        {
             for (int i = 0; i < _items.Length; i++)
             {
                 if (_active[i]) continue;
                 _active[i] = true;
                 _items[i].transform.position = position;
+                if (sprite != null) _items[i].GetComponent<SpriteRenderer>().sprite = sprite;
                 _items[i].SetActive(true);
                 return _items[i];
             }

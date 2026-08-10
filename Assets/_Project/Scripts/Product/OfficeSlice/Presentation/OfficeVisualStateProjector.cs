@@ -21,9 +21,14 @@ namespace Desk42.Product.OfficeSlice
         public bool GhostClockActive { get; }
         public bool MissingRoomActive { get; }
         public bool PromotionCascadeActive { get; }
+        public bool AutomationRuleActive { get; }
+        public bool PayrollRuleActive { get; }
         public bool FastTraysVisible { get; }
         public bool CalmChairsVisible { get; }
         public bool RedLabelsVisible { get; }
+        public int FastTraysTier { get; }
+        public int CalmChairsTier { get; }
+        public int RedLabelsTier { get; }
 
         public OfficeVisualSnapshot(
             long tick,
@@ -34,9 +39,14 @@ namespace Desk42.Product.OfficeSlice
             bool ghostClockActive,
             bool missingRoomActive,
             bool promotionCascadeActive,
+            bool automationRuleActive,
+            bool payrollRuleActive,
             bool fastTraysVisible,
             bool calmChairsVisible,
-            bool redLabelsVisible)
+            bool redLabelsVisible,
+            int fastTraysTier,
+            int calmChairsTier,
+            int redLabelsTier)
         {
             Tick = tick;
             ShiftOrdinal = shiftOrdinal;
@@ -46,9 +56,14 @@ namespace Desk42.Product.OfficeSlice
             GhostClockActive = ghostClockActive;
             MissingRoomActive = missingRoomActive;
             PromotionCascadeActive = promotionCascadeActive;
+            AutomationRuleActive = automationRuleActive;
+            PayrollRuleActive = payrollRuleActive;
             FastTraysVisible = fastTraysVisible;
             CalmChairsVisible = calmChairsVisible;
             RedLabelsVisible = redLabelsVisible;
+            FastTraysTier = fastTraysTier;
+            CalmChairsTier = calmChairsTier;
+            RedLabelsTier = redLabelsTier;
         }
     }
 
@@ -70,9 +85,14 @@ namespace Desk42.Product.OfficeSlice
                 state.GhostClock.Active,
                 state.MissingRoomAccess.Active,
                 state.PromotionCascade.Active && !state.PromotionCascade.Recovered,
+                state.AutomationRule.Enabled,
+                state.PayrollRule.Enabled,
                 campaign?.Upgrades.FastTraysTier > 0,
                 campaign?.Upgrades.CalmChairsTier > 0,
-                campaign?.Upgrades.RedLabelsTier > 0);
+                campaign?.Upgrades.RedLabelsTier > 0,
+                campaign?.Upgrades.FastTraysTier ?? 0,
+                campaign?.Upgrades.CalmChairsTier ?? 0,
+                campaign?.Upgrades.RedLabelsTier ?? 0);
         }
 
         private static OfficeVisualPressureState ProjectPressure(

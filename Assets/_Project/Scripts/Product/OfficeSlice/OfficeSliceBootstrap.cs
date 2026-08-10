@@ -325,7 +325,11 @@ namespace Desk42.Product.OfficeSlice
                                 : new Color(0.92f, 0.35f, 0.32f)
                             : FolderColor(sourceCase.Urgency);
                     if (renderer is SpriteRenderer spriteRenderer)
-                        spriteRenderer.color = folderColour;
+                    {
+                        _m4Director?.SetSprite(view, M4FolderVisualId(folder));
+                        spriteRenderer.color = _m4Director == null
+                            ? folderColour : Color.white;
+                    }
                     else
                         renderer.sharedMaterial.color = folderColour;
                 }
@@ -648,7 +652,10 @@ namespace Desk42.Product.OfficeSlice
                 GameObject folder = _m4Director != null
                     ? _m4Director.CreateSpriteObject(
                         "Folder " + officeCase.DisplayId,
-                        "folder.original." + ((i % 6) + 1),
+                        string.Equals(caseId,
+                            _simulationState.PromotionCascade.MaraCaseId,
+                            StringComparison.Ordinal)
+                            ? "folder.original" : "folder.normal",
                         Vector3.zero, Vector3.one, 120)
                     : CreateCube("Folder " + officeCase.DisplayId,
                         Vector3.zero, new Vector3(0.62f, 0.16f, 0.42f),
@@ -670,7 +677,7 @@ namespace Desk42.Product.OfficeSlice
             {
                 GameObject m4Copy = _m4Director.CreateSpriteObject(
                     "Copied Folder " + folder.CaseId,
-                    "folder.original.6",
+                    M4FolderVisualId(folder),
                     Vector3.zero,
                     Vector3.one,
                     121);
@@ -704,6 +711,36 @@ namespace Desk42.Product.OfficeSlice
                 redLabel.transform.SetParent(copy.transform, false);
                 redLabel.transform.localPosition = new Vector3(0f, 0.1f, 0f);
             }
+        }
+
+        private string M4FolderVisualId(OfficeFolderState folder)
+        {
+            if (folder == null) return "folder.normal";
+            if (folder.OwnerKind == OfficeFolderOwnerKind.Warden)
+                return "folder.carried";
+            if (!folder.IsCopy &&
+                _simulationState.PromotionCascade.OriginalBadgeReturned &&
+                string.Equals(folder.CaseId,
+                    _simulationState.PromotionCascade.MaraCaseId,
+                    StringComparison.Ordinal))
+                return "folder.returned";
+            if (_simulationState.AutomationRule.Accepted(folder.CaseId) ||
+                _simulationState.PayrollRule.Accepted(folder.CaseId))
+                return "folder.rule-matched";
+            if (folder.CaseId.StartsWith("time-slip.", StringComparison.Ordinal))
+                return "folder.time-slip";
+            if (_simulationState.PromotionCascade.IsPromotionForm(folder.CaseId))
+                return "folder.promotion-form";
+            if (folder.IsCopy)
+            {
+                int tier = Mathf.Clamp(
+                    _campaignState?.Upgrades.RedLabelsTier ?? 0, 0, 2);
+                return "folder.copy.tier-" + tier;
+            }
+            return string.Equals(folder.CaseId,
+                _simulationState.PromotionCascade.MaraCaseId,
+                StringComparison.Ordinal)
+                ? "folder.original" : "folder.normal";
         }
 
         private void CreateMachineViews()

@@ -239,6 +239,27 @@ MonoBehaviour:
   - id: fallback.explicit
     sprite: {fileID: 21300000, guid: f404fc054ad983942a6b500e39b56f25, type: 3}
     anchor: {x: 0.5, y: 0.5}
+  - id: folder.carried
+    sprite: {fileID: 21300000, guid: 5e30df7deb6ec6941a5d5e6deb2b4e05, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.copy
+    sprite: {fileID: 21300000, guid: 31746f1f72e70a04bb170c9486b256f0, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.copy.tier-0
+    sprite: {fileID: 21300000, guid: 1c81c26e3b7782741a14db135b035176, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.copy.tier-1
+    sprite: {fileID: 21300000, guid: 6bc599a411c40c645a89d1d24e4f53e6, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.copy.tier-2
+    sprite: {fileID: 21300000, guid: 007259474942f01488268473164692d8, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.normal
+    sprite: {fileID: 21300000, guid: f4568e59bf96f40498cac335a6f461c5, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.original
+    sprite: {fileID: 21300000, guid: 5452c276cf1a1de49b0db484e22c42d5, type: 3}
+    anchor: {x: 0.5, y: 0.5}
   - id: folder.original.1
     sprite: {fileID: 21300000, guid: e282dbd57de3f9b4795414bd7cc44301, type: 3}
     anchor: {x: 0.5, y: 0.5}
@@ -256,6 +277,123 @@ MonoBehaviour:
     anchor: {x: 0.5, y: 0.5}
   - id: folder.original.6
     sprite: {fileID: 21300000, guid: b9820b9d748f8904e94c25a3f37b53d5, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.promotion-form
+    sprite: {fileID: 21300000, guid: f2f24694196acd04d9bc638bb3dbd23c, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.returned
+    sprite: {fileID: 21300000, guid: 58bbfb0baf4695640adfec9af7c53a26, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.rule-matched
+    sprite: {fileID: 21300000, guid: f937a9b7ae5d69848afc5bec90a53179, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: folder.time-slip
+    sprite: {fileID: 21300000, guid: cd01481299a690f41b67541dfa5887ec, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.auto-sorter.active
+    sprite: {fileID: 21300000, guid: ec969ab391f41904a97638960080fd35, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.auto-sorter.break
+    sprite: {fileID: 21300000, guid: 08eca21ce99c1f8469cef1bff7c571fa, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.auto-sorter.idle
+    sprite: {fileID: 21300000, guid: f4d2b332e79c4db4c822008f0be5ecaf, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.auto-sorter.jammed
+    sprite: {fileID: 21300000, guid: 044ed8791ea1ae94894c3159f24f499b, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.auto-sorter.warning
+    sprite: {fileID: 21300000, guid: 2a68a6101f746cb44ac3fd7e88090c13, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.copy-echo.active
+    sprite: {fileID: 21300000, guid: 947c9b3b27864584289567480543aac1, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.copy-echo.break
+    sprite: {fileID: 21300000, guid: fbd7aebd612008948bc0ec7c90349fa0, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.copy-echo.idle
+    sprite: {fileID: 21300000, guid: 2a06b5ea6b7f50e45ad2b8300a7c2411, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.copy-echo.jammed
+    sprite: {fileID: 21300000, guid: 645fb591f61233141a852c90d64c1c89, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.copy-echo.warning
+    sprite: {fileID: 21300000, guid: 514c8c920dd831342be2e5a07dc19ad2, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.front-desk-counter.active
+    sprite: {fileID: 21300000, guid: 017786749170b8641a968d045827cfe6, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.front-desk-counter.break
+    sprite: {fileID: 21300000, guid: 607d2ece9afb5654ebfe13b491f4b5cf, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.front-desk-counter.idle
+    sprite: {fileID: 21300000, guid: e32f6be528046ba4f8e6cea43abcef30, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.front-desk-counter.jammed
+    sprite: {fileID: 21300000, guid: 37bb153f7a9c5f24e8d4ea2fa84d7457, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.front-desk-counter.warning
+    sprite: {fileID: 21300000, guid: 44be0bb67766eb945959141f3e5ea0cb, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.ghost-clock.active
+    sprite: {fileID: 21300000, guid: 6fb71577511b7524e9f69d1f23859e93, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.ghost-clock.break
+    sprite: {fileID: 21300000, guid: 69340e558aa68ad42a710ed680835399, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.ghost-clock.idle
+    sprite: {fileID: 21300000, guid: 730de23878520c644906a56e481e9160, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.ghost-clock.jammed
+    sprite: {fileID: 21300000, guid: e21a75f09b0a7394dbe3de63f5e50365, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.ghost-clock.warning
+    sprite: {fileID: 21300000, guid: 012505cf251f63b4a90bae8a8fdc6f69, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.money-trace.active
+    sprite: {fileID: 21300000, guid: 6730ecdc7b778e04ebb0c4e1b0492819, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.money-trace.break
+    sprite: {fileID: 21300000, guid: 88c42435d087b194e99e9ef81cd29896, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.money-trace.idle
+    sprite: {fileID: 21300000, guid: 8218ef16e08f1cd4aae78101be41229a, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.money-trace.jammed
+    sprite: {fileID: 21300000, guid: b0beacc4947158945b32cd56e5469ae3, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.money-trace.warning
+    sprite: {fileID: 21300000, guid: a147528a604c0e0419593b2721086f94, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.paper-check.active
+    sprite: {fileID: 21300000, guid: 181f8bfa08ebb2c4fbf62bd39bdf6778, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.paper-check.break
+    sprite: {fileID: 21300000, guid: 07f87bdadb995834c84ab4561d4f1a97, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.paper-check.idle
+    sprite: {fileID: 21300000, guid: b788fb954e336a348a907762ec2e7eae, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.paper-check.jammed
+    sprite: {fileID: 21300000, guid: cafbb52646963fb46997e0925e0ce813, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.paper-check.warning
+    sprite: {fileID: 21300000, guid: e2a989735e8366b46954587979d1fefa, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.supervisor-stamp.active
+    sprite: {fileID: 21300000, guid: c9e766faad271744e833eb689d6b1f20, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.supervisor-stamp.break
+    sprite: {fileID: 21300000, guid: 6ddab412074afcb4fa565c7e8ead8a98, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.supervisor-stamp.idle
+    sprite: {fileID: 21300000, guid: 01942b48b77bf56469e7f58cc4a6dc96, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.supervisor-stamp.jammed
+    sprite: {fileID: 21300000, guid: 0b28474e7decf8440be278b45dc7c013, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: machine.supervisor-stamp.warning
+    sprite: {fileID: 21300000, guid: bf08ba835c51c8e45bbc553bfc718a38, type: 3}
     anchor: {x: 0.5, y: 0.5}
   - id: portrait.iris-cole.calm
     sprite: {fileID: 21300000, guid: ff09c1ea562ed7b4fa7bab7d7b92917b, type: 3}
@@ -334,4 +472,88 @@ MonoBehaviour:
     anchor: {x: 0.5, y: 0.5}
   - id: portrait.tomas-reed.worried
     sprite: {fileID: 21300000, guid: 7dfd9a503ad22ed4e9e30ef2c135e996, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: prop.company-poster
+    sprite: {fileID: 21300000, guid: 7782c100ecb084244ad199362615d471, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: prop.folder-rack
+    sprite: {fileID: 21300000, guid: 93a20d8f2af44f24daa7d3fa8f7e0518, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: prop.queue-post
+    sprite: {fileID: 21300000, guid: b68fb4bb90642aa4b8dc043030b43a91, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: upgrade.calm-chairs.tier-1
+    sprite: {fileID: 21300000, guid: 00386a6623f683e40b14d60b8f6e9d4b, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: upgrade.calm-chairs.tier-2
+    sprite: {fileID: 21300000, guid: 7d7e8fe87f9dfa042803373f4f1e79a1, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: upgrade.fast-trays.tier-1
+    sprite: {fileID: 21300000, guid: 141f4b57a16aa894592ab6e100a16aa0, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: upgrade.fast-trays.tier-2
+    sprite: {fileID: 21300000, guid: 440651bb9c82623438199d294464bea0, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: upgrade.red-labels.tier-1
+    sprite: {fileID: 21300000, guid: 23a30268ebd764c468b1bd6b51517485, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: upgrade.red-labels.tier-2
+    sprite: {fileID: 21300000, guid: 7f2bd304a4e66c049acdcd6e53cfb880, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.calm-effect
+    sprite: {fileID: 21300000, guid: 6b8e12e3d1b1a124ab0f264105a8c3f4, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.copy-clear
+    sprite: {fileID: 21300000, guid: bd08de812630c6e4c83f2de74f1bed23, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.copy-spawn
+    sprite: {fileID: 21300000, guid: 7a82870fa26a2a94684204645f0f4022, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.customer-mood-rise
+    sprite: {fileID: 21300000, guid: b346d288b67e7b445b9dad91dd34f946, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.folder-send-trail
+    sprite: {fileID: 21300000, guid: ef1f9490c0496e04ba3d28ca9da24cf5, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.ghost-clock-slip
+    sprite: {fileID: 21300000, guid: 267309c3bd4cf5b42ae626b095e7db93, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.machine-stop
+    sprite: {fileID: 21300000, guid: 8b73bf00ba24bd84dab383a9b5396467, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.money-route-pulse
+    sprite: {fileID: 21300000, guid: c8e7ebccb6fac374cb17b9f08c5e3c47, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.paper-compare-snap
+    sprite: {fileID: 21300000, guid: 7736be265aa0f314b9b26420bb3fa997, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.paper-pickup
+    sprite: {fileID: 21300000, guid: f2e201c4c4b810942a51523a0448c901, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.promotion-cascade-ink-fracture
+    sprite: {fileID: 21300000, guid: e719f84cc9da965499e9a9b869af500b, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.recovery-complete
+    sprite: {fileID: 21300000, guid: f92fb4c59cfc1b745b1841a22ee68d2f, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.rule-accepted-tick
+    sprite: {fileID: 21300000, guid: d9070cab7d72cb54bb77dd4e73ee1e0c, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.rule-learned-stamp
+    sprite: {fileID: 21300000, guid: 8983d40aa8e3c6445b7b344ecdead9da, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.rule-rejected-cross
+    sprite: {fileID: 21300000, guid: 2ee684cf32d1392479b2407b24b5336b, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.runner-allegiance-swap
+    sprite: {fileID: 21300000, guid: f02cc7924678a9b43ba04f9d7d105db1, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.shift-close
+    sprite: {fileID: 21300000, guid: 52407bed403a5484bab93379f96161aa, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.supervisor-stamp-attach
+    sprite: {fileID: 21300000, guid: fed4d669ba44c0d48a587cbd263b9156, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: vfx.supervisor-stamp-remove
+    sprite: {fileID: 21300000, guid: 533d5210b245b6643a382c3713c3fc1f, type: 3}
     anchor: {x: 0.5, y: 0.5}
