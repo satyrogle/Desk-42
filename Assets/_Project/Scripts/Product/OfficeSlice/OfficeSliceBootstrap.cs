@@ -207,6 +207,34 @@ namespace Desk42.Product.OfficeSlice
             RefreshPresentation();
         }
 
+        public bool RestartShift()
+        {
+            if (!Ready || !_simulationState.Shift.RestartRequested) return false;
+            if (_runtimeRoot != null)
+            {
+                _runtimeRoot.gameObject.SetActive(false);
+                Destroy(_runtimeRoot.gameObject);
+            }
+            for (int i = 0; i < _runtimeMaterials.Count; i++)
+                if (_runtimeMaterials[i] != null) Destroy(_runtimeMaterials[i]);
+            _runtimeMaterials.Clear();
+            _folderViews.Clear();
+            _folderLabels.Clear();
+            _folderRenderers.Clear();
+            _customerViews.Clear();
+            _staffViews.Clear();
+
+            _simulationState = OfficeSimulationState.CreateM2();
+            _caseRepository = _simulationState.Cases;
+            _runtimeRoot = new GameObject("Office Slice Runtime").transform;
+            _runtimeRoot.SetParent(transform, false);
+            BuildGreybox();
+            _tickDriver.ReplaceState(_simulationState, paused: false);
+            _lastDebugMessage = "SHIFT RESTARTED FROM CLEAN CHECKPOINT";
+            RefreshPresentation();
+            return true;
+        }
+
         public void SaveCommandLog()
         {
             string path = Path.Combine(
@@ -581,6 +609,8 @@ namespace Desk42.Product.OfficeSlice
             if (!Ready) return;
             GUILayout.BeginArea(new Rect(16f, 16f, 540f, 440f), GUI.skin.box);
             GUILayout.Label("DESK 42 / TODAY'S DESK");
+            GUILayout.Label("SHIFT: " +
+                _simulationState.Shift.Phase.ToString().ToUpperInvariant());
             OfficeCustomerState customer =
                 _simulationState.Customers.ActiveDeskCustomer;
             if (customer == null)
@@ -622,6 +652,11 @@ namespace Desk42.Product.OfficeSlice
                 GUILayout.Label(_simulationState.BreakState.Recovered
                     ? "OFFICE FIXED"
                     : "COPY ECHO: FIX MACHINE / CLEAR COPIES / FIND ORIGINAL");
+            if (_simulationState.Shift.Failed)
+                GUILayout.Label(_simulationState.Shift.FailureReason +
+                    " / ENTER OR START TO RESTART");
+            if (_simulationState.Shift.Phase == OfficeShiftPhase.Result)
+                DrawCausalRecap();
             GUILayout.EndArea();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -709,6 +744,15 @@ namespace Desk42.Product.OfficeSlice
             if (folder.OwnerKind == OfficeFolderOwnerKind.Warden) return "CARRIED";
             if (folder.IsMoving) return "ON THE WAY TO " + RoomLabel(folder.DestinationRoom);
             return "AT " + RoomLabel(folder.CurrentRoom);
+        }
+
+        private void DrawCausalRecap()
+        {
+            GUILayout.Space(6f);
+            GUILayout.Label("WHAT HAPPENED");
+            for (int i = 0; i < _simulationState.CausalEvents.Events.Count; i++)
+                GUILayout.Label("→ " +
+                    _simulationState.CausalEvents.Events[i].PlayerText);
         }
 
         private static bool HasArgument(string[] arguments, string expected)

@@ -76,6 +76,8 @@ namespace Desk42.Product.OfficeSlice
                 AutomationRule = new OfficeAutomationRuleState(
                     _m2Scenario, Queues, ManualTasks);
                 BreakState = new OfficeBreakState(_m2Scenario, Queues);
+                CausalEvents = new OfficeCausalEventLog();
+                Shift = new OfficeShiftState();
             }
         }
 
@@ -92,6 +94,8 @@ namespace Desk42.Product.OfficeSlice
         public OfficeCustomerPressureState CustomerPressure { get; }
         public OfficeAutomationRuleState AutomationRule { get; }
         public OfficeBreakState BreakState { get; }
+        public OfficeCausalEventLog CausalEvents { get; }
+        public OfficeShiftState Shift { get; }
         public OfficeCommandLog CommandLog { get; }
         public bool ReplayMode { get; }
         public bool M2Enabled => _m2Scenario != null;
@@ -258,6 +262,11 @@ namespace Desk42.Product.OfficeSlice
             return OfficeCommand.Fix(CurrentTick + 1, _nextSequence++);
         }
 
+        public OfficeCommand CreateRestartCommand()
+        {
+            return OfficeCommand.Restart(CurrentTick + 1, _nextSequence++);
+        }
+
         public OfficeCommand CreateDecideCommand(string caseId)
         {
             return OfficeCommand.Decide(CurrentTick + 1, _nextSequence++, caseId);
@@ -421,6 +430,10 @@ namespace Desk42.Product.OfficeSlice
                 AutomationRule.AdvanceOneTick(CurrentTick);
                 BreakState.AdvanceAfterRule(
                     CurrentTick, Customers, AutomationRule);
+                CausalEvents.Capture(
+                    CurrentTick, AutomationRule, BreakState, Queues);
+                Shift.Advance(
+                    CurrentTick, Customers, Decisions, AutomationRule, BreakState);
             }
         }
 
@@ -452,6 +465,7 @@ namespace Desk42.Product.OfficeSlice
             AppliedCommandCount++;
             if (M2Enabled)
             {
+                Shift.ObserveCommand(command, CurrentTick);
                 if (command.Kind != OfficeCommandKind.Help)
                     RoomWork.CancelHelp();
                 if (command.Kind != OfficeCommandKind.Calm)
@@ -503,6 +517,11 @@ namespace Desk42.Product.OfficeSlice
                     break;
                 case OfficeCommandKind.Fix:
                     ExecuteFix(command);
+                    break;
+                case OfficeCommandKind.Restart:
+                    if (!M2Enabled || !Shift.TryRequestRestart())
+                        AddFailure(CurrentTick, command.Sequence, "RESTART_NOT_AVAILABLE",
+                            "Finish the current recovery before restarting.");
                     break;
                 case OfficeCommandKind.Decide:
                     ExecuteDecide(command);
@@ -884,6 +903,8 @@ namespace Desk42.Product.OfficeSlice
                 state.CustomerPressure.AppendSnapshot(builder);
                 state.AutomationRule.AppendSnapshot(builder);
                 state.BreakState.AppendSnapshot(builder);
+                state.CausalEvents.AppendSnapshot(builder);
+                state.Shift.AppendSnapshot(builder);
             }
             for (int i = 0; i < state.Failures.Count; i++)
                 builder.Append("|failure=").Append(state.Failures[i]);

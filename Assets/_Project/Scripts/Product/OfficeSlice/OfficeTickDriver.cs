@@ -24,11 +24,11 @@ namespace Desk42.Product.OfficeSlice
             _initialized = true;
         }
 
-        public void ReplaceState(OfficeSimulationState state)
+        public void ReplaceState(OfficeSimulationState state, bool paused = true)
         {
             _state = state;
             _clock = new OfficeSimulationClock();
-            _clock.SetPaused(true);
+            _clock.SetPaused(paused);
             _inputIntent = new OfficeInputIntent();
             _inputCommandGenerator = new OfficeInputCommandGenerator(_state, _inputIntent);
         }
@@ -59,6 +59,11 @@ namespace Desk42.Product.OfficeSlice
             }
 
             _clock.Advance(Time.unscaledDeltaTime, _inputCommandGenerator.AdvanceOneTick);
+            if (_state.M2Enabled && _state.Shift.RestartRequested)
+            {
+                _bootstrap.RestartShift();
+                return;
+            }
             _bootstrap.RefreshPresentation();
         }
 
@@ -119,6 +124,10 @@ namespace Desk42.Product.OfficeSlice
             bool toggleRulePressed = keyboard != null && keyboard.rKey.wasPressedThisFrame;
             toggleRulePressed |= gamepad != null && gamepad.selectButton.wasPressedThisFrame;
             if (toggleRulePressed) _inputIntent.BufferToggleRule(_state.CurrentTick);
+
+            bool restartPressed = keyboard != null && keyboard.enterKey.wasPressedThisFrame;
+            restartPressed |= gamepad != null && gamepad.startButton.wasPressedThisFrame;
+            if (restartPressed) _inputIntent.BufferRestart(_state.CurrentTick);
         }
     }
 }

@@ -22,6 +22,7 @@ namespace Desk42.Product.OfficeSlice
         Fix,
         ToggleRule,
         AssignStaff,
+        Restart,
     }
 
     public sealed class OfficeCommand
@@ -189,6 +190,13 @@ namespace Desk42.Product.OfficeSlice
             return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
                 tick, sequence, OfficeCommandKind.Fix,
                 "warden", string.Empty, 0, 0, string.Empty);
+        }
+
+        public static OfficeCommand Restart(long tick, int sequence)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Restart,
+                "warden", "shift", 0, 0, string.Empty);
         }
     }
 

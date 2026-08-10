@@ -35,7 +35,7 @@ namespace Desk42.Product.OfficeSlice
     {
         public const int TransferDurationTicks = 5;
         public const string PlayerRule =
-            "IF PAPERS MATCH AND REFUND PATH CLEAR, SEND FRONT";
+            "IF PAPERS MATCH AND REFUND PATH CLEAR, SEND MONEY";
 
         private readonly OfficeM2Scenario _scenario;
         private readonly OfficeQueueService _queues;
@@ -105,7 +105,7 @@ namespace Desk42.Product.OfficeSlice
                         : !work.PublicPapersMatch
                             ? "PAPERS DO NOT MATCH"
                             : "REFUND PATH NOT CLEAR";
-                string action = matched ? "SENT FRONT" : "LEFT FOR CHECK";
+                string action = matched ? "SENT TO MONEY" : "LEFT FOR CHECK";
                 _matches.Add(new OfficeAutomationRuleMatch(
                     currentTick,
                     folder.CaseId,
@@ -116,7 +116,7 @@ namespace Desk42.Product.OfficeSlice
                 if (!matched) continue;
                 _queues.TryTransferCase(
                     folder.CaseId,
-                    OfficeRoomId.FrontDesk,
+                    OfficeRoomId.MoneyRoom,
                     currentTick,
                     TransferDurationTicks);
                 if (folder.IsCopy) LastAcceptedCopyId = folder.CaseId;

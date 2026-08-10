@@ -88,6 +88,8 @@ namespace Desk42.Product.OfficeSlice
         private long _dropExpiresAfterTick;
         private bool _toggleRuleBuffered;
         private long _toggleRuleExpiresAfterTick;
+        private bool _restartBuffered;
+        private long _restartExpiresAfterTick;
 
         public OfficeInputDirection Movement { get; private set; }
         public bool HasBufferedInteraction => _interactionBuffered;
@@ -195,6 +197,26 @@ namespace Desk42.Product.OfficeSlice
             return true;
         }
 
+        public void BufferRestart(long currentTick)
+        {
+            if (currentTick < 0L) throw new ArgumentOutOfRangeException(nameof(currentTick));
+            if (_restartBuffered) return;
+            _restartBuffered = true;
+            _restartExpiresAfterTick = currentTick + InteractionBufferTicks;
+        }
+
+        public bool TryConsumeRestart(long commandTick)
+        {
+            if (!_restartBuffered) return false;
+            if (commandTick > _restartExpiresAfterTick)
+            {
+                ClearRestart();
+                return false;
+            }
+            ClearRestart();
+            return true;
+        }
+
         public void Clear()
         {
             Movement = OfficeInputDirection.None;
@@ -202,6 +224,7 @@ namespace Desk42.Product.OfficeSlice
             ClearChoice();
             ClearDrop();
             ClearToggleRule();
+            ClearRestart();
         }
 
         private void ClearInteraction()
@@ -227,6 +250,12 @@ namespace Desk42.Product.OfficeSlice
         {
             _toggleRuleBuffered = false;
             _toggleRuleExpiresAfterTick = 0L;
+        }
+
+        private void ClearRestart()
+        {
+            _restartBuffered = false;
+            _restartExpiresAfterTick = 0L;
         }
     }
 
@@ -273,6 +302,9 @@ namespace Desk42.Product.OfficeSlice
             if (_intent.TryConsumeToggleRule(commandTick))
                 _state.TryQueueCommand(
                     _state.CreateToggleRuleCommand(), out OfficeCommandFailure ignored);
+            if (_intent.TryConsumeRestart(commandTick))
+                _state.TryQueueCommand(
+                    _state.CreateRestartCommand(), out OfficeCommandFailure ignored);
 
             _state.AdvanceOneTick();
         }

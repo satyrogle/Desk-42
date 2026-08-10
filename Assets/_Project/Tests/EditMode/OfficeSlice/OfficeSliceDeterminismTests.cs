@@ -120,7 +120,7 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
-        public void HeldInputAtThirtySixtyAndOneFortyFourFpsIsIdentical()
+        public void M1InputDeterminism_RemainsGreen()
         {
             OfficeSimulationState atThirty = SimulateHeldInput(30, 4);
             OfficeSimulationState atSixty = SimulateHeldInput(60, 4);
@@ -224,7 +224,7 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
-        public void TenThousandTickReplayMatchesAcrossThreeRuns()
+        public void TenThousandTickReplay_RemainsGreen()
         {
             for (int run = 0; run < 3; run++)
             {

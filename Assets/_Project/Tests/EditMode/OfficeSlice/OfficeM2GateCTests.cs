@@ -36,7 +36,7 @@ namespace Desk42.Tests.EditMode
             Assert.That(match.Matched, Is.True);
             Assert.That(match.Reason,
                 Is.EqualTo("PAPERS MATCH / REFUND PATH CLEAR"));
-            Assert.That(match.Action, Is.EqualTo("SENT FRONT"));
+            Assert.That(match.Action, Is.EqualTo("SENT TO MONEY"));
         }
 
         [Test]
@@ -123,13 +123,14 @@ namespace Desk42.Tests.EditMode
 
             NavigateTo(state, intent, input, "weird-room.interact");
             PressPrimary(state, intent, input); // FIX MACHINE
-            NavigateTo(state, intent, input, "front-desk.interact");
 
             if (fixMachineFirst)
             {
+                NavigateTo(state, intent, input, "front-desk.interact");
                 PressPrimary(state, intent, input); // CALM
                 state.AdvanceTicks(OfficeCustomerPressureState.CalmDurationTicks);
             }
+            NavigateTo(state, intent, input, "money-room.interact");
 
             int safety = 0;
             while (state.Queues.ActiveCopyCount > 0 && safety++ < 40)
@@ -141,7 +142,7 @@ namespace Desk42.Tests.EditMode
                     continue;
                 }
                 if (string.IsNullOrWhiteSpace(
-                        state.Queues.FirstActiveCopyAt(OfficeRoomId.FrontDesk)))
+                        state.Queues.FirstActiveCopyAt(OfficeRoomId.MoneyRoom)))
                 {
                     state.AdvanceOneTick();
                     continue;
@@ -150,6 +151,12 @@ namespace Desk42.Tests.EditMode
             }
             Assert.That(state.Queues.ActiveCopyCount, Is.Zero,
                 state.OrderedStateSnapshot);
+            if (state.PrimaryActionLabel == "CALM")
+            {
+                PressPrimary(state, intent, input);
+                state.AdvanceTicks(OfficeCustomerPressureState.CalmDurationTicks);
+            }
+            NavigateTo(state, intent, input, "front-desk.interact");
             if (state.PrimaryActionLabel == "CALM")
             {
                 PressPrimary(state, intent, input);

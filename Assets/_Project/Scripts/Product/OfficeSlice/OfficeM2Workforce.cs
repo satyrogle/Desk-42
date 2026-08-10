@@ -615,6 +615,8 @@ namespace Desk42.Product.OfficeSlice
                     }
                 }
                 record.PressureTicks = Math.Max(0, record.PressureTicks + delta);
+                if (customer.QueueState == OfficeCustomerQueueState.Waiting)
+                    record.PressureTicks = Math.Min(899, record.PressureTicks);
                 if (calming)
                 {
                     record.PressureTicks = Math.Max(
