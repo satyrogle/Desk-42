@@ -26,6 +26,8 @@ namespace Desk42.Product.OfficeSlice
             "--desk42-office-slice-capture-distribution";
         private const string ReducedFlashArgument =
             "--desk42-office-slice-reduced-flash";
+        private const string TelemetryArgument =
+            "--desk42-evaluation-telemetry";
         private const string TutorialCompleteKey =
             "desk42.office-slice.m6.tutorial-complete";
 
@@ -62,6 +64,8 @@ namespace Desk42.Product.OfficeSlice
         private OfficeM6Onboarding _m6Onboarding;
         private OfficeM6PresentationSettings _m6Settings;
         private readonly OfficeM6PauseController _m6PauseController = new();
+        private OfficeM6TelemetryRecorder _m6TelemetryRecorder;
+        private OfficeM6TelemetryObserver _m6TelemetryObserver;
         private OfficeM6ControlScheme _m6ControlScheme =
             OfficeM6ControlScheme.Keyboard;
         private bool _m6TutorialCompletionSaved;
@@ -86,6 +90,8 @@ namespace Desk42.Product.OfficeSlice
         public OfficeM6Onboarding Onboarding => _m6Onboarding;
         public OfficeM6PresentationSettings PresentationSettings => _m6Settings;
         public OfficeM6PauseController PauseController => _m6PauseController;
+        public OfficeM6TelemetryRecorder TelemetryRecorder =>
+            _m6TelemetryRecorder;
         public OfficeAudioDirector AudioDirector => _m5AudioDirector;
         public OfficeAudioSettings AudioSettings => _m5AudioSettings;
         public OfficeFeedbackDirector FeedbackDirector => _m5FeedbackDirector;
@@ -113,6 +119,15 @@ namespace Desk42.Product.OfficeSlice
             _m6Onboarding = new OfficeM6Onboarding(
                 PlayerPrefs.GetInt(TutorialCompleteKey, 0) != 0);
             _m6Onboarding.SetHintsEnabled(_m6Settings.TutorialHints);
+            bool telemetryEnabled = HasArgument(
+                Environment.GetCommandLineArgs(), TelemetryArgument);
+            _m6TelemetryRecorder = new OfficeM6TelemetryRecorder(
+                telemetryEnabled,
+                Path.Combine(Application.persistentDataPath,
+                    "Desk42Evaluation"),
+                "Desk42-M6-" + Application.version);
+            _m6TelemetryObserver = new OfficeM6TelemetryObserver(
+                _m6TelemetryRecorder);
             _campaignState = OfficeCampaignState.Create();
             _simulationState = _campaignState.CurrentSimulation;
             _caseRepository = _simulationState.Cases;
@@ -647,6 +662,8 @@ namespace Desk42.Product.OfficeSlice
             RefreshM4CharacterSprites();
             UpdateBillboards(wardenCell);
             _m6Onboarding?.Observe(_simulationState, _campaignState);
+            _m6TelemetryObserver?.Observe(
+                _simulationState, _campaignState, _m6Onboarding);
             if (_m6Onboarding != null && _m6Onboarding.Complete &&
                 !_m6TutorialCompletionSaved)
             {
@@ -696,6 +713,10 @@ namespace Desk42.Product.OfficeSlice
         public bool TogglePauseMenu()
         {
             _m6PauseController.Toggle();
+            if (_m6PauseController.Paused)
+                _m6TelemetryObserver?.RecordPause(
+                    _simulationState.CurrentTick,
+                    _campaignState.CurrentShiftOrdinal);
             return _m6PauseController.Paused;
         }
 
@@ -778,9 +799,20 @@ namespace Desk42.Product.OfficeSlice
             if (_m6HudModel == null || !_m6HudModel.WhatHappenedAvailable)
                 return false;
             _m6HudPresenter.ToggleWhatHappened();
+            if (_m6HudPresenter.WhatHappenedOpen)
+                _m6TelemetryObserver?.RecordWhatHappened(
+                    _simulationState.CurrentTick,
+                    _campaignState.CurrentShiftOrdinal);
             _m6HudModel = null;
             RefreshPresentation();
             return true;
+        }
+
+        private void OnApplicationQuit()
+        {
+            _m6TelemetryRecorder?.CloseNormal(
+                _simulationState?.CurrentTick ?? 0L,
+                _campaignState?.CurrentShiftOrdinal ?? 0);
         }
 
         public void ForceAllFoldersThroughM1Route()
@@ -896,6 +928,9 @@ namespace Desk42.Product.OfficeSlice
         {
             _m5AudioDirector?.Dispose();
             _m5FeedbackDirector?.Dispose();
+            _m6TelemetryRecorder?.CloseNormal(
+                _simulationState?.CurrentTick ?? 0L,
+                _campaignState?.CurrentShiftOrdinal ?? 0);
         }
 
         public void SaveCommandLog()
