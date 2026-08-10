@@ -4,12 +4,23 @@ using System.Collections.ObjectModel;
 
 namespace Desk42.Product.OfficeSlice
 {
+    public enum OfficeFolderOwnerKind
+    {
+        RoomQueue,
+        Transit,
+        Warden,
+        Runner,
+        Cleared,
+    }
+
     public sealed class OfficeFolderState
     {
         internal OfficeFolderState(string caseId, OfficeRoomId room)
         {
             CaseId = caseId;
             CurrentRoom = room;
+            OwnerKind = OfficeFolderOwnerKind.RoomQueue;
+            OwnerId = room.ToString();
         }
 
         public string CaseId { get; }
@@ -19,6 +30,8 @@ namespace Desk42.Product.OfficeSlice
         public long TransferStartTick { get; internal set; }
         public long TransferEndTick { get; internal set; }
         public bool IsMoving { get; internal set; }
+        public OfficeFolderOwnerKind OwnerKind { get; internal set; }
+        public string OwnerId { get; internal set; }
 
         public float ProgressAt(long tick)
         {
@@ -104,6 +117,19 @@ namespace Desk42.Product.OfficeSlice
         }
 
         public IReadOnlyList<string> FolderIds => _folderOrder.AsReadOnly();
+        public string WardenCarriedFolderId
+        {
+            get
+            {
+                for (int i = 0; i < _folderOrder.Count; i++)
+                {
+                    OfficeFolderState folder = _folders[_folderOrder[i]];
+                    if (folder.OwnerKind == OfficeFolderOwnerKind.Warden)
+                        return folder.CaseId;
+                }
+                return string.Empty;
+            }
+        }
 
         public OfficeFolderState GetFolder(string caseId)
         {
@@ -120,8 +146,11 @@ namespace Desk42.Product.OfficeSlice
         public bool TryEnqueue(string caseId, OfficeRoomId room)
         {
             if (!_folders.TryGetValue(caseId, out OfficeFolderState folder)) return false;
-            if (folder.IsMoving || IsQueuedAnywhere(caseId)) return false;
+            if (folder.IsMoving || IsQueuedAnywhere(caseId) ||
+                folder.OwnerKind != OfficeFolderOwnerKind.Cleared) return false;
             folder.CurrentRoom = room;
+            folder.OwnerKind = OfficeFolderOwnerKind.RoomQueue;
+            folder.OwnerId = room.ToString();
             _queues[room].Add(caseId);
             ValidateSingleOwnership();
             return true;
@@ -134,17 +163,71 @@ namespace Desk42.Product.OfficeSlice
             int durationTicks = DefaultTransferDurationTicks)
         {
             if (!_folders.TryGetValue(caseId, out OfficeFolderState folder)) return false;
-            if (folder.IsMoving || !IsQueuedIn(caseId, folder.CurrentRoom)) return false;
+            if (folder.IsMoving ||
+                folder.OwnerKind != OfficeFolderOwnerKind.RoomQueue ||
+                !IsQueuedIn(caseId, folder.CurrentRoom)) return false;
             if (durationTicks <= 0) throw new ArgumentOutOfRangeException(nameof(durationTicks));
 
             _queues[folder.CurrentRoom].Remove(caseId);
+            BeginTransfer(folder, destination, currentTick, durationTicks);
+            ValidateSingleOwnership();
+            return true;
+        }
+
+        public bool TryTakeByWarden(string caseId, OfficeRoomId room)
+        {
+            if (!string.IsNullOrWhiteSpace(WardenCarriedFolderId)) return false;
+            if (!_folders.TryGetValue(caseId, out OfficeFolderState folder)) return false;
+            if (folder.IsMoving || folder.CurrentRoom != room ||
+                folder.OwnerKind != OfficeFolderOwnerKind.RoomQueue ||
+                !IsQueuedIn(caseId, room)) return false;
+            _queues[room].Remove(caseId);
+            folder.OwnerKind = OfficeFolderOwnerKind.Warden;
+            folder.OwnerId = "warden";
+            ValidateSingleOwnership();
+            return true;
+        }
+
+        public bool TryDropByWarden(OfficeRoomId room)
+        {
+            string caseId = WardenCarriedFolderId;
+            if (string.IsNullOrWhiteSpace(caseId)) return false;
+            OfficeFolderState folder = _folders[caseId];
+            folder.CurrentRoom = room;
+            folder.OwnerKind = OfficeFolderOwnerKind.RoomQueue;
+            folder.OwnerId = room.ToString();
+            _queues[room].Add(caseId);
+            ValidateSingleOwnership();
+            return true;
+        }
+
+        public bool TrySendByWarden(
+            OfficeRoomId destination,
+            long currentTick,
+            int durationTicks = DefaultTransferDurationTicks)
+        {
+            string caseId = WardenCarriedFolderId;
+            if (string.IsNullOrWhiteSpace(caseId)) return false;
+            if (durationTicks <= 0) throw new ArgumentOutOfRangeException(nameof(durationTicks));
+            OfficeFolderState folder = _folders[caseId];
+            BeginTransfer(folder, destination, currentTick, durationTicks);
+            ValidateSingleOwnership();
+            return true;
+        }
+
+        private static void BeginTransfer(
+            OfficeFolderState folder,
+            OfficeRoomId destination,
+            long currentTick,
+            int durationTicks)
+        {
             folder.SourceRoom = folder.CurrentRoom;
             folder.DestinationRoom = destination;
             folder.TransferStartTick = currentTick;
             folder.TransferEndTick = currentTick + durationTicks;
             folder.IsMoving = true;
-            ValidateSingleOwnership();
-            return true;
+            folder.OwnerKind = OfficeFolderOwnerKind.Transit;
+            folder.OwnerId = folder.SourceRoom + ">" + destination;
         }
 
         public bool TrySendFromRoom(OfficeRoomId source, long currentTick)
@@ -169,6 +252,8 @@ namespace Desk42.Product.OfficeSlice
                 if (!folder.IsMoving || currentTick < folder.TransferEndTick) continue;
                 folder.CurrentRoom = folder.DestinationRoom;
                 folder.IsMoving = false;
+                folder.OwnerKind = OfficeFolderOwnerKind.RoomQueue;
+                folder.OwnerId = folder.CurrentRoom.ToString();
                 _queues[folder.CurrentRoom].Add(folder.CaseId);
             }
             ValidateSingleOwnership();
@@ -180,7 +265,9 @@ namespace Desk42.Product.OfficeSlice
             for (int i = 0; i < _folderOrder.Count; i++)
             {
                 OfficeFolderState folder = _folders[_folderOrder[i]];
-                if (folder.IsMoving || folder.CurrentRoom != OfficeRoomId.FrontDesk)
+                if (folder.IsMoving ||
+                    folder.OwnerKind != OfficeFolderOwnerKind.RoomQueue ||
+                    folder.CurrentRoom != OfficeRoomId.FrontDesk)
                     return false;
             }
             return true;
@@ -241,10 +328,17 @@ namespace Desk42.Product.OfficeSlice
             for (int i = 0; i < _folderOrder.Count; i++)
             {
                 OfficeFolderState folder = _folders[_folderOrder[i]];
-                int expected = folder.IsMoving ? 0 : 1;
+                int expected = folder.OwnerKind == OfficeFolderOwnerKind.RoomQueue ? 1 : 0;
                 if (owners[folder.CaseId] != expected)
                     throw new InvalidOperationException(
                         "Folder does not have exactly one logical owner: " + folder.CaseId);
+                if ((folder.OwnerKind == OfficeFolderOwnerKind.Transit) != folder.IsMoving)
+                    throw new InvalidOperationException(
+                        "Folder transit state disagrees with its logical owner: " +
+                        folder.CaseId);
+                if (string.IsNullOrWhiteSpace(folder.OwnerId))
+                    throw new InvalidOperationException(
+                        "Folder logical owner ID is missing: " + folder.CaseId);
             }
         }
     }

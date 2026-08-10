@@ -12,6 +12,16 @@ namespace Desk42.Product.OfficeSlice
         Interact,
         Send,
         Decide,
+        Carry,
+        Drop,
+        StartWork,
+        SubmitWorkChoice,
+        CancelWork,
+        Help,
+        Calm,
+        Fix,
+        ToggleRule,
+        AssignStaff,
     }
 
     public sealed class OfficeCommand
@@ -50,7 +60,8 @@ namespace Desk42.Product.OfficeSlice
 
         public static OfficeCommand Move(long tick, int sequence, int x, int z)
         {
-            return new OfficeCommand(1, tick, sequence, OfficeCommandKind.Move,
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Move,
                 "warden", string.Empty, x, z, string.Empty);
         }
 
@@ -59,20 +70,85 @@ namespace Desk42.Product.OfficeSlice
             int sequence,
             string targetId = "")
         {
-            return new OfficeCommand(1, tick, sequence, OfficeCommandKind.Interact,
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Interact,
                 "warden", targetId, 0, 0, string.Empty);
         }
 
         public static OfficeCommand Send(long tick, int sequence, string targetId)
         {
-            return new OfficeCommand(1, tick, sequence, OfficeCommandKind.Send,
-                "warden", targetId, 0, 0, string.Empty);
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Send,
+                "warden", targetId, -1, 0, string.Empty);
+        }
+
+        public static OfficeCommand Send(
+            long tick,
+            int sequence,
+            string targetId,
+            OfficeRoomId destination)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Send,
+                "warden", targetId, (int)destination, 0, destination.ToString());
         }
 
         public static OfficeCommand Decide(long tick, int sequence, string targetId)
         {
-            return new OfficeCommand(1, tick, sequence, OfficeCommandKind.Decide,
+            return Decide(tick, sequence, targetId, OfficeDecisionChoice.RejectCase);
+        }
+
+        public static OfficeCommand Decide(
+            long tick,
+            int sequence,
+            string targetId,
+            OfficeDecisionChoice choice)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Decide,
+                "warden", targetId, (int)choice, 0, choice.ToString());
+        }
+
+        public static OfficeCommand Carry(long tick, int sequence, string targetId)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Carry,
                 "warden", targetId, 0, 0, string.Empty);
+        }
+
+        public static OfficeCommand Drop(long tick, int sequence)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Drop,
+                "warden", string.Empty, 0, 0, string.Empty);
+        }
+
+        public static OfficeCommand StartWork(
+            long tick,
+            int sequence,
+            string targetId,
+            OfficeManualTaskKind kind)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.StartWork,
+                "warden", targetId, (int)kind, 0, kind.ToString());
+        }
+
+        public static OfficeCommand SubmitWorkChoice(
+            long tick,
+            int sequence,
+            int choice)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.SubmitWorkChoice,
+                "warden", string.Empty, choice, 0, string.Empty);
+        }
+
+        public static OfficeCommand CancelWork(long tick, int sequence)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.CancelWork,
+                "warden", string.Empty, 0, 0, string.Empty);
         }
     }
 
@@ -101,7 +177,7 @@ namespace Desk42.Product.OfficeSlice
 
     public sealed class OfficeCommandLog
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
 
         private readonly List<OfficeCommand> _commands = new();
         private readonly HashSet<int> _sequences = new();

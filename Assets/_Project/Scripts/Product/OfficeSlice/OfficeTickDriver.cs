@@ -94,6 +94,23 @@ namespace Desk42.Product.OfficeSlice
                 (keyboard.eKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame);
             interactionPressed |= gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
             if (interactionPressed) _inputIntent.BufferInteraction(_state.CurrentTick);
+
+            int choice = 0;
+            if (keyboard != null)
+            {
+                if (keyboard.digit1Key.wasPressedThisFrame) choice = 1;
+                else if (keyboard.digit2Key.wasPressedThisFrame) choice = 2;
+                else if (keyboard.digit3Key.wasPressedThisFrame) choice = 3;
+                else if (keyboard.digit4Key.wasPressedThisFrame) choice = 4;
+            }
+            if (choice == 0 && gamepad != null)
+            {
+                if (gamepad.buttonWest.wasPressedThisFrame) choice = 1;
+                else if (gamepad.buttonNorth.wasPressedThisFrame) choice = 2;
+                else if (gamepad.leftShoulder.wasPressedThisFrame) choice = 3;
+                else if (gamepad.rightShoulder.wasPressedThisFrame) choice = 4;
+            }
+            if (choice > 0) _inputIntent.BufferChoice(choice, _state.CurrentTick);
         }
     }
 }

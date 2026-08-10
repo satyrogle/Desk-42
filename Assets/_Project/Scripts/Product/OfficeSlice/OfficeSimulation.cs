@@ -48,36 +48,93 @@ namespace Desk42.Product.OfficeSlice
     {
         private readonly List<OfficeCommandFailure> _failures = new();
         private int _nextSequence = 1;
+        private readonly OfficeM2Scenario _m2Scenario;
 
         private OfficeSimulationState(
             OfficeCaseRepository cases,
             OfficeCommandLog commandLog,
-            bool replayMode)
+            bool replayMode,
+            OfficeM2Scenario m2Scenario = null)
         {
             Cases = cases ?? throw new ArgumentNullException(nameof(cases));
+            _m2Scenario = m2Scenario;
             Grid = OfficeGrid.CreateM1();
             Warden = new OfficeWardenState(Grid.SpawnCell);
             Queues = new OfficeQueueService(Cases);
+            Carry = new OfficeCarryState(Queues);
             CommandLog = commandLog ?? new OfficeCommandLog();
             ReplayMode = replayMode;
+            if (_m2Scenario != null)
+            {
+                Customers = new OfficeCustomerScheduleState(_m2Scenario.Customers);
+                ManualTasks = new OfficeManualTaskState(_m2Scenario);
+                Decisions = new OfficeDecisionState(_m2Scenario.InstitutionalSession);
+            }
         }
 
         public OfficeGrid Grid { get; }
         public OfficeCaseRepository Cases { get; }
         public OfficeWardenState Warden { get; }
         public OfficeQueueService Queues { get; }
+        public OfficeCarryState Carry { get; }
+        public OfficeCustomerScheduleState Customers { get; }
+        public OfficeManualTaskState ManualTasks { get; }
+        public OfficeDecisionState Decisions { get; }
         public OfficeCommandLog CommandLog { get; }
         public bool ReplayMode { get; }
+        public bool M2Enabled => _m2Scenario != null;
         public long CurrentTick { get; private set; }
         public int AppliedCommandCount { get; private set; }
         public int DecisionStubCount { get; private set; }
         public IReadOnlyList<OfficeCommandFailure> Failures => _failures.AsReadOnly();
         public string Checksum => OfficeStateChecksum.Compute(this);
         public string OrderedStateSnapshot => OfficeStateChecksum.Snapshot(this);
+        public string PrimaryActionLabel
+        {
+            get
+            {
+                if (!M2Enabled) return "INTERACT";
+                OfficeInteractionPoint point = CurrentInteractionPoint();
+                if (point == null) return "MOVE TO A WORK POINT";
+                if (Carry.IsCarrying)
+                {
+                    OfficeCaseWorkRecord record = ManualTasks.RecordFor(
+                        Carry.CarriedFolderId);
+                    if (point.Room == OfficeRoomId.FrontDesk)
+                        return record.CompareComplete && record.TraceComplete
+                            ? "PUT DOWN"
+                            : "SEND TO PAPERS";
+                    if (point.Room == OfficeRoomId.PaperRoom)
+                        return record.CompareComplete ? "SEND TO MONEY" : "CHECK PAPERS";
+                    if (point.Room == OfficeRoomId.MoneyRoom)
+                        return record.TraceComplete ? "SEND TO FRONT" : "TRACE MONEY";
+                    return "SEND TO FRONT";
+                }
+                string activeCaseId = Customers.ActiveDeskCustomer?.LinkedAutomationClaimId;
+                OfficeFolderState folder = Queues.GetFolder(activeCaseId);
+                if (folder != null && !folder.IsMoving &&
+                    folder.OwnerKind == OfficeFolderOwnerKind.RoomQueue &&
+                    folder.CurrentRoom == point.Room)
+                    return "TAKE FOLDER";
+                return "NOTHING TO DO HERE";
+            }
+        }
+
+        public OfficeCaseWorkDefinition WorkDefinitionFor(string automationClaimId)
+        {
+            return _m2Scenario?.WorkFor(automationClaimId);
+        }
 
         public static OfficeSimulationState Create(OfficeCaseRepository cases)
         {
             return new OfficeSimulationState(cases, new OfficeCommandLog(), false);
+        }
+
+        public static OfficeSimulationState CreateM2()
+        {
+            OfficeM2Scenario scenario = OfficeM2Scenario.Create();
+            return new OfficeSimulationState(
+                scenario.Cases, new OfficeCommandLog(), false, scenario);
         }
 
         public static OfficeSimulationState CreateReplay(
@@ -86,6 +143,14 @@ namespace Desk42.Product.OfficeSlice
         {
             if (sourceLog == null) throw new ArgumentNullException(nameof(sourceLog));
             return new OfficeSimulationState(cases, sourceLog.CloneForReplay(), true);
+        }
+
+        public static OfficeSimulationState CreateM2Replay(OfficeCommandLog sourceLog)
+        {
+            if (sourceLog == null) throw new ArgumentNullException(nameof(sourceLog));
+            OfficeM2Scenario scenario = OfficeM2Scenario.Create();
+            return new OfficeSimulationState(
+                scenario.Cases, sourceLog.CloneForReplay(), true, scenario);
         }
 
         public OfficeCommand CreateMoveCommand(int x, int z)
@@ -103,9 +168,109 @@ namespace Desk42.Product.OfficeSlice
             return OfficeCommand.Send(CurrentTick + 1, _nextSequence++, caseId);
         }
 
+        public OfficeCommand CreateSendCommand(
+            string caseId,
+            OfficeRoomId destination)
+        {
+            return OfficeCommand.Send(
+                CurrentTick + 1, _nextSequence++, caseId, destination);
+        }
+
+        public OfficeCommand CreateCarryCommand(string caseId)
+        {
+            return OfficeCommand.Carry(CurrentTick + 1, _nextSequence++, caseId);
+        }
+
+        public OfficeCommand CreateDropCommand()
+        {
+            return OfficeCommand.Drop(CurrentTick + 1, _nextSequence++);
+        }
+
+        public OfficeCommand CreateStartWorkCommand(
+            string caseId,
+            OfficeManualTaskKind kind)
+        {
+            return OfficeCommand.StartWork(
+                CurrentTick + 1, _nextSequence++, caseId, kind);
+        }
+
+        public OfficeCommand CreateSubmitWorkChoiceCommand(int choice)
+        {
+            return OfficeCommand.SubmitWorkChoice(
+                CurrentTick + 1, _nextSequence++, choice);
+        }
+
+        public OfficeCommand CreateCancelWorkCommand()
+        {
+            return OfficeCommand.CancelWork(CurrentTick + 1, _nextSequence++);
+        }
+
         public OfficeCommand CreateDecideCommand(string caseId)
         {
             return OfficeCommand.Decide(CurrentTick + 1, _nextSequence++, caseId);
+        }
+
+        public OfficeCommand CreateDecideCommand(
+            string caseId,
+            OfficeDecisionChoice choice)
+        {
+            return OfficeCommand.Decide(
+                CurrentTick + 1, _nextSequence++, caseId, choice);
+        }
+
+        public OfficeCommand CreatePrimaryActionCommand()
+        {
+            if (!M2Enabled) return CreateInteractCommand();
+            OfficeInteractionPoint point = CurrentInteractionPoint();
+            if (point == null) return CreateInteractCommand();
+
+            if (Carry.IsCarrying)
+            {
+                string caseId = Carry.CarriedFolderId;
+                OfficeCaseWorkRecord record = ManualTasks.RecordFor(caseId);
+                if (point.Room == OfficeRoomId.FrontDesk)
+                {
+                    if (record.CompareComplete && record.TraceComplete)
+                        return CreateDropCommand();
+                    return CreateSendCommand(caseId, OfficeRoomId.PaperRoom);
+                }
+                if (point.Room == OfficeRoomId.PaperRoom)
+                    return record.CompareComplete
+                        ? CreateSendCommand(caseId, OfficeRoomId.MoneyRoom)
+                        : CreateStartWorkCommand(caseId, OfficeManualTaskKind.Compare);
+                if (point.Room == OfficeRoomId.MoneyRoom)
+                    return record.TraceComplete
+                        ? CreateSendCommand(caseId, OfficeRoomId.FrontDesk)
+                        : CreateStartWorkCommand(caseId, OfficeManualTaskKind.Trace);
+                return CreateSendCommand(caseId, OfficeRoomId.FrontDesk);
+            }
+
+            string activeCaseId = Customers.ActiveDeskCustomer?.LinkedAutomationClaimId;
+            OfficeFolderState folder = Queues.GetFolder(activeCaseId);
+            if (folder != null && !folder.IsMoving &&
+                folder.OwnerKind == OfficeFolderOwnerKind.RoomQueue &&
+                folder.CurrentRoom == point.Room)
+                return CreateCarryCommand(activeCaseId);
+            return CreateInteractCommand(point.Id);
+        }
+
+        public OfficeCommand CreateChoiceCommand(int oneBasedChoice)
+        {
+            if (ManualTasks != null && ManualTasks.IsActive)
+                return CreateSubmitWorkChoiceCommand(oneBasedChoice - 1);
+            string caseId = Customers?.ActiveDeskCustomer?.LinkedAutomationClaimId;
+            if (!string.IsNullOrWhiteSpace(caseId))
+            {
+                OfficeCaseWorkRecord record = ManualTasks.RecordFor(caseId);
+                if (record.CompareComplete && record.TraceComplete)
+                {
+                    OfficeDecisionChoice choice = oneBasedChoice == 1
+                        ? OfficeDecisionChoice.HelpCustomer
+                        : OfficeDecisionChoice.RejectCase;
+                    return CreateDecideCommand(caseId, choice);
+                }
+            }
+            return CreateInteractCommand();
         }
 
         public bool TryQueueCommand(OfficeCommand command, out OfficeCommandFailure failure)
@@ -154,6 +319,7 @@ namespace Desk42.Product.OfficeSlice
         {
             CurrentTick++;
             Queues.AdvanceToTick(CurrentTick);
+            Customers?.AdvanceToTick(CurrentTick);
             IReadOnlyList<OfficeCommand> commands = CommandLog.Commands;
             for (int i = 0; i < commands.Count; i++)
             {
@@ -198,20 +364,30 @@ namespace Desk42.Product.OfficeSlice
                 case OfficeCommandKind.Interact:
                     ExecuteInteract(command);
                     break;
+                case OfficeCommandKind.Carry:
+                    ExecuteCarry(command);
+                    break;
+                case OfficeCommandKind.Drop:
+                    ExecuteDrop(command);
+                    break;
                 case OfficeCommandKind.Send:
-                    if (string.IsNullOrWhiteSpace(command.TargetId) ||
-                        !Queues.TrySendCase(command.TargetId, CurrentTick))
-                        AddFailure(CurrentTick, command.Sequence, "MISSING_TARGET",
-                            "Send target does not identify a queued folder.");
+                    ExecuteSend(command);
+                    break;
+                case OfficeCommandKind.StartWork:
+                    ExecuteStartWork(command);
+                    break;
+                case OfficeCommandKind.SubmitWorkChoice:
+                    ExecuteSubmitWorkChoice(command);
+                    break;
+                case OfficeCommandKind.CancelWork:
+                    if (ManualTasks == null || !ManualTasks.IsActive)
+                        AddFailure(CurrentTick, command.Sequence, "NO_WORK_ACTIVE",
+                            "There is no active work to cancel.");
+                    else
+                        ManualTasks.Cancel();
                     break;
                 case OfficeCommandKind.Decide:
-                    DecisionStubCount++;
-                    if (string.IsNullOrWhiteSpace(command.TargetId))
-                        AddFailure(CurrentTick, command.Sequence, "MISSING_TARGET",
-                            "Decide target is empty.");
-                    else
-                        AddFailure(CurrentTick, command.Sequence, "DECIDE_STUB",
-                            "M1 decision receiver is intentionally deferred.");
+                    ExecuteDecide(command);
                     break;
                 default:
                     AddFailure(CurrentTick, command.Sequence, "UNKNOWN_COMMAND",
@@ -222,6 +398,12 @@ namespace Desk42.Product.OfficeSlice
 
         private void ExecuteInteract(OfficeCommand command)
         {
+            if (M2Enabled)
+            {
+                AddFailure(CurrentTick, command.Sequence, "NO_CONTEXT_ACTION",
+                    "Move beside the highlighted folder or work point.");
+                return;
+            }
             OfficeCell wardenCell = Warden.Cell(Grid);
             OfficeInteractionPoint point = string.IsNullOrWhiteSpace(command.TargetId)
                 ? Grid.ChooseClosestInteractionPoint(wardenCell)
@@ -243,6 +425,160 @@ namespace Desk42.Product.OfficeSlice
             if (!Queues.TrySendFromRoom(point.Room, CurrentTick))
                 AddFailure(CurrentTick, command.Sequence, "EMPTY_QUEUE",
                     "The selected room has no folder ready to send.");
+        }
+
+        private void ExecuteCarry(OfficeCommand command)
+        {
+            if (!M2Enabled || string.IsNullOrWhiteSpace(command.TargetId))
+            {
+                AddFailure(CurrentTick, command.Sequence, "MISSING_TARGET",
+                    "Take needs a highlighted folder.");
+                return;
+            }
+            OfficeInteractionPoint point = CurrentInteractionPoint();
+            OfficeCustomerState active = Customers.ActiveDeskCustomer;
+            if (point == null || active == null ||
+                !string.Equals(active.LinkedAutomationClaimId,
+                    command.TargetId, StringComparison.Ordinal) ||
+                !Carry.TryTake(command.TargetId, point.Room))
+            {
+                AddFailure(CurrentTick, command.Sequence, "INVALID_TAKE",
+                    "That folder cannot be taken here.");
+            }
+        }
+
+        private void ExecuteDrop(OfficeCommand command)
+        {
+            OfficeInteractionPoint point = CurrentInteractionPoint();
+            if (!M2Enabled || point == null || !Carry.TryDrop(point.Room))
+                AddFailure(CurrentTick, command.Sequence, "INVALID_DROP",
+                    "The carried folder cannot be put down here.");
+        }
+
+        private void ExecuteSend(OfficeCommand command)
+        {
+            if (!M2Enabled)
+            {
+                if (string.IsNullOrWhiteSpace(command.TargetId) ||
+                    !Queues.TrySendCase(command.TargetId, CurrentTick))
+                    AddFailure(CurrentTick, command.Sequence, "MISSING_TARGET",
+                        "Send target does not identify a queued folder.");
+                return;
+            }
+
+            if (command.Arg0 < (int)OfficeRoomId.FrontDesk ||
+                command.Arg0 > (int)OfficeRoomId.WaitingArea)
+            {
+                AddFailure(CurrentTick, command.Sequence, "MISSING_DESTINATION",
+                    "Send needs an explicit room.");
+                return;
+            }
+            OfficeInteractionPoint point = CurrentInteractionPoint();
+            string carried = Carry.CarriedFolderId;
+            OfficeRoomId destination = (OfficeRoomId)command.Arg0;
+            if (point == null || string.IsNullOrWhiteSpace(carried) ||
+                !string.Equals(carried, command.TargetId, StringComparison.Ordinal) ||
+                destination == point.Room || !Carry.TrySend(destination, CurrentTick))
+            {
+                AddFailure(CurrentTick, command.Sequence, "INVALID_SEND",
+                    "The folder stayed with its current owner.");
+            }
+        }
+
+        private void ExecuteStartWork(OfficeCommand command)
+        {
+            if (!M2Enabled || ManualTasks.IsActive ||
+                command.Arg0 < (int)OfficeManualTaskKind.Compare ||
+                command.Arg0 > (int)OfficeManualTaskKind.Trace)
+            {
+                AddFailure(CurrentTick, command.Sequence, "INVALID_WORK",
+                    "That work cannot start now.");
+                return;
+            }
+            OfficeManualTaskKind kind = (OfficeManualTaskKind)command.Arg0;
+            OfficeInteractionPoint point = CurrentInteractionPoint();
+            OfficeRoomId requiredRoom = kind == OfficeManualTaskKind.Compare
+                ? OfficeRoomId.PaperRoom
+                : OfficeRoomId.MoneyRoom;
+            OfficeCustomerState active = Customers.ActiveDeskCustomer;
+            if (point == null || point.Room != requiredRoom || active == null ||
+                !string.Equals(active.LinkedAutomationClaimId,
+                    command.TargetId, StringComparison.Ordinal) ||
+                !string.Equals(Carry.CarriedFolderId,
+                    command.TargetId, StringComparison.Ordinal))
+            {
+                AddFailure(CurrentTick, command.Sequence, "INVALID_WORK",
+                    "Bring the active folder to the right room.");
+                return;
+            }
+            if (!ManualTasks.TryStart(kind, command.TargetId, CurrentTick,
+                    out string failure))
+                AddFailure(CurrentTick, command.Sequence, "INVALID_WORK", failure);
+        }
+
+        private void ExecuteSubmitWorkChoice(OfficeCommand command)
+        {
+            if (!M2Enabled || !ManualTasks.IsActive)
+            {
+                AddFailure(CurrentTick, command.Sequence, "NO_WORK_ACTIVE",
+                    "There is no paper or money choice to submit.");
+                return;
+            }
+            OfficeManualTaskKind completedKind = ManualTasks.ActiveKind;
+            string caseId = ManualTasks.ActiveCaseId;
+            if (!ManualTasks.TrySubmit(command.Arg0, out bool completed,
+                    out string result))
+            {
+                AddFailure(CurrentTick, command.Sequence, "INVALID_WORK_CHOICE", result);
+                return;
+            }
+            if (!completed) return;
+            if (completedKind == OfficeManualTaskKind.Compare)
+                Customers.MarkPapersChecked(caseId);
+            else
+                Customers.MarkMoneyTraced(caseId);
+        }
+
+        private void ExecuteDecide(OfficeCommand command)
+        {
+            if (!M2Enabled)
+            {
+                AddFailure(CurrentTick, command.Sequence, "DECIDE_UNAVAILABLE",
+                    "This command log does not contain an active M2 case.");
+                return;
+            }
+            OfficeCustomerState active = Customers.ActiveDeskCustomer;
+            OfficeCaseWorkRecord work = ManualTasks.RecordFor(command.TargetId);
+            OfficeFolderState folder = Queues.GetFolder(command.TargetId);
+            if (active == null ||
+                !string.Equals(active.LinkedAutomationClaimId,
+                    command.TargetId, StringComparison.Ordinal) ||
+                work == null || !work.CompareComplete || !work.TraceComplete ||
+                folder == null || folder.IsMoving ||
+                folder.OwnerKind != OfficeFolderOwnerKind.RoomQueue ||
+                folder.CurrentRoom != OfficeRoomId.FrontDesk ||
+                command.Arg0 < (int)OfficeDecisionChoice.RejectCase ||
+                command.Arg0 > (int)OfficeDecisionChoice.HelpCustomer)
+            {
+                AddFailure(CurrentTick, command.Sequence, "DECISION_NOT_READY",
+                    "Check papers, trace money, and return the folder first.");
+                return;
+            }
+            if (!Decisions.TryCommit(
+                    command.TargetId,
+                    (OfficeDecisionChoice)command.Arg0,
+                    out OfficeDecisionRecord ignored,
+                    out string failure))
+            {
+                AddFailure(CurrentTick, command.Sequence, "DECISION_REJECTED", failure);
+                return;
+            }
+            Customers.MarkDecisionMade(command.TargetId);
+        }
+
+        private OfficeInteractionPoint CurrentInteractionPoint()
+        {
+            return Grid.ChooseClosestInteractionPoint(Warden.Cell(Grid));
         }
 
         private OfficeCommandFailure AddFailure(
@@ -357,7 +693,14 @@ namespace Desk42.Product.OfficeSlice
                     .Append(':').Append(folder.SourceRoom).Append(':')
                     .Append(folder.DestinationRoom).Append(':')
                     .Append(folder.TransferStartTick).Append(':')
-                    .Append(folder.TransferEndTick);
+                    .Append(folder.TransferEndTick).Append(':')
+                    .Append(folder.OwnerKind).Append(':').Append(folder.OwnerId);
+            }
+            if (state.M2Enabled)
+            {
+                state.Customers.AppendSnapshot(builder);
+                state.ManualTasks.AppendSnapshot(builder, state.Cases.Cases);
+                state.Decisions.AppendSnapshot(builder, state.Cases.Cases);
             }
             for (int i = 0; i < state.Failures.Count; i++)
                 builder.Append("|failure=").Append(state.Failures[i]);

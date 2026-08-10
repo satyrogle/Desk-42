@@ -81,10 +81,14 @@ namespace Desk42.Product.OfficeSlice
 
         private bool _interactionBuffered;
         private long _interactionExpiresAfterTick;
+        private bool _choiceBuffered;
+        private int _bufferedChoice;
+        private long _choiceExpiresAfterTick;
 
         public OfficeInputDirection Movement { get; private set; }
         public bool HasBufferedInteraction => _interactionBuffered;
         public long InteractionExpiresAfterTick => _interactionExpiresAfterTick;
+        public bool HasBufferedChoice => _choiceBuffered;
 
         public void SetMovement(OfficeInputDirection movement)
         {
@@ -122,16 +126,49 @@ namespace Desk42.Product.OfficeSlice
             return true;
         }
 
+        public void BufferChoice(int oneBasedChoice, long currentTick)
+        {
+            if (oneBasedChoice < 1 || oneBasedChoice > 4)
+                throw new ArgumentOutOfRangeException(nameof(oneBasedChoice));
+            if (currentTick < 0L) throw new ArgumentOutOfRangeException(nameof(currentTick));
+            if (_choiceBuffered) return;
+            _choiceBuffered = true;
+            _bufferedChoice = oneBasedChoice;
+            _choiceExpiresAfterTick = currentTick + InteractionBufferTicks;
+        }
+
+        public bool TryConsumeChoice(long commandTick, out int oneBasedChoice)
+        {
+            oneBasedChoice = 0;
+            if (!_choiceBuffered) return false;
+            if (commandTick > _choiceExpiresAfterTick)
+            {
+                ClearChoice();
+                return false;
+            }
+            oneBasedChoice = _bufferedChoice;
+            ClearChoice();
+            return true;
+        }
+
         public void Clear()
         {
             Movement = OfficeInputDirection.None;
             ClearInteraction();
+            ClearChoice();
         }
 
         private void ClearInteraction()
         {
             _interactionBuffered = false;
             _interactionExpiresAfterTick = 0L;
+        }
+
+        private void ClearChoice()
+        {
+            _choiceBuffered = false;
+            _bufferedChoice = 0;
+            _choiceExpiresAfterTick = 0L;
         }
     }
 
@@ -168,7 +205,10 @@ namespace Desk42.Product.OfficeSlice
             long commandTick = _state.CurrentTick + 1L;
             if (_intent.TryConsumeInteraction(commandTick))
                 _state.TryQueueCommand(
-                    _state.CreateInteractCommand(), out OfficeCommandFailure ignored);
+                    _state.CreatePrimaryActionCommand(), out OfficeCommandFailure ignored);
+            if (_intent.TryConsumeChoice(commandTick, out int choice))
+                _state.TryQueueCommand(
+                    _state.CreateChoiceCommand(choice), out OfficeCommandFailure ignored);
 
             _state.AdvanceOneTick();
         }

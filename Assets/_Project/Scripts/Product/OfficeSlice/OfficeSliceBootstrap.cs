@@ -20,6 +20,10 @@ namespace Desk42.Product.OfficeSlice
             new(StringComparer.Ordinal);
         private readonly Dictionary<string, TextMesh> _folderLabels =
             new(StringComparer.Ordinal);
+        private readonly Dictionary<string, Renderer> _folderRenderers =
+            new(StringComparer.Ordinal);
+        private readonly Dictionary<string, Transform> _customerViews =
+            new(StringComparer.Ordinal);
         private readonly List<Material> _runtimeMaterials = new();
 
         private OfficeCaseRepository _caseRepository;
@@ -53,8 +57,8 @@ namespace Desk42.Product.OfficeSlice
         {
             if (_built) return;
             name = "Office Slice Bootstrap";
-            _caseRepository = OfficeCaseProjector.CreateSixCaseRepository();
-            _simulationState = OfficeSimulationState.Create(_caseRepository);
+            _simulationState = OfficeSimulationState.CreateM2();
+            _caseRepository = _simulationState.Cases;
             _runtimeRoot = new GameObject("Office Slice Runtime").transform;
             _runtimeRoot.SetParent(transform, false);
             BuildGreybox();
@@ -120,7 +124,12 @@ namespace Desk42.Product.OfficeSlice
 
                 int queueIndex = QueueIndex(folder.CurrentRoom, caseId);
                 Vector3 destination = SocketWorldPosition(folder.CurrentRoom, queueIndex);
-                if (folder.IsMoving)
+                if (folder.OwnerKind == OfficeFolderOwnerKind.Warden &&
+                    _wardenView != null)
+                {
+                    destination = _wardenView.position + new Vector3(0.55f, 0.15f, 0f);
+                }
+                else if (folder.IsMoving)
                 {
                     Vector3 source = SocketWorldPosition(folder.SourceRoom, 0);
                     Vector3 target = SocketWorldPosition(folder.DestinationRoom, 0);
@@ -132,8 +141,15 @@ namespace Desk42.Product.OfficeSlice
                 view.position = destination;
                 if (_folderLabels.TryGetValue(caseId, out TextMesh label))
                     label.text = _caseRepository.Get(caseId)?.DisplayId ?? caseId;
+                if (_folderRenderers.TryGetValue(caseId, out Renderer renderer))
+                {
+                    renderer.sharedMaterial.color = IsHighlightedFolder(folder)
+                        ? new Color(1f, 0.88f, 0.22f)
+                        : FolderColor(_caseRepository.Get(caseId).Urgency);
+                }
             }
 
+            RefreshCustomerViews();
             UpdateBillboards(wardenCell);
         }
 
@@ -166,7 +182,8 @@ namespace Desk42.Product.OfficeSlice
         public void ReplayRecordedCommands()
         {
             OfficeCommandLog source = _simulationState.CommandLog;
-            _simulationState = OfficeSimulationState.CreateReplay(_caseRepository, source);
+            _simulationState = OfficeSimulationState.CreateM2Replay(source);
+            _caseRepository = _simulationState.Cases;
             _tickDriver.ReplaceState(_simulationState);
             _lastDebugMessage = "REPLAY MODE / LIVE INPUT DISABLED";
             RefreshPresentation();
@@ -219,6 +236,7 @@ namespace Desk42.Product.OfficeSlice
             CreateRooms();
             CreateWarden();
             CreateFolderViews();
+            CreateCustomerViews();
         }
 
         private void CreateCamera()
@@ -328,7 +346,59 @@ namespace Desk42.Product.OfficeSlice
                 TextMesh label = CreateLabel(officeCase.DisplayId,
                     Vector3.up * 0.18f, 0.055f, folder.transform);
                 _folderLabels.Add(caseId, label);
+                _folderRenderers.Add(caseId, folder.GetComponent<Renderer>());
             }
+        }
+
+        private void CreateCustomerViews()
+        {
+            IReadOnlyList<OfficeCustomerState> customers =
+                _simulationState.Customers.Customers;
+            for (int i = 0; i < customers.Count; i++)
+            {
+                OfficeCustomerState customer = customers[i];
+                GameObject body = CreateCube("Customer " + customer.DisplayName,
+                    Vector3.zero, new Vector3(0.62f, 1.05f, 0.62f),
+                    new Color(0.42f, 0.63f, 0.78f));
+                CreateLabel(customer.DisplayName, Vector3.up * 1.25f,
+                    0.065f, body.transform);
+                _customerViews.Add(customer.CustomerId, body.transform);
+            }
+            RefreshCustomerViews();
+        }
+
+        private void RefreshCustomerViews()
+        {
+            if (_simulationState.Customers == null) return;
+            IReadOnlyList<OfficeCustomerState> customers =
+                _simulationState.Customers.Customers;
+            int waitingIndex = 0;
+            for (int i = 0; i < customers.Count; i++)
+            {
+                OfficeCustomerState customer = customers[i];
+                if (!_customerViews.TryGetValue(customer.CustomerId,
+                        out Transform view)) continue;
+                bool visible = customer.QueueState == OfficeCustomerQueueState.AtDesk ||
+                    customer.QueueState == OfficeCustomerQueueState.Waiting;
+                view.gameObject.SetActive(visible);
+                if (!visible) continue;
+                view.position = customer.QueueState == OfficeCustomerQueueState.AtDesk
+                    ? new Vector3(-10f, 0.55f, 7f)
+                    : new Vector3(-3f + waitingIndex++ * 1.1f, 0.55f, -3f);
+            }
+        }
+
+        private bool IsHighlightedFolder(OfficeFolderState folder)
+        {
+            OfficeCustomerState active = _simulationState.Customers.ActiveDeskCustomer;
+            if (active == null || !string.Equals(active.LinkedAutomationClaimId,
+                    folder.CaseId, StringComparison.Ordinal)) return false;
+            if (folder.OwnerKind == OfficeFolderOwnerKind.Warden) return true;
+            OfficeInteractionPoint point = _simulationState.Grid.ChooseClosestInteractionPoint(
+                _simulationState.Warden.Cell(_simulationState.Grid));
+            return point != null && !folder.IsMoving &&
+                folder.OwnerKind == OfficeFolderOwnerKind.RoomQueue &&
+                folder.CurrentRoom == point.Room;
         }
 
         private GameObject CreateCube(
@@ -435,10 +505,33 @@ namespace Desk42.Product.OfficeSlice
 
         private void OnGUI()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!Ready) return;
-            GUILayout.BeginArea(new Rect(16f, 16f, 560f, 240f), GUI.skin.box);
-            GUILayout.Label("DESK42 / OFFICE SLICE / M1 GREYBOX");
+            GUILayout.BeginArea(new Rect(16f, 16f, 540f, 330f), GUI.skin.box);
+            GUILayout.Label("DESK 42 / TODAY'S DESK");
+            OfficeCustomerState customer =
+                _simulationState.Customers.ActiveDeskCustomer;
+            if (customer == null)
+            {
+                GUILayout.Label("NO CUSTOMER AT THE DESK");
+            }
+            else
+            {
+                GUILayout.Label("CUSTOMER: " + customer.DisplayName);
+                GUILayout.Label(customer.Problem);
+                GUILayout.Label("MOOD: " + customer.VisibleMoodState.ToString().ToUpperInvariant());
+                GUILayout.Label("FOLDER: " + FolderStatus(customer.LinkedAutomationClaimId));
+            }
+            GUILayout.Space(8f);
+            DrawCurrentWork(customer);
+            GUILayout.Space(8f);
+            GUILayout.Label("E / SPACE / A: " + _simulationState.PrimaryActionLabel);
+            GUILayout.Label("WASD / ARROWS / LEFT STICK: MOVE");
+            GUILayout.Label("CHOICES: 1-4 / X-Y-LB-RB");
+            GUILayout.EndArea();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            GUILayout.BeginArea(new Rect(16f, 360f, 700f, 205f), GUI.skin.box);
+            GUILayout.Label("M2 ENGINEERING EVIDENCE");
             GUILayout.Label("TICK " + _simulationState.CurrentTick +
                 " / CHECKSUM " + _simulationState.Checksum);
             GUILayout.Label("WARDEN " + _simulationState.Warden.Cell(_simulationState.Grid) +
@@ -446,10 +539,73 @@ namespace Desk42.Product.OfficeSlice
             GUILayout.Label("ROUTES " + (CriticalRoutesValid ? "VALID" : "INVALID"));
             GUILayout.Label("QUEUES " + QueueSummary());
             GUILayout.Label("STATUS " + _lastDebugMessage);
-            GUILayout.Label("WASD/ARROWS MOVE | E/SPACE INTERACT | P PAUSE | N STEP");
-            GUILayout.Label("F5 SAVE LOG | F6 FORCE ROUTE | F7 REPLAY");
+            GUILayout.Label("P PAUSE | N STEP | F5 SAVE LOG | F7 REPLAY");
             GUILayout.EndArea();
 #endif
+        }
+
+        private void DrawCurrentWork(OfficeCustomerState customer)
+        {
+            if (_simulationState.ManualTasks.IsActive)
+            {
+                string caseId = _simulationState.ManualTasks.ActiveCaseId;
+                OfficeCaseWorkDefinition work =
+                    _simulationState.WorkDefinitionFor(caseId);
+                if (_simulationState.ManualTasks.ActiveKind ==
+                    OfficeManualTaskKind.Compare)
+                {
+                    GUILayout.Label("CHECK PAPERS");
+                    GUILayout.Label("1 CUSTOMER NAME: " + work.CustomerNameOnPaper);
+                    GUILayout.Label("2 PAYMENT DATE: " + work.PaymentDateOnPaper);
+                    GUILayout.Label("3 ACCOUNT MARK: " + work.AccountMarkOnPaper);
+                    GUILayout.Label("4 THE PAPERS MATCH");
+                }
+                else
+                {
+                    GUILayout.Label("TRACE MONEY");
+                    GUILayout.Label("1 COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT");
+                    GUILayout.Label("2 COMPANY > PAYMENT RECORD > HOLDING ACCOUNT");
+                    GUILayout.Label("3 COPIED FILE > NO PAYMENT RECORD > NO ACCOUNT");
+                }
+                return;
+            }
+
+            if (customer == null) return;
+            OfficeCaseWorkRecord record = _simulationState.ManualTasks.RecordFor(
+                customer.LinkedAutomationClaimId);
+            if (record.CompareAttempts > 0)
+                GUILayout.Label("PAPERS: " + record.CompareReason);
+            if (record.TraceAttempts > 0)
+            {
+                GUILayout.Label("MONEY: " + record.TraceResult);
+                if (!string.IsNullOrWhiteSpace(record.TracePathSummary))
+                    GUILayout.Label(record.TracePathSummary);
+            }
+            OfficeFolderState folder = _simulationState.Queues.GetFolder(
+                customer.LinkedAutomationClaimId);
+            if (record.CompareComplete && record.TraceComplete &&
+                folder != null && !folder.IsMoving &&
+                folder.OwnerKind == OfficeFolderOwnerKind.RoomQueue &&
+                folder.CurrentRoom == OfficeRoomId.FrontDesk)
+            {
+                GUILayout.Label("DECIDE");
+                GUILayout.Label("1 HELP CUSTOMER     2 REJECT CASE");
+            }
+            OfficeDecisionRecord decision = _simulationState.Decisions.RecordFor(
+                customer.LinkedAutomationClaimId);
+            if (decision != null) GUILayout.Label("STAMP: " + decision.Stamp);
+            else if (_simulationState.Decisions.LastRecord != null)
+                GUILayout.Label("LAST STAMP: " +
+                    _simulationState.Decisions.LastRecord.Stamp);
+        }
+
+        private string FolderStatus(string caseId)
+        {
+            OfficeFolderState folder = _simulationState.Queues.GetFolder(caseId);
+            if (folder == null) return "NOT HERE";
+            if (folder.OwnerKind == OfficeFolderOwnerKind.Warden) return "CARRIED";
+            if (folder.IsMoving) return "ON THE WAY TO " + RoomLabel(folder.DestinationRoom);
+            return "AT " + RoomLabel(folder.CurrentRoom);
         }
 
         private static bool HasArgument(string[] arguments, string expected)
