@@ -79,6 +79,8 @@ namespace Desk42.Product.OfficeSlice
             }
 
             OfficeInputDirection movement = OfficeInputDirection.None;
+            bool keyboardUsed = false;
+            bool controllerUsed = false;
             if (keyboard != null)
             {
                 movement = OfficeInputCanonicalizer.FromDigital(
@@ -86,6 +88,7 @@ namespace Desk42.Product.OfficeSlice
                     keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed,
                     keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed,
                     keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed);
+                keyboardUsed = movement != OfficeInputDirection.None;
             }
 
             if (movement == OfficeInputDirection.None && gamepad != null)
@@ -94,13 +97,18 @@ namespace Desk42.Product.OfficeSlice
                 Vector2 dpad = gamepad.dpad.ReadValue();
                 Vector2 direction = stick.sqrMagnitude >= dpad.sqrMagnitude ? stick : dpad;
                 movement = OfficeInputCanonicalizer.FromAnalog(direction.x, direction.y);
+                controllerUsed = movement != OfficeInputDirection.None;
             }
             _inputIntent.SetMovement(movement);
 
-            bool interactionPressed =
-                keyboard != null &&
+            bool keyboardInteractionPressed = keyboard != null &&
                 (keyboard.eKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame);
-            interactionPressed |= gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
+            bool controllerInteractionPressed =
+                gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
+            keyboardUsed |= keyboardInteractionPressed;
+            controllerUsed |= controllerInteractionPressed;
+            bool interactionPressed = keyboardInteractionPressed ||
+                controllerInteractionPressed;
             if (interactionPressed)
             {
                 _bootstrap.NotifyPresentationInteractionAttempt(
@@ -115,6 +123,7 @@ namespace Desk42.Product.OfficeSlice
                 else if (keyboard.digit2Key.wasPressedThisFrame) choice = 2;
                 else if (keyboard.digit3Key.wasPressedThisFrame) choice = 3;
                 else if (keyboard.digit4Key.wasPressedThisFrame) choice = 4;
+                keyboardUsed |= choice > 0;
             }
             if (choice == 0 && gamepad != null)
             {
@@ -122,27 +131,53 @@ namespace Desk42.Product.OfficeSlice
                 else if (gamepad.buttonNorth.wasPressedThisFrame) choice = 2;
                 else if (gamepad.leftShoulder.wasPressedThisFrame) choice = 3;
                 else if (gamepad.rightShoulder.wasPressedThisFrame) choice = 4;
+                controllerUsed |= choice > 0;
             }
             if (choice > 0) _inputIntent.BufferChoice(choice, _state.CurrentTick);
 
-            bool dropPressed = keyboard != null && keyboard.qKey.wasPressedThisFrame;
-            dropPressed |= gamepad != null && gamepad.buttonEast.wasPressedThisFrame;
+            bool keyboardDropPressed =
+                keyboard != null && keyboard.qKey.wasPressedThisFrame;
+            bool controllerDropPressed =
+                gamepad != null && gamepad.buttonEast.wasPressedThisFrame;
+            keyboardUsed |= keyboardDropPressed;
+            controllerUsed |= controllerDropPressed;
+            bool dropPressed = keyboardDropPressed || controllerDropPressed;
             if (dropPressed) _inputIntent.BufferDrop(_state.CurrentTick);
 
-            bool toggleRulePressed = keyboard != null && keyboard.rKey.wasPressedThisFrame;
-            toggleRulePressed |= gamepad != null && gamepad.selectButton.wasPressedThisFrame;
+            bool keyboardRulePressed =
+                keyboard != null && keyboard.rKey.wasPressedThisFrame;
+            bool controllerRulePressed =
+                gamepad != null && gamepad.selectButton.wasPressedThisFrame;
+            keyboardUsed |= keyboardRulePressed;
+            controllerUsed |= controllerRulePressed;
+            bool toggleRulePressed = keyboardRulePressed || controllerRulePressed;
             if (toggleRulePressed) _inputIntent.BufferToggleRule(_state.CurrentTick);
 
-            bool toggleRule2Pressed = keyboard != null &&
+            bool keyboardRule2Pressed = keyboard != null &&
                 keyboard.tKey.wasPressedThisFrame;
-            toggleRule2Pressed |= gamepad != null &&
+            bool controllerRule2Pressed = gamepad != null &&
                 gamepad.rightStickButton.wasPressedThisFrame;
+            keyboardUsed |= keyboardRule2Pressed;
+            controllerUsed |= controllerRule2Pressed;
+            bool toggleRule2Pressed = keyboardRule2Pressed ||
+                controllerRule2Pressed;
             if (toggleRule2Pressed)
                 _inputIntent.BufferToggleRule2(_state.CurrentTick);
 
-            bool restartPressed = keyboard != null && keyboard.enterKey.wasPressedThisFrame;
-            restartPressed |= gamepad != null && gamepad.startButton.wasPressedThisFrame;
+            bool keyboardRestartPressed =
+                keyboard != null && keyboard.enterKey.wasPressedThisFrame;
+            bool controllerRestartPressed =
+                gamepad != null && gamepad.startButton.wasPressedThisFrame;
+            keyboardUsed |= keyboardRestartPressed;
+            controllerUsed |= controllerRestartPressed;
+            bool restartPressed = keyboardRestartPressed ||
+                controllerRestartPressed;
             if (restartPressed) _inputIntent.BufferRestart(_state.CurrentTick);
+
+            if (keyboardUsed)
+                _bootstrap.NotifyControlScheme(OfficeM6ControlScheme.Keyboard);
+            else if (controllerUsed)
+                _bootstrap.NotifyControlScheme(OfficeM6ControlScheme.Controller);
         }
     }
 }

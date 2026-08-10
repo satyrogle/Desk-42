@@ -57,6 +57,9 @@ namespace Desk42.Product.OfficeSlice
         public string ResultSummary { get; internal set; } = string.Empty;
         public string TomorrowText { get; internal set; } = string.Empty;
         public bool DevelopmentHudVisible { get; internal set; }
+        public bool TutorialVisible { get; internal set; }
+        public string TutorialText { get; internal set; } = string.Empty;
+        public string TutorialHighlightId { get; internal set; } = string.Empty;
 
         public string AllNormalPlayerText()
         {
@@ -81,6 +84,7 @@ namespace Desk42.Product.OfficeSlice
             Append(text, ResultTitle);
             Append(text, ResultSummary);
             Append(text, TomorrowText);
+            Append(text, TutorialText);
             return text.ToString();
         }
 
@@ -218,6 +222,13 @@ namespace Desk42.Product.OfficeSlice
                 (height - cardHeight) * 0.5f, cardWidth, cardHeight);
         }
 
+        public Rect TutorialRect(int width, int height)
+        {
+            float cardWidth = Mathf.Min(560f, width - SafeMargin * 2f);
+            return new Rect((width - cardWidth) * 0.5f, 80f,
+                cardWidth, 58f);
+        }
+
         public Rect CustomerPortraitRect(int width, int height)
         {
             Rect card = CustomerCardRect(width, height);
@@ -235,6 +246,7 @@ namespace Desk42.Product.OfficeSlice
                 BreakCardRect(width, height),
                 ActionRect(width, height),
                 ResultRect(width, height),
+                TutorialRect(width, height),
             };
             for (int i = 0; i < rects.Length; i++)
                 if (!Inside(rects[i], width, height)) return false;
@@ -261,6 +273,8 @@ namespace Desk42.Product.OfficeSlice
                 visible.Add(RuleCardRect(width, height));
             if (model.BreakCardVisible)
                 visible.Add(BreakCardRect(width, height));
+            if (model.TutorialVisible)
+                visible.Add(TutorialRect(width, height));
 
             Vector2[] targets =
             {

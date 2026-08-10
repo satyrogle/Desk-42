@@ -26,6 +26,8 @@ namespace Desk42.Product.OfficeSlice
             "--desk42-office-slice-capture-distribution";
         private const string ReducedFlashArgument =
             "--desk42-office-slice-reduced-flash";
+        private const string TutorialCompleteKey =
+            "desk42.office-slice.m6.tutorial-complete";
 
         private readonly Dictionary<string, Transform> _folderViews =
             new(StringComparer.Ordinal);
@@ -57,8 +59,10 @@ namespace Desk42.Product.OfficeSlice
         private readonly OfficeM4HudPresenter _m4HudPresenter = new();
         private readonly OfficeM6HudPresenter _m6HudPresenter = new();
         private OfficeM6HudModel _m6HudModel;
+        private OfficeM6Onboarding _m6Onboarding;
         private OfficeM6ControlScheme _m6ControlScheme =
             OfficeM6ControlScheme.Keyboard;
+        private bool _m6TutorialCompletionSaved;
         private GUIStyle _m4TitleStyle;
         private GUIStyle _m4ActionStyle;
         private GUIStyle _m4BodyStyle;
@@ -77,6 +81,7 @@ namespace Desk42.Product.OfficeSlice
         public OfficeM4HudPresenter HudPresenter => _m4HudPresenter;
         public OfficeM6HudPresenter M6HudPresenter => _m6HudPresenter;
         public OfficeM6HudModel M6HudModel => _m6HudModel;
+        public OfficeM6Onboarding Onboarding => _m6Onboarding;
         public OfficeAudioDirector AudioDirector => _m5AudioDirector;
         public OfficeAudioSettings AudioSettings => _m5AudioSettings;
         public OfficeFeedbackDirector FeedbackDirector => _m5FeedbackDirector;
@@ -99,6 +104,8 @@ namespace Desk42.Product.OfficeSlice
             name = "Office Slice Bootstrap";
             _m5AudioSettings = OfficeAudioSettings.Load();
             _m5AudioSettings.ApplyCommandLine(Environment.GetCommandLineArgs());
+            _m6Onboarding = new OfficeM6Onboarding(
+                PlayerPrefs.GetInt(TutorialCompleteKey, 0) != 0);
             _campaignState = OfficeCampaignState.Create();
             _simulationState = _campaignState.CurrentSimulation;
             _caseRepository = _simulationState.Cases;
@@ -632,6 +639,14 @@ namespace Desk42.Product.OfficeSlice
             RefreshStaffViews();
             RefreshM4CharacterSprites();
             UpdateBillboards(wardenCell);
+            _m6Onboarding?.Observe(_simulationState, _campaignState);
+            if (_m6Onboarding != null && _m6Onboarding.Complete &&
+                !_m6TutorialCompletionSaved)
+            {
+                PlayerPrefs.SetInt(TutorialCompleteKey, 1);
+                PlayerPrefs.Save();
+                _m6TutorialCompletionSaved = true;
+            }
             if (_m4Projector != null &&
                 (_m4Snapshot == null || _m4Snapshot.Tick != _simulationState.CurrentTick))
                 _m4Snapshot = _m4Projector.Project(_simulationState, _campaignState);
@@ -642,14 +657,32 @@ namespace Desk42.Product.OfficeSlice
             if (_m6HudModel == null ||
                 _m6HudModel.Tick != _simulationState.CurrentTick ||
                 _m6HudModel.DevelopmentHudVisible !=
-                    _m6HudPresenter.DevelopmentHudVisible)
+                    _m6HudPresenter.DevelopmentHudVisible ||
+                _m6HudModel.TutorialText !=
+                    (_m6Onboarding?.CurrentSentence ?? string.Empty))
+            {
                 _m6HudModel = _m6HudPresenter.Project(
                     _simulationState, _campaignState, _m6ControlScheme);
+                _m6Onboarding?.ApplyTo(_m6HudModel);
+            }
         }
 
         public void NotifyPresentationInteractionAttempt(bool valid)
         {
             _m5AudioDirector?.NotifyInteractionAttempt(valid);
+        }
+
+        public void NotifyControlScheme(OfficeM6ControlScheme scheme)
+        {
+            if (_m6ControlScheme == scheme) return;
+            _m6ControlScheme = scheme;
+            _m6HudModel = null;
+        }
+
+        public void SetTutorialHintsEnabled(bool enabled)
+        {
+            _m6Onboarding?.SetHintsEnabled(enabled);
+            _m6HudModel = null;
         }
 
         public void ForceAllFoldersThroughM1Route()
@@ -1500,6 +1533,16 @@ namespace Desk42.Product.OfficeSlice
                 GUILayout.EndArea();
                 DrawM4DevelopmentHud();
                 return;
+            }
+
+            if (_m6HudModel.TutorialVisible)
+            {
+                Rect tutorial = _m6HudPresenter.TutorialRect(
+                    Screen.width, Screen.height);
+                DrawM4PaperCard(tutorial);
+                GUILayout.BeginArea(Inset(tutorial, 10f));
+                GUILayout.Label(_m6HudModel.TutorialText, _m4TitleStyle);
+                GUILayout.EndArea();
             }
 
             Rect top = _m6HudPresenter.TopBarRect(Screen.width, Screen.height);
