@@ -270,6 +270,22 @@ namespace Desk42.Product.OfficeSlice
                 campaign);
         }
 
+        public static OfficeSimulationState CreateCampaignShiftReplay(
+            OfficeM2Scenario scenario,
+            OfficeCampaignState campaign,
+            OfficeCommandLog sourceLog)
+        {
+            if (scenario == null) throw new ArgumentNullException(nameof(scenario));
+            if (campaign == null) throw new ArgumentNullException(nameof(campaign));
+            if (sourceLog == null) throw new ArgumentNullException(nameof(sourceLog));
+            return new OfficeSimulationState(
+                scenario.Cases,
+                sourceLog.CloneForReplay(),
+                true,
+                scenario,
+                campaign);
+        }
+
         public static OfficeSimulationState CreateAuthoredShift(
             OfficeM2Scenario scenario,
             OfficeCampaignUpgradeState upgrades = null,

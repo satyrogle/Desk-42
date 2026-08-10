@@ -272,6 +272,240 @@ namespace Desk42.Product.OfficeSlice
         public OfficeCampaignAutomationState Rules { get; }
     }
 
+    public sealed class OfficeCampaignShiftSummary
+    {
+        private readonly List<string> _observableRecapLines = new();
+        private readonly IReadOnlyList<string> _readOnlyObservableRecapLines;
+
+        private OfficeCampaignShiftSummary(int shiftOrdinal)
+        {
+            ShiftOrdinal = shiftOrdinal;
+            _readOnlyObservableRecapLines = _observableRecapLines.AsReadOnly();
+        }
+
+        public int ShiftOrdinal { get; }
+        public int CustomersHelped { get; private set; }
+        public int CustomersRejected { get; private set; }
+        public int RuleMatches { get; private set; }
+        public int CopiesCleared { get; private set; }
+        public int OfficeFailuresRecovered { get; private set; }
+        public long TotalWaitTicks { get; private set; }
+        public int CustomerCount { get; private set; }
+        public int MisroutedFiles { get; private set; }
+        public int KnownCustomerFollowUps { get; private set; }
+        public IReadOnlyList<string> ObservableRecapLines =>
+            _readOnlyObservableRecapLines;
+
+        internal static OfficeCampaignShiftSummary Capture(
+            OfficeSimulationState simulation)
+        {
+            var summary = new OfficeCampaignShiftSummary(
+                simulation.Shift.ShiftOrdinal);
+            for (int i = 0; i < simulation.Customers.Customers.Count; i++)
+            {
+                OfficeCustomerState customer = simulation.Customers.Customers[i];
+                OfficeDecisionRecord decision = simulation.Decisions.RecordFor(
+                    customer.LinkedAutomationClaimId);
+                if (decision != null && string.Equals(
+                        decision.Stamp, "HELP CUSTOMER", StringComparison.Ordinal))
+                    summary.CustomersHelped++;
+                else if (decision != null)
+                    summary.CustomersRejected++;
+                OfficeCustomerPressureRecord pressure =
+                    simulation.CustomerPressure.RecordFor(customer.CustomerId);
+                if (pressure != null) summary.TotalWaitTicks += pressure.PressureTicks;
+                summary.CustomerCount++;
+                OfficeCaseWorkDefinition work = simulation.WorkDefinitionFor(
+                    customer.LinkedAutomationClaimId);
+                if (!string.IsNullOrWhiteSpace(work?.PriorObservableRecord))
+                    summary.KnownCustomerFollowUps++;
+            }
+            for (int i = 0; i < simulation.AutomationRule.Matches.Count; i++)
+                if (simulation.AutomationRule.Matches[i].Matched)
+                    summary.RuleMatches++;
+            for (int i = 0; i < simulation.PayrollRule.Matches.Count; i++)
+                if (simulation.PayrollRule.Matches[i].Matched)
+                    summary.RuleMatches++;
+            summary.CopiesCleared = simulation.BreakState.ClearedCopyCount +
+                simulation.GhostClock.ClearedSlipCount +
+                simulation.PromotionCascade.ClearedPromotionFormCount;
+            if (simulation.BreakState.Recovered)
+                summary.OfficeFailuresRecovered++;
+            if (simulation.GhostClock.Recovered)
+                summary.OfficeFailuresRecovered++;
+            if (simulation.MissingRoomAccess.Recovered)
+                summary.OfficeFailuresRecovered++;
+            if (simulation.PromotionCascade.Recovered)
+                summary.OfficeFailuresRecovered++;
+            summary.MisroutedFiles = simulation.Staff.RunnerDiversionCount +
+                simulation.PromotionCascade.DivertedFolderIds.Count;
+            for (int i = 0; i < simulation.CausalEvents.Events.Count; i++)
+                summary._observableRecapLines.Add(
+                    simulation.CausalEvents.Events[i].PlayerText);
+            return summary;
+        }
+    }
+
+    public sealed class OfficeCampaignResult
+    {
+        private readonly List<string> _observableRecapLines = new();
+        private readonly IReadOnlyList<string> _readOnlyObservableRecapLines;
+
+        private OfficeCampaignResult()
+        {
+            _readOnlyObservableRecapLines = _observableRecapLines.AsReadOnly();
+        }
+
+        public const string NextDayTease =
+            "TOMORROW'S FIRST CASE: THE COMPLAINT BOX HAS FILED A COMPLAINT.";
+
+        public int CustomersHelped { get; private set; }
+        public int CustomersRejected { get; private set; }
+        public int RulesTaught { get; private set; }
+        public int RuleMatches { get; private set; }
+        public int CopiesCleared { get; private set; }
+        public int OfficeFailuresRecovered { get; private set; }
+        public int UpgradesChosen { get; private set; }
+        public int AverageWaitTicks { get; private set; }
+        public int MisroutedFiles { get; private set; }
+        public int KnownCustomerFollowUps { get; private set; }
+        public IReadOnlyList<string> ObservableRecapLines =>
+            _readOnlyObservableRecapLines;
+
+        internal static OfficeCampaignResult Create(
+            IReadOnlyList<OfficeCampaignShiftSummary> shifts,
+            OfficeCampaignAutomationState rules,
+            OfficeCampaignUpgradeState upgrades)
+        {
+            var result = new OfficeCampaignResult();
+            long totalWaitTicks = 0L;
+            int customerCount = 0;
+            for (int i = 0; i < shifts.Count; i++)
+            {
+                OfficeCampaignShiftSummary shift = shifts[i];
+                result.CustomersHelped += shift.CustomersHelped;
+                result.CustomersRejected += shift.CustomersRejected;
+                result.RuleMatches += shift.RuleMatches;
+                result.CopiesCleared += shift.CopiesCleared;
+                result.OfficeFailuresRecovered +=
+                    shift.OfficeFailuresRecovered;
+                result.MisroutedFiles += shift.MisroutedFiles;
+                result.KnownCustomerFollowUps += shift.KnownCustomerFollowUps;
+                totalWaitTicks += shift.TotalWaitTicks;
+                customerCount += shift.CustomerCount;
+                for (int line = 0; line < shift.ObservableRecapLines.Count; line++)
+                    result._observableRecapLines.Add(
+                        shift.ObservableRecapLines[line]);
+            }
+            result.RulesTaught = (rules.Rule1Taught ? 1 : 0) +
+                (rules.Rule2Taught ? 1 : 0);
+            result.UpgradesChosen = upgrades.Choices.Count;
+            result.AverageWaitTicks = customerCount == 0
+                ? 0
+                : (int)(totalWaitTicks / customerCount);
+            return result;
+        }
+
+        public void AppendSnapshot(StringBuilder builder)
+        {
+            builder.Append("|campaign-result=")
+                .Append(CustomersHelped).Append(':')
+                .Append(CustomersRejected).Append(':')
+                .Append(RulesTaught).Append(':').Append(RuleMatches).Append(':')
+                .Append(CopiesCleared).Append(':')
+                .Append(OfficeFailuresRecovered).Append(':')
+                .Append(UpgradesChosen).Append(':').Append(AverageWaitTicks)
+                .Append(':').Append(MisroutedFiles).Append(':')
+                .Append(KnownCustomerFollowUps);
+            for (int i = 0; i < _observableRecapLines.Count; i++)
+                builder.Append("|campaign-recap=").Append(i + 1).Append(':')
+                    .Append(_observableRecapLines[i]);
+            builder.Append("|next-day=").Append(NextDayTease);
+        }
+    }
+
+    public sealed class OfficeCampaignReplayEntry
+    {
+        internal OfficeCampaignReplayEntry(
+            int shiftOrdinal,
+            long endTick,
+            OfficeCommandLog commandLog)
+        {
+            if (shiftOrdinal < 1 || shiftOrdinal > OfficeCampaignScenario.ShiftCount)
+                throw new ArgumentOutOfRangeException(nameof(shiftOrdinal));
+            if (endTick < 0L) throw new ArgumentOutOfRangeException(nameof(endTick));
+            ShiftOrdinal = shiftOrdinal;
+            EndTick = endTick;
+            CommandLog = commandLog?.CloneForArchive() ??
+                throw new ArgumentNullException(nameof(commandLog));
+        }
+
+        public int ShiftOrdinal { get; }
+        public long EndTick { get; }
+        public OfficeCommandLog CommandLog { get; }
+    }
+
+    public sealed class OfficeCampaignReplayTape
+    {
+        private readonly List<OfficeCampaignReplayEntry> _entries = new();
+        private readonly IReadOnlyList<OfficeCampaignReplayEntry> _readOnlyEntries;
+
+        internal OfficeCampaignReplayTape(
+            IReadOnlyList<OfficeCampaignReplayEntry> entries)
+        {
+            if (entries == null ||
+                entries.Count != OfficeCampaignScenario.ShiftCount)
+                throw new ArgumentException(
+                    "A campaign replay requires exactly three shift logs.",
+                    nameof(entries));
+            for (int i = 0; i < entries.Count; i++)
+            {
+                OfficeCampaignReplayEntry entry = entries[i];
+                if (entry.ShiftOrdinal != i + 1)
+                    throw new ArgumentException(
+                        "Campaign replay shift logs must be ordered.",
+                        nameof(entries));
+                _entries.Add(new OfficeCampaignReplayEntry(
+                    entry.ShiftOrdinal, entry.EndTick, entry.CommandLog));
+            }
+            _readOnlyEntries = _entries.AsReadOnly();
+        }
+
+        public IReadOnlyList<OfficeCampaignReplayEntry> Entries =>
+            _readOnlyEntries;
+
+        internal OfficeCampaignReplayEntry ForShift(int shiftOrdinal)
+        {
+            return shiftOrdinal < 1 || shiftOrdinal > _entries.Count
+                ? null
+                : _entries[shiftOrdinal - 1];
+        }
+    }
+
+    public static class OfficeCampaignReplayRunner
+    {
+        public static OfficeCampaignState ReplayToResult(
+            OfficeCampaignReplayTape tape)
+        {
+            OfficeCampaignState campaign = OfficeCampaignState.CreateReplay(tape);
+            for (int shift = 1; shift <= OfficeCampaignScenario.ShiftCount; shift++)
+            {
+                OfficeSimulationState simulation = campaign.CurrentSimulation;
+                OfficeCampaignReplayEntry entry = tape.ForShift(shift);
+                while (simulation.CurrentTick < entry.EndTick)
+                    simulation.AdvanceOneTick();
+                if (shift < OfficeCampaignScenario.ShiftCount &&
+                    campaign.CurrentShiftOrdinal != shift + 1)
+                    throw new InvalidOperationException(
+                        "Campaign replay did not reach the next shift.");
+            }
+            if (!campaign.IsComplete)
+                throw new InvalidOperationException(
+                    "Campaign replay did not reach the final result.");
+            return campaign;
+        }
+    }
+
     public sealed class OfficeCampaignState
     {
         private readonly List<string> _completedShiftSnapshots = new();
@@ -281,17 +515,28 @@ namespace Desk42.Product.OfficeSlice
         private readonly List<OfficeCampaignDecisionCallback> _decisionCallbacks = new();
         private readonly IReadOnlyList<OfficeCampaignDecisionCallback>
             _readOnlyDecisionCallbacks;
+        private readonly List<OfficeCampaignShiftSummary> _completedShiftSummaries =
+            new();
+        private readonly IReadOnlyList<OfficeCampaignShiftSummary>
+            _readOnlyCompletedShiftSummaries;
+        private readonly List<OfficeCampaignReplayEntry> _completedReplayEntries =
+            new();
+        private readonly OfficeCampaignReplayTape _replayTape;
         private OfficeCampaignCheckpoint _shiftStartCheckpoint;
 
         private OfficeCampaignState(
             InstitutionalAutomationSession session,
             OfficeCampaignUpgradeState upgrades,
             OfficeCampaignAutomationState rules,
-            int shiftOrdinal)
+            int shiftOrdinal,
+            OfficeCampaignReplayTape replayTape = null)
         {
             _readOnlyCompletedShiftSnapshots = _completedShiftSnapshots.AsReadOnly();
             _readOnlyCompletedShiftChecksums = _completedShiftChecksums.AsReadOnly();
             _readOnlyDecisionCallbacks = _decisionCallbacks.AsReadOnly();
+            _readOnlyCompletedShiftSummaries =
+                _completedShiftSummaries.AsReadOnly();
+            _replayTape = replayTape;
             InstitutionalSession = session ??
                 throw new ArgumentNullException(nameof(session));
             Upgrades = upgrades ?? throw new ArgumentNullException(nameof(upgrades));
@@ -314,6 +559,10 @@ namespace Desk42.Product.OfficeSlice
         public IReadOnlyList<OfficeCampaignDecisionCallback> DecisionCallbacks =>
             _readOnlyDecisionCallbacks;
         public OfficeCampaignCheckpoint ShiftStartCheckpoint => _shiftStartCheckpoint;
+        public IReadOnlyList<OfficeCampaignShiftSummary> CompletedShiftSummaries =>
+            _readOnlyCompletedShiftSummaries;
+        public OfficeCampaignResult Result { get; private set; }
+        public bool ReplayMode => _replayTape != null;
         public bool IsComplete => Phase == OfficeCampaignPhase.CampaignResult;
         public string OrderedStateSnapshot
         {
@@ -339,6 +588,7 @@ namespace Desk42.Product.OfficeSlice
                         .Append(callback.AutomationClaimId).Append(':')
                         .Append(callback.Stamp).Append(':').Append(callback.RulingId);
                 }
+                Result?.AppendSnapshot(builder);
                 builder.Append("|current=").Append(
                     CurrentSimulation?.OrderedStateSnapshot ?? string.Empty);
                 return builder.ToString();
@@ -355,15 +605,33 @@ namespace Desk42.Product.OfficeSlice
                 1);
         }
 
+        public static OfficeCampaignState CreateReplay(
+            OfficeCampaignReplayTape tape)
+        {
+            if (tape == null) throw new ArgumentNullException(nameof(tape));
+            return new OfficeCampaignState(
+                InstitutionalAutomationSession.Create(6),
+                new OfficeCampaignUpgradeState(),
+                new OfficeCampaignAutomationState(),
+                1,
+                tape);
+        }
+
         internal void ObserveSimulationTick(OfficeSimulationState simulation)
         {
             if (!ReferenceEquals(simulation, CurrentSimulation) ||
                 Phase != OfficeCampaignPhase.ActiveShift) return;
             Rules.Observe(simulation);
             if (!simulation.Shift.Success) return;
-            Phase = CurrentShiftOrdinal < OfficeCampaignScenario.ShiftCount
-                ? OfficeCampaignPhase.ChooseUpgrade
-                : OfficeCampaignPhase.CampaignResult;
+            if (CurrentShiftOrdinal < OfficeCampaignScenario.ShiftCount)
+            {
+                Phase = OfficeCampaignPhase.ChooseUpgrade;
+                return;
+            }
+            CaptureCompletedShift();
+            Result = OfficeCampaignResult.Create(
+                _completedShiftSummaries, Rules, Upgrades);
+            Phase = OfficeCampaignPhase.CampaignResult;
         }
 
         internal bool TryChooseUpgrade(OfficeUpgradeFamily family)
@@ -401,6 +669,21 @@ namespace Desk42.Product.OfficeSlice
             return true;
         }
 
+        public OfficeCampaignReplayTape CreateReplayTape()
+        {
+            if (!IsComplete || _completedReplayEntries.Count !=
+                    OfficeCampaignScenario.ShiftCount)
+                throw new InvalidOperationException(
+                    "Complete all three shifts before creating a campaign replay.");
+            var entries = new List<OfficeCampaignReplayEntry>(
+                _completedReplayEntries);
+            entries[entries.Count - 1] = new OfficeCampaignReplayEntry(
+                CurrentShiftOrdinal,
+                CurrentSimulation.CurrentTick,
+                CurrentSimulation.CommandLog);
+            return new OfficeCampaignReplayTape(entries);
+        }
+
         private void StartCurrentShift(bool captureCheckpoint)
         {
             CurrentShift = OfficeCampaignScenario.CreateShift(
@@ -408,8 +691,13 @@ namespace Desk42.Product.OfficeSlice
                 CurrentShiftOrdinal,
                 _decisionCallbacks);
             Phase = OfficeCampaignPhase.ActiveShift;
-            CurrentSimulation = OfficeSimulationState.CreateCampaignShift(
-                CurrentShift.Scenario, this);
+            OfficeCampaignReplayEntry replayEntry =
+                _replayTape?.ForShift(CurrentShiftOrdinal);
+            CurrentSimulation = replayEntry == null
+                ? OfficeSimulationState.CreateCampaignShift(
+                    CurrentShift.Scenario, this)
+                : OfficeSimulationState.CreateCampaignShiftReplay(
+                    CurrentShift.Scenario, this, replayEntry.CommandLog);
             if (captureCheckpoint)
                 _shiftStartCheckpoint = new OfficeCampaignCheckpoint(
                     CurrentShiftOrdinal,
@@ -420,8 +708,15 @@ namespace Desk42.Product.OfficeSlice
 
         private void CaptureCompletedShift()
         {
+            if (_completedShiftSnapshots.Count >= CurrentShiftOrdinal) return;
             _completedShiftSnapshots.Add(CurrentSimulation.OrderedStateSnapshot);
             _completedShiftChecksums.Add(CurrentSimulation.Checksum);
+            _completedShiftSummaries.Add(
+                OfficeCampaignShiftSummary.Capture(CurrentSimulation));
+            _completedReplayEntries.Add(new OfficeCampaignReplayEntry(
+                CurrentShiftOrdinal,
+                CurrentSimulation.CurrentTick,
+                CurrentSimulation.CommandLog));
             for (int i = 0; i < CurrentSimulation.Customers.Customers.Count; i++)
             {
                 OfficeCustomerState customer =

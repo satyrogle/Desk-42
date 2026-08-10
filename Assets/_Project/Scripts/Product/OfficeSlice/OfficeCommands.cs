@@ -348,13 +348,19 @@ namespace Desk42.Product.OfficeSlice
 
         public OfficeCommandLog CloneForReplay()
         {
+            OfficeCommandLog clone = CloneForArchive();
+            clone.RecordingEnabled = false;
+            return clone;
+        }
+
+        public OfficeCommandLog CloneForArchive()
+        {
             var clone = new OfficeCommandLog();
             for (int i = 0; i < _commands.Count; i++)
             {
                 if (!clone.TryRecord(_commands[i], out string failure))
                     throw new InvalidOperationException(failure);
             }
-            clone.RecordingEnabled = false;
             return clone;
         }
 

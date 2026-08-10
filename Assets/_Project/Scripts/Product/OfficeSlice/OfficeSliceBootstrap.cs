@@ -15,6 +15,10 @@ namespace Desk42.Product.OfficeSlice
     {
         private const string OfficeSliceArgument = "--desk42-office-slice";
         private const string CaptureArgument = "--desk42-office-slice-capture";
+        private const string CaptureShiftArgument =
+            "--desk42-office-slice-capture-shift";
+        private const string CaptureStateArgument =
+            "--desk42-office-slice-capture-state";
         private const string PerformanceArgument =
             "--desk42-office-slice-performance-smoke";
         private const string CaptureDistributionArgument =
@@ -84,6 +88,35 @@ namespace Desk42.Product.OfficeSlice
             string performancePath = ArgumentValue(arguments, PerformanceArgument);
             if (string.IsNullOrWhiteSpace(capturePath) &&
                 string.IsNullOrWhiteSpace(performancePath)) yield break;
+
+            if (!string.IsNullOrWhiteSpace(performancePath))
+            {
+                OfficeCampaignCaptureDriver.Prepare(
+                    _campaignState,
+                    3,
+                    "promotion-cascade");
+                SynchronizeCampaignState();
+                RefreshPresentation();
+            }
+            else if (!HasArgument(arguments, CaptureDistributionArgument))
+            {
+                string shiftValue = ArgumentValue(arguments, CaptureShiftArgument);
+                int shiftOrdinal = 1;
+                if (!string.IsNullOrWhiteSpace(shiftValue) &&
+                    (!int.TryParse(shiftValue, NumberStyles.Integer,
+                        CultureInfo.InvariantCulture, out shiftOrdinal) ||
+                     shiftOrdinal < 1 || shiftOrdinal > 3))
+                    throw new ArgumentException(
+                        "Capture shift must be 1, 2, or 3.",
+                        CaptureShiftArgument);
+                string stateName = ArgumentValue(arguments, CaptureStateArgument);
+                OfficeCampaignCaptureDriver.Prepare(
+                    _campaignState,
+                    shiftOrdinal,
+                    string.IsNullOrWhiteSpace(stateName) ? "opening" : stateName);
+                SynchronizeCampaignState();
+                RefreshPresentation();
+            }
 
             yield return null;
             if (!string.IsNullOrWhiteSpace(performancePath))
@@ -158,6 +191,33 @@ namespace Desk42.Product.OfficeSlice
                 (worstFrameSeconds * 1000d).ToString("F2", CultureInfo.InvariantCulture));
             report.Append("simulation_ticks=").AppendLine(
                 _simulationState.CurrentTick.ToString(CultureInfo.InvariantCulture));
+            report.Append("active_folders=").AppendLine(
+                _simulationState.Queues.FolderIds.Count.ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("active_copies=").AppendLine(
+                _simulationState.Queues.ActiveCopyCount.ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("active_time_slips=").AppendLine(
+                _simulationState.GhostClock.SlipIds.Count.ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("active_promotion_forms=").AppendLine(
+                _simulationState.PromotionCascade.PromotionFormIds.Count.ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("causal_events=").AppendLine(
+                _simulationState.CausalEvents.Events.Count.ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("commands=").AppendLine(
+                _simulationState.CommandLog.Commands.Count.ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("customers=").AppendLine(
+                _simulationState.Customers.Customers.Count.ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("staff=").AppendLine(
+                _simulationState.Staff.Staff.Count.ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("ownership_valid=").AppendLine(
+                _simulationState.Queues.HasSingleLogicalOwnerForEveryFolder()
+                    .ToString());
             report.Append("target_fps=").AppendLine(
                 targetFps.ToString("F0", CultureInfo.InvariantCulture));
             report.Append("target_met=").AppendLine(
@@ -775,6 +835,18 @@ namespace Desk42.Product.OfficeSlice
         private void OnGUI()
         {
             if (!Ready) return;
+            if (_campaignState != null &&
+                _campaignState.Phase == OfficeCampaignPhase.CampaignResult)
+            {
+                GUILayout.BeginArea(
+                    new Rect(16f, 16f, 620f, 680f),
+                    GUI.skin.box);
+                GUILayout.Label("DESK 42 / THREE-DAY RESULT");
+                GUILayout.Label("DAY 3 / " + _campaignState.CurrentShift.Title);
+                DrawCampaignResult();
+                GUILayout.EndArea();
+                return;
+            }
             GUILayout.BeginArea(new Rect(16f, 16f, 540f, 440f), GUI.skin.box);
             GUILayout.Label("DESK 42 / TODAY'S DESK");
             if (_campaignState != null)
@@ -996,6 +1068,39 @@ namespace Desk42.Product.OfficeSlice
                     _simulationState.CausalEvents.Events[i].PlayerText);
         }
 
+        private void DrawCampaignResult()
+        {
+            OfficeCampaignResult result = _campaignState?.Result;
+            if (result == null) return;
+            GUILayout.Space(6f);
+            GUILayout.Label("WHAT HAPPENED?");
+            for (int shiftIndex = 0;
+                shiftIndex < _campaignState.CompletedShiftSummaries.Count;
+                shiftIndex++)
+            {
+                OfficeCampaignShiftSummary shift =
+                    _campaignState.CompletedShiftSummaries[shiftIndex];
+                string line = shift.ObservableRecapLines.Count == 0
+                    ? "THE OFFICE CLOSED WITHOUT A RECORDED FAILURE."
+                    : shift.ObservableRecapLines[
+                        shift.ObservableRecapLines.Count - 1];
+                GUILayout.Label("DAY " + shift.ShiftOrdinal + " -> " + line);
+            }
+            GUILayout.Label("CUSTOMERS HELPED: " + result.CustomersHelped);
+            GUILayout.Label("CUSTOMERS REJECTED: " + result.CustomersRejected);
+            GUILayout.Label("RULES TAUGHT: " + result.RulesTaught);
+            GUILayout.Label("RULE MATCHES: " + result.RuleMatches);
+            GUILayout.Label("COPIES CLEARED: " + result.CopiesCleared);
+            GUILayout.Label("OFFICE FAILURES RECOVERED: " +
+                result.OfficeFailuresRecovered);
+            GUILayout.Label("UPGRADES CHOSEN: " + result.UpgradesChosen);
+            GUILayout.Label("AVERAGE WAIT: " + result.AverageWaitTicks + " TICKS");
+            GUILayout.Label("MISROUTED FILES: " + result.MisroutedFiles);
+            GUILayout.Label("KNOWN CUSTOMER FOLLOW-UPS: " +
+                result.KnownCustomerFollowUps);
+            GUILayout.Label(OfficeCampaignResult.NextDayTease);
+        }
+
         private static bool HasArgument(string[] arguments, string expected)
         {
             for (int i = 0; i < arguments.Length; i++)
@@ -1006,10 +1111,15 @@ namespace Desk42.Product.OfficeSlice
 
         private static string ArgumentValue(string[] arguments, string key)
         {
+            string prefix = key + "=";
             for (int i = 0; i < arguments.Length; i++)
+            {
                 if (string.Equals(arguments[i], key, StringComparison.OrdinalIgnoreCase) &&
                     i + 1 < arguments.Length)
                     return arguments[i + 1];
+                if (arguments[i].StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    return arguments[i].Substring(prefix.Length);
+            }
             return string.Empty;
         }
     }

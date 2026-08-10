@@ -221,6 +221,30 @@ namespace Desk42.Tests.EditMode.OfficeM3
             Assert.That(campaign.Rules.Rule2AcceptedCopiedPayroll, Is.True);
         }
 
+        public static void DriveShiftThreeToResult(OfficeCampaignState campaign)
+        {
+            Assert.That(campaign.CurrentShiftOrdinal, Is.EqualTo(3));
+            OfficeSimulationState state = campaign.CurrentSimulation;
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            OfficeM3GateCTests.TriggerPromotion(state, intent, input);
+            OfficeM3GateCTests.RecoverMachineFirst(state, intent, input);
+            while (state.Decisions.CommitCount < 6)
+                CompleteActiveCaseInAuthoredOrder(state, intent, input);
+            state.AdvanceTicks(2);
+            Assert.That(state.Shift.Phase, Is.EqualTo(OfficeShiftPhase.Result),
+                state.OrderedStateSnapshot);
+            Assert.That(campaign.Phase,
+                Is.EqualTo(OfficeCampaignPhase.CampaignResult));
+            Assert.That(campaign.Result, Is.Not.Null);
+        }
+
+        public static void DriveCampaignToResult(OfficeCampaignState campaign)
+        {
+            EnterShiftThree(campaign);
+            DriveShiftThreeToResult(campaign);
+        }
+
         public static void CompleteActiveCaseInAuthoredOrder(
             OfficeSimulationState state,
             OfficeInputIntent intent,
@@ -246,7 +270,8 @@ namespace Desk42.Tests.EditMode.OfficeM3
                 NavigateTo(state, intent, input, pointId);
                 state.AdvanceTicks(state.Queues.TransferDurationTicks);
 
-                if (string.Equals(customer.DisplayName, "TOMAS REED",
+                if (state.Shift.ShiftOrdinal == 2 &&
+                    string.Equals(customer.DisplayName, "TOMAS REED",
                         System.StringComparison.Ordinal) &&
                     step == OfficeManualTaskKind.Compare &&
                     state.GhostClock != null && !state.GhostClock.HasTriggered)
