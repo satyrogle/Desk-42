@@ -45,3 +45,13 @@ Reviewed the 32 built-player captures in `evidence/M4/Captures`, covering all 16
 - Presentation remains read-only relative to gameplay; validation of determinism, allocation, performance and full regressions is recorded separately in the M4 closeout.
 
 This review approves a target-quality visual statement for the three-shift evaluation campaign. It does not claim full-game commercial final art, final onboarding, final accessibility UI, audio, or human experience validation.
+
+## Final candidate confirmation
+
+The matrix was regenerated from `Builds/M4/Desk42.exe` after the presentation
+compatibility fix at `a022dc85bc0493493e66c10baf2899f34b9b508a`. All 32
+processes again exited 0 with success markers; dimension/black/flat-frame QA found
+zero defects. The regenerated 1600×900 and 1280×720 contact sheets were inspected
+and the visual result remained unchanged. The built-player stress probe also
+confirmed one M4 visual root, zero temporary-object/material/pool growth and no
+fallback use. Final candidate review result: PASS.
