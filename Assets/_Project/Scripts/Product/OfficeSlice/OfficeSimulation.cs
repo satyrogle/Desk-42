@@ -262,6 +262,7 @@ namespace Desk42.Product.OfficeSlice
         public const int TicksPerSecond = 30;
         public const int DefaultMaximumCatchUpTicks = 4;
         public const double TickDurationSeconds = 1d / TicksPerSecond;
+        private const double TickComparisonEpsilon = 0.000000000001d;
 
         private double _accumulator;
 
@@ -283,11 +284,14 @@ namespace Desk42.Product.OfficeSlice
 
             _accumulator += Math.Max(0d, unscaledDeltaTime);
             int executed = 0;
-            while (_accumulator >= TickDurationSeconds && executed < MaximumCatchUpTicks)
+            while (_accumulator + TickComparisonEpsilon >= TickDurationSeconds &&
+                executed < MaximumCatchUpTicks)
             {
                 tick();
                 CurrentTick++;
                 _accumulator -= TickDurationSeconds;
+                if (_accumulator < 0d && _accumulator > -TickComparisonEpsilon)
+                    _accumulator = 0d;
                 executed++;
             }
             if (executed == MaximumCatchUpTicks && _accumulator > TickDurationSeconds)

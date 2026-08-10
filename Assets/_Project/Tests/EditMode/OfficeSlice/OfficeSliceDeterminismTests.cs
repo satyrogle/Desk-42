@@ -120,6 +120,110 @@ namespace Desk42.Tests.EditMode
         }
 
         [Test]
+        public void HeldInputAtThirtySixtyAndOneFortyFourFpsIsIdentical()
+        {
+            OfficeSimulationState atThirty = SimulateHeldInput(30, 4);
+            OfficeSimulationState atSixty = SimulateHeldInput(60, 4);
+            OfficeSimulationState atOneFortyFour = SimulateHeldInput(144, 4);
+
+            Assert.That(atSixty.CommandLog.ToJson(),
+                Is.EqualTo(atThirty.CommandLog.ToJson()));
+            Assert.That(atOneFortyFour.CommandLog.ToJson(),
+                Is.EqualTo(atThirty.CommandLog.ToJson()));
+            Assert.That(atSixty.Warden.XSubunits, Is.EqualTo(atThirty.Warden.XSubunits));
+            Assert.That(atSixty.Warden.ZSubunits, Is.EqualTo(atThirty.Warden.ZSubunits));
+            Assert.That(atOneFortyFour.Warden.XSubunits,
+                Is.EqualTo(atThirty.Warden.XSubunits));
+            Assert.That(atOneFortyFour.Warden.ZSubunits,
+                Is.EqualTo(atThirty.Warden.ZSubunits));
+            Assert.That(atSixty.Checksum, Is.EqualTo(atThirty.Checksum));
+            Assert.That(atOneFortyFour.Checksum, Is.EqualTo(atThirty.Checksum));
+            Assert.That(atSixty.OrderedStateSnapshot,
+                Is.EqualTo(atThirty.OrderedStateSnapshot));
+            Assert.That(atOneFortyFour.OrderedStateSnapshot,
+                Is.EqualTo(atThirty.OrderedStateSnapshot));
+        }
+
+        [Test]
+        public void InputGeneratorQueuesAtMostOneWardenMovePerTick()
+        {
+            OfficeSimulationState state = SimulateHeldInput(144, 4);
+            var moveTicks = new HashSet<long>();
+            int moveCount = 0;
+            for (int i = 0; i < state.CommandLog.Commands.Count; i++)
+            {
+                OfficeCommand command = state.CommandLog.Commands[i];
+                if (command.Kind != OfficeCommandKind.Move || command.ActorId != "warden")
+                    continue;
+
+                moveCount++;
+                Assert.That(moveTicks.Add(command.Tick), Is.True,
+                    "More than one Warden Move was generated for tick " + command.Tick + ".");
+            }
+
+            Assert.That(moveCount, Is.EqualTo(120));
+            Assert.That(moveTicks.Count, Is.EqualTo(120));
+        }
+
+        [Test]
+        public void KeyboardAndGamepadDirectionsGenerateEquivalentCommands()
+        {
+            OfficeInputDirection[] directions =
+            {
+                OfficeInputDirection.Left,
+                OfficeInputDirection.Right,
+                OfficeInputDirection.Down,
+                OfficeInputDirection.Up,
+            };
+
+            for (int i = 0; i < directions.Length; i++)
+            {
+                OfficeInputDirection keyboardDirection = KeyboardDirection(directions[i]);
+                OfficeInputDirection gamepadDirection = GamepadDirection(directions[i]);
+                Assert.That(gamepadDirection, Is.EqualTo(keyboardDirection));
+
+                string keyboardLog = SingleMoveLog(keyboardDirection);
+                string gamepadLog = SingleMoveLog(gamepadDirection);
+                Assert.That(gamepadLog, Is.EqualTo(keyboardLog));
+            }
+        }
+
+        [Test]
+        public void BufferedInteractionFiresOnceAndReplayLocksOutLiveIntent()
+        {
+            OfficeCaseRepository repository = OfficeCaseProjector.CreateSixCaseRepository();
+            OfficeSimulationState live = OfficeSimulationState.Create(repository);
+            var liveIntent = new OfficeInputIntent();
+            var liveGenerator = new OfficeInputCommandGenerator(live, liveIntent);
+
+            liveIntent.BufferInteraction(live.CurrentTick);
+            liveIntent.BufferInteraction(live.CurrentTick);
+            Assert.That(liveIntent.InteractionExpiresAfterTick,
+                Is.EqualTo(OfficeInputIntent.InteractionBufferTicks));
+            for (int tick = 0; tick < 12; tick++) liveGenerator.AdvanceOneTick();
+
+            Assert.That(CountCommands(live, OfficeCommandKind.Interact), Is.EqualTo(1));
+            Assert.That(liveIntent.HasBufferedInteraction, Is.False);
+
+            var replayLog = new OfficeCommandLog();
+            Assert.That(replayLog.TryRecord(OfficeCommand.Move(1, 1, 1, 0), out _), Is.True);
+            OfficeSimulationState replay = OfficeSimulationState.CreateReplay(repository, replayLog);
+            var replayIntent = new OfficeInputIntent();
+            replayIntent.SetMovement(OfficeInputDirection.Left);
+            replayIntent.BufferInteraction(replay.CurrentTick);
+            var replayGenerator = new OfficeInputCommandGenerator(replay, replayIntent);
+
+            replayGenerator.AdvanceOneTick();
+
+            Assert.That(replay.CommandLog.Commands, Has.Count.EqualTo(1));
+            Assert.That(replay.Warden.XSubunits,
+                Is.EqualTo(replay.Grid.SpawnCell.X * OfficeGrid.LogicalSubunitsPerCell +
+                    OfficeWardenState.MovementSubunitsPerTick));
+            Assert.That(replayIntent.Movement, Is.EqualTo(OfficeInputDirection.None));
+            Assert.That(replayIntent.HasBufferedInteraction, Is.False);
+        }
+
+        [Test]
         public void TenThousandTickReplayMatchesAcrossThreeRuns()
         {
             for (int run = 0; run < 3; run++)
@@ -183,6 +287,81 @@ namespace Desk42.Tests.EditMode
                 new[] { "public evidence" },
                 string.Empty,
                 string.Empty);
+        }
+
+        private static OfficeSimulationState SimulateHeldInput(
+            int renderFramesPerSecond,
+            int seconds)
+        {
+            OfficeSimulationState state = OfficeSimulationState.Create(
+                OfficeCaseProjector.CreateSixCaseRepository());
+            var intent = new OfficeInputIntent();
+            var generator = new OfficeInputCommandGenerator(state, intent);
+            var clock = new OfficeSimulationClock();
+            OfficeInputDirection heldRight = OfficeInputCanonicalizer.FromDigital(
+                false, true, false, false);
+
+            int frameCount = renderFramesPerSecond * seconds;
+            double frameDuration = 1d / renderFramesPerSecond;
+            for (int frame = 0; frame < frameCount; frame++)
+            {
+                intent.SetMovement(heldRight);
+                clock.Advance(frameDuration, generator.AdvanceOneTick);
+            }
+
+            int expectedTicks = OfficeSimulationClock.TicksPerSecond * seconds;
+            Assert.That(clock.CurrentTick, Is.EqualTo(expectedTicks));
+            Assert.That(state.CurrentTick, Is.EqualTo(expectedTicks));
+            return state;
+        }
+
+        private static string SingleMoveLog(OfficeInputDirection direction)
+        {
+            OfficeSimulationState state = OfficeSimulationState.Create(
+                OfficeCaseProjector.CreateSixCaseRepository());
+            var intent = new OfficeInputIntent();
+            intent.SetMovement(direction);
+            var generator = new OfficeInputCommandGenerator(state, intent);
+            generator.AdvanceOneTick();
+            return state.CommandLog.ToJson();
+        }
+
+        private static OfficeInputDirection KeyboardDirection(OfficeInputDirection direction)
+        {
+            return direction switch
+            {
+                OfficeInputDirection.Left =>
+                    OfficeInputCanonicalizer.FromDigital(true, false, false, false),
+                OfficeInputDirection.Right =>
+                    OfficeInputCanonicalizer.FromDigital(false, true, false, false),
+                OfficeInputDirection.Down =>
+                    OfficeInputCanonicalizer.FromDigital(false, false, true, false),
+                OfficeInputDirection.Up =>
+                    OfficeInputCanonicalizer.FromDigital(false, false, false, true),
+                _ => OfficeInputDirection.None,
+            };
+        }
+
+        private static OfficeInputDirection GamepadDirection(OfficeInputDirection direction)
+        {
+            return direction switch
+            {
+                OfficeInputDirection.Left => OfficeInputCanonicalizer.FromAnalog(-1f, 0f),
+                OfficeInputDirection.Right => OfficeInputCanonicalizer.FromAnalog(1f, 0f),
+                OfficeInputDirection.Down => OfficeInputCanonicalizer.FromAnalog(0f, -1f),
+                OfficeInputDirection.Up => OfficeInputCanonicalizer.FromAnalog(0f, 1f),
+                _ => OfficeInputDirection.None,
+            };
+        }
+
+        private static int CountCommands(
+            OfficeSimulationState state,
+            OfficeCommandKind kind)
+        {
+            int count = 0;
+            for (int i = 0; i < state.CommandLog.Commands.Count; i++)
+                if (state.CommandLog.Commands[i].Kind == kind) count++;
+            return count;
         }
     }
 }

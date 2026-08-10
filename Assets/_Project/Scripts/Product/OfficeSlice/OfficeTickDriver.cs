@@ -8,6 +8,8 @@ namespace Desk42.Product.OfficeSlice
         private OfficeSliceBootstrap _bootstrap;
         private OfficeSimulationState _state;
         private OfficeSimulationClock _clock;
+        private OfficeInputIntent _inputIntent;
+        private OfficeInputCommandGenerator _inputCommandGenerator;
         private bool _initialized;
 
         public OfficeSimulationClock Clock => _clock;
@@ -17,6 +19,8 @@ namespace Desk42.Product.OfficeSlice
             _bootstrap = bootstrap;
             _state = state;
             _clock = new OfficeSimulationClock();
+            _inputIntent = new OfficeInputIntent();
+            _inputCommandGenerator = new OfficeInputCommandGenerator(_state, _inputIntent);
             _initialized = true;
         }
 
@@ -25,6 +29,8 @@ namespace Desk42.Product.OfficeSlice
             _state = state;
             _clock = new OfficeSimulationClock();
             _clock.SetPaused(true);
+            _inputIntent = new OfficeInputIntent();
+            _inputCommandGenerator = new OfficeInputCommandGenerator(_state, _inputIntent);
         }
 
         private void Update()
@@ -32,6 +38,7 @@ namespace Desk42.Product.OfficeSlice
             if (!_initialized || _state == null) return;
             Keyboard keyboard = Keyboard.current;
             Gamepad gamepad = Gamepad.current;
+            SampleDeviceIntent(keyboard, gamepad);
 
             if (keyboard != null)
             {
@@ -40,7 +47,7 @@ namespace Desk42.Product.OfficeSlice
                 if (keyboard.nKey.wasPressedThisFrame)
                 {
                     _clock.SetPaused(true);
-                    _clock.Step(_state.AdvanceOneTick);
+                    _clock.Step(_inputCommandGenerator.AdvanceOneTick);
                     _bootstrap.RefreshPresentation();
                     return;
                 }
@@ -49,54 +56,44 @@ namespace Desk42.Product.OfficeSlice
                     _bootstrap.ForceAllFoldersThroughM1Route();
                 if (keyboard.f7Key.wasPressedThisFrame)
                     _bootstrap.ReplayRecordedCommands();
-
-                if (!TryReadKeyboardDirection(keyboard, out int x, out int z))
-                {
-                    x = 0;
-                    z = 0;
-                }
-                if (!_state.ReplayMode && (x != 0 || z != 0))
-                    _state.TryQueueCommand(
-                        _state.CreateMoveCommand(x, z), out OfficeCommandFailure ignored);
-                if (!_state.ReplayMode &&
-                    (keyboard.eKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame))
-                    _state.TryQueueCommand(
-                        _state.CreateInteractCommand(), out OfficeCommandFailure ignored);
             }
 
-            if (gamepad != null && !_state.ReplayMode)
+            _clock.Advance(Time.unscaledDeltaTime, _inputCommandGenerator.AdvanceOneTick);
+            _bootstrap.RefreshPresentation();
+        }
+
+        private void SampleDeviceIntent(Keyboard keyboard, Gamepad gamepad)
+        {
+            if (_state.ReplayMode)
+            {
+                _inputIntent.Clear();
+                return;
+            }
+
+            OfficeInputDirection movement = OfficeInputDirection.None;
+            if (keyboard != null)
+            {
+                movement = OfficeInputCanonicalizer.FromDigital(
+                    keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed,
+                    keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed,
+                    keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed,
+                    keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed);
+            }
+
+            if (movement == OfficeInputDirection.None && gamepad != null)
             {
                 Vector2 stick = gamepad.leftStick.ReadValue();
                 Vector2 dpad = gamepad.dpad.ReadValue();
                 Vector2 direction = stick.sqrMagnitude >= dpad.sqrMagnitude ? stick : dpad;
-                if (Mathf.Abs(direction.x) > 0.35f || Mathf.Abs(direction.y) > 0.35f)
-                {
-                    int x = Mathf.Abs(direction.x) >= Mathf.Abs(direction.y)
-                        ? (direction.x >= 0f ? 1 : -1)
-                        : 0;
-                    int z = x == 0 ? (direction.y >= 0f ? 1 : -1) : 0;
-                    _state.TryQueueCommand(
-                        _state.CreateMoveCommand(x, z), out OfficeCommandFailure ignored);
-                }
-                if (gamepad.buttonSouth.wasPressedThisFrame)
-                    _state.TryQueueCommand(
-                        _state.CreateInteractCommand(), out OfficeCommandFailure ignored);
+                movement = OfficeInputCanonicalizer.FromAnalog(direction.x, direction.y);
             }
+            _inputIntent.SetMovement(movement);
 
-            _clock.Advance(Time.unscaledDeltaTime, _state.AdvanceOneTick);
-            _bootstrap.RefreshPresentation();
-        }
-
-        private static bool TryReadKeyboardDirection(Keyboard keyboard, out int x, out int z)
-        {
-            x = 0;
-            z = 0;
-            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) x--;
-            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) x++;
-            if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) z--;
-            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) z++;
-            if (x != 0 && z != 0) z = 0;
-            return x != 0 || z != 0;
+            bool interactionPressed =
+                keyboard != null &&
+                (keyboard.eKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame);
+            interactionPressed |= gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
+            if (interactionPressed) _inputIntent.BufferInteraction(_state.CurrentTick);
         }
     }
 }
