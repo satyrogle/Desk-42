@@ -205,6 +205,7 @@ namespace Desk42.Tests.EditMode.OfficeSlice
         {
             OfficeCampaignState enabled = CompleteCampaign();
             OfficeCampaignState muted = CompleteCampaign();
+            OfficeCampaignState deviceUnavailable = CompleteCampaign();
             OfficeCampaignState feedbackDisabled = CompleteCampaign();
             GameObject owner = new("M5 Gate F Determinism Owner");
             try
@@ -214,20 +215,28 @@ namespace Desk42.Tests.EditMode.OfficeSlice
                 mutedSettings.SetAudioEnabled(false);
                 var feedbackSettings = new OfficeAudioSettings();
                 feedbackSettings.SetFeedbackEnabled(false);
+                var unavailableSettings = new OfficeAudioSettings();
+                unavailableSettings.SetAudioDeviceAvailable(false);
                 var enabledDirector = new OfficeAudioDirector(owner.transform,
                     OfficeAudioCueCatalog.Load(), enabledSettings);
                 enabledDirector.Apply(enabled.CurrentSimulation, enabled, 1f / 60f);
                 var mutedDirector = new OfficeAudioDirector(owner.transform,
                     OfficeAudioCueCatalog.Load(), mutedSettings);
                 mutedDirector.Apply(muted.CurrentSimulation, muted, 1f / 60f);
+                var unavailableDirector = new OfficeAudioDirector(owner.transform,
+                    OfficeAudioCueCatalog.Load(), unavailableSettings);
+                unavailableDirector.Apply(deviceUnavailable.CurrentSimulation,
+                    deviceUnavailable, 1f / 60f);
                 var feedbackDirector = new OfficeFeedbackDirector(owner.transform,
                     null, null, feedbackSettings);
                 feedbackDirector.RouteCue("event.final-result", 1f);
 
                 Assert.That(muted.Checksum, Is.EqualTo(enabled.Checksum));
+                Assert.That(deviceUnavailable.Checksum, Is.EqualTo(enabled.Checksum));
                 Assert.That(feedbackDisabled.Checksum, Is.EqualTo(enabled.Checksum));
                 enabledDirector.Dispose();
                 mutedDirector.Dispose();
+                unavailableDirector.Dispose();
                 feedbackDirector.Dispose();
             }
             finally

@@ -61,9 +61,11 @@ namespace Desk42.Product.OfficeSlice
         public bool Rumble { get; private set; } = true;
         public bool ReducedFlash { get; private set; }
         public bool AudioEnabled { get; private set; } = true;
+        public bool AudioDeviceAvailable { get; private set; } = true;
         public bool FeedbackEnabled { get; private set; } = true;
 
-        public bool Muted => !AudioEnabled || Master <= 0.0001f;
+        public bool Muted => !AudioEnabled || !AudioDeviceAvailable ||
+            Master <= 0.0001f;
 
         public void SetVolumes(float master, float music, float sfx, float ambience)
         {
@@ -76,6 +78,8 @@ namespace Desk42.Product.OfficeSlice
         public void SetRumble(bool enabled) => Rumble = enabled;
         public void SetReducedFlash(bool enabled) => ReducedFlash = enabled;
         public void SetAudioEnabled(bool enabled) => AudioEnabled = enabled;
+        public void SetAudioDeviceAvailable(bool available) =>
+            AudioDeviceAvailable = available;
         public void SetFeedbackEnabled(bool enabled) => FeedbackEnabled = enabled;
 
         public float BusGain(string bus)
@@ -93,6 +97,9 @@ namespace Desk42.Product.OfficeSlice
         {
             if (HasArgument(arguments, "--desk42-office-slice-audio-muted"))
                 SetAudioEnabled(false);
+            if (HasArgument(arguments,
+                    "--desk42-office-slice-audio-device-unavailable"))
+                SetAudioDeviceAvailable(false);
             if (HasArgument(arguments, "--desk42-office-slice-feedback-disabled"))
                 SetFeedbackEnabled(false);
             if (HasArgument(arguments, "--desk42-office-slice-rumble-disabled"))
