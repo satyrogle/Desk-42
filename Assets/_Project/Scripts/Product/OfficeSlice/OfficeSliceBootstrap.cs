@@ -122,7 +122,12 @@ namespace Desk42.Product.OfficeSlice
             {
                 string caseId = folderIds[i];
                 OfficeFolderState folder = _simulationState.Queues.GetFolder(caseId);
+                if (folder.IsCopy && !_folderViews.ContainsKey(caseId))
+                    CreateCopyFolderView(folder);
                 if (!_folderViews.TryGetValue(caseId, out Transform view)) continue;
+                view.gameObject.SetActive(
+                    folder.OwnerKind != OfficeFolderOwnerKind.Cleared);
+                if (folder.OwnerKind == OfficeFolderOwnerKind.Cleared) continue;
 
                 int queueIndex = QueueIndex(folder.CurrentRoom, caseId);
                 Vector3 destination = SocketWorldPosition(folder.CurrentRoom, queueIndex);
@@ -147,12 +152,17 @@ namespace Desk42.Product.OfficeSlice
                 }
                 view.position = destination;
                 if (_folderLabels.TryGetValue(caseId, out TextMesh label))
-                    label.text = _caseRepository.Get(caseId)?.DisplayId ?? caseId;
+                    label.text = folder.IsCopy
+                        ? "COPY"
+                        : _caseRepository.Get(caseId)?.DisplayId ?? caseId;
                 if (_folderRenderers.TryGetValue(caseId, out Renderer renderer))
                 {
+                    OfficeCase sourceCase = _caseRepository.Get(folder.SourceCaseId);
                     renderer.sharedMaterial.color = IsHighlightedFolder(folder)
                         ? new Color(1f, 0.88f, 0.22f)
-                        : FolderColor(_caseRepository.Get(caseId).Urgency);
+                        : folder.IsCopy
+                            ? new Color(0.92f, 0.35f, 0.32f)
+                            : FolderColor(sourceCase.Urgency);
                 }
             }
 
@@ -242,6 +252,7 @@ namespace Desk42.Product.OfficeSlice
             CreateLighting();
             CreateFloorAndWalls();
             CreateRooms();
+            CreateMachineViews();
             CreateWarden();
             CreateFolderViews();
             CreateCustomerViews();
@@ -357,6 +368,28 @@ namespace Desk42.Product.OfficeSlice
                 _folderLabels.Add(caseId, label);
                 _folderRenderers.Add(caseId, folder.GetComponent<Renderer>());
             }
+        }
+
+        private void CreateCopyFolderView(OfficeFolderState folder)
+        {
+            GameObject copy = CreateCube("Copied Folder " + folder.CaseId,
+                Vector3.zero, new Vector3(0.62f, 0.16f, 0.42f),
+                new Color(0.92f, 0.35f, 0.32f));
+            _folderViews.Add(folder.CaseId, copy.transform);
+            TextMesh label = CreateLabel("COPY", Vector3.up * 0.18f,
+                0.055f, copy.transform);
+            _folderLabels.Add(folder.CaseId, label);
+            _folderRenderers.Add(folder.CaseId, copy.GetComponent<Renderer>());
+        }
+
+        private void CreateMachineViews()
+        {
+            CreateCube("Auto Sorter", new Vector3(10f, 0.65f, -3.5f),
+                new Vector3(1.3f, 1.3f, 1.3f), new Color(0.25f, 0.65f, 0.62f));
+            CreateLabel("AUTO SORTER", new Vector3(10f, 1.55f, -3.5f), 0.07f);
+            CreateCube("Copy Echo", new Vector3(5.5f, 0.65f, -3.5f),
+                new Vector3(1.3f, 1.3f, 1.3f), new Color(0.62f, 0.35f, 0.58f));
+            CreateLabel("COPY ECHO", new Vector3(5.5f, 1.55f, -3.5f), 0.07f);
         }
 
         private void CreateCustomerViews()
@@ -571,6 +604,11 @@ namespace Desk42.Product.OfficeSlice
             GUILayout.Label("WASD / ARROWS / LEFT STICK: MOVE");
             GUILayout.Label("CHOICES: 1-4 / X-Y-LB-RB");
             GUILayout.Label("Q / B: PUT DOWN");
+            GUILayout.Label("R / VIEW: AUTO SORTER " +
+                (_simulationState.AutomationRule.Enabled ? "ON" :
+                    _simulationState.AutomationRule.Unlocked ? "OFF" : "LOCKED"));
+            if (_simulationState.AutomationRule.Unlocked)
+                GUILayout.Label(OfficeAutomationRuleState.PlayerRule);
             GUILayout.Label("3 RUNNER     4 TALKER");
             for (int i = 0; i < _simulationState.Staff.Staff.Count; i++)
             {
@@ -580,6 +618,10 @@ namespace Desk42.Product.OfficeSlice
             if (_simulationState.CustomerPressure.CalmActive)
                 GUILayout.Label("CALMING: " +
                     _simulationState.CustomerPressure.CalmRemainingTicks + " TICKS");
+            if (_simulationState.BreakState.Active)
+                GUILayout.Label(_simulationState.BreakState.Recovered
+                    ? "OFFICE FIXED"
+                    : "COPY ECHO: FIX MACHINE / CLEAR COPIES / FIND ORIGINAL");
             GUILayout.EndArea();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

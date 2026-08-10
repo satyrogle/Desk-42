@@ -66,7 +66,8 @@ namespace Desk42.Product.OfficeSlice
             OfficePaperEntry paperAnswer,
             int moneyPathAnswer,
             OfficeMoneyResult moneyResult,
-            string moneyPathSummary)
+            string moneyPathSummary,
+            bool refundFile)
         {
             AutomationClaimId = Require(automationClaimId, nameof(automationClaimId));
             CustomerNameOnPaper = Require(
@@ -81,6 +82,7 @@ namespace Desk42.Product.OfficeSlice
             MoneyPathAnswer = moneyPathAnswer;
             MoneyResult = moneyResult;
             MoneyPathSummary = Require(moneyPathSummary, nameof(moneyPathSummary));
+            RefundFile = refundFile;
         }
 
         public string AutomationClaimId { get; }
@@ -91,6 +93,9 @@ namespace Desk42.Product.OfficeSlice
         public int MoneyPathAnswer { get; }
         public OfficeMoneyResult MoneyResult { get; }
         public string MoneyPathSummary { get; }
+        public bool RefundFile { get; }
+        public bool PublicPapersMatch => PaperAnswer == OfficePaperEntry.PapersMatch;
+        public bool PublicRefundPathClear => MoneyResult == OfficeMoneyResult.MoneyFound;
         public string PaperResult => PaperAnswer == OfficePaperEntry.PapersMatch
             ? "THE PAPERS MATCH"
             : "THE PAPERS DON'T MATCH";
@@ -157,6 +162,15 @@ namespace Desk42.Product.OfficeSlice
             return value;
         }
 
+        public OfficeCustomerDefinition CustomerForClaim(string automationClaimId)
+        {
+            for (int i = 0; i < Customers.Count; i++)
+                if (string.Equals(Customers[i].LinkedAutomationClaimId,
+                        automationClaimId, StringComparison.Ordinal))
+                    return Customers[i];
+            return null;
+        }
+
         public static OfficeM2Scenario Create()
         {
             InstitutionalAutomationSession session =
@@ -174,7 +188,7 @@ namespace Desk42.Product.OfficeSlice
                 "THE COPIER MADE ANOTHER REFUND FILE AND NOW BOTH LOOK REAL.",
                 "MY ACCESS CARD STOPPED WORKING AFTER I CHANGED DESKS.",
                 "MY PAY RECORD HAS MY NAME, BUT THE ACCOUNT MARK IS WRONG.",
-                "THE COMPANY SAYS IT PAID ME. MY ACCOUNT SHOWS NOTHING.",
+                "MY REFUND PAPERS LOOK RIGHT. PLEASE SEND THE MONEY TO MY ACCOUNT.",
             };
             string[] traitIds =
             {
@@ -200,27 +214,27 @@ namespace Desk42.Product.OfficeSlice
             work.Add(new OfficeCaseWorkDefinition(cases.Cases[0].AutomationClaimId,
                 "NIA BELL", "TODAY / RECEIPT SAYS YESTERDAY", "REFUND READY",
                 OfficePaperEntry.PaymentDate, 1, OfficeMoneyResult.MoneyMoved,
-                "COMPANY > PAYMENT RECORD > HOLDING ACCOUNT"));
+                "COMPANY > PAYMENT RECORD > HOLDING ACCOUNT", true));
             work.Add(new OfficeCaseWorkDefinition(cases.Cases[1].AutomationClaimId,
                 "OWEN PIKE", "YESTERDAY", "REFUND READY",
                 OfficePaperEntry.PapersMatch, 0, OfficeMoneyResult.MoneyFound,
-                "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT"));
+                "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT", true));
             work.Add(new OfficeCaseWorkDefinition(cases.Cases[2].AutomationClaimId,
-                "MARA VALE / COPY", "YESTERDAY", "REFUND READY",
-                OfficePaperEntry.CustomerName, 2, OfficeMoneyResult.MoneyMissing,
-                "COPIED FILE > NO PAYMENT RECORD > NO ACCOUNT"));
+                "MARA VALE", "YESTERDAY", "REFUND READY",
+                OfficePaperEntry.PapersMatch, 0, OfficeMoneyResult.MoneyFound,
+                "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT", true));
             work.Add(new OfficeCaseWorkDefinition(cases.Cases[3].AutomationClaimId,
                 "IRIS COLE", "MONDAY", "OLD DESK MARK",
                 OfficePaperEntry.AccountMark, 1, OfficeMoneyResult.MoneyMoved,
-                "COMPANY > ACCESS RECORD > OLD DESK"));
+                "COMPANY > ACCESS RECORD > OLD DESK", false));
             work.Add(new OfficeCaseWorkDefinition(cases.Cases[4].AutomationClaimId,
                 "TOMAS REED", "FRIDAY", "ACCOUNT 14 / FILE SAYS 41",
                 OfficePaperEntry.AccountMark, 0, OfficeMoneyResult.MoneyFound,
-                "COMPANY > PAY RECORD > ACCOUNT 14"));
+                "COMPANY > PAY RECORD > ACCOUNT 14", false));
             work.Add(new OfficeCaseWorkDefinition(cases.Cases[5].AutomationClaimId,
-                "JUNE HART", "THURSDAY", "PAYMENT WAITING",
-                OfficePaperEntry.PapersMatch, 2, OfficeMoneyResult.MoneyMissing,
-                "COMPANY > PAYMENT RECORD > EMPTY ACCOUNT"));
+                "JUNE HART", "THURSDAY", "REFUND READY",
+                OfficePaperEntry.PapersMatch, 0, OfficeMoneyResult.MoneyFound,
+                "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT", true));
             return new OfficeM2Scenario(session, cases, customers, work);
         }
     }

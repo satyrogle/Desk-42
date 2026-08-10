@@ -73,6 +73,9 @@ namespace Desk42.Product.OfficeSlice
                 Staff = new OfficeStaffSystem(Grid, Queues, RoomWork, Customers);
                 CustomerPressure = new OfficeCustomerPressureState(
                     Customers, Queues, ManualTasks);
+                AutomationRule = new OfficeAutomationRuleState(
+                    _m2Scenario, Queues, ManualTasks);
+                BreakState = new OfficeBreakState(_m2Scenario, Queues);
             }
         }
 
@@ -87,6 +90,8 @@ namespace Desk42.Product.OfficeSlice
         public OfficeRoomWorkState RoomWork { get; }
         public OfficeStaffSystem Staff { get; }
         public OfficeCustomerPressureState CustomerPressure { get; }
+        public OfficeAutomationRuleState AutomationRule { get; }
+        public OfficeBreakState BreakState { get; }
         public OfficeCommandLog CommandLog { get; }
         public bool ReplayMode { get; }
         public bool M2Enabled => _m2Scenario != null;
@@ -103,13 +108,18 @@ namespace Desk42.Product.OfficeSlice
                 if (!M2Enabled) return "INTERACT";
                 OfficeInteractionPoint point = CurrentInteractionPoint();
                 if (point == null) return "MOVE TO A WORK POINT";
+                if (BreakState.Active && point.Room == OfficeRoomId.WeirdRoom &&
+                    BreakState.CopierActive) return "FIX MACHINE";
                 OfficeRoomWorkJobState roomJob = RoomWork.ActiveJobAt(point.Room);
                 if (!Carry.IsCarrying && roomJob != null) return "HELP";
                 OfficeCustomerState active = Customers.ActiveDeskCustomer;
                 if (!Carry.IsCarrying && point.Room == OfficeRoomId.FrontDesk &&
-                    active != null && active.VisibleMoodState >= OfficeVisibleMoodState.Worried &&
+                    active != null && active.VisibleMoodState >= OfficeVisibleMoodState.Upset &&
+                    !CustomerPressure.CalmActive &&
                     CustomerPressure.CalmCooldownRemainingTicks == 0)
                     return "CALM";
+                if (BreakState.Active && !string.IsNullOrWhiteSpace(
+                        Queues.FirstActiveCopyAt(point.Room))) return "FIX COPY";
                 if (Carry.IsCarrying)
                 {
                     OfficeCaseWorkRecord record = ManualTasks.RecordFor(
@@ -238,6 +248,16 @@ namespace Desk42.Product.OfficeSlice
                 CurrentTick + 1, _nextSequence++, staffId, targetId, destination);
         }
 
+        public OfficeCommand CreateToggleRuleCommand()
+        {
+            return OfficeCommand.ToggleRule(CurrentTick + 1, _nextSequence++);
+        }
+
+        public OfficeCommand CreateFixCommand()
+        {
+            return OfficeCommand.Fix(CurrentTick + 1, _nextSequence++);
+        }
+
         public OfficeCommand CreateDecideCommand(string caseId)
         {
             return OfficeCommand.Decide(CurrentTick + 1, _nextSequence++, caseId);
@@ -257,15 +277,21 @@ namespace Desk42.Product.OfficeSlice
             OfficeInteractionPoint point = CurrentInteractionPoint();
             if (point == null) return CreateInteractCommand();
 
+            if (BreakState.Active && point.Room == OfficeRoomId.WeirdRoom &&
+                BreakState.CopierActive) return CreateFixCommand();
+
             OfficeRoomWorkJobState roomJob = RoomWork.ActiveJobAt(point.Room);
             if (!Carry.IsCarrying && roomJob != null)
                 return CreateHelpCommand(roomJob.JobId);
             OfficeCustomerState activeCustomer = Customers.ActiveDeskCustomer;
             if (!Carry.IsCarrying && point.Room == OfficeRoomId.FrontDesk &&
                 activeCustomer != null &&
-                activeCustomer.VisibleMoodState >= OfficeVisibleMoodState.Worried &&
+                activeCustomer.VisibleMoodState >= OfficeVisibleMoodState.Upset &&
+                !CustomerPressure.CalmActive &&
                 CustomerPressure.CalmCooldownRemainingTicks == 0)
                 return CreateCalmCommand(activeCustomer.CustomerId);
+            if (BreakState.Active && !string.IsNullOrWhiteSpace(
+                    Queues.FirstActiveCopyAt(point.Room))) return CreateFixCommand();
 
             if (Carry.IsCarrying)
             {
@@ -390,6 +416,11 @@ namespace Desk42.Product.OfficeSlice
                 Staff.AdvanceOneTick(CurrentTick);
                 RoomWork.AdvanceOneTick(Warden.Cell(Grid));
                 CustomerPressure.AdvanceOneTick(Warden.Cell(Grid), Staff);
+                BreakState.PrepareCopyCandidate(
+                    CurrentTick, Customers, AutomationRule);
+                AutomationRule.AdvanceOneTick(CurrentTick);
+                BreakState.AdvanceAfterRule(
+                    CurrentTick, Customers, AutomationRule);
             }
         }
 
@@ -464,6 +495,14 @@ namespace Desk42.Product.OfficeSlice
                     break;
                 case OfficeCommandKind.AssignStaff:
                     ExecuteAssignStaff(command);
+                    break;
+                case OfficeCommandKind.ToggleRule:
+                    if (!M2Enabled || !AutomationRule.TryToggle())
+                        AddFailure(CurrentTick, command.Sequence, "RULE_LOCKED",
+                            "CHECK and TRACE one folder before teaching the machine.");
+                    break;
+                case OfficeCommandKind.Fix:
+                    ExecuteFix(command);
                     break;
                 case OfficeCommandKind.Decide:
                     ExecuteDecide(command);
@@ -705,6 +744,15 @@ namespace Desk42.Product.OfficeSlice
                     "STAFF_ASSIGNMENT_REJECTED", failure);
         }
 
+        private void ExecuteFix(OfficeCommand command)
+        {
+            OfficeInteractionPoint point = CurrentInteractionPoint();
+            if (!M2Enabled || point == null ||
+                !BreakState.TryFixAt(point.Room, out string result))
+                AddFailure(CurrentTick, command.Sequence, "FIX_NOT_AVAILABLE",
+                    "There is nothing to fix here.");
+        }
+
         private OfficeInteractionPoint CurrentInteractionPoint()
         {
             return Grid.ChooseClosestInteractionPoint(Warden.Cell(Grid));
@@ -818,6 +866,7 @@ namespace Desk42.Product.OfficeSlice
             {
                 OfficeFolderState folder = state.Queues.GetFolder(folderIds[i]);
                 builder.Append("|folder=").Append(folder.CaseId).Append(':')
+                    .Append(folder.SourceCaseId).Append(':')
                     .Append(folder.CurrentRoom).Append(':').Append(folder.IsMoving)
                     .Append(':').Append(folder.SourceRoom).Append(':')
                     .Append(folder.DestinationRoom).Append(':')
@@ -833,6 +882,8 @@ namespace Desk42.Product.OfficeSlice
                 state.RoomWork.AppendSnapshot(builder);
                 state.Staff.AppendSnapshot(builder);
                 state.CustomerPressure.AppendSnapshot(builder);
+                state.AutomationRule.AppendSnapshot(builder);
+                state.BreakState.AppendSnapshot(builder);
             }
             for (int i = 0; i < state.Failures.Count; i++)
                 builder.Append("|failure=").Append(state.Failures[i]);

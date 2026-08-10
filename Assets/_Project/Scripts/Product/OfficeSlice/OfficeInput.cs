@@ -86,6 +86,8 @@ namespace Desk42.Product.OfficeSlice
         private long _choiceExpiresAfterTick;
         private bool _dropBuffered;
         private long _dropExpiresAfterTick;
+        private bool _toggleRuleBuffered;
+        private long _toggleRuleExpiresAfterTick;
 
         public OfficeInputDirection Movement { get; private set; }
         public bool HasBufferedInteraction => _interactionBuffered;
@@ -173,12 +175,33 @@ namespace Desk42.Product.OfficeSlice
             return true;
         }
 
+        public void BufferToggleRule(long currentTick)
+        {
+            if (currentTick < 0L) throw new ArgumentOutOfRangeException(nameof(currentTick));
+            if (_toggleRuleBuffered) return;
+            _toggleRuleBuffered = true;
+            _toggleRuleExpiresAfterTick = currentTick + InteractionBufferTicks;
+        }
+
+        public bool TryConsumeToggleRule(long commandTick)
+        {
+            if (!_toggleRuleBuffered) return false;
+            if (commandTick > _toggleRuleExpiresAfterTick)
+            {
+                ClearToggleRule();
+                return false;
+            }
+            ClearToggleRule();
+            return true;
+        }
+
         public void Clear()
         {
             Movement = OfficeInputDirection.None;
             ClearInteraction();
             ClearChoice();
             ClearDrop();
+            ClearToggleRule();
         }
 
         private void ClearInteraction()
@@ -198,6 +221,12 @@ namespace Desk42.Product.OfficeSlice
         {
             _dropBuffered = false;
             _dropExpiresAfterTick = 0L;
+        }
+
+        private void ClearToggleRule()
+        {
+            _toggleRuleBuffered = false;
+            _toggleRuleExpiresAfterTick = 0L;
         }
     }
 
@@ -241,6 +270,9 @@ namespace Desk42.Product.OfficeSlice
             if (_intent.TryConsumeDrop(commandTick))
                 _state.TryQueueCommand(
                     _state.CreateDropCommand(), out OfficeCommandFailure ignored);
+            if (_intent.TryConsumeToggleRule(commandTick))
+                _state.TryQueueCommand(
+                    _state.CreateToggleRuleCommand(), out OfficeCommandFailure ignored);
 
             _state.AdvanceOneTick();
         }

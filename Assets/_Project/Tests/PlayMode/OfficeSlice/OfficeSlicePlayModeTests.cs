@@ -109,6 +109,69 @@ namespace Desk42.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator AutomationClearsTwoKnownCases()
+        {
+            yield return SceneManager.LoadSceneAsync("OfficeSlice");
+            yield return null;
+            OfficeSimulationState state = Object.FindObjectOfType<OfficeSliceBootstrap>()
+                .SimulationState;
+            UnlockAutomation(state);
+            string first = state.Cases.Cases[1].AutomationClaimId;
+            string second = state.Cases.Cases[5].AutomationClaimId;
+
+            Assert.That(state.Queues.TryTransferCase(
+                first, OfficeRoomId.WeirdRoom, state.CurrentTick, 1), Is.True);
+            Assert.That(state.Queues.TryTransferCase(
+                second, OfficeRoomId.WeirdRoom, state.CurrentTick, 1), Is.True);
+            state.AdvanceOneTick();
+            state.AdvanceTicks(OfficeAutomationRuleState.TransferDurationTicks);
+
+            Assert.That(state.AutomationRule.Matches, Has.Count.EqualTo(2));
+            Assert.That(state.AutomationRule.Matches[0].Matched, Is.True);
+            Assert.That(state.AutomationRule.Matches[1].Matched, Is.True);
+            Assert.That(state.Queues.GetFolder(first).CurrentRoom,
+                Is.EqualTo(OfficeRoomId.FrontDesk));
+            Assert.That(state.Queues.GetFolder(second).CurrentRoom,
+                Is.EqualTo(OfficeRoomId.FrontDesk));
+        }
+
+        [UnityTest]
+        public IEnumerator CopyEchoEdgeCaseTriggersDeterministicBreak()
+        {
+            yield return SceneManager.LoadSceneAsync("OfficeSlice");
+            yield return null;
+            OfficeSimulationState state = Object.FindObjectOfType<OfficeSliceBootstrap>()
+                .SimulationState;
+
+            DriveToBreak(state);
+
+            Assert.That(state.BreakState.Active, Is.True);
+            Assert.That(state.BreakState.OriginalMarkedHard, Is.True);
+            Assert.That(state.AutomationRule.LastAcceptedCopyId, Is.Not.Empty);
+            Assert.That(state.Queues.ActiveCopyCount, Is.GreaterThanOrEqualTo(1));
+        }
+
+        [UnityTest]
+        public IEnumerator TwoRecoveryOrdersReachValidClosingState()
+        {
+            yield return SceneManager.LoadSceneAsync("OfficeSlice");
+            yield return null;
+            OfficeSimulationState calmFirst = Object.FindObjectOfType<OfficeSliceBootstrap>()
+                .SimulationState;
+            DriveToBreak(calmFirst);
+            OfficeSimulationState fixFirst = OfficeSimulationState.CreateM2();
+            DriveToBreak(fixFirst);
+
+            RecoverBreak(calmFirst, fixMachineFirst: false);
+            RecoverBreak(fixFirst, fixMachineFirst: true);
+
+            Assert.That(calmFirst.BreakState.Recovered, Is.True);
+            Assert.That(fixFirst.BreakState.Recovered, Is.True);
+            Assert.That(calmFirst.Queues.HasSingleLogicalOwnerForEveryFolder(), Is.True);
+            Assert.That(fixFirst.Queues.HasSingleLogicalOwnerForEveryFolder(), Is.True);
+        }
+
+        [UnityTest]
         public IEnumerator OfficeSliceSceneBootsAsOneRootWithSixCases()
         {
             yield return SceneManager.LoadSceneAsync("OfficeSlice");
@@ -192,6 +255,107 @@ namespace Desk42.Tests.PlayMode
         {
             intent.BufferChoice(oneBasedChoice, state.CurrentTick);
             input.AdvanceOneTick();
+        }
+
+        private static void UnlockAutomation(OfficeSimulationState state)
+        {
+            string caseId = state.Customers.ActiveDeskCustomer.LinkedAutomationClaimId;
+            OfficeCaseWorkDefinition work = state.WorkDefinitionFor(caseId);
+            Assert.That(state.ManualTasks.TryStart(
+                OfficeManualTaskKind.Compare, caseId, state.CurrentTick, out _), Is.True);
+            Assert.That(state.ManualTasks.TrySubmit((int)work.PaperAnswer,
+                out bool compared, out _), Is.True);
+            Assert.That(compared, Is.True);
+            Assert.That(state.ManualTasks.TryStart(
+                OfficeManualTaskKind.Trace, caseId, state.CurrentTick, out _), Is.True);
+            Assert.That(state.ManualTasks.TrySubmit(work.MoneyPathAnswer,
+                out bool traced, out _), Is.True);
+            Assert.That(traced, Is.True);
+            state.AdvanceOneTick();
+            Assert.That(state.AutomationRule.TryToggle(), Is.True);
+        }
+
+        private static void DriveToBreak(OfficeSimulationState state)
+        {
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            CompleteActiveCase(state, intent, input);
+            intent.BufferToggleRule(state.CurrentTick);
+            input.AdvanceOneTick();
+            CompleteActiveCase(state, intent, input);
+            for (int tick = 0; tick < 1200 && !state.BreakState.Active; tick++)
+                input.AdvanceOneTick();
+            Assert.That(state.BreakState.Active, Is.True);
+        }
+
+        private static void CompleteActiveCase(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            string caseId = state.Customers.ActiveDeskCustomer.LinkedAutomationClaimId;
+            OfficeCaseWorkDefinition work = state.WorkDefinitionFor(caseId);
+            NavigateTo(state, intent, input, "front-desk.interact");
+            PressPrimary(state, intent, input);
+            PressPrimary(state, intent, input);
+            NavigateTo(state, intent, input, "paper-room.interact");
+            PressPrimary(state, intent, input);
+            PressPrimary(state, intent, input);
+            PressChoice(state, intent, input, (int)work.PaperAnswer + 1);
+            PressPrimary(state, intent, input);
+            NavigateTo(state, intent, input, "money-room.interact");
+            PressPrimary(state, intent, input);
+            PressPrimary(state, intent, input);
+            PressChoice(state, intent, input, work.MoneyPathAnswer + 1);
+            PressPrimary(state, intent, input);
+            NavigateTo(state, intent, input, "front-desk.interact");
+            PressChoice(state, intent, input, 1);
+            Assert.That(state.Decisions.RecordFor(caseId), Is.Not.Null);
+        }
+
+        private static void RecoverBreak(
+            OfficeSimulationState state,
+            bool fixMachineFirst)
+        {
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            if (!fixMachineFirst)
+            {
+                PressPrimary(state, intent, input);
+                state.AdvanceTicks(OfficeCustomerPressureState.CalmDurationTicks);
+            }
+            NavigateTo(state, intent, input, "weird-room.interact");
+            PressPrimary(state, intent, input);
+            NavigateTo(state, intent, input, "front-desk.interact");
+            if (fixMachineFirst)
+            {
+                PressPrimary(state, intent, input);
+                state.AdvanceTicks(OfficeCustomerPressureState.CalmDurationTicks);
+            }
+            int safety = 0;
+            while (state.Queues.ActiveCopyCount > 0 && safety++ < 40)
+            {
+                if (state.PrimaryActionLabel == "CALM")
+                {
+                    PressPrimary(state, intent, input);
+                    state.AdvanceTicks(OfficeCustomerPressureState.CalmDurationTicks);
+                    continue;
+                }
+                if (string.IsNullOrWhiteSpace(
+                        state.Queues.FirstActiveCopyAt(OfficeRoomId.FrontDesk)))
+                    state.AdvanceOneTick();
+                else
+                    PressPrimary(state, intent, input);
+            }
+            if (state.PrimaryActionLabel == "CALM")
+            {
+                PressPrimary(state, intent, input);
+                state.AdvanceTicks(OfficeCustomerPressureState.CalmDurationTicks);
+            }
+            PressPrimary(state, intent, input);
+            intent.BufferDrop(state.CurrentTick);
+            input.AdvanceOneTick();
+            state.AdvanceOneTick();
         }
     }
 }

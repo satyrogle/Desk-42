@@ -15,15 +15,24 @@ namespace Desk42.Product.OfficeSlice
 
     public sealed class OfficeFolderState
     {
-        internal OfficeFolderState(string caseId, OfficeRoomId room)
+        internal OfficeFolderState(
+            string caseId,
+            OfficeRoomId room,
+            string sourceCaseId = null)
         {
             CaseId = caseId;
+            SourceCaseId = string.IsNullOrWhiteSpace(sourceCaseId)
+                ? caseId
+                : sourceCaseId;
             CurrentRoom = room;
             OwnerKind = OfficeFolderOwnerKind.RoomQueue;
             OwnerId = room.ToString();
         }
 
         public string CaseId { get; }
+        public string SourceCaseId { get; }
+        public bool IsCopy => !string.Equals(
+            CaseId, SourceCaseId, StringComparison.Ordinal);
         public OfficeRoomId CurrentRoom { get; internal set; }
         public OfficeRoomId SourceRoom { get; internal set; }
         public OfficeRoomId DestinationRoom { get; internal set; }
@@ -130,6 +139,20 @@ namespace Desk42.Product.OfficeSlice
                 return string.Empty;
             }
         }
+        public int ActiveCopyCount
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < _folderOrder.Count; i++)
+                {
+                    OfficeFolderState folder = _folders[_folderOrder[i]];
+                    if (folder.IsCopy &&
+                        folder.OwnerKind != OfficeFolderOwnerKind.Cleared) count++;
+                }
+                return count;
+            }
+        }
 
         public OfficeFolderState GetFolder(string caseId)
         {
@@ -141,6 +164,46 @@ namespace Desk42.Product.OfficeSlice
         public OfficeRoomQueueState GetQueue(OfficeRoomId room)
         {
             return _queues[room];
+        }
+
+        public bool TryCreateCopy(
+            string copyId,
+            string sourceCaseId,
+            OfficeRoomId room)
+        {
+            if (string.IsNullOrWhiteSpace(copyId) ||
+                string.IsNullOrWhiteSpace(sourceCaseId) ||
+                _folders.ContainsKey(copyId) || !_folders.ContainsKey(sourceCaseId))
+                return false;
+            var copy = new OfficeFolderState(copyId, room, sourceCaseId);
+            _folders.Add(copyId, copy);
+            _folderOrder.Add(copyId);
+            _queues[room].Add(copyId);
+            ValidateSingleOwnership();
+            return true;
+        }
+
+        public string FirstActiveCopyAt(OfficeRoomId room)
+        {
+            IReadOnlyList<string> queue = _queues[room].CaseIds;
+            for (int i = 0; i < queue.Count; i++)
+            {
+                OfficeFolderState folder = GetFolder(queue[i]);
+                if (folder != null && folder.IsCopy) return folder.CaseId;
+            }
+            return string.Empty;
+        }
+
+        public bool TryClearCopy(string copyId)
+        {
+            OfficeFolderState folder = GetFolder(copyId);
+            if (folder == null || !folder.IsCopy || folder.IsMoving ||
+                folder.OwnerKind != OfficeFolderOwnerKind.RoomQueue ||
+                !_queues[folder.CurrentRoom].Remove(copyId)) return false;
+            folder.OwnerKind = OfficeFolderOwnerKind.Cleared;
+            folder.OwnerId = "cleared";
+            ValidateSingleOwnership();
+            return true;
         }
 
         public bool TryEnqueue(string caseId, OfficeRoomId room)

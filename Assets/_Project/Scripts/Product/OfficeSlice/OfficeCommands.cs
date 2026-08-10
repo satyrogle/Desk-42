@@ -176,6 +176,20 @@ namespace Desk42.Product.OfficeSlice
                 tick, sequence, OfficeCommandKind.AssignStaff,
                 "warden", staffId, (int)destination, 0, targetId);
         }
+
+        public static OfficeCommand ToggleRule(long tick, int sequence)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.ToggleRule,
+                "warden", "auto-sorter", 0, 0, string.Empty);
+        }
+
+        public static OfficeCommand Fix(long tick, int sequence)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Fix,
+                "warden", string.Empty, 0, 0, string.Empty);
+        }
     }
 
     public sealed class OfficeCommandFailure

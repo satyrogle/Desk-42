@@ -115,6 +115,10 @@ namespace Desk42.Product.OfficeSlice
             bool dropPressed = keyboard != null && keyboard.qKey.wasPressedThisFrame;
             dropPressed |= gamepad != null && gamepad.buttonEast.wasPressedThisFrame;
             if (dropPressed) _inputIntent.BufferDrop(_state.CurrentTick);
+
+            bool toggleRulePressed = keyboard != null && keyboard.rKey.wasPressedThisFrame;
+            toggleRulePressed |= gamepad != null && gamepad.selectButton.wasPressedThisFrame;
+            if (toggleRulePressed) _inputIntent.BufferToggleRule(_state.CurrentTick);
         }
     }
 }

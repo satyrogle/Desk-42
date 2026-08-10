@@ -498,7 +498,7 @@ namespace Desk42.Product.OfficeSlice
     {
         public const int CalmDurationTicks = 60;
         public const int CalmCooldownTicks = 90;
-        public const int CalmReductionPerTick = 3;
+        public const int CalmReductionPerTick = 10;
 
         private readonly OfficeCustomerScheduleState _customers;
         private readonly OfficeQueueService _queues;
