@@ -47,6 +47,7 @@ namespace Desk42.Product.OfficeSlice
     public sealed class OfficeSimulationState
     {
         private readonly List<OfficeCommandFailure> _failures = new();
+        private readonly IReadOnlyList<OfficeCommandFailure> _readOnlyFailures;
         private int _nextSequence = 1;
         private readonly OfficeM2Scenario _m2Scenario;
 
@@ -56,6 +57,7 @@ namespace Desk42.Product.OfficeSlice
             bool replayMode,
             OfficeM2Scenario m2Scenario = null)
         {
+            _readOnlyFailures = _failures.AsReadOnly();
             Cases = cases ?? throw new ArgumentNullException(nameof(cases));
             _m2Scenario = m2Scenario;
             Grid = OfficeGrid.CreateM1();
@@ -102,7 +104,7 @@ namespace Desk42.Product.OfficeSlice
         public long CurrentTick { get; private set; }
         public int AppliedCommandCount { get; private set; }
         public int DecisionStubCount { get; private set; }
-        public IReadOnlyList<OfficeCommandFailure> Failures => _failures.AsReadOnly();
+        public IReadOnlyList<OfficeCommandFailure> Failures => _readOnlyFailures;
         public string Checksum => OfficeStateChecksum.Compute(this);
         public string OrderedStateSnapshot => OfficeStateChecksum.Snapshot(this);
         public string PrimaryActionLabel

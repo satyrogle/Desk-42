@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text;
 
@@ -229,10 +228,15 @@ namespace Desk42.Product.OfficeSlice
 
         private readonly List<OfficeCommand> _commands = new();
         private readonly HashSet<int> _sequences = new();
+        private readonly IReadOnlyList<OfficeCommand> _readOnlyCommands;
+
+        public OfficeCommandLog()
+        {
+            _readOnlyCommands = _commands.AsReadOnly();
+        }
 
         public bool RecordingEnabled { get; private set; } = true;
-        public IReadOnlyList<OfficeCommand> Commands =>
-            new ReadOnlyCollection<OfficeCommand>(_commands);
+        public IReadOnlyList<OfficeCommand> Commands => _readOnlyCommands;
 
         public bool TryRecord(OfficeCommand command, out string failure)
         {

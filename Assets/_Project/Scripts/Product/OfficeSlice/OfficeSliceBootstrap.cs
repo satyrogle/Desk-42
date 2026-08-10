@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Text;
 using Desk42.Institutional.Player;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -13,6 +15,8 @@ namespace Desk42.Product.OfficeSlice
     {
         private const string OfficeSliceArgument = "--desk42-office-slice";
         private const string CaptureArgument = "--desk42-office-slice-capture";
+        private const string PerformanceArgument =
+            "--desk42-office-slice-performance-smoke";
         private const string CaptureDistributionArgument =
             "--desk42-office-slice-capture-distribution";
 
@@ -75,9 +79,16 @@ namespace Desk42.Product.OfficeSlice
         {
             string[] arguments = Environment.GetCommandLineArgs();
             string capturePath = ArgumentValue(arguments, CaptureArgument);
-            if (string.IsNullOrWhiteSpace(capturePath)) yield break;
+            string performancePath = ArgumentValue(arguments, PerformanceArgument);
+            if (string.IsNullOrWhiteSpace(capturePath) &&
+                string.IsNullOrWhiteSpace(performancePath)) yield break;
 
             yield return null;
+            if (!string.IsNullOrWhiteSpace(performancePath))
+            {
+                yield return RunPerformanceSmoke(performancePath);
+                yield break;
+            }
             if (HasArgument(arguments, CaptureDistributionArgument))
                 PrepareCaptureDistribution();
             yield return new WaitForSecondsRealtime(0.5f);
@@ -98,6 +109,63 @@ namespace Desk42.Product.OfficeSlice
             }
             Debug.Log("OFFICE_SLICE_CAPTURE_OK " + fullPath, this);
             Application.Quit(0);
+        }
+
+        private IEnumerator RunPerformanceSmoke(string outputPath)
+        {
+            const int warmupFrames = 60;
+            const int sampleFrames = 600;
+            const double targetFps = 60d;
+
+            Application.runInBackground = true;
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = 120;
+            var endOfFrame = new WaitForEndOfFrame();
+            for (int frame = 0; frame < warmupFrames; frame++)
+                yield return endOfFrame;
+
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            double previousSeconds = stopwatch.Elapsed.TotalSeconds;
+            double worstFrameSeconds = 0d;
+            for (int frame = 0; frame < sampleFrames; frame++)
+            {
+                yield return endOfFrame;
+                double currentSeconds = stopwatch.Elapsed.TotalSeconds;
+                double frameSeconds = currentSeconds - previousSeconds;
+                if (frameSeconds > worstFrameSeconds)
+                    worstFrameSeconds = frameSeconds;
+                previousSeconds = currentSeconds;
+            }
+            stopwatch.Stop();
+
+            double elapsedSeconds = stopwatch.Elapsed.TotalSeconds;
+            double averageFps = sampleFrames / elapsedSeconds;
+            string fullPath = Path.GetFullPath(outputPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? ".");
+            var report = new StringBuilder(256);
+            report.AppendLine("OFFICE_SLICE_PERFORMANCE_V1");
+            report.Append("resolution=").Append(Screen.width).Append('x')
+                .AppendLine(Screen.height.ToString(CultureInfo.InvariantCulture));
+            report.Append("frames=").AppendLine(
+                sampleFrames.ToString(CultureInfo.InvariantCulture));
+            report.Append("elapsed_seconds=").AppendLine(
+                elapsedSeconds.ToString("F6", CultureInfo.InvariantCulture));
+            report.Append("average_fps=").AppendLine(
+                averageFps.ToString("F2", CultureInfo.InvariantCulture));
+            report.Append("worst_frame_ms=").AppendLine(
+                (worstFrameSeconds * 1000d).ToString("F2", CultureInfo.InvariantCulture));
+            report.Append("simulation_ticks=").AppendLine(
+                _simulationState.CurrentTick.ToString(CultureInfo.InvariantCulture));
+            report.Append("target_fps=").AppendLine(
+                targetFps.ToString("F0", CultureInfo.InvariantCulture));
+            report.Append("target_met=").AppendLine(
+                (averageFps >= targetFps).ToString());
+            File.WriteAllText(fullPath, report.ToString());
+
+            Debug.Log("OFFICE_SLICE_PERFORMANCE_OK " +
+                averageFps.ToString("F2", CultureInfo.InvariantCulture) +
+                " FPS " + fullPath, this);
+            Application.Quit(averageFps >= targetFps ? 0 : 2);
         }
 
         private void LateUpdate()

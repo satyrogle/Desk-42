@@ -91,6 +91,7 @@ namespace Desk42.Product.OfficeSlice
     public sealed class OfficeCaseRepository
     {
         private readonly List<OfficeCase> _cases;
+        private readonly IReadOnlyList<OfficeCase> _readOnlyCases;
         private readonly Dictionary<string, OfficeCase> _byAutomationId;
 
         public OfficeCaseRepository(IEnumerable<OfficeCase> cases)
@@ -98,6 +99,7 @@ namespace Desk42.Product.OfficeSlice
             if (cases == null) throw new ArgumentNullException(nameof(cases));
 
             _cases = new List<OfficeCase>();
+            _readOnlyCases = _cases.AsReadOnly();
             _byAutomationId = new Dictionary<string, OfficeCase>(StringComparer.Ordinal);
             foreach (OfficeCase officeCase in cases)
             {
@@ -115,7 +117,7 @@ namespace Desk42.Product.OfficeSlice
             }
         }
 
-        public IReadOnlyList<OfficeCase> Cases => _cases.AsReadOnly();
+        public IReadOnlyList<OfficeCase> Cases => _readOnlyCases;
 
         public OfficeCase Get(string automationClaimId)
         {

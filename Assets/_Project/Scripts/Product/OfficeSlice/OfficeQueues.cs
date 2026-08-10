@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace Desk42.Product.OfficeSlice
 {
@@ -55,15 +54,16 @@ namespace Desk42.Product.OfficeSlice
     public sealed class OfficeRoomQueueState
     {
         private readonly List<string> _caseIds = new();
+        private readonly IReadOnlyList<string> _readOnlyCaseIds;
 
         internal OfficeRoomQueueState(OfficeRoomId room)
         {
             Room = room;
+            _readOnlyCaseIds = _caseIds.AsReadOnly();
         }
 
         public OfficeRoomId Room { get; }
-        public IReadOnlyList<string> CaseIds =>
-            new ReadOnlyCollection<string>(_caseIds);
+        public IReadOnlyList<string> CaseIds => _readOnlyCaseIds;
         public int Count => _caseIds.Count;
 
         public bool Contains(string caseId)
@@ -101,6 +101,7 @@ namespace Desk42.Product.OfficeSlice
         private readonly Dictionary<OfficeRoomId, OfficeRoomQueueState> _queues;
         private readonly Dictionary<string, OfficeFolderState> _folders;
         private readonly List<string> _folderOrder;
+        private readonly IReadOnlyList<string> _readOnlyFolderOrder;
         private readonly OfficeCaseRepository _cases;
 
         public OfficeQueueService(OfficeCaseRepository cases)
@@ -109,6 +110,7 @@ namespace Desk42.Product.OfficeSlice
             _queues = new Dictionary<OfficeRoomId, OfficeRoomQueueState>();
             _folders = new Dictionary<string, OfficeFolderState>(StringComparer.Ordinal);
             _folderOrder = new List<string>();
+            _readOnlyFolderOrder = _folderOrder.AsReadOnly();
             foreach (OfficeRoomId room in Enum.GetValues(typeof(OfficeRoomId)))
                 _queues.Add(room, new OfficeRoomQueueState(room));
 
@@ -125,7 +127,7 @@ namespace Desk42.Product.OfficeSlice
             ValidateSingleOwnership();
         }
 
-        public IReadOnlyList<string> FolderIds => _folderOrder.AsReadOnly();
+        public IReadOnlyList<string> FolderIds => _readOnlyFolderOrder;
         public string WardenCarriedFolderId
         {
             get
