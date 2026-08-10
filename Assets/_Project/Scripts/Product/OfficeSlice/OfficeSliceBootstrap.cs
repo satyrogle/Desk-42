@@ -53,6 +53,7 @@ namespace Desk42.Product.OfficeSlice
         private OfficeVisualSnapshot _m4Snapshot;
         private OfficeAudioSettings _m5AudioSettings;
         private OfficeAudioDirector _m5AudioDirector;
+        private OfficeFeedbackDirector _m5FeedbackDirector;
         private readonly OfficeM4HudPresenter _m4HudPresenter = new();
         private GUIStyle _m4TitleStyle;
         private GUIStyle _m4ActionStyle;
@@ -72,6 +73,7 @@ namespace Desk42.Product.OfficeSlice
         public OfficeM4HudPresenter HudPresenter => _m4HudPresenter;
         public OfficeAudioDirector AudioDirector => _m5AudioDirector;
         public OfficeAudioSettings AudioSettings => _m5AudioSettings;
+        public OfficeFeedbackDirector FeedbackDirector => _m5FeedbackDirector;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void RouteDevelopmentPlayerToOfficeSlice()
@@ -543,6 +545,7 @@ namespace Desk42.Product.OfficeSlice
             _m4Director?.Apply(_m4Snapshot);
             _m5AudioDirector?.Apply(
                 _simulationState, _campaignState, Time.unscaledDeltaTime);
+            _m5FeedbackDirector?.Update(Time.unscaledDeltaTime);
         }
 
         public void NotifyPresentationInteractionAttempt(bool valid)
@@ -618,6 +621,8 @@ namespace Desk42.Product.OfficeSlice
         {
             _m5AudioDirector?.Dispose();
             _m5AudioDirector = null;
+            _m5FeedbackDirector?.Dispose();
+            _m5FeedbackDirector = null;
             if (_runtimeRoot != null)
             {
                 _runtimeRoot.gameObject.SetActive(false);
@@ -644,16 +649,23 @@ namespace Desk42.Product.OfficeSlice
         private void BuildM5AudioPresentation()
         {
             _m5AudioSettings ??= OfficeAudioSettings.Load();
+            _m5FeedbackDirector = new OfficeFeedbackDirector(
+                _runtimeRoot,
+                _camera == null ? null : _camera.transform,
+                _m4Director,
+                _m5AudioSettings);
             _m5AudioDirector = new OfficeAudioDirector(
                 _runtimeRoot,
                 OfficeAudioCueCatalog.Load(),
                 _m5AudioSettings);
+            _m5AudioDirector.CueRouted += _m5FeedbackDirector.RouteCue;
             _m5AudioDirector.ResetForState(_simulationState, _campaignState);
         }
 
         private void OnDestroy()
         {
             _m5AudioDirector?.Dispose();
+            _m5FeedbackDirector?.Dispose();
         }
 
         public void SaveCommandLog()

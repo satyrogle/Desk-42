@@ -29,6 +29,7 @@ namespace Desk42.Product.OfficeSlice
         public OfficeAudioSettings Settings => _settings;
         public OfficeAudioStateSnapshot Snapshot => _snapshot;
         public OfficeAudioMixState MixState => _mixState;
+        public event Action<string, float> CueRouted;
 
         public void Apply(
             OfficeSimulationState state,
@@ -90,6 +91,8 @@ namespace Desk42.Product.OfficeSlice
             float intensity,
             float? panOverride)
         {
+            if (_catalog.ContainsCue(cueId))
+                CueRouted?.Invoke(cueId, Mathf.Clamp01(intensity));
             if (_settings.Muted ||
                 !_catalog.TryResolve(cueId, out OfficeAudioCueRecord cue,
                     out AudioClip clip)) return false;
