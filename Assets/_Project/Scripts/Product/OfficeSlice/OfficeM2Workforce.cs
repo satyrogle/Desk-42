@@ -192,6 +192,8 @@ namespace Desk42.Product.OfficeSlice
         public const int MovementSubunitsPerTick = 4;
         public const string RunnerId = "staff.runner";
         public const string TalkerId = "staff.talker";
+        public const string WardenTaskSourceId = "warden";
+        public const string CopierTaskSourceId = "copy-echo";
 
         private readonly OfficeGrid _grid;
         private readonly OfficeQueueService _queues;
@@ -226,10 +228,55 @@ namespace Desk42.Product.OfficeSlice
         public IReadOnlyList<OfficeStaffState> Staff => _readOnlyStaff;
         public bool RunnerDiversionActive => _runnerDiversionActive;
         public int RunnerDiversionCount { get; private set; }
+        public string RunnerTaskSourceId { get; private set; } =
+            WardenTaskSourceId;
+        public int CopierAssignmentCount { get; private set; }
 
         public void SetRunnerDiversion(bool active)
         {
             _runnerDiversionActive = active;
+        }
+
+        public void AcceptCopierAsTaskSource()
+        {
+            RunnerTaskSourceId = CopierTaskSourceId;
+            OfficeStaffState runner = Get(RunnerId);
+            if (runner != null && runner.TaskState == OfficeStaffTaskState.Idle)
+                runner.VisibleIntent = "FOLLOWING COPIER";
+        }
+
+        public bool TryAssignFromCopier(
+            string targetId,
+            long currentTick,
+            out string failure)
+        {
+            if (!string.Equals(RunnerTaskSourceId, CopierTaskSourceId,
+                    StringComparison.Ordinal))
+            {
+                failure = "COPIER_NOT_TASK_SOURCE";
+                return false;
+            }
+            if (!TryAssign(
+                    RunnerId,
+                    targetId,
+                    OfficeRoomId.WeirdRoom,
+                    currentTick,
+                    out failure)) return false;
+            CopierAssignmentCount++;
+            Get(RunnerId).VisibleIntent = "COPIER ORDER / " +
+                Get(RunnerId).VisibleIntent;
+            return true;
+        }
+
+        public bool TryReassignRunnerToWarden()
+        {
+            if (!string.Equals(RunnerTaskSourceId, CopierTaskSourceId,
+                    StringComparison.Ordinal)) return false;
+            RunnerTaskSourceId = WardenTaskSourceId;
+            OfficeStaffState runner = Get(RunnerId);
+            if (runner != null && runner.TaskState == OfficeStaffTaskState.Idle)
+                runner.VisibleIntent = "READY";
+            return true;
         }
 
         public OfficeStaffState Get(string staffId)
@@ -332,7 +379,9 @@ namespace Desk42.Product.OfficeSlice
                     .Append(staff.VisibleIntent);
             }
             builder.Append("|runner-diversion=").Append(_runnerDiversionActive)
-                .Append(':').Append(RunnerDiversionCount);
+                .Append(':').Append(RunnerDiversionCount)
+                .Append("|runner-source=").Append(RunnerTaskSourceId)
+                .Append(':').Append(CopierAssignmentCount);
         }
 
         private void AdvanceTalker(OfficeStaffState staff)

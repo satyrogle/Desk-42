@@ -72,7 +72,8 @@ namespace Desk42.Product.OfficeSlice
             bool shiftLogMatches = false,
             IReadOnlyList<OfficeManualTaskKind> requiredSequence = null,
             int weirdChoiceAnswer = 0,
-            string weirdResult = "WEIRD STUFF CHECKED")
+            string weirdResult = "WEIRD STUFF CHECKED",
+            string priorObservableRecord = "")
         {
             AutomationClaimId = Require(automationClaimId, nameof(automationClaimId));
             CustomerNameOnPaper = Require(
@@ -94,6 +95,7 @@ namespace Desk42.Product.OfficeSlice
                 throw new ArgumentOutOfRangeException(nameof(weirdChoiceAnswer));
             WeirdChoiceAnswer = weirdChoiceAnswer;
             WeirdResult = Require(weirdResult, nameof(weirdResult));
+            PriorObservableRecord = priorObservableRecord ?? string.Empty;
             var sequence = requiredSequence == null
                 ? new List<OfficeManualTaskKind>
                 {
@@ -130,6 +132,7 @@ namespace Desk42.Product.OfficeSlice
         public IReadOnlyList<OfficeManualTaskKind> RequiredSequence { get; }
         public int WeirdChoiceAnswer { get; }
         public string WeirdResult { get; }
+        public string PriorObservableRecord { get; }
         public bool PublicPapersMatch => PaperAnswer == OfficePaperEntry.PapersMatch;
         public bool PublicRefundPathClear => MoneyResult == OfficeMoneyResult.MoneyFound;
         public string PaperResult => PaperAnswer == OfficePaperEntry.PapersMatch
@@ -221,7 +224,8 @@ namespace Desk42.Product.OfficeSlice
 
         public static OfficeM2Scenario CreateForCampaign(
             InstitutionalAutomationSession session,
-            int shiftOrdinal)
+            int shiftOrdinal,
+            IReadOnlyList<OfficeCampaignDecisionCallback> priorDecisions = null)
         {
             if (session == null) throw new ArgumentNullException(nameof(session));
             if (shiftOrdinal < 1 || shiftOrdinal > 3)
@@ -257,7 +261,7 @@ namespace Desk42.Product.OfficeSlice
                     traitIds[i]));
             }
 
-            AddWorkForShift(work, cases, shiftOrdinal);
+            AddWorkForShift(work, cases, shiftOrdinal, priorDecisions);
             return new OfficeM2Scenario(
                 session, cases, customers, work, shiftOrdinal);
         }
@@ -298,7 +302,8 @@ namespace Desk42.Product.OfficeSlice
         private static void AddWorkForShift(
             List<OfficeCaseWorkDefinition> work,
             OfficeCaseRepository cases,
-            int shiftOrdinal)
+            int shiftOrdinal,
+            IReadOnlyList<OfficeCampaignDecisionCallback> priorDecisions)
         {
             if (shiftOrdinal == 1)
             {
@@ -389,8 +394,33 @@ namespace Desk42.Product.OfficeSlice
                         ? "MISSING ROOM RECORD FOUND"
                         : i == 4
                             ? "CLOCK RECORD DOES NOT MATCH THE PERSON"
-                            : "COPIED OFFICE MARK FOUND"));
+                            : "COPIED OFFICE MARK FOUND",
+                    priorObservableRecord: shiftOrdinal == 3 && i == 0
+                        ? PriorDecisionRecord(
+                            priorDecisions, 1, "customer.m2.01")
+                        : shiftOrdinal == 3 && i == 1
+                            ? PriorDecisionRecord(
+                                priorDecisions, 2, "customer.m2.02")
+                            : string.Empty));
             }
+        }
+
+        private static string PriorDecisionRecord(
+            IReadOnlyList<OfficeCampaignDecisionCallback> priorDecisions,
+            int shiftOrdinal,
+            string customerId)
+        {
+            if (priorDecisions == null) return string.Empty;
+            for (int i = 0; i < priorDecisions.Count; i++)
+            {
+                OfficeCampaignDecisionCallback callback = priorDecisions[i];
+                if (callback.ShiftOrdinal == shiftOrdinal &&
+                    string.Equals(callback.CustomerId, customerId,
+                        StringComparison.Ordinal))
+                    return "SHIFT " + shiftOrdinal + " RECORD / " +
+                        callback.Stamp;
+            }
+            return string.Empty;
         }
 
         private static IReadOnlyList<OfficeManualTaskKind> SequenceFor(

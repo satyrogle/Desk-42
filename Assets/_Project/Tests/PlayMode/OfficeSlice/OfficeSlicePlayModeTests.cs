@@ -298,7 +298,11 @@ namespace Desk42.Tests.PlayMode
             state.AdvanceOneTick();
             state.AdvanceTicks(OfficePayrollRuleState.TransferDurationTicks);
 
-            Assert.That(state.PayrollRule.Matches, Has.Count.EqualTo(2));
+            Assert.That(state.PayrollRule.Matches, Has.Count.EqualTo(3));
+            Assert.That(state.PayrollRule.Accepted(owen), Is.True);
+            Assert.That(state.PayrollRule.Accepted(june), Is.True);
+            Assert.That(state.PayrollRule.LastAcceptedCopiedPayrollId,
+                Is.EqualTo("copy.badge.001"));
             Assert.That(state.Queues.GetFolder(owen).CurrentRoom,
                 Is.EqualTo(OfficeRoomId.MoneyRoom));
             Assert.That(state.Queues.GetFolder(june).CurrentRoom,
@@ -365,6 +369,99 @@ namespace Desk42.Tests.PlayMode
             Assert.That(campaign.Upgrades.CalmChairsTier, Is.EqualTo(1));
             Assert.That(bootstrap.SimulationState,
                 Is.SameAs(campaign.CurrentSimulation));
+        }
+
+        [UnityTest]
+        public IEnumerator PromotionCascadeTriggersFromExactPlayerState()
+        {
+            yield return SceneManager.LoadSceneAsync("OfficeSlice");
+            yield return null;
+            OfficeSliceBootstrap bootstrap =
+                Object.FindObjectOfType<OfficeSliceBootstrap>();
+            OfficeSimulationState state = DriveCampaignToShiftThree(bootstrap);
+
+            TriggerPromotion(state);
+            bootstrap.RefreshPresentation();
+
+            Assert.That(state.PromotionCascade.HasTriggered, Is.True);
+            Assert.That(state.PromotionCascade.RuleOneAcceptedCopiedRefund,
+                Is.True);
+            Assert.That(state.PromotionCascade.RuleTwoAcceptedCopiedPayroll,
+                Is.True);
+            Assert.That(state.Staff.RunnerTaskSourceId,
+                Is.EqualTo(OfficeStaffSystem.CopierTaskSourceId));
+            Assert.That(GameObject.Find("Supervisor Stamp"), Is.Not.Null);
+        }
+
+        [UnityTest]
+        public IEnumerator PromotionCascadeMachineFirstRecoveryWorks()
+        {
+            yield return SceneManager.LoadSceneAsync("OfficeSlice");
+            yield return null;
+            OfficeSliceBootstrap bootstrap =
+                Object.FindObjectOfType<OfficeSliceBootstrap>();
+            OfficeSimulationState state = DriveCampaignToShiftThree(bootstrap);
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            TriggerPromotion(state, intent, input);
+
+            RecoverPromotionMachineFirst(state, intent, input);
+
+            Assert.That(state.PromotionCascade.Recovered, Is.True,
+                state.OrderedStateSnapshot);
+        }
+
+        [UnityTest]
+        public IEnumerator PromotionCascadePeopleFirstRecoveryWorks()
+        {
+            yield return SceneManager.LoadSceneAsync("OfficeSlice");
+            yield return null;
+            OfficeSliceBootstrap bootstrap =
+                Object.FindObjectOfType<OfficeSliceBootstrap>();
+            OfficeSimulationState state = DriveCampaignToShiftThree(bootstrap);
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            TriggerPromotion(state, intent, input);
+
+            RecoverPromotionPeopleFirst(state, intent, input);
+
+            Assert.That(state.PromotionCascade.Recovered, Is.True,
+                state.OrderedStateSnapshot);
+        }
+
+        [UnityTest]
+        public IEnumerator ShiftThreeFailureRestartReturnsToCleanCheckpoint()
+        {
+            yield return SceneManager.LoadSceneAsync("OfficeSlice");
+            yield return null;
+            OfficeSliceBootstrap bootstrap =
+                Object.FindObjectOfType<OfficeSliceBootstrap>();
+            OfficeSimulationState failed = DriveCampaignToShiftThree(bootstrap);
+            TriggerPromotion(failed);
+            failed.AdvanceTicks(
+                OfficePromotionCascadeState.FailureGraceTicks + 2);
+            Assert.That(failed.Shift.Failed, Is.True);
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(failed, intent);
+            intent.BufferRestart(failed.CurrentTick);
+            input.AdvanceOneTick();
+
+            Assert.That(bootstrap.RestartShift(), Is.True);
+            OfficeSimulationState restarted = bootstrap.SimulationState;
+
+            Assert.That(restarted, Is.Not.SameAs(failed));
+            Assert.That(restarted.CurrentTick, Is.Zero);
+            Assert.That(restarted.PromotionCascade.HasTriggered, Is.False);
+            Assert.That(restarted.Staff.Staff, Has.Count.EqualTo(2));
+            Assert.That(restarted.Customers.Customers, Has.Count.EqualTo(6));
+            Assert.That(restarted.Queues.FolderIds, Has.Count.EqualTo(6));
+            yield return null;
+            int activeRuntimeRoots = 0;
+            for (int i = 0; i < bootstrap.transform.childCount; i++)
+                if (bootstrap.transform.GetChild(i).gameObject.activeSelf &&
+                    bootstrap.transform.GetChild(i).name == "Office Slice Runtime")
+                    activeRuntimeRoots++;
+            Assert.That(activeRuntimeRoots, Is.EqualTo(1));
         }
 
         [UnityTest]
@@ -482,6 +579,29 @@ namespace Desk42.Tests.PlayMode
             return campaign.CurrentSimulation;
         }
 
+        private static OfficeSimulationState DriveCampaignToShiftThree(
+            OfficeSliceBootstrap bootstrap)
+        {
+            OfficeCampaignState campaign = bootstrap.CampaignState;
+            OfficeSimulationState state = DriveCampaignToShiftTwo(bootstrap);
+            CompleteShiftTwoCases(state, 6);
+            state.AdvanceTicks(2);
+            Assert.That(campaign.Phase,
+                Is.EqualTo(OfficeCampaignPhase.ChooseUpgrade));
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            intent.BufferChoice((int)OfficeUpgradeFamily.CalmChairs,
+                state.CurrentTick);
+            input.AdvanceOneTick();
+            intent.BufferInteraction(state.CurrentTick);
+            input.AdvanceOneTick();
+            bootstrap.SynchronizeCampaignState();
+            Assert.That(campaign.CurrentShiftOrdinal, Is.EqualTo(3));
+            Assert.That(campaign.Rules.Rule1AcceptedCopiedRefund, Is.True);
+            Assert.That(campaign.Rules.Rule2AcceptedCopiedPayroll, Is.True);
+            return campaign.CurrentSimulation;
+        }
+
         private static void CompleteShiftTwoCases(
             OfficeSimulationState state,
             int targetDecisionCount)
@@ -510,6 +630,126 @@ namespace Desk42.Tests.PlayMode
                     Assert.That(state.PayrollRule.Enabled, Is.True);
                 }
             }
+        }
+
+        private static void TriggerPromotion(OfficeSimulationState state)
+        {
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            TriggerPromotion(state, intent, input);
+        }
+
+        private static void TriggerPromotion(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            while (state.Decisions.CommitCount < 2)
+                CompleteActiveCase(state, intent, input);
+            Assert.That(state.Customers.ActiveDeskCustomer.DisplayName,
+                Is.EqualTo("MARA VALE"));
+            for (int tick = 0; tick < 1800 &&
+                !state.PromotionCascade.HasTriggered; tick++)
+                input.AdvanceOneTick();
+            Assert.That(state.PromotionCascade.HasTriggered, Is.True,
+                state.OrderedStateSnapshot);
+        }
+
+        private static void RecoverPromotionMachineFirst(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            NavigateTo(state, intent, input, "weird-room.interact");
+            Assert.That(state.PrimaryActionLabel, Is.EqualTo("STOP COPIER"));
+            PressPrimary(state, intent, input);
+            Assert.That(state.PrimaryActionLabel,
+                Is.EqualTo("REMOVE SUPERVISOR STAMP"));
+            PressPrimary(state, intent, input);
+            ClearPromotionForms(state, intent, input);
+            NavigateTo(state, intent, input, "front-desk.interact");
+            CalmUntilActionable(state, intent, input);
+            CompleteActiveCase(state, intent, input);
+            ReassignPromotionRunner(state, intent, input);
+            state.AdvanceOneTick();
+        }
+
+        private static void RecoverPromotionPeopleFirst(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            NavigateTo(state, intent, input, "front-desk.interact");
+            CalmUntilActionable(state, intent, input);
+            string maraCaseId = state.PromotionCascade.MaraCaseId;
+            PressPrimary(state, intent, input);
+            PressPrimary(state, intent, input);
+            NavigateTo(state, intent, input, "paper-room.interact");
+            state.AdvanceTicks(state.Queues.TransferDurationTicks);
+            Assert.That(state.PrimaryActionLabel,
+                Is.EqualTo("FIND ORIGINAL BADGE"));
+            PressPrimary(state, intent, input);
+            state.AdvanceTicks(
+                state.PromotionCascade.RecoveryChannelRemainingTicks);
+            PressPrimary(state, intent, input);
+            OfficeCommand sendFront = state.CreateSendCommand(
+                maraCaseId, OfficeRoomId.FrontDesk);
+            Assert.That(state.TryQueueCommand(
+                sendFront, out OfficeCommandFailure failure), Is.True,
+                failure?.ToString());
+            input.AdvanceOneTick();
+            NavigateTo(state, intent, input, "front-desk.interact");
+            state.AdvanceTicks(state.Queues.TransferDurationTicks);
+            state.AdvanceOneTick();
+            ReassignPromotionRunner(state, intent, input);
+            NavigateTo(state, intent, input, "weird-room.interact");
+            PressPrimary(state, intent, input);
+            PressPrimary(state, intent, input);
+            ClearPromotionForms(state, intent, input);
+            state.AdvanceOneTick();
+        }
+
+        private static void ClearPromotionForms(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            string[] points =
+            {
+                "weird-room.interact",
+                "money-room.interact",
+                "paper-room.interact",
+                "front-desk.interact",
+            };
+            for (int pointIndex = 0; pointIndex < points.Length; pointIndex++)
+            {
+                NavigateTo(state, intent, input, points[pointIndex]);
+                int safety = 0;
+                while (state.PrimaryActionLabel == "CLEAR PROMOTION FORM" &&
+                    safety++ < 12)
+                {
+                    PressPrimary(state, intent, input);
+                    state.AdvanceTicks(
+                        state.PromotionCascade.RecoveryChannelRemainingTicks);
+                }
+            }
+            Assert.That(state.PromotionCascade.ActivePromotionFormCount,
+                Is.Zero, state.OrderedStateSnapshot);
+        }
+
+        private static void ReassignPromotionRunner(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            for (int tick = 0; tick < 1200 &&
+                state.PromotionCascade.DivertedFolderIds.Count < 2; tick++)
+                input.AdvanceOneTick();
+            Assert.That(state.PromotionCascade.DivertedFolderIds,
+                Has.Count.EqualTo(2), state.OrderedStateSnapshot);
+            NavigateTo(state, intent, input, "waiting-area.interact");
+            Assert.That(state.PrimaryActionLabel, Is.EqualTo("REASSIGN RUNNER"));
+            PressPrimary(state, intent, input);
         }
 
         private static string[] ClaimIds(OfficeSimulationState state)
@@ -664,11 +904,22 @@ namespace Desk42.Tests.PlayMode
             OfficeInputCommandGenerator input)
         {
             int safety = 0;
-            while (safety++ < 12 &&
-                (state.PrimaryActionLabel == "STOP CLOCK" ||
-                 state.PrimaryActionLabel == "CLEAR TIME SLIP" ||
-                 state.PrimaryActionLabel == "CLOSE MISSING ROOM"))
+            while (safety++ < 24)
+            {
+                string action = state.PrimaryActionLabel;
+                bool complication = action == "STOP CLOCK" ||
+                    action == "CLEAR TIME SLIP" ||
+                    action == "CLOSE MISSING ROOM" ||
+                    action == "STOP COPIER" ||
+                    action == "REMOVE SUPERVISOR STAMP" ||
+                    action == "CLEAR PROMOTION FORM" ||
+                    action == "FIND ORIGINAL BADGE";
+                if (!complication) break;
                 PressPrimary(state, intent, input);
+                if (state.PromotionCascade.RecoveryChannelActive)
+                    state.AdvanceTicks(
+                        state.PromotionCascade.RecoveryChannelRemainingTicks);
+            }
         }
 
         private static void CompleteActiveCaseWithAnalogControls(

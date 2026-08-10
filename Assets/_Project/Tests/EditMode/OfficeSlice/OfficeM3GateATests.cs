@@ -208,6 +208,19 @@ namespace Desk42.Tests.EditMode.OfficeM3
                 Is.EqualTo(OfficeCampaignPhase.ChooseUpgrade));
         }
 
+        public static void EnterShiftThree(
+            OfficeCampaignState campaign,
+            OfficeUpgradeFamily firstUpgrade = OfficeUpgradeFamily.FastTrays,
+            OfficeUpgradeFamily secondUpgrade = OfficeUpgradeFamily.CalmChairs)
+        {
+            EnterShiftTwo(campaign, firstUpgrade);
+            DriveShiftTwoToResult(campaign);
+            ChooseUpgradeAndContinue(campaign, secondUpgrade);
+            Assert.That(campaign.CurrentShiftOrdinal, Is.EqualTo(3));
+            Assert.That(campaign.Rules.Rule1AcceptedCopiedRefund, Is.True);
+            Assert.That(campaign.Rules.Rule2AcceptedCopiedPayroll, Is.True);
+        }
+
         public static void CompleteActiveCaseInAuthoredOrder(
             OfficeSimulationState state,
             OfficeInputIntent intent,
@@ -273,11 +286,38 @@ namespace Desk42.Tests.EditMode.OfficeM3
             OfficeInputCommandGenerator input)
         {
             int safety = 0;
-            while (safety++ < 12 &&
-                (state.PrimaryActionLabel == "STOP CLOCK" ||
-                 state.PrimaryActionLabel == "CLEAR TIME SLIP" ||
-                 state.PrimaryActionLabel == "CLOSE MISSING ROOM"))
+            while (safety++ < 24)
+            {
+                string action = state.PrimaryActionLabel;
+                bool complication = action == "STOP CLOCK" ||
+                    action == "CLEAR TIME SLIP" ||
+                    action == "CLOSE MISSING ROOM" ||
+                    action == "STOP COPIER" ||
+                    action == "REMOVE SUPERVISOR STAMP" ||
+                    action == "CLEAR PROMOTION FORM" ||
+                    action == "FIND ORIGINAL BADGE";
+                if (!complication) break;
                 PressPrimary(state, intent, input);
+                if (state.PromotionCascade.RecoveryChannelActive)
+                    state.AdvanceTicks(
+                        state.PromotionCascade.RecoveryChannelRemainingTicks);
+            }
+        }
+
+        public static void CalmActiveCustomer(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            CalmUntilActionable(state, intent, input);
+        }
+
+        public static void ResolvePromotionAtCurrentPoint(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            ResolvePointComplications(state, intent, input);
         }
 
         private static void CompleteActiveCase(

@@ -43,19 +43,28 @@ namespace Desk42.Product.OfficeSlice
             new(StringComparer.Ordinal);
         private readonly List<OfficePayrollRuleMatch> _matches = new();
         private readonly IReadOnlyList<OfficePayrollRuleMatch> _readOnlyMatches;
+        private readonly bool _seedAuthoredCopiedBadge;
+        private readonly string _maraCaseId;
+        private bool _authoredCopiedBadgeSeeded;
 
         public OfficePayrollRuleState(
             OfficeM2Scenario scenario,
             OfficeQueueService queues,
             OfficeManualTaskState manualTasks,
             bool unlocked,
-            bool enabled)
+            bool enabled,
+            bool seedAuthoredCopiedBadge = false)
         {
             _scenario = scenario ?? throw new ArgumentNullException(nameof(scenario));
             _queues = queues ?? throw new ArgumentNullException(nameof(queues));
             _manualTasks = manualTasks ?? throw new ArgumentNullException(nameof(manualTasks));
             Unlocked = unlocked;
             Enabled = unlocked && enabled;
+            _seedAuthoredCopiedBadge = seedAuthoredCopiedBadge;
+            for (int i = 0; i < scenario.Customers.Count; i++)
+                if (string.Equals(scenario.Customers[i].DisplayName,
+                        "MARA VALE", StringComparison.Ordinal))
+                    _maraCaseId = scenario.Customers[i].LinkedAutomationClaimId;
             _readOnlyMatches = _matches.AsReadOnly();
         }
 
@@ -92,6 +101,13 @@ namespace Desk42.Product.OfficeSlice
         {
             RefreshUnlock();
             if (!Enabled) return;
+            if (_seedAuthoredCopiedBadge &&
+                _scenario.ShiftOrdinal == 2 &&
+                !_authoredCopiedBadgeSeeded)
+            {
+                _authoredCopiedBadgeSeeded = _queues.TryCreateCopy(
+                    "copy.badge.001", _maraCaseId, OfficeRoomId.WeirdRoom);
+            }
             IReadOnlyList<string> folderIds = _queues.FolderIds;
             for (int i = 0; i < folderIds.Count; i++)
             {
@@ -101,11 +117,19 @@ namespace Desk42.Product.OfficeSlice
                     folder.CurrentRoom != OfficeRoomId.WeirdRoom ||
                     !_evaluatedFolderIds.Add(folder.CaseId)) continue;
                 OfficeCaseWorkDefinition work = _scenario.WorkFor(folder.SourceCaseId);
-                bool matched = work != null && work.PublicBadgeActive &&
-                    work.PublicShiftLogMatches;
+                bool authoredCopiedBadge = folder.IsCopy &&
+                    string.Equals(folder.CaseId, "copy.badge.001",
+                        StringComparison.Ordinal) &&
+                    string.Equals(folder.SourceCaseId, _maraCaseId,
+                        StringComparison.Ordinal);
+                bool badgeActive = work != null && work.PublicBadgeActive ||
+                    authoredCopiedBadge;
+                bool shiftLogMatches = work != null &&
+                    work.PublicShiftLogMatches || authoredCopiedBadge;
+                bool matched = badgeActive && shiftLogMatches;
                 string reason = matched
                     ? "BADGE ACTIVE / SHIFT LOG MATCHES"
-                    : work == null || !work.PublicBadgeActive
+                    : !badgeActive
                         ? "BADGE NOT ACTIVE"
                         : "SHIFT LOG DOES NOT MATCH";
                 string action = matched ? "SENT TO MONEY" : "LEFT FOR CHECK";
@@ -139,7 +163,8 @@ namespace Desk42.Product.OfficeSlice
         public void AppendSnapshot(StringBuilder builder)
         {
             builder.Append("|pay-rule=").Append(Unlocked).Append(':')
-                .Append(Enabled).Append(':').Append(LastAcceptedCopiedPayrollId);
+                .Append(Enabled).Append(':').Append(LastAcceptedCopiedPayrollId)
+                .Append(':').Append(_authoredCopiedBadgeSeeded);
             for (int i = 0; i < _matches.Count; i++)
             {
                 OfficePayrollRuleMatch match = _matches[i];

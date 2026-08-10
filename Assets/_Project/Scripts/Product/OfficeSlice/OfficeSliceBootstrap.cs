@@ -38,6 +38,7 @@ namespace Desk42.Product.OfficeSlice
         private OfficeTickDriver _tickDriver;
         private Transform _runtimeRoot;
         private Transform _wardenView;
+        private Transform _supervisorStampView;
         private Camera _camera;
         private bool _built;
         private string _lastDebugMessage = "BOOTING OFFICE SLICE";
@@ -238,7 +239,9 @@ namespace Desk42.Product.OfficeSlice
                 view.position = destination;
                 if (_folderLabels.TryGetValue(caseId, out TextMesh label))
                     label.text = folder.IsCopy
-                        ? caseId.StartsWith("time-slip.", StringComparison.Ordinal)
+                        ? _simulationState.PromotionCascade.IsPromotionForm(caseId)
+                            ? "PROMOTION FORM"
+                            : caseId.StartsWith("time-slip.", StringComparison.Ordinal)
                             ? "TIME SLIP"
                             : "COPY"
                         : _caseRepository.Get(caseId)?.DisplayId ?? caseId;
@@ -254,6 +257,10 @@ namespace Desk42.Product.OfficeSlice
                             : FolderColor(sourceCase.Urgency);
                 }
             }
+
+            if (_supervisorStampView != null)
+                _supervisorStampView.gameObject.SetActive(
+                    _simulationState.PromotionCascade.SupervisorStampActive);
 
             RefreshCustomerViews();
             RefreshStaffViews();
@@ -339,6 +346,7 @@ namespace Desk42.Product.OfficeSlice
             _folderRenderers.Clear();
             _customerViews.Clear();
             _staffViews.Clear();
+            _supervisorStampView = null;
             _runtimeRoot = new GameObject("Office Slice Runtime").transform;
             _runtimeRoot.SetParent(transform, false);
             BuildGreybox();
@@ -516,13 +524,25 @@ namespace Desk42.Product.OfficeSlice
                     : new Color(0.92f, 0.35f, 0.32f));
             _folderViews.Add(folder.CaseId, copy.transform);
             TextMesh label = CreateLabel(
-                folder.CaseId.StartsWith("time-slip.", StringComparison.Ordinal)
+                _simulationState.PromotionCascade.IsPromotionForm(folder.CaseId)
+                    ? "PROMOTION FORM"
+                    : folder.CaseId.StartsWith("time-slip.", StringComparison.Ordinal)
                     ? "TIME SLIP"
                     : "COPY",
                 Vector3.up * 0.18f,
                 0.055f, copy.transform);
             _folderLabels.Add(folder.CaseId, label);
             _folderRenderers.Add(folder.CaseId, copy.GetComponent<Renderer>());
+            if (_campaignState?.Upgrades.RedLabelsTier > 0)
+            {
+                GameObject redLabel = CreateCube(
+                    "Red Label " + folder.CaseId,
+                    Vector3.zero,
+                    new Vector3(0.22f, 0.03f, 0.16f),
+                    new Color(0.95f, 0.08f, 0.08f));
+                redLabel.transform.SetParent(copy.transform, false);
+                redLabel.transform.localPosition = new Vector3(0f, 0.1f, 0f);
+            }
         }
 
         private void CreateMachineViews()
@@ -541,6 +561,18 @@ namespace Desk42.Product.OfficeSlice
                 CreateCube("Missing Room Door", new Vector3(12f, 0.9f, -3.5f),
                     new Vector3(0.25f, 1.8f, 1.5f), new Color(0.5f, 0.4f, 0.25f));
                 CreateLabel("MISSING ROOM", new Vector3(12f, 2f, -3.5f), 0.06f);
+            }
+            if (_campaignState != null && _campaignState.CurrentShiftOrdinal >= 3)
+            {
+                GameObject stamp = CreateCube(
+                    "Supervisor Stamp",
+                    new Vector3(5.5f, 1.55f, -3.5f),
+                    new Vector3(0.72f, 0.22f, 0.72f),
+                    new Color(0.9f, 0.18f, 0.18f));
+                CreateLabel("SUPERVISOR", Vector3.up * 0.38f,
+                    0.06f, stamp.transform);
+                _supervisorStampView = stamp.transform;
+                stamp.SetActive(false);
             }
             if (_campaignState?.Upgrades.FastTraysTier > 0)
             {
@@ -786,6 +818,12 @@ namespace Desk42.Product.OfficeSlice
                     _simulationState.CustomerPressure.RecordFor(customer.CustomerId);
                 GUILayout.Label("WHY: " + pressure.LastAuthoredCause);
                 GUILayout.Label("FOLDER: " + FolderStatus(customer.LinkedAutomationClaimId));
+                OfficeCaseWorkDefinition activeWork =
+                    _simulationState.WorkDefinitionFor(
+                        customer.LinkedAutomationClaimId);
+                if (!string.IsNullOrWhiteSpace(
+                        activeWork?.PriorObservableRecord))
+                    GUILayout.Label(activeWork.PriorObservableRecord);
             }
             GUILayout.Space(8f);
             DrawCurrentWork(customer);
@@ -813,6 +851,10 @@ namespace Desk42.Product.OfficeSlice
                 OfficeStaffState staff = _simulationState.Staff.Staff[i];
                 GUILayout.Label(staff.DisplayName + ": " + staff.VisibleIntent);
             }
+            if (_campaignState != null &&
+                _campaignState.CurrentShiftOrdinal >= 3)
+                GUILayout.Label("RUNNER TASK SOURCE: " +
+                    _simulationState.Staff.RunnerTaskSourceId.ToUpperInvariant());
             if (_simulationState.CustomerPressure.CalmActive)
                 GUILayout.Label("CALMING: " +
                     _simulationState.CustomerPressure.CalmRemainingTicks + " TICKS");
@@ -824,6 +866,16 @@ namespace Desk42.Product.OfficeSlice
                 GUILayout.Label("GHOST CLOCK: KEEP TOMAS CALM / STOP CLOCK / CLEAR SLIPS");
             if (_simulationState.MissingRoomAccess.Active)
                 GUILayout.Label("MISSING ROOM OPEN: CLOSE DOOR OR FINISH IRIS'S CASE");
+            if (_simulationState.PromotionCascade.Active)
+            {
+                GUILayout.Label("PROMOTION CASCADE: COPIER " +
+                    (_simulationState.PromotionCascade.CopierActive ? "ON" : "OFF") +
+                    " / STAMP " +
+                    (_simulationState.PromotionCascade.SupervisorStampActive
+                        ? "ON" : "REMOVED"));
+                GUILayout.Label("STOP COPIER / REMOVE STAMP / CLEAR FORMS / " +
+                    "CALM MARA / FIND AND RETURN ORIGINAL / REASSIGN RUNNER");
+            }
             if (_simulationState.Shift.Failed)
                 GUILayout.Label(_simulationState.Shift.FailureReason +
                     " / ENTER OR START TO RESTART");

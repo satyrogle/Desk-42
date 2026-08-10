@@ -151,10 +151,11 @@ namespace Desk42.Product.OfficeSlice
 
         public static OfficeCampaignShiftDefinition CreateShift(
             InstitutionalAutomationSession session,
-            int ordinal)
+            int ordinal,
+            IReadOnlyList<OfficeCampaignDecisionCallback> priorDecisions = null)
         {
             OfficeM2Scenario scenario = OfficeM2Scenario.CreateForCampaign(
-                session, ordinal);
+                session, ordinal, priorDecisions);
             return ordinal switch
             {
                 1 => new OfficeCampaignShiftDefinition(
@@ -196,6 +197,8 @@ namespace Desk42.Product.OfficeSlice
         public bool Rule1Enabled { get; private set; }
         public bool Rule2Taught { get; private set; }
         public bool Rule2Enabled { get; private set; }
+        public bool Rule1AcceptedCopiedRefund { get; private set; }
+        public bool Rule2AcceptedCopiedPayroll { get; private set; }
 
         internal void Observe(OfficeSimulationState simulation)
         {
@@ -208,6 +211,12 @@ namespace Desk42.Product.OfficeSlice
                 simulation.PayrollRule.Unlocked;
             if (simulation.PayrollRule != null)
                 Rule2Enabled = simulation.PayrollRule.Enabled;
+            Rule1AcceptedCopiedRefund |= simulation.AutomationRule != null &&
+                !string.IsNullOrWhiteSpace(
+                    simulation.AutomationRule.LastAcceptedCopyId);
+            Rule2AcceptedCopiedPayroll |= simulation.PayrollRule != null &&
+                !string.IsNullOrWhiteSpace(
+                    simulation.PayrollRule.LastAcceptedCopiedPayrollId);
         }
 
         internal OfficeCampaignAutomationState Clone()
@@ -218,6 +227,8 @@ namespace Desk42.Product.OfficeSlice
                 Rule1Enabled = Rule1Enabled,
                 Rule2Taught = Rule2Taught,
                 Rule2Enabled = Rule2Enabled,
+                Rule1AcceptedCopiedRefund = Rule1AcceptedCopiedRefund,
+                Rule2AcceptedCopiedPayroll = Rule2AcceptedCopiedPayroll,
             };
         }
 
@@ -225,7 +236,9 @@ namespace Desk42.Product.OfficeSlice
         {
             builder.Append("|campaign-rules=").Append(Rule1Taught).Append(':')
                 .Append(Rule1Enabled).Append(':').Append(Rule2Taught).Append(':')
-                .Append(Rule2Enabled);
+                .Append(Rule2Enabled).Append(':')
+                .Append(Rule1AcceptedCopiedRefund).Append(':')
+                .Append(Rule2AcceptedCopiedPayroll);
         }
     }
 
@@ -391,7 +404,9 @@ namespace Desk42.Product.OfficeSlice
         private void StartCurrentShift(bool captureCheckpoint)
         {
             CurrentShift = OfficeCampaignScenario.CreateShift(
-                InstitutionalSession, CurrentShiftOrdinal);
+                InstitutionalSession,
+                CurrentShiftOrdinal,
+                _decisionCallbacks);
             Phase = OfficeCampaignPhase.ActiveShift;
             CurrentSimulation = OfficeSimulationState.CreateCampaignShift(
                 CurrentShift.Scenario, this);

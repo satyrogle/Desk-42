@@ -165,12 +165,20 @@ namespace Desk42.Product.OfficeSlice
         private string _candidateCopyId = string.Empty;
         private int _nextCopyOrdinal = 1;
         private long _lastCopyTick;
+        private readonly int _maximumActiveCopies;
 
-        public OfficeBreakState(OfficeM2Scenario scenario, OfficeQueueService queues)
+        public OfficeBreakState(
+            OfficeM2Scenario scenario,
+            OfficeQueueService queues,
+            int maximumCopyReduction = 0)
         {
             _scenario = scenario ?? throw new ArgumentNullException(nameof(scenario));
             _queues = queues ?? throw new ArgumentNullException(nameof(queues));
             _readOnlyCopyIds = _copyIds.AsReadOnly();
+            if (maximumCopyReduction < 0 ||
+                maximumCopyReduction >= MaximumActiveCopies)
+                throw new ArgumentOutOfRangeException(nameof(maximumCopyReduction));
+            _maximumActiveCopies = MaximumActiveCopies - maximumCopyReduction;
             for (int i = 0; i < scenario.Customers.Count; i++)
             {
                 OfficeCustomerDefinition customer = scenario.Customers[i];
@@ -194,6 +202,7 @@ namespace Desk42.Product.OfficeSlice
         public string OriginalFolderId => _copyEchoCaseId;
         public string CopyEchoCustomerId => _copyEchoCustomerId;
         public IReadOnlyList<string> CopyIds => _readOnlyCopyIds;
+        public int MaximumActiveCopyLimit => _maximumActiveCopies;
 
         public static bool ExactAuthoredConjunction(
             OfficeVisibleMoodState mood,
@@ -235,7 +244,7 @@ namespace Desk42.Product.OfficeSlice
             }
             if (Active && CopierActive &&
                 currentTick - _lastCopyTick >= CopyIntervalTicks &&
-                _queues.ActiveCopyCount < MaximumActiveCopies)
+                _queues.ActiveCopyCount < _maximumActiveCopies)
             {
                 CreateCopy(currentTick);
                 _lastCopyTick = currentTick;
@@ -259,6 +268,13 @@ namespace Desk42.Product.OfficeSlice
                 return false;
             ClearedCopyCount++;
             result = "COPY CLEARED";
+            return true;
+        }
+
+        public bool TryStopCopier()
+        {
+            if (!CopierActive) return false;
+            CopierActive = false;
             return true;
         }
 
@@ -293,7 +309,8 @@ namespace Desk42.Product.OfficeSlice
                 .Append(':').Append(OriginalFound).Append(':')
                 .Append(ClearedCopyCount).Append(':').Append(_candidateCopyId)
                 .Append(':').Append(_nextCopyOrdinal).Append(':')
-                .Append(_lastCopyTick);
+                .Append(_lastCopyTick).Append(':')
+                .Append(_maximumActiveCopies);
             for (int i = 0; i < _copyIds.Count; i++)
                 builder.Append("|copy-lineage=").Append(_copyIds[i]).Append('>')
                     .Append(_copyEchoCaseId);

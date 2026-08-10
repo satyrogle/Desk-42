@@ -32,6 +32,16 @@ namespace Desk42.Product.OfficeSlice
         TimeSlipCleared,
         MissingRoomOpened,
         MissingRoomClosed,
+        PromotionFormReceived,
+        MachinePromoted,
+        RunnerFollowedCopier,
+        FolderDiverted,
+        SupervisorStampRemoved,
+        PromotionFormCleared,
+        OriginalBadgeFound,
+        OriginalBadgeReturned,
+        RunnerReassigned,
+        PromotionRecovered,
     }
 
     public sealed class OfficeCausalEvent
@@ -65,6 +75,8 @@ namespace Desk42.Product.OfficeSlice
         private int _observedRuleMatchCount;
         private int _observedPayrollMatchCount;
         private int _observedClearedSlipCount;
+        private int _observedPromotionDiversionCount;
+        private int _observedClearedPromotionFormCount;
 
         public OfficeCausalEventLog()
         {
@@ -80,7 +92,8 @@ namespace Desk42.Product.OfficeSlice
             OfficeQueueService queues,
             OfficePayrollRuleState payrollRule = null,
             OfficeGhostClockState ghostClock = null,
-            OfficeMissingRoomAccessState missingRoom = null)
+            OfficeMissingRoomAccessState missingRoom = null,
+            OfficePromotionCascadeState promotion = null)
         {
             if (rule.Enabled)
                 TryRecord("rule-taught", currentTick,
@@ -175,6 +188,77 @@ namespace Desk42.Product.OfficeSlice
                     OfficeCausalEventKind.MissingRoomClosed,
                     "YOU CLOSED THE MISSING ROOM",
                     "missing-room-door");
+            if (promotion != null && promotion.HasTriggered)
+            {
+                TryRecord("promotion-form-received", promotion.TriggeredTick,
+                    OfficeCausalEventKind.PromotionFormReceived,
+                    "THE COPIER RECEIVED A PROMOTION FORM",
+                    "promotion-form.001");
+                TryRecord("machine-promoted", promotion.TriggeredTick,
+                    OfficeCausalEventKind.MachinePromoted,
+                    "THE MACHINE BECAME A SUPERVISOR",
+                    "supervisor-stamp");
+                TryRecord("runner-followed-copier", promotion.TriggeredTick,
+                    OfficeCausalEventKind.RunnerFollowedCopier,
+                    "THE RUNNER FOLLOWED THE COPIER'S ORDERS",
+                    OfficeStaffSystem.RunnerId);
+            }
+            while (promotion != null &&
+                _observedPromotionDiversionCount <
+                    promotion.DivertedFolderIds.Count)
+            {
+                string folderId = promotion.DivertedFolderIds[
+                    _observedPromotionDiversionCount++];
+                TryRecord("promotion-diverted:" + folderId, currentTick,
+                    OfficeCausalEventKind.FolderDiverted,
+                    "THE COPIER SENT A CASE TO THE WRONG ROOM",
+                    folderId);
+            }
+            if (promotion != null && promotion.HasTriggered &&
+                !promotion.CopierActive)
+                TryRecord("promotion-copier-stopped", currentTick,
+                    OfficeCausalEventKind.MachineStopped,
+                    "YOU STOPPED THE COPY ECHO",
+                    "weird-room.interact");
+            if (promotion != null && promotion.HasTriggered &&
+                !promotion.SupervisorStampActive)
+                TryRecord("supervisor-stamp-removed", currentTick,
+                    OfficeCausalEventKind.SupervisorStampRemoved,
+                    "YOU REMOVED THE SUPERVISOR STAMP",
+                    "supervisor-stamp");
+            while (promotion != null &&
+                _observedClearedPromotionFormCount <
+                    promotion.ClearedPromotionFormCount)
+            {
+                _observedClearedPromotionFormCount++;
+                TryRecord("promotion-form-cleared:" +
+                        _observedClearedPromotionFormCount,
+                    currentTick,
+                    OfficeCausalEventKind.PromotionFormCleared,
+                    "YOU CLEARED A COPIED PROMOTION FORM",
+                    "promotion-form." +
+                        _observedClearedPromotionFormCount.ToString("D3"));
+            }
+            if (promotion != null && promotion.OriginalBadgeFound)
+                TryRecord("promotion-original-found", currentTick,
+                    OfficeCausalEventKind.OriginalBadgeFound,
+                    "YOU FOUND MARA'S ORIGINAL BADGE FILE",
+                    promotion.MaraCaseId);
+            if (promotion != null && promotion.OriginalBadgeReturned)
+                TryRecord("promotion-original-returned", currentTick,
+                    OfficeCausalEventKind.OriginalBadgeReturned,
+                    "YOU RETURNED THE ORIGINAL BADGE FILE TO THE FRONT DESK",
+                    promotion.MaraCaseId);
+            if (promotion != null && promotion.RunnerReassigned)
+                TryRecord("promotion-runner-reassigned", currentTick,
+                    OfficeCausalEventKind.RunnerReassigned,
+                    "YOU REASSIGNED THE RUNNER TO THE WARDEN",
+                    OfficeStaffSystem.RunnerId);
+            if (promotion != null && promotion.Recovered)
+                TryRecord("promotion-recovered", currentTick,
+                    OfficeCausalEventKind.PromotionRecovered,
+                    "YOU STOPPED THE COPIER AND RESTORED THE ORIGINAL FILE",
+                    promotion.MaraCaseId);
         }
 
         public bool ContainsOnlyObservableEvents()
@@ -200,6 +284,16 @@ namespace Desk42.Product.OfficeSlice
                     case OfficeCausalEventKind.TimeSlipCleared:
                     case OfficeCausalEventKind.MissingRoomOpened:
                     case OfficeCausalEventKind.MissingRoomClosed:
+                    case OfficeCausalEventKind.PromotionFormReceived:
+                    case OfficeCausalEventKind.MachinePromoted:
+                    case OfficeCausalEventKind.RunnerFollowedCopier:
+                    case OfficeCausalEventKind.FolderDiverted:
+                    case OfficeCausalEventKind.SupervisorStampRemoved:
+                    case OfficeCausalEventKind.PromotionFormCleared:
+                    case OfficeCausalEventKind.OriginalBadgeFound:
+                    case OfficeCausalEventKind.OriginalBadgeReturned:
+                    case OfficeCausalEventKind.RunnerReassigned:
+                    case OfficeCausalEventKind.PromotionRecovered:
                         break;
                     default:
                         return false;
@@ -269,7 +363,8 @@ namespace Desk42.Product.OfficeSlice
             OfficeBreakState breakState,
             OfficePayrollRuleState payrollRule = null,
             OfficeGhostClockState ghostClock = null,
-            OfficeMissingRoomAccessState missingRoom = null)
+            OfficeMissingRoomAccessState missingRoom = null,
+            OfficePromotionCascadeState promotion = null)
         {
             if (Failed || Phase == OfficeShiftPhase.Result) return;
             if (ShiftOrdinal == 2)
@@ -280,6 +375,16 @@ namespace Desk42.Product.OfficeSlice
                     payrollRule,
                     ghostClock,
                     missingRoom);
+                return;
+            }
+            if (ShiftOrdinal == 3)
+            {
+                AdvanceShiftThree(
+                    currentTick,
+                    decisions,
+                    rule,
+                    payrollRule,
+                    promotion);
                 return;
             }
             OfficeCustomerState active = customers.ActiveDeskCustomer;
@@ -378,6 +483,57 @@ namespace Desk42.Product.OfficeSlice
                         ghostClock.HasTriggered && ghostClock.Recovered &&
                         missingRoom != null && missingRoom.HasTriggered &&
                         missingRoom.Recovered)
+                        Transition(OfficeShiftPhase.Closing, currentTick);
+                    break;
+                case OfficeShiftPhase.Closing:
+                    Transition(OfficeShiftPhase.Result, currentTick);
+                    break;
+            }
+        }
+
+        private void AdvanceShiftThree(
+            long currentTick,
+            OfficeDecisionState decisions,
+            OfficeAutomationRuleState rule,
+            OfficePayrollRuleState payrollRule,
+            OfficePromotionCascadeState promotion)
+        {
+            if (promotion != null && promotion.Failed)
+            {
+                Fail(promotion.FailureReason);
+                return;
+            }
+            switch (Phase)
+            {
+                case OfficeShiftPhase.Briefing:
+                    break;
+                case OfficeShiftPhase.Open:
+                    if (decisions.CommitCount >= 1)
+                        Transition(OfficeShiftPhase.Learn, currentTick);
+                    break;
+                case OfficeShiftPhase.Learn:
+                    if (rule != null && rule.Unlocked &&
+                        payrollRule != null && payrollRule.Unlocked)
+                        Transition(OfficeShiftPhase.Rush, currentTick);
+                    break;
+                case OfficeShiftPhase.Rush:
+                case OfficeShiftPhase.Automate:
+                    if (promotion != null && promotion.Active)
+                        Transition(OfficeShiftPhase.Break, currentTick);
+                    break;
+                case OfficeShiftPhase.Break:
+                    if (promotion != null &&
+                        (!promotion.CopierActive ||
+                         !promotion.SupervisorStampActive ||
+                         promotion.ClearedPromotionFormCount > 0 ||
+                         promotion.MaraCalmed ||
+                         promotion.OriginalBadgeFound ||
+                         promotion.RunnerReassigned))
+                        Transition(OfficeShiftPhase.Recovery, currentTick);
+                    break;
+                case OfficeShiftPhase.Recovery:
+                    if (promotion != null && promotion.Recovered &&
+                        decisions.CommitCount >= 6)
                         Transition(OfficeShiftPhase.Closing, currentTick);
                     break;
                 case OfficeShiftPhase.Closing:

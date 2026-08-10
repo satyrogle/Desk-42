@@ -56,7 +56,10 @@ namespace Desk42.Product.OfficeSlice
             OfficeCommandLog commandLog,
             bool replayMode,
             OfficeM2Scenario m2Scenario = null,
-            OfficeCampaignState campaign = null)
+            OfficeCampaignState campaign = null,
+            OfficeCampaignUpgradeState authoredUpgrades = null,
+            bool ruleOneAcceptedCopiedRefund = false,
+            bool ruleTwoAcceptedCopiedPayroll = false)
         {
             _readOnlyFailures = _failures.AsReadOnly();
             Cases = cases ?? throw new ArgumentNullException(nameof(cases));
@@ -64,9 +67,11 @@ namespace Desk42.Product.OfficeSlice
             Campaign = campaign;
             Grid = OfficeGrid.CreateM1();
             Warden = new OfficeWardenState(Grid.SpawnCell);
+            OfficeCampaignUpgradeState effectiveUpgrades =
+                Campaign?.Upgrades ?? authoredUpgrades;
             Queues = new OfficeQueueService(
                 Cases,
-                Campaign?.Upgrades.TransferDurationTicks ??
+                effectiveUpgrades?.TransferDurationTicks ??
                     OfficeQueueService.DefaultTransferDurationTicks);
             Carry = new OfficeCarryState(Queues);
             CommandLog = commandLog ?? new OfficeCommandLog();
@@ -82,7 +87,7 @@ namespace Desk42.Product.OfficeSlice
                     Customers,
                     Queues,
                     ManualTasks,
-                    Campaign?.Upgrades.MoodThresholdBonusTicks ?? 0);
+                    effectiveUpgrades?.MoodThresholdBonusTicks ?? 0);
                 AutomationRule = new OfficeAutomationRuleState(
                     _m2Scenario,
                     Queues,
@@ -94,11 +99,24 @@ namespace Desk42.Product.OfficeSlice
                     Queues,
                     ManualTasks,
                     Campaign?.Rules.Rule2Taught ?? false,
-                    Campaign?.Rules.Rule2Enabled ?? false);
-                BreakState = new OfficeBreakState(_m2Scenario, Queues);
+                    Campaign?.Rules.Rule2Enabled ?? false,
+                    seedAuthoredCopiedBadge: Campaign != null);
+                BreakState = new OfficeBreakState(
+                    _m2Scenario,
+                    Queues,
+                    effectiveUpgrades?.MaximumCopyReduction ?? 0);
                 GhostClock = new OfficeGhostClockState(_m2Scenario, Queues);
                 MissingRoomAccess = new OfficeMissingRoomAccessState(
                     _m2Scenario, Queues);
+                PromotionCascade = new OfficePromotionCascadeState(
+                    _m2Scenario,
+                    Queues,
+                    BreakState,
+                    Staff,
+                    effectiveUpgrades,
+                    Campaign?.Rules,
+                    ruleOneAcceptedCopiedRefund,
+                    ruleTwoAcceptedCopiedPayroll);
                 CausalEvents = new OfficeCausalEventLog();
                 Shift = new OfficeShiftState(_m2Scenario.ShiftOrdinal);
             }
@@ -120,6 +138,7 @@ namespace Desk42.Product.OfficeSlice
         public OfficeBreakState BreakState { get; }
         public OfficeGhostClockState GhostClock { get; }
         public OfficeMissingRoomAccessState MissingRoomAccess { get; }
+        public OfficePromotionCascadeState PromotionCascade { get; }
         public OfficeCausalEventLog CausalEvents { get; }
         public OfficeShiftState Shift { get; }
         public OfficeCommandLog CommandLog { get; }
@@ -147,6 +166,9 @@ namespace Desk42.Product.OfficeSlice
                 }
                 OfficeInteractionPoint point = CurrentInteractionPoint();
                 if (point == null) return "MOVE TO A WORK POINT";
+                string promotionAction = PromotionCascade.ActionAt(point.Room);
+                if (!string.IsNullOrWhiteSpace(promotionAction))
+                    return promotionAction;
                 if (GhostClock.Active && point.Room == OfficeRoomId.PaperRoom &&
                     (GhostClock.ClockTerminalActive ||
                      GhostClock.ActiveSlipCount > 0))
@@ -158,8 +180,6 @@ namespace Desk42.Product.OfficeSlice
                     return "CLOSE MISSING ROOM";
                 if (BreakState.Active && point.Room == OfficeRoomId.WeirdRoom &&
                     BreakState.CopierActive) return "FIX MACHINE";
-                OfficeRoomWorkJobState roomJob = RoomWork.ActiveJobAt(point.Room);
-                if (!Carry.IsCarrying && roomJob != null) return "HELP";
                 OfficeCustomerState active = Customers.ActiveDeskCustomer;
                 if (!Carry.IsCarrying && point.Room == OfficeRoomId.FrontDesk &&
                     active != null && active.VisibleMoodState >= OfficeVisibleMoodState.Upset &&
@@ -197,6 +217,8 @@ namespace Desk42.Product.OfficeSlice
                     folder.OwnerKind == OfficeFolderOwnerKind.RoomQueue &&
                     folder.CurrentRoom == point.Room)
                     return "TAKE FOLDER";
+                OfficeRoomWorkJobState roomJob = RoomWork.ActiveJobAt(point.Room);
+                if (roomJob != null) return "HELP";
                 return "NOTHING TO DO HERE";
             }
         }
@@ -249,14 +271,20 @@ namespace Desk42.Product.OfficeSlice
         }
 
         public static OfficeSimulationState CreateAuthoredShift(
-            OfficeM2Scenario scenario)
+            OfficeM2Scenario scenario,
+            OfficeCampaignUpgradeState upgrades = null,
+            bool ruleOneAcceptedCopiedRefund = false,
+            bool ruleTwoAcceptedCopiedPayroll = false)
         {
             if (scenario == null) throw new ArgumentNullException(nameof(scenario));
             return new OfficeSimulationState(
                 scenario.Cases,
                 new OfficeCommandLog(),
                 false,
-                scenario);
+                scenario,
+                authoredUpgrades: upgrades,
+                ruleOneAcceptedCopiedRefund: ruleOneAcceptedCopiedRefund,
+                ruleTwoAcceptedCopiedPayroll: ruleTwoAcceptedCopiedPayroll);
         }
 
         public OfficeCommand CreateMoveCommand(int x, int z)
@@ -345,6 +373,18 @@ namespace Desk42.Product.OfficeSlice
             return OfficeCommand.Fix(CurrentTick + 1, _nextSequence++);
         }
 
+        public OfficeCommand CreateRemoveSupervisorStampCommand()
+        {
+            return OfficeCommand.RemoveSupervisorStamp(
+                CurrentTick + 1, _nextSequence++);
+        }
+
+        public OfficeCommand CreateReassignRunnerCommand()
+        {
+            return OfficeCommand.ReassignRunner(
+                CurrentTick + 1, _nextSequence++);
+        }
+
         public OfficeCommand CreateRestartCommand()
         {
             return OfficeCommand.Restart(CurrentTick + 1, _nextSequence++);
@@ -384,6 +424,16 @@ namespace Desk42.Product.OfficeSlice
             OfficeInteractionPoint point = CurrentInteractionPoint();
             if (point == null) return CreateInteractCommand();
 
+            string promotionAction = PromotionCascade.ActionAt(point.Room);
+            if (string.Equals(promotionAction, "REMOVE SUPERVISOR STAMP",
+                    StringComparison.Ordinal))
+                return CreateRemoveSupervisorStampCommand();
+            if (string.Equals(promotionAction, "REASSIGN RUNNER",
+                    StringComparison.Ordinal))
+                return CreateReassignRunnerCommand();
+            if (!string.IsNullOrWhiteSpace(promotionAction))
+                return CreateFixCommand();
+
             if ((GhostClock.Active && point.Room == OfficeRoomId.PaperRoom &&
                  (GhostClock.ClockTerminalActive ||
                   GhostClock.ActiveSlipCount > 0)) ||
@@ -393,9 +443,6 @@ namespace Desk42.Product.OfficeSlice
             if (BreakState.Active && point.Room == OfficeRoomId.WeirdRoom &&
                 BreakState.CopierActive) return CreateFixCommand();
 
-            OfficeRoomWorkJobState roomJob = RoomWork.ActiveJobAt(point.Room);
-            if (!Carry.IsCarrying && roomJob != null)
-                return CreateHelpCommand(roomJob.JobId);
             OfficeCustomerState activeCustomer = Customers.ActiveDeskCustomer;
             if (!Carry.IsCarrying && point.Room == OfficeRoomId.FrontDesk &&
                 activeCustomer != null &&
@@ -441,6 +488,8 @@ namespace Desk42.Product.OfficeSlice
                 folder.OwnerKind == OfficeFolderOwnerKind.RoomQueue &&
                 folder.CurrentRoom == point.Room)
                 return CreateCarryCommand(activeCaseId);
+            OfficeRoomWorkJobState roomJob = RoomWork.ActiveJobAt(point.Room);
+            if (roomJob != null) return CreateHelpCommand(roomJob.JobId);
             return CreateInteractCommand(point.Id);
         }
 
@@ -551,6 +600,7 @@ namespace Desk42.Product.OfficeSlice
                 PayrollRule.AdvanceOneTick(CurrentTick);
                 BreakState.AdvanceAfterRule(
                     CurrentTick, Customers, AutomationRule);
+                PromotionCascade.AdvanceOneTick(CurrentTick, Customers);
                 CausalEvents.Capture(
                     CurrentTick,
                     AutomationRule,
@@ -558,7 +608,8 @@ namespace Desk42.Product.OfficeSlice
                     Queues,
                     PayrollRule,
                     GhostClock,
-                    MissingRoomAccess);
+                    MissingRoomAccess,
+                    PromotionCascade);
                 Shift.Advance(
                     CurrentTick,
                     Customers,
@@ -567,7 +618,8 @@ namespace Desk42.Product.OfficeSlice
                     BreakState,
                     PayrollRule,
                     GhostClock,
-                    MissingRoomAccess);
+                    MissingRoomAccess,
+                    PromotionCascade);
                 Campaign?.ObserveSimulationTick(this);
             }
         }
@@ -657,6 +709,12 @@ namespace Desk42.Product.OfficeSlice
                     break;
                 case OfficeCommandKind.Fix:
                     ExecuteFix(command);
+                    break;
+                case OfficeCommandKind.RemoveSupervisorStamp:
+                    ExecuteRemoveSupervisorStamp(command);
+                    break;
+                case OfficeCommandKind.ReassignRunner:
+                    ExecuteReassignRunner(command);
                     break;
                 case OfficeCommandKind.Restart:
                     if (!M2Enabled || !Shift.TryRequestRestart())
@@ -925,12 +983,32 @@ namespace Desk42.Product.OfficeSlice
                     "There is nothing to fix here.");
                 return;
             }
-            bool fixedSomething = BreakState.TryFixAt(point.Room, out string result) ||
+            bool fixedSomething = PromotionCascade.TryFixAt(
+                    point.Room, out string result) ||
+                BreakState.TryFixAt(point.Room, out result) ||
                 GhostClock.TryFixAt(point.Room, out result) ||
                 MissingRoomAccess.TryCloseAt(point.Room, Staff);
             if (!fixedSomething)
                 AddFailure(CurrentTick, command.Sequence, "FIX_NOT_AVAILABLE",
                     "There is nothing to fix here.");
+        }
+
+        private void ExecuteRemoveSupervisorStamp(OfficeCommand command)
+        {
+            OfficeInteractionPoint point = CurrentInteractionPoint();
+            if (!M2Enabled || point == null ||
+                !PromotionCascade.TryRemoveSupervisorStamp(point.Room))
+                AddFailure(CurrentTick, command.Sequence, "STAMP_NOT_AVAILABLE",
+                    "The supervisor stamp cannot be removed here.");
+        }
+
+        private void ExecuteReassignRunner(OfficeCommand command)
+        {
+            OfficeInteractionPoint point = CurrentInteractionPoint();
+            if (!M2Enabled || point == null ||
+                !PromotionCascade.TryReassignRunner(point.Room))
+                AddFailure(CurrentTick, command.Sequence, "RUNNER_NOT_AVAILABLE",
+                    "The Runner cannot be reassigned here yet.");
         }
 
         private static OfficeRoomId RoomForWork(OfficeManualTaskKind kind)
@@ -1092,6 +1170,7 @@ namespace Desk42.Product.OfficeSlice
                 state.BreakState.AppendSnapshot(builder);
                 state.GhostClock.AppendSnapshot(builder);
                 state.MissingRoomAccess.AppendSnapshot(builder, state.Staff);
+                state.PromotionCascade.AppendSnapshot(builder);
                 state.CausalEvents.AppendSnapshot(builder);
                 state.Shift.AppendSnapshot(builder);
             }
