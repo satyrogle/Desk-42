@@ -1,17 +1,17 @@
 ﻿# Repo Activity Summary
 
-Generated: 2026-07-20 09:01 +01:00
+Generated: 2026-08-10 09:01 +01:00
 Repository: C:/Users/jacob/Desk 42
 
 ## Headline Counts
 
-- Commit range: 2026-04-05 to 2026-07-19
-- Total commits: 86
-- Active commit dates: 21
-- File-change rows: 1343
-- Unique changed files: 887
-- Lines added: 102227
-- Lines deleted: 2952
+- Commit range: 2026-04-05 to 2026-08-10
+- Total commits: 229
+- Active commit dates: 32
+- File-change rows: 4213
+- Unique changed files: 2113
+- Lines added: 508689
+- Lines deleted: 68057
 
 ## Activity By Date
 
@@ -37,34 +37,45 @@ Repository: C:/Users/jacob/Desk 42
 | 2026-07-04 | 2 | 35 | 829 | 1 |
 | 2026-07-17 | 2 | 21 | 314 | 16 |
 | 2026-07-18 | 10 | 184 | 15235 | 167 |
-| 2026-07-19 | 4 | 21 | 1364 | 302 |
+| 2026-07-19 | 1 | 17 | 601 | 0 |
+| 2026-07-20 | 5 | 336 | 17018 | 2159 |
+| 2026-07-21 | 7 | 287 | 16012 | 1255 |
+| 2026-07-22 | 11 | 125 | 5834 | 963 |
+| 2026-07-23 | 10 | 94 | 6847 | 56 |
+| 2026-07-26 | 14 | 114 | 10833 | 391 |
+| 2026-07-27 | 31 | 122 | 12769 | 497 |
+| 2026-07-28 | 7 | 67 | 5943 | 123 |
+| 2026-08-02 | 5 | 538 | 254869 | 963 |
+| 2026-08-03 | 38 | 1025 | 63088 | 58577 |
+| 2026-08-04 | 1 | 9 | 206 | 76 |
+| 2026-08-10 | 17 | 157 | 13806 | 347 |
 
 ## Top Areas
 
 | Area | Change rows | Added | Deleted |
 |---|---:|---:|---:|
-| Assets | 340 | 20854 | 13 |
-| Scripts/UI | 218 | 14476 | 254 |
-| Tests | 93 | 4042 | 484 |
-| Scripts/Core | 84 | 4002 | 111 |
-| evidence | 50 | 6243 | 95 |
-| Scripts/Meta | 50 | 1800 | 6 |
-| Scripts/Archetypes | 37 | 1591 | 4 |
-| Scripts/BSM | 34 | 1819 | 8 |
-| Scripts/Debug | 33 | 707 | 3 |
-| Scripts/OfficeSupplies | 29 | 1995 | 39 |
-| Scripts/Editor | 28 | 3034 | 94 |
-| Scripts/Audio | 27 | 1465 | 26 |
-| .claude | 25 | 879 | 6 |
-| Scripts/RedTape | 23 | 1011 | 53 |
-| ProjectSettings | 23 | 2262 | 1 |
-| Scripts/BehaviourTrees | 20 | 1161 | 0 |
-| Scripts/Narrative | 20 | 1150 | 15 |
-| Scripts/Cards | 19 | 1096 | 2 |
-| Scripts/Encounter | 18 | 447 | 90 |
-| Scripts/Persistence | 17 | 788 | 18 |
-| Prefabs | 17 | 11408 | 181 |
-| Scenes | 15 | 12679 | 1116 |
-| Packages | 11 | 654 | 287 |
-| tools | 9 | 1286 | 7 |
-| Scripts/MoralInjury | 8 | 594 | 3 |
+| Assets | 913 | 40724 | 4841 |
+| Tests | 467 | 50251 | 3077 |
+| Scripts/UI | 371 | 18734 | 9525 |
+| Scripts/Institutional | 367 | 45944 | 879 |
+| tmp | 269 | 203877 | 610 |
+| Scripts/Product | 173 | 15785 | 871 |
+| Scripts/Core | 154 | 5153 | 3751 |
+| Scripts/Meta | 97 | 1806 | 1803 |
+| evidence | 93 | 37574 | 559 |
+| Prefabs | 91 | 14439 | 11509 |
+| Scripts/Editor | 88 | 6097 | 2492 |
+| Scripts/Narrative | 72 | 3420 | 1176 |
+| Scripts/Archetypes | 66 | 1591 | 1591 |
+| ArtLab | 63 | 5167 | 34 |
+| Scripts/BSM | 62 | 2074 | 1790 |
+| Scripts/Audio | 56 | 2227 | 1047 |
+| Scripts/Debug | 56 | 1979 | 263 |
+| tools | 56 | 5607 | 147 |
+| Scripts/OfficeSupplies | 54 | 2097 | 1848 |
+| Scripts/Encounter | 52 | 1872 | 628 |
+| Docs | 51 | 6156 | 145 |
+| Scripts/Persistence | 51 | 2060 | 825 |
+| Scripts/BehaviourTrees | 40 | 1169 | 1161 |
+| Scenes | 39 | 13649 | 11848 |
+| Scripts/RedTape | 39 | 1753 | 1098 |
