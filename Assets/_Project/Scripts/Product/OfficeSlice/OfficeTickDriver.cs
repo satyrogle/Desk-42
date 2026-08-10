@@ -40,6 +40,19 @@ namespace Desk42.Product.OfficeSlice
             if (!_initialized || _state == null) return;
             Keyboard keyboard = Keyboard.current;
             Gamepad gamepad = Gamepad.current;
+            bool newRunPressed = _bootstrap.EvaluationMode.Enabled &&
+                _bootstrap.CampaignState.IsComplete &&
+                ((keyboard != null && keyboard.enterKey.wasPressedThisFrame) ||
+                 (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame));
+            if (newRunPressed)
+            {
+                _bootstrap.NotifyControlScheme(
+                    gamepad != null && gamepad.buttonSouth.wasPressedThisFrame
+                        ? OfficeM6ControlScheme.Controller
+                        : OfficeM6ControlScheme.Keyboard);
+                _bootstrap.StartNewEvaluationRun();
+                return;
+            }
             if (HandlePauseMenuInput(keyboard, gamepad))
             {
                 _bootstrap.RefreshPresentation();
@@ -48,7 +61,7 @@ namespace Desk42.Product.OfficeSlice
             if (_bootstrap.PauseController.Paused) return;
             SampleDeviceIntent(keyboard, gamepad);
 
-            if (keyboard != null)
+            if (keyboard != null && _bootstrap.DeveloperShortcutsAllowed)
             {
                 if (keyboard.pKey.wasPressedThisFrame)
                     _clock.SetPaused(!_clock.Paused);

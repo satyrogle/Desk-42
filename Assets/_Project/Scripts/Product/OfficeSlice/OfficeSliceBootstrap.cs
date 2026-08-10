@@ -66,6 +66,7 @@ namespace Desk42.Product.OfficeSlice
         private readonly OfficeM6PauseController _m6PauseController = new();
         private OfficeM6TelemetryRecorder _m6TelemetryRecorder;
         private OfficeM6TelemetryObserver _m6TelemetryObserver;
+        private OfficeM6EvaluationMode _m6EvaluationMode;
         private OfficeM6ControlScheme _m6ControlScheme =
             OfficeM6ControlScheme.Keyboard;
         private bool _m6TutorialCompletionSaved;
@@ -92,6 +93,10 @@ namespace Desk42.Product.OfficeSlice
         public OfficeM6PauseController PauseController => _m6PauseController;
         public OfficeM6TelemetryRecorder TelemetryRecorder =>
             _m6TelemetryRecorder;
+        public OfficeM6EvaluationMode EvaluationMode => _m6EvaluationMode;
+        public bool DeveloperShortcutsAllowed =>
+            _m6EvaluationMode == null ||
+            _m6EvaluationMode.DeveloperShortcutsAllowed;
         public OfficeAudioDirector AudioDirector => _m5AudioDirector;
         public OfficeAudioSettings AudioSettings => _m5AudioSettings;
         public OfficeFeedbackDirector FeedbackDirector => _m5FeedbackDirector;
@@ -100,7 +105,9 @@ namespace Desk42.Product.OfficeSlice
         private static void RouteDevelopmentPlayerToOfficeSlice()
         {
             string[] arguments = Environment.GetCommandLineArgs();
-            if (!HasArgument(arguments, OfficeSliceArgument)) return;
+            if (!HasArgument(arguments, OfficeSliceArgument) &&
+                !HasArgument(arguments, OfficeM6EvaluationMode.LaunchArgument))
+                return;
 
             int sceneIndex = SceneUtility.GetBuildIndexByScenePath(
                 "Assets/_Project/Scenes/OfficeSlice.unity");
@@ -112,22 +119,18 @@ namespace Desk42.Product.OfficeSlice
         {
             if (_built) return;
             name = "Office Slice Bootstrap";
+            string[] arguments = Environment.GetCommandLineArgs();
+            _m6EvaluationMode = new OfficeM6EvaluationMode(arguments);
             _m5AudioSettings = OfficeAudioSettings.Load();
             _m6Settings = new OfficeM6PresentationSettings(_m5AudioSettings);
             _m6Settings.Load();
-            _m5AudioSettings.ApplyCommandLine(Environment.GetCommandLineArgs());
+            _m5AudioSettings.ApplyCommandLine(arguments);
             _m6Onboarding = new OfficeM6Onboarding(
+                !_m6EvaluationMode.ForceFreshOnboarding &&
                 PlayerPrefs.GetInt(TutorialCompleteKey, 0) != 0);
             _m6Onboarding.SetHintsEnabled(_m6Settings.TutorialHints);
-            bool telemetryEnabled = HasArgument(
-                Environment.GetCommandLineArgs(), TelemetryArgument);
-            _m6TelemetryRecorder = new OfficeM6TelemetryRecorder(
-                telemetryEnabled,
-                Path.Combine(Application.persistentDataPath,
-                    "Desk42Evaluation"),
-                "Desk42-M6-" + Application.version);
-            _m6TelemetryObserver = new OfficeM6TelemetryObserver(
-                _m6TelemetryRecorder);
+            StartTelemetrySession(_m6EvaluationMode.TelemetryEnabled ||
+                HasArgument(arguments, TelemetryArgument));
             _campaignState = OfficeCampaignState.Create();
             _simulationState = _campaignState.CurrentSimulation;
             _caseRepository = _simulationState.Cases;
@@ -665,7 +668,8 @@ namespace Desk42.Product.OfficeSlice
             _m6TelemetryObserver?.Observe(
                 _simulationState, _campaignState, _m6Onboarding);
             if (_m6Onboarding != null && _m6Onboarding.Complete &&
-                !_m6TutorialCompletionSaved)
+                !_m6TutorialCompletionSaved &&
+                !_m6EvaluationMode.Enabled)
             {
                 PlayerPrefs.SetInt(TutorialCompleteKey, 1);
                 PlayerPrefs.Save();
@@ -813,6 +817,40 @@ namespace Desk42.Product.OfficeSlice
             _m6TelemetryRecorder?.CloseNormal(
                 _simulationState?.CurrentTick ?? 0L,
                 _campaignState?.CurrentShiftOrdinal ?? 0);
+        }
+
+        public bool StartNewEvaluationRun()
+        {
+            if (_m6EvaluationMode == null || !_m6EvaluationMode.Enabled ||
+                _campaignState == null || !_campaignState.IsComplete)
+                return false;
+            _m6TelemetryRecorder?.CloseNormal(
+                _simulationState.CurrentTick,
+                _campaignState.CurrentShiftOrdinal);
+            _campaignState = OfficeCampaignState.Create();
+            _simulationState = _campaignState.CurrentSimulation;
+            _caseRepository = _simulationState.Cases;
+            _m6Onboarding = new OfficeM6Onboarding();
+            _m6Onboarding.SetHintsEnabled(_m6Settings.TutorialHints);
+            _m6TutorialCompletionSaved = false;
+            _m6PauseController.Resume();
+            _m6HudModel = null;
+            RebuildRuntimePresentation();
+            _tickDriver.ReplaceState(_simulationState, paused: false);
+            StartTelemetrySession(enabled: true);
+            RefreshPresentation();
+            return true;
+        }
+
+        private void StartTelemetrySession(bool enabled)
+        {
+            _m6TelemetryRecorder = new OfficeM6TelemetryRecorder(
+                enabled,
+                Path.Combine(Application.persistentDataPath,
+                    "Desk42Evaluation"),
+                OfficeM6EvaluationMode.BuildIdentifier);
+            _m6TelemetryObserver = new OfficeM6TelemetryObserver(
+                _m6TelemetryRecorder);
         }
 
         public void ForceAllFoldersThroughM1Route()
@@ -1626,7 +1664,8 @@ namespace Desk42.Product.OfficeSlice
         {
             if (!Ready) return;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Event.current.type == EventType.KeyDown &&
+            if (DeveloperShortcutsAllowed &&
+                Event.current.type == EventType.KeyDown &&
                 Event.current.keyCode == KeyCode.F9)
             {
                 _m4HudPresenter.SetDevelopmentHudVisible(
@@ -1665,7 +1704,8 @@ namespace Desk42.Product.OfficeSlice
             {
                 GUILayout.Label("ABOUT DESK 42", _m4TitleStyle);
                 GUILayout.Space(16f);
-                GUILayout.Label("M6 EVALUATION CANDIDATE", _m4ActionStyle);
+                GUILayout.Label(OfficeM6EvaluationMode.BuildIdentifier,
+                    _m4ActionStyle);
                 GUILayout.Label("A THREE-SHIFT WORK-IN-PROGRESS.", _m4BodyStyle);
                 GUILayout.FlexibleSpace();
                 GUILayout.Label("> BACK", _m4BodyStyle);
@@ -1740,6 +1780,9 @@ namespace Desk42.Product.OfficeSlice
                 GUILayout.Label(_m6HudModel.ResultSummary, _m4ActionStyle);
                 GUILayout.FlexibleSpace();
                 GUILayout.Label(_m6HudModel.TomorrowText, _m4BodyStyle);
+                if (_m6EvaluationMode.Enabled)
+                    GUILayout.Label("ENTER / A - START A NEW RUN",
+                        _m4BodyStyle);
                 GUILayout.EndArea();
                 DrawM4DevelopmentHud();
                 return;
