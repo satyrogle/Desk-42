@@ -55,6 +55,10 @@ namespace Desk42.Product.OfficeSlice
         private OfficeAudioDirector _m5AudioDirector;
         private OfficeFeedbackDirector _m5FeedbackDirector;
         private readonly OfficeM4HudPresenter _m4HudPresenter = new();
+        private readonly OfficeM6HudPresenter _m6HudPresenter = new();
+        private OfficeM6HudModel _m6HudModel;
+        private OfficeM6ControlScheme _m6ControlScheme =
+            OfficeM6ControlScheme.Keyboard;
         private GUIStyle _m4TitleStyle;
         private GUIStyle _m4ActionStyle;
         private GUIStyle _m4BodyStyle;
@@ -71,6 +75,8 @@ namespace Desk42.Product.OfficeSlice
         public OfficeVisualDirector VisualDirector => _m4Director;
         public OfficeVisualSnapshot VisualSnapshot => _m4Snapshot;
         public OfficeM4HudPresenter HudPresenter => _m4HudPresenter;
+        public OfficeM6HudPresenter M6HudPresenter => _m6HudPresenter;
+        public OfficeM6HudModel M6HudModel => _m6HudModel;
         public OfficeAudioDirector AudioDirector => _m5AudioDirector;
         public OfficeAudioSettings AudioSettings => _m5AudioSettings;
         public OfficeFeedbackDirector FeedbackDirector => _m5FeedbackDirector;
@@ -633,6 +639,12 @@ namespace Desk42.Product.OfficeSlice
             _m5AudioDirector?.Apply(
                 _simulationState, _campaignState, Time.unscaledDeltaTime);
             _m5FeedbackDirector?.Update(Time.unscaledDeltaTime);
+            if (_m6HudModel == null ||
+                _m6HudModel.Tick != _simulationState.CurrentTick ||
+                _m6HudModel.DevelopmentHudVisible !=
+                    _m6HudPresenter.DevelopmentHudVisible)
+                _m6HudModel = _m6HudPresenter.Project(
+                    _simulationState, _campaignState, _m6ControlScheme);
         }
 
         public void NotifyPresentationInteractionAttempt(bool valid)
@@ -1453,15 +1465,145 @@ namespace Desk42.Product.OfficeSlice
             {
                 _m4HudPresenter.SetDevelopmentHudVisible(
                     !_m4HudPresenter.DevelopmentHudVisible);
+                _m6HudPresenter.SetDevelopmentHudVisible(
+                    _m4HudPresenter.DevelopmentHudVisible);
+                _m6HudModel = _m6HudPresenter.Project(
+                    _simulationState, _campaignState, _m6ControlScheme);
                 Event.current.Use();
             }
 #endif
             if (_m4Director != null)
             {
-                DrawM4Hud();
+                DrawM6Hud();
                 return;
             }
             DrawLegacyHud();
+        }
+
+        private void DrawM6Hud()
+        {
+            EnsureM4HudStyles();
+            _m6HudModel ??= _m6HudPresenter.Project(
+                _simulationState, _campaignState, _m6ControlScheme);
+
+            if (_m6HudModel.ResultVisible)
+            {
+                Rect result = _m6HudPresenter.ResultRect(
+                    Screen.width, Screen.height);
+                DrawM4PaperCard(result);
+                GUILayout.BeginArea(Inset(result, 18f));
+                GUILayout.Label(_m6HudModel.ResultTitle, _m4TitleStyle);
+                GUILayout.Space(18f);
+                GUILayout.Label(_m6HudModel.ResultSummary, _m4ActionStyle);
+                GUILayout.FlexibleSpace();
+                GUILayout.Label(_m6HudModel.TomorrowText, _m4BodyStyle);
+                GUILayout.EndArea();
+                DrawM4DevelopmentHud();
+                return;
+            }
+
+            Rect top = _m6HudPresenter.TopBarRect(Screen.width, Screen.height);
+            DrawM4PaperCard(top);
+            GUILayout.BeginArea(Inset(top, 10f));
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(_m6HudModel.ShiftText, _m4TitleStyle);
+            GUILayout.FlexibleSpace();
+            GUILayout.Label(_m6HudModel.TimeText + "   " +
+                _m6HudModel.WaitingText + "   " +
+                _m6HudModel.DangerText, _m4BodyStyle);
+            GUILayout.EndHorizontal();
+            GUILayout.EndArea();
+
+            Rect action = _m6HudPresenter.ActionRect(
+                Screen.width, Screen.height);
+            DrawM4PaperCard(action);
+            GUILayout.BeginArea(Inset(action, 10f));
+            GUILayout.Label("DO THIS", _m4TitleStyle);
+            GUILayout.Label(_m6HudModel.ActionPrompt, _m4ActionStyle);
+            if (_m6HudModel.ManualChoicesVisible)
+                GUILayout.Label("1-4 - CHOOSE THE MATCHING RECORD", _m4BodyStyle);
+            else if (_m6HudModel.DecisionChoicesVisible)
+                GUILayout.Label("1-4 - CHOOSE WHAT HAPPENS TO THE FILE", _m4BodyStyle);
+            GUILayout.EndArea();
+
+            if (_m6HudModel.CustomerCardVisible)
+            {
+                Rect customer = _m6HudPresenter.CustomerCardRect(
+                    Screen.width, Screen.height);
+                DrawM4PaperCard(customer);
+                GUILayout.BeginArea(new Rect(
+                    customer.x + 10f, customer.y + 10f,
+                    customer.width - 98f, customer.height - 20f));
+                GUILayout.Label("AT THE DESK", _m4TitleStyle);
+                GUILayout.Label(_m6HudModel.CustomerName, _m4ActionStyle);
+                GUILayout.Label(_m6HudModel.CustomerProblem, _m4BodyStyle);
+                GUILayout.Label(_m6HudModel.CustomerMood, _m4BodyStyle);
+                GUILayout.EndArea();
+                DrawM6Portrait();
+            }
+
+            if (_m6HudModel.CaseCardVisible)
+            {
+                Rect caseCard = _m6HudPresenter.CaseCardRect(
+                    Screen.width, Screen.height);
+                DrawM4PaperCard(caseCard);
+                GUILayout.BeginArea(Inset(caseCard, 10f));
+                GUILayout.Label("THIS FILE", _m4TitleStyle);
+                GUILayout.Label(_m6HudModel.WhatWeKnow, _m4BodyStyle);
+                GUILayout.Label(_m6HudModel.WhatNeedsChecking, _m4BodyStyle);
+                GUILayout.Label(_m6HudModel.NextUsefulAction, _m4BodyStyle);
+                GUILayout.EndArea();
+            }
+
+            if (_m6HudModel.RuleCardVisible)
+            {
+                Rect rule = _m6HudPresenter.RuleCardRect(
+                    Screen.width, Screen.height);
+                DrawM4PaperCard(rule);
+                GUILayout.BeginArea(Inset(rule, 10f));
+                GUILayout.Label("YOUR MACHINES", _m4TitleStyle);
+                if (!string.IsNullOrWhiteSpace(_m6HudModel.RuleOneText))
+                    GUILayout.Label(_m6HudModel.RuleOneText, _m4BodyStyle);
+                if (!string.IsNullOrWhiteSpace(_m6HudModel.RuleTwoText))
+                    GUILayout.Label(_m6HudModel.RuleTwoText, _m4BodyStyle);
+                GUILayout.EndArea();
+            }
+
+            if (_m6HudModel.BreakCardVisible)
+            {
+                Rect breakCard = _m6HudPresenter.BreakCardRect(
+                    Screen.width, Screen.height);
+                DrawM4PaperCard(breakCard);
+                GUILayout.BeginArea(Inset(breakCard, 10f));
+                GUILayout.Label(_m6HudModel.BreakTitle, _m4TitleStyle);
+                GUILayout.Label(_m6HudModel.BreakCause, _m4BodyStyle);
+                for (int i = 0; i < _m6HudModel.RecoveryItems.Count; i++)
+                    GUILayout.Label(_m6HudModel.RecoveryItems[i], _m4BodyStyle);
+                GUILayout.EndArea();
+            }
+
+            DrawM4DevelopmentHud();
+        }
+
+        private void DrawM6Portrait()
+        {
+            OfficeCustomerState customer =
+                _simulationState.Customers.ActiveDeskCustomer;
+            if (customer == null || _m4Catalog == null) return;
+            string id = CustomerVisualId(
+                customer.DisplayName, customer.VisibleMoodState)
+                .Replace("character.", "portrait.");
+            if (customer.DisplayName == "MARA VALE" &&
+                _simulationState.PromotionCascade.Active)
+                id = "portrait.mara-vale.promotion-cascade";
+            else if (customer.DisplayName == "TOMAS REED" &&
+                _simulationState.GhostClock.Active)
+                id = "portrait.tomas-reed.ghost-clock";
+            if (_m4Catalog.TryResolve(id, out Sprite portrait) && portrait != null)
+                GUI.DrawTexture(
+                    _m6HudPresenter.CustomerPortraitRect(
+                        Screen.width, Screen.height),
+                    portrait.texture, ScaleMode.ScaleToFit, true);
         }
 
         private void DrawM4Hud()
