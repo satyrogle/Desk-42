@@ -1561,12 +1561,14 @@ namespace Desk42.Product.OfficeSlice
                 Screen.width, Screen.height);
             DrawM4PaperCard(action);
             GUILayout.BeginArea(Inset(action, 10f));
-            GUILayout.Label("DO THIS", _m4TitleStyle);
+            GUILayout.Label(OfficeM6PlayerCopyCatalog.DoThis, _m4TitleStyle);
             GUILayout.Label(_m6HudModel.ActionPrompt, _m4ActionStyle);
             if (_m6HudModel.ManualChoicesVisible)
-                GUILayout.Label("1-4 - CHOOSE THE MATCHING RECORD", _m4BodyStyle);
+                GUILayout.Label(
+                    OfficeM6PlayerCopyCatalog.TutorialChoice, _m4BodyStyle);
             else if (_m6HudModel.DecisionChoicesVisible)
-                GUILayout.Label("1-4 - CHOOSE WHAT HAPPENS TO THE FILE", _m4BodyStyle);
+                GUILayout.Label(
+                    OfficeM6PlayerCopyCatalog.DecisionChoice, _m4BodyStyle);
             GUILayout.EndArea();
 
             if (_m6HudModel.CustomerCardVisible)
@@ -1577,7 +1579,8 @@ namespace Desk42.Product.OfficeSlice
                 GUILayout.BeginArea(new Rect(
                     customer.x + 10f, customer.y + 10f,
                     customer.width - 98f, customer.height - 20f));
-                GUILayout.Label("AT THE DESK", _m4TitleStyle);
+                GUILayout.Label(
+                    OfficeM6PlayerCopyCatalog.AtTheDesk, _m4TitleStyle);
                 GUILayout.Label(_m6HudModel.CustomerName, _m4ActionStyle);
                 GUILayout.Label(_m6HudModel.CustomerProblem, _m4BodyStyle);
                 GUILayout.Label(_m6HudModel.CustomerMood, _m4BodyStyle);
@@ -1591,7 +1594,8 @@ namespace Desk42.Product.OfficeSlice
                     Screen.width, Screen.height);
                 DrawM4PaperCard(caseCard);
                 GUILayout.BeginArea(Inset(caseCard, 10f));
-                GUILayout.Label("THIS FILE", _m4TitleStyle);
+                GUILayout.Label(
+                    OfficeM6PlayerCopyCatalog.ThisFile, _m4TitleStyle);
                 GUILayout.Label(_m6HudModel.WhatWeKnow, _m4BodyStyle);
                 GUILayout.Label(_m6HudModel.WhatNeedsChecking, _m4BodyStyle);
                 GUILayout.Label(_m6HudModel.NextUsefulAction, _m4BodyStyle);
@@ -1604,7 +1608,8 @@ namespace Desk42.Product.OfficeSlice
                     Screen.width, Screen.height);
                 DrawM4PaperCard(rule);
                 GUILayout.BeginArea(Inset(rule, 10f));
-                GUILayout.Label("YOUR MACHINES", _m4TitleStyle);
+                GUILayout.Label(
+                    OfficeM6PlayerCopyCatalog.YourMachines, _m4TitleStyle);
                 if (!string.IsNullOrWhiteSpace(_m6HudModel.RuleOneText))
                     GUILayout.Label(_m6HudModel.RuleOneText, _m4BodyStyle);
                 if (!string.IsNullOrWhiteSpace(_m6HudModel.RuleTwoText))

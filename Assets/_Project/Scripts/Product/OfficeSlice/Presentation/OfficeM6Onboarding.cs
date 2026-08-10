@@ -38,7 +38,9 @@ namespace Desk42.Product.OfficeSlice
         public bool HintsEnabled { get; private set; } = true;
         public bool Complete => Step == OfficeM6TutorialStep.Complete;
         public bool Visible => HintsEnabled && !Complete;
-        public string CurrentSentence => Visible ? SentenceFor(Step) : string.Empty;
+        public string CurrentSentence => Visible
+            ? OfficeM6PlayerCopyCatalog.TutorialSentence(Step)
+            : string.Empty;
         public string HighlightId => Visible ? HighlightFor(Step) : string.Empty;
 
         public void SetHintsEnabled(bool enabled)
@@ -178,34 +180,6 @@ namespace Desk42.Product.OfficeSlice
             return state.BreakState.Recovered || state.GhostClock.Recovered ||
                 state.MissingRoomAccess.Recovered ||
                 state.PromotionCascade.Recovered;
-        }
-
-        private static string SentenceFor(OfficeM6TutorialStep step)
-        {
-            return step switch
-            {
-                OfficeM6TutorialStep.Move =>
-                    "MOVE WITH WASD OR THE LEFT STICK.",
-                OfficeM6TutorialStep.TakeFile =>
-                    "GO TO THE FRONT DESK AND TAKE THE FILE.",
-                OfficeM6TutorialStep.SendFile =>
-                    "CARRY THE FILE TO THE ROOM THAT CAN CHECK IT.",
-                OfficeM6TutorialStep.CheckPapers =>
-                    "CHECK THE PAPERS AND PICK THE MATCHING RECORD.",
-                OfficeM6TutorialStep.TraceMoney =>
-                    "TRACE THE MONEY AND PICK WHERE IT WENT.",
-                OfficeM6TutorialStep.Decide =>
-                    "RETURN TO THE DESK AND DECIDE THE CASE.",
-                OfficeM6TutorialStep.Calm =>
-                    "CALM THE CUSTOMER WHEN THE WAIT GETS TO THEM.",
-                OfficeM6TutorialStep.EnableAutoSorter =>
-                    "TURN ON THE AUTO SORTER TO SEND EASY FILES.",
-                OfficeM6TutorialStep.RespondToBreak =>
-                    "THE COPIER GOT CONFIDENT; START FIXING THE MESS.",
-                OfficeM6TutorialStep.Recover =>
-                    "FINISH EVERY ITEM IN THE FIX THE MESS LIST.",
-                _ => string.Empty,
-            };
         }
 
         private static string HighlightFor(OfficeM6TutorialStep step)

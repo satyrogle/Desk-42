@@ -132,13 +132,13 @@ namespace Desk42.Product.OfficeSlice
                 DevelopmentHudVisible = DevelopmentHudVisible,
             };
             model.DangerText = model.DangerState.ToString().ToUpperInvariant();
-            model.ActionPrompt = Prompt(
+            model.ActionPrompt = OfficeM6PlayerCopyCatalog.Prompt(
                 state.PrimaryActionLabel, controlScheme);
 
             if (campaign.Phase == OfficeCampaignPhase.CampaignResult)
             {
                 model.ResultVisible = true;
-                model.ResultTitle = "THREE-SHIFT RESULT";
+                model.ResultTitle = OfficeM6PlayerCopyCatalog.ThreeShiftResult;
                 OfficeCampaignResult result = campaign.Result;
                 model.ResultSummary = result == null
                     ? "THE LEDGER IS CLOSING."
@@ -164,11 +164,13 @@ namespace Desk42.Product.OfficeSlice
             model.RuleCardVisible = state.AutomationRule.Unlocked ||
                 state.PayrollRule.Unlocked;
             if (state.AutomationRule.Unlocked)
-                model.RuleOneText = "AUTO SORTER: " +
-                    (state.AutomationRule.Enabled ? "ON" : "OFF");
+                model.RuleOneText = OfficeM6PlayerCopyCatalog.RuleStatus(
+                    "AUTO SORTER", state.AutomationRule.Enabled) + "\n" +
+                    OfficeM6PlayerCopyCatalog.RuleOne;
             if (state.PayrollRule.Unlocked)
-                model.RuleTwoText = "PAY MACHINE: " +
-                    (state.PayrollRule.Enabled ? "ON" : "OFF");
+                model.RuleTwoText = OfficeM6PlayerCopyCatalog.RuleStatus(
+                    "PAY MACHINE", state.PayrollRule.Enabled) + "\n" +
+                    OfficeM6PlayerCopyCatalog.RuleTwo;
 
             ProjectBreak(state, model);
             return model;
@@ -327,7 +329,7 @@ namespace Desk42.Product.OfficeSlice
                 _ => "NEEDS: A DECISION",
             };
             model.NextUsefulAction = "NEXT: " +
-                PlainAction(state.PrimaryActionLabel);
+                OfficeM6PlayerCopyCatalog.Action(state.PrimaryActionLabel);
             model.ManualChoicesVisible = state.ManualTasks.IsActive;
 
             OfficeFolderState folder = state.Queues.GetFolder(caseId);
@@ -346,8 +348,8 @@ namespace Desk42.Product.OfficeSlice
                 !state.PromotionCascade.Recovered)
             {
                 model.BreakCardVisible = true;
-                model.BreakTitle = "FIX THE MESS";
-                model.BreakCause = "THE COPIER PROMOTED ITSELF.";
+                model.BreakTitle = OfficeM6PlayerCopyCatalog.FixTheMess;
+                model.BreakCause = OfficeM6PlayerCopyCatalog.PromotionCause;
                 model.RecoveryItems = new[]
                 {
                     Item(!state.PromotionCascade.CopierActive, "STOP COPIER"),
@@ -362,8 +364,8 @@ namespace Desk42.Product.OfficeSlice
             if (state.GhostClock.Active && !state.GhostClock.Recovered)
             {
                 model.BreakCardVisible = true;
-                model.BreakTitle = "FIX THE MESS";
-                model.BreakCause = "THE CLOCK KEEPS MAKING EARLY FILES.";
+                model.BreakTitle = OfficeM6PlayerCopyCatalog.FixTheMess;
+                model.BreakCause = OfficeM6PlayerCopyCatalog.GhostClockCause;
                 model.RecoveryItems = new[]
                 {
                     Item(!state.GhostClock.ClockTerminalActive, "STOP CLOCK"),
@@ -375,8 +377,8 @@ namespace Desk42.Product.OfficeSlice
                 !state.MissingRoomAccess.Recovered)
             {
                 model.BreakCardVisible = true;
-                model.BreakTitle = "FIX THE MESS";
-                model.BreakCause = "AN OLD CARD OPENED A ROOM THAT ISN'T THERE.";
+                model.BreakTitle = OfficeM6PlayerCopyCatalog.FixTheMess;
+                model.BreakCause = OfficeM6PlayerCopyCatalog.MissingRoomCause;
                 model.RecoveryItems = new[]
                 {
                     Item(!state.MissingRoomAccess.DoorOpen, "CLOSE MISSING ROOM"),
@@ -387,8 +389,8 @@ namespace Desk42.Product.OfficeSlice
             if (state.BreakState.Active && !state.BreakState.Recovered)
             {
                 model.BreakCardVisible = true;
-                model.BreakTitle = "FIX THE MESS";
-                model.BreakCause = "THE COPIER IS MAKING CONFIDENT COPIES.";
+                model.BreakTitle = OfficeM6PlayerCopyCatalog.FixTheMess;
+                model.BreakCause = OfficeM6PlayerCopyCatalog.CopyEchoCause;
                 model.RecoveryItems = new[]
                 {
                     Item(!state.BreakState.CopierActive, "STOP COPIER"),
@@ -429,30 +431,6 @@ namespace Desk42.Product.OfficeSlice
                     customers[i].QueueState == OfficeCustomerQueueState.AtDesk)
                     count++;
             return count;
-        }
-
-        private static string Prompt(
-            string action,
-            OfficeM6ControlScheme controlScheme)
-        {
-            string button = controlScheme == OfficeM6ControlScheme.Controller
-                ? "A" : "E";
-            return button + " - " + PlainAction(action);
-        }
-
-        private static string PlainAction(string action)
-        {
-            if (string.IsNullOrWhiteSpace(action)) return "WAIT";
-            return action switch
-            {
-                "TAKE FOLDER" => "TAKE FILE",
-                "FIX MACHINE" => "FIX COPIER",
-                "FIX COPY" => "CLEAR COPY",
-                "CHOOSE AN OFFICE UPGRADE" => "CHOOSE UPGRADE",
-                "MOVE TO A WORK POINT" => "MOVE CLOSER",
-                "NOTHING TO DO HERE" => "NOTHING HERE",
-                _ => action,
-            };
         }
 
         private static string FormatTime(long tick)
