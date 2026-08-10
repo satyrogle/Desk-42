@@ -256,6 +256,28 @@ namespace Desk42.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator CampaignCaptureRebuildsGeneratedFolderViews()
+        {
+            yield return SceneManager.LoadSceneAsync("OfficeSlice");
+            yield return null;
+            OfficeSliceBootstrap bootstrap =
+                Object.FindObjectOfType<OfficeSliceBootstrap>();
+
+            OfficeCampaignCaptureDriver.Prepare(
+                bootstrap.CampaignState,
+                2,
+                "rush");
+            bool replaced = bootstrap.SynchronizeCampaignState();
+            bootstrap.RefreshPresentation();
+            yield return null;
+
+            Assert.That(replaced, Is.True);
+            Assert.That(bootstrap.SimulationState.GhostClock.Active, Is.True);
+            Assert.That(bootstrap.VisibleFolderCount,
+                Is.EqualTo(bootstrap.SimulationState.Queues.FolderIds.Count));
+        }
+
+        [UnityTest]
         public IEnumerator ShiftTwoHeadlineCaseCompletesWithNormalControls()
         {
             yield return SceneManager.LoadSceneAsync("OfficeSlice");

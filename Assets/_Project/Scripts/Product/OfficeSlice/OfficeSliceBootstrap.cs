@@ -563,7 +563,17 @@ namespace Desk42.Product.OfficeSlice
             for (int i = 0; i < ids.Count; i++)
             {
                 string caseId = ids[i];
+                OfficeFolderState folderState =
+                    _simulationState.Queues.GetFolder(caseId);
+                if (folderState != null && folderState.IsCopy)
+                {
+                    CreateCopyFolderView(folderState);
+                    continue;
+                }
                 OfficeCase officeCase = _caseRepository.Get(caseId);
+                if (officeCase == null)
+                    throw new InvalidOperationException(
+                        "Authored folder has no public case: " + caseId);
                 GameObject folder = CreateCube("Folder " + officeCase.DisplayId,
                     Vector3.zero, new Vector3(0.62f, 0.16f, 0.42f),
                     FolderColor(officeCase.Urgency));
