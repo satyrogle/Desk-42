@@ -1,0 +1,177 @@
+{
+  "assets": [
+    {
+      "asset_id": "ambience.calm",
+      "bit_depth": 16,
+      "category": "Ambience",
+      "channels": 2,
+      "duration_seconds": 4.0,
+      "final_sha256": "953c8567a43e519a32a95faec4d5917b3b5dfb04a2abc93d303c25e9a85b85af",
+      "loop": true,
+      "resource_path": "OfficeSliceM5/Ambience/ambience_calm",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Ambience/ambience_calm.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "ambience.rush",
+      "bit_depth": 16,
+      "category": "Ambience",
+      "channels": 2,
+      "duration_seconds": 4.0,
+      "final_sha256": "849975ca666c672d668886ce4eb5d90f3921a0a1c582af708530f1649c828c5f",
+      "loop": true,
+      "resource_path": "OfficeSliceM5/Ambience/ambience_rush",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Ambience/ambience_rush.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "ambience.break",
+      "bit_depth": 16,
+      "category": "Ambience",
+      "channels": 2,
+      "duration_seconds": 4.0,
+      "final_sha256": "9864fb6b3b01a30bae289b6635c2279586e9a457830af1ca34d3c1bb40d646c0",
+      "loop": true,
+      "resource_path": "OfficeSliceM5/Ambience/ambience_break",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Ambience/ambience_break.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "ambience.recovery",
+      "bit_depth": 16,
+      "category": "Ambience",
+      "channels": 2,
+      "duration_seconds": 4.0,
+      "final_sha256": "b4123378c40386e569561d59ad1510016e3df2c7a1fe043acad66b9606666b6d",
+      "loop": true,
+      "resource_path": "OfficeSliceM5/Ambience/ambience_recovery",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Ambience/ambience_recovery.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "ambience.result",
+      "bit_depth": 16,
+      "category": "Ambience",
+      "channels": 2,
+      "duration_seconds": 4.0,
+      "final_sha256": "75ceeb5e4e3741e6164bc9abdfcd591fc1ac6199c974b6f8d93f90e06c40d3da",
+      "loop": true,
+      "resource_path": "OfficeSliceM5/Ambience/ambience_result",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Ambience/ambience_result.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "music.work",
+      "bit_depth": 16,
+      "category": "Music",
+      "channels": 2,
+      "duration_seconds": 5.0,
+      "final_sha256": "cfc68ae1ece7ae45205451d7396eaaa7a33759b3f9c67df91f23a67b74ba6cb0",
+      "loop": true,
+      "resource_path": "OfficeSliceM5/Music/music_work",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Music/music_work.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "music.pressure",
+      "bit_depth": 16,
+      "category": "Music",
+      "channels": 2,
+      "duration_seconds": 5.0,
+      "final_sha256": "c34e73ad9a6f31b42cfbc89a6935ae7c5b3ea2909db321adbcc99c5a31fd60bf",
+      "loop": true,
+      "resource_path": "OfficeSliceM5/Music/music_pressure",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Music/music_pressure.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "music.break",
+      "bit_depth": 16,
+      "category": "Music",
+      "channels": 2,
+      "duration_seconds": 5.0,
+      "final_sha256": "ea96c05925fa14bdd024d66e5c7d84b5c496ad3eaf74f097c3d5c7ad66c48a5c",
+      "loop": true,
+      "resource_path": "OfficeSliceM5/Music/music_break",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Music/music_break.wav",
+      "sample_rate": 48000
+    }
+  ],
+  "cues": [
+    {
+      "asset_id": "ambience.calm",
+      "base_volume": 0.23,
+      "bus": "Ambience",
+      "cue_id": "ambience.calm",
+      "loop": true,
+      "pan": 0,
+      "stage": "A"
+    },
+    {
+      "asset_id": "ambience.rush",
+      "base_volume": 0.24,
+      "bus": "Ambience",
+      "cue_id": "ambience.rush",
+      "loop": true,
+      "pan": 0,
+      "stage": "A"
+    },
+    {
+      "asset_id": "ambience.break",
+      "base_volume": 0.27,
+      "bus": "Ambience",
+      "cue_id": "ambience.break",
+      "loop": true,
+      "pan": 0,
+      "stage": "A"
+    },
+    {
+      "asset_id": "ambience.recovery",
+      "base_volume": 0.22,
+      "bus": "Ambience",
+      "cue_id": "ambience.recovery",
+      "loop": true,
+      "pan": 0,
+      "stage": "A"
+    },
+    {
+      "asset_id": "ambience.result",
+      "base_volume": 0.2,
+      "bus": "Ambience",
+      "cue_id": "ambience.result",
+      "loop": true,
+      "pan": 0,
+      "stage": "A"
+    },
+    {
+      "asset_id": "music.work",
+      "base_volume": 0.18,
+      "bus": "Music",
+      "cue_id": "music.work",
+      "loop": true,
+      "pan": 0,
+      "stage": "A"
+    },
+    {
+      "asset_id": "music.pressure",
+      "base_volume": 0.16,
+      "bus": "Music",
+      "cue_id": "music.pressure",
+      "loop": true,
+      "pan": 0,
+      "stage": "A"
+    },
+    {
+      "asset_id": "music.break",
+      "base_volume": 0.19,
+      "bus": "Music",
+      "cue_id": "music.break",
+      "loop": true,
+      "pan": 0,
+      "stage": "A"
+    }
+  ],
+  "schema": "desk42.office-slice-m5.audio-manifest.v1",
+  "through_gate": "A",
+  "workflow_version": "1.0.0"
+}

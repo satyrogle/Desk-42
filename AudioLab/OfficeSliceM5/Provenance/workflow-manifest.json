@@ -1,0 +1,14 @@
+{
+  "ai_assisted_voice": false,
+  "artist_style_prompting": false,
+  "authoring_method": "project-original deterministic synthesis",
+  "bit_depth": 16,
+  "python_version": "3.14.3",
+  "runtime_asset_count": 8,
+  "runtime_cue_count": 8,
+  "sample_rate": 48000,
+  "schema": "desk42.office-slice-m5.synthesis-workflow.v1",
+  "source_script_sha256": "c57cfd4a32c344e2f35ee68ca9a93707c9bea6eb575352773ae619d21ab47060",
+  "through_gate": "A",
+  "workflow_version": "1.0.0"
+}

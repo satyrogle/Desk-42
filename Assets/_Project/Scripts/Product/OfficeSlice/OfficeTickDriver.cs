@@ -101,7 +101,12 @@ namespace Desk42.Product.OfficeSlice
                 keyboard != null &&
                 (keyboard.eKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame);
             interactionPressed |= gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
-            if (interactionPressed) _inputIntent.BufferInteraction(_state.CurrentTick);
+            if (interactionPressed)
+            {
+                _bootstrap.NotifyPresentationInteractionAttempt(
+                    _state.PrimaryActionLabel != "MOVE TO A WORK POINT");
+                _inputIntent.BufferInteraction(_state.CurrentTick);
+            }
 
             int choice = 0;
             if (keyboard != null)

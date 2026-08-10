@@ -51,6 +51,8 @@ namespace Desk42.Product.OfficeSlice
         private OfficeVisualDirector _m4Director;
         private OfficeVisualStateProjector _m4Projector;
         private OfficeVisualSnapshot _m4Snapshot;
+        private OfficeAudioSettings _m5AudioSettings;
+        private OfficeAudioDirector _m5AudioDirector;
         private readonly OfficeM4HudPresenter _m4HudPresenter = new();
         private GUIStyle _m4TitleStyle;
         private GUIStyle _m4ActionStyle;
@@ -68,6 +70,8 @@ namespace Desk42.Product.OfficeSlice
         public OfficeVisualDirector VisualDirector => _m4Director;
         public OfficeVisualSnapshot VisualSnapshot => _m4Snapshot;
         public OfficeM4HudPresenter HudPresenter => _m4HudPresenter;
+        public OfficeAudioDirector AudioDirector => _m5AudioDirector;
+        public OfficeAudioSettings AudioSettings => _m5AudioSettings;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void RouteDevelopmentPlayerToOfficeSlice()
@@ -85,6 +89,8 @@ namespace Desk42.Product.OfficeSlice
         {
             if (_built) return;
             name = "Office Slice Bootstrap";
+            _m5AudioSettings = OfficeAudioSettings.Load();
+            _m5AudioSettings.ApplyCommandLine(Environment.GetCommandLineArgs());
             _campaignState = OfficeCampaignState.Create();
             _simulationState = _campaignState.CurrentSimulation;
             _caseRepository = _simulationState.Cases;
@@ -99,7 +105,7 @@ namespace Desk42.Product.OfficeSlice
         private IEnumerator Start()
         {
             string[] arguments = Environment.GetCommandLineArgs();
-            _m4HudPresenter.SetReducedFlash(
+            _m4HudPresenter.SetReducedFlash(_m5AudioSettings.ReducedFlash ||
                 HasArgument(arguments, ReducedFlashArgument));
             string capturePath = ArgumentValue(arguments, CaptureArgument);
             string performancePath = ArgumentValue(arguments, PerformanceArgument);
@@ -535,6 +541,13 @@ namespace Desk42.Product.OfficeSlice
                 (_m4Snapshot == null || _m4Snapshot.Tick != _simulationState.CurrentTick))
                 _m4Snapshot = _m4Projector.Project(_simulationState, _campaignState);
             _m4Director?.Apply(_m4Snapshot);
+            _m5AudioDirector?.Apply(
+                _simulationState, _campaignState, Time.unscaledDeltaTime);
+        }
+
+        public void NotifyPresentationInteractionAttempt(bool valid)
+        {
+            _m5AudioDirector?.NotifyInteractionAttempt(valid);
         }
 
         public void ForceAllFoldersThroughM1Route()
@@ -603,6 +616,8 @@ namespace Desk42.Product.OfficeSlice
 
         private void RebuildRuntimePresentation()
         {
+            _m5AudioDirector?.Dispose();
+            _m5AudioDirector = null;
             if (_runtimeRoot != null)
             {
                 _runtimeRoot.gameObject.SetActive(false);
@@ -623,6 +638,22 @@ namespace Desk42.Product.OfficeSlice
             _runtimeRoot = new GameObject("Office Slice Runtime").transform;
             _runtimeRoot.SetParent(transform, false);
             BuildGreybox();
+            BuildM5AudioPresentation();
+        }
+
+        private void BuildM5AudioPresentation()
+        {
+            _m5AudioSettings ??= OfficeAudioSettings.Load();
+            _m5AudioDirector = new OfficeAudioDirector(
+                _runtimeRoot,
+                OfficeAudioCueCatalog.Load(),
+                _m5AudioSettings);
+            _m5AudioDirector.ResetForState(_simulationState, _campaignState);
+        }
+
+        private void OnDestroy()
+        {
+            _m5AudioDirector?.Dispose();
         }
 
         public void SaveCommandLog()
