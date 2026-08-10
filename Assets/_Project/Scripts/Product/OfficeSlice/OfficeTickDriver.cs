@@ -174,6 +174,18 @@ namespace Desk42.Product.OfficeSlice
                 controllerRestartPressed;
             if (restartPressed) _inputIntent.BufferRestart(_state.CurrentTick);
 
+            bool keyboardWhatHappenedPressed = keyboard != null &&
+                keyboard.hKey.wasPressedThisFrame;
+            bool controllerWhatHappenedPressed = gamepad != null &&
+                gamepad.buttonNorth.wasPressedThisFrame &&
+                !_state.ManualTasks.IsActive;
+            keyboardUsed |= keyboardWhatHappenedPressed;
+            controllerUsed |= controllerWhatHappenedPressed;
+            bool whatHappenedPressed = keyboardWhatHappenedPressed ||
+                controllerWhatHappenedPressed;
+            if (whatHappenedPressed)
+                _bootstrap.ToggleWhatHappened();
+
             if (keyboardUsed)
                 _bootstrap.NotifyControlScheme(OfficeM6ControlScheme.Keyboard);
             else if (controllerUsed)

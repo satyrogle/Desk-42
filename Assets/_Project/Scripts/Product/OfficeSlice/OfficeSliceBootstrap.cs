@@ -685,6 +685,16 @@ namespace Desk42.Product.OfficeSlice
             _m6HudModel = null;
         }
 
+        public bool ToggleWhatHappened()
+        {
+            if (_m6HudModel == null || !_m6HudModel.WhatHappenedAvailable)
+                return false;
+            _m6HudPresenter.ToggleWhatHappened();
+            _m6HudModel = null;
+            RefreshPresentation();
+            return true;
+        }
+
         public void ForceAllFoldersThroughM1Route()
         {
             _simulationState.ForceAllFoldersThroughM1Route();
@@ -1569,6 +1579,12 @@ namespace Desk42.Product.OfficeSlice
             else if (_m6HudModel.DecisionChoicesVisible)
                 GUILayout.Label(
                     OfficeM6PlayerCopyCatalog.DecisionChoice, _m4BodyStyle);
+            if (_m6HudModel.CarriedFileVisible)
+                GUILayout.Label(_m6HudModel.CarriedFileText, _m4BodyStyle);
+            if (!string.IsNullOrWhiteSpace(_m6HudModel.OriginalCopyLegend))
+                GUILayout.Label(_m6HudModel.OriginalCopyLegend, _m4BodyStyle);
+            if (_m6HudModel.WhatHappenedAvailable)
+                GUILayout.Label(_m6HudModel.WhatHappenedPrompt, _m4BodyStyle);
             GUILayout.EndArea();
 
             if (_m6HudModel.CustomerCardVisible)
@@ -1625,8 +1641,27 @@ namespace Desk42.Product.OfficeSlice
                 GUILayout.BeginArea(Inset(breakCard, 10f));
                 GUILayout.Label(_m6HudModel.BreakTitle, _m4TitleStyle);
                 GUILayout.Label(_m6HudModel.BreakCause, _m4BodyStyle);
+                GUILayout.Label(
+                    _m6HudModel.ActionableProblemRoom, _m4BodyStyle);
                 for (int i = 0; i < _m6HudModel.RecoveryItems.Count; i++)
                     GUILayout.Label(_m6HudModel.RecoveryItems[i], _m4BodyStyle);
+                GUILayout.EndArea();
+            }
+
+            if (_m6HudModel.WhatHappenedVisible)
+            {
+                Rect happened = _m6HudPresenter.WhatHappenedRect(
+                    Screen.width, Screen.height);
+                DrawM4PaperCard(happened);
+                GUILayout.BeginArea(Inset(happened, 18f));
+                GUILayout.Label(
+                    OfficeM6PlayerCopyCatalog.WhatHappenedTitle,
+                    _m4TitleStyle);
+                GUILayout.Space(10f);
+                GUILayout.Label(_m6HudModel.WhatHappenedText, _m4ActionStyle);
+                GUILayout.FlexibleSpace();
+                GUILayout.Label(_m6HudModel.WhatHappenedPrompt + " TO CLOSE",
+                    _m4BodyStyle);
                 GUILayout.EndArea();
             }
 

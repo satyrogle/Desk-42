@@ -60,6 +60,15 @@ namespace Desk42.Product.OfficeSlice
         public bool TutorialVisible { get; internal set; }
         public string TutorialText { get; internal set; } = string.Empty;
         public string TutorialHighlightId { get; internal set; } = string.Empty;
+        public int CurrentCustomerPresentationFocusCount { get; internal set; }
+        public bool CarriedFileVisible { get; internal set; }
+        public string CarriedFileText { get; internal set; } = string.Empty;
+        public string OriginalCopyLegend { get; internal set; } = string.Empty;
+        public string ActionableProblemRoom { get; internal set; } = string.Empty;
+        public bool WhatHappenedAvailable { get; internal set; }
+        public bool WhatHappenedVisible { get; internal set; }
+        public string WhatHappenedPrompt { get; internal set; } = string.Empty;
+        public string WhatHappenedText { get; internal set; } = string.Empty;
 
         public string AllNormalPlayerText()
         {
@@ -85,6 +94,11 @@ namespace Desk42.Product.OfficeSlice
             Append(text, ResultSummary);
             Append(text, TomorrowText);
             Append(text, TutorialText);
+            Append(text, CarriedFileText);
+            Append(text, OriginalCopyLegend);
+            Append(text, ActionableProblemRoom);
+            Append(text, WhatHappenedPrompt);
+            Append(text, WhatHappenedText);
             return text.ToString();
         }
 
@@ -105,13 +119,19 @@ namespace Desk42.Product.OfficeSlice
         public const float TopBarHeight = 52f;
         public const float SideCardWidth = 300f;
         public const float ActionWidth = 430f;
-        public const float ActionHeight = 104f;
+        public const float ActionHeight = 126f;
 
         public bool DevelopmentHudVisible { get; private set; }
+        public bool WhatHappenedOpen { get; private set; }
 
         public void SetDevelopmentHudVisible(bool visible)
         {
             DevelopmentHudVisible = visible;
+        }
+
+        public void ToggleWhatHappened()
+        {
+            WhatHappenedOpen = !WhatHappenedOpen;
         }
 
         public OfficeM6HudModel Project(
@@ -153,6 +173,7 @@ namespace Desk42.Product.OfficeSlice
             if (customer != null)
             {
                 model.CustomerCardVisible = true;
+                model.CurrentCustomerPresentationFocusCount = 1;
                 model.CustomerName = customer.DisplayName;
                 model.CustomerProblem = customer.Problem;
                 model.CustomerMood = "MOOD: " +
@@ -173,6 +194,7 @@ namespace Desk42.Product.OfficeSlice
                     OfficeM6PlayerCopyCatalog.RuleTwo;
 
             ProjectBreak(state, model);
+            ProjectReadability(state, controlScheme, model);
             return model;
         }
 
@@ -231,6 +253,14 @@ namespace Desk42.Product.OfficeSlice
                 cardWidth, 58f);
         }
 
+        public Rect WhatHappenedRect(int width, int height)
+        {
+            float cardWidth = Mathf.Min(600f, width - SafeMargin * 2f);
+            const float cardHeight = 220f;
+            return new Rect((width - cardWidth) * 0.5f,
+                (height - cardHeight) * 0.5f, cardWidth, cardHeight);
+        }
+
         public Rect CustomerPortraitRect(int width, int height)
         {
             Rect card = CustomerCardRect(width, height);
@@ -249,6 +279,7 @@ namespace Desk42.Product.OfficeSlice
                 ActionRect(width, height),
                 ResultRect(width, height),
                 TutorialRect(width, height),
+                WhatHappenedRect(width, height),
             };
             for (int i = 0; i < rects.Length; i++)
                 if (!Inside(rects[i], width, height)) return false;
@@ -398,6 +429,53 @@ namespace Desk42.Product.OfficeSlice
                     Item(state.BreakState.OriginalFound, "FIND ORIGINAL"),
                 };
             }
+        }
+
+        private void ProjectReadability(
+            OfficeSimulationState state,
+            OfficeM6ControlScheme controlScheme,
+            OfficeM6HudModel model)
+        {
+            if (state.Carry.IsCarrying)
+            {
+                model.CarriedFileVisible = true;
+                model.CarriedFileText = "CARRIED FILE - TAB MARK";
+            }
+            if (state.Queues.ActiveCopyCount > 0 ||
+                state.PromotionCascade.PromotionFormIds.Count > 0 ||
+                state.GhostClock.ActiveSlipCount > 0)
+                model.OriginalCopyLegend =
+                    "ORIGINAL: TAB MARK   COPY: STRIPED MARK";
+
+            if (state.PromotionCascade.Active &&
+                !state.PromotionCascade.Recovered)
+                model.ActionableProblemRoom =
+                    "GO TO: WEIRD ROOM COPIER AND STAMP";
+            else if (state.GhostClock.Active && !state.GhostClock.Recovered)
+                model.ActionableProblemRoom = "GO TO: PAPER ROOM CLOCK";
+            else if (state.MissingRoomAccess.Active &&
+                !state.MissingRoomAccess.Recovered)
+                model.ActionableProblemRoom = "GO TO: WEIRD ROOM DOOR";
+            else if (state.BreakState.Active && !state.BreakState.Recovered)
+                model.ActionableProblemRoom = "GO TO: WEIRD ROOM COPIER";
+
+            model.WhatHappenedAvailable =
+                state.BreakState.Active || state.BreakState.Recovered ||
+                state.GhostClock.HasTriggered ||
+                state.MissingRoomAccess.HasTriggered ||
+                state.PromotionCascade.HasTriggered;
+            if (!model.WhatHappenedAvailable)
+            {
+                WhatHappenedOpen = false;
+                return;
+            }
+            string button = controlScheme == OfficeM6ControlScheme.Controller
+                ? "Y" : "H";
+            model.WhatHappenedPrompt = button + " - " +
+                OfficeM6PlayerCopyCatalog.WhatHappenedTitle;
+            model.WhatHappenedVisible = WhatHappenedOpen;
+            model.WhatHappenedText =
+                OfficeM6PlayerCopyCatalog.WhatHappened(state);
         }
 
         private static OfficeM6DangerState DangerState(
