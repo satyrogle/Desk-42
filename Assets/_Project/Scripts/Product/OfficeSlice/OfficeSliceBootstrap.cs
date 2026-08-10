@@ -33,6 +33,7 @@ namespace Desk42.Product.OfficeSlice
         private readonly List<Material> _runtimeMaterials = new();
 
         private OfficeCaseRepository _caseRepository;
+        private OfficeCampaignState _campaignState;
         private OfficeSimulationState _simulationState;
         private OfficeTickDriver _tickDriver;
         private Transform _runtimeRoot;
@@ -42,6 +43,7 @@ namespace Desk42.Product.OfficeSlice
         private string _lastDebugMessage = "BOOTING OFFICE SLICE";
 
         public OfficeCaseRepository CaseRepository => _caseRepository;
+        public OfficeCampaignState CampaignState => _campaignState;
         public OfficeSimulationState SimulationState => _simulationState;
         public bool Ready => _built && _simulationState != null && _caseRepository != null;
         public bool CriticalRoutesValid => Ready && ValidateCriticalRoutes();
@@ -63,11 +65,10 @@ namespace Desk42.Product.OfficeSlice
         {
             if (_built) return;
             name = "Office Slice Bootstrap";
-            _simulationState = OfficeSimulationState.CreateM2();
+            _campaignState = OfficeCampaignState.Create();
+            _simulationState = _campaignState.CurrentSimulation;
             _caseRepository = _simulationState.Cases;
-            _runtimeRoot = new GameObject("Office Slice Runtime").transform;
-            _runtimeRoot.SetParent(transform, false);
-            BuildGreybox();
+            RebuildRuntimePresentation();
             _tickDriver = gameObject.AddComponent<OfficeTickDriver>();
             _tickDriver.Initialize(this, _simulationState);
             _built = true;
@@ -170,7 +171,23 @@ namespace Desk42.Product.OfficeSlice
 
         private void LateUpdate()
         {
+            SynchronizeCampaignState();
             RefreshPresentation();
+        }
+
+        public bool SynchronizeCampaignState()
+        {
+            if (_campaignState == null ||
+                ReferenceEquals(_simulationState,
+                    _campaignState.CurrentSimulation)) return false;
+            _simulationState = _campaignState.CurrentSimulation;
+            _caseRepository = _simulationState.Cases;
+            RebuildRuntimePresentation();
+            if (_tickDriver != null)
+                _tickDriver.ReplaceState(_simulationState, paused: false);
+            _lastDebugMessage = "SHIFT " +
+                _campaignState.CurrentShiftOrdinal + " READY / SIX PUBLIC CASES";
+            return true;
         }
 
         public void RefreshPresentation()
@@ -278,6 +295,33 @@ namespace Desk42.Product.OfficeSlice
         public bool RestartShift()
         {
             if (!Ready || !_simulationState.Shift.RestartRequested) return false;
+            if (_campaignState != null)
+            {
+                if (!_campaignState.TryRestartCurrentShift()) return false;
+                _simulationState = _campaignState.CurrentSimulation;
+                _caseRepository = _simulationState.Cases;
+                RebuildRuntimePresentation();
+                _tickDriver.ReplaceState(_simulationState, paused: false);
+                _lastDebugMessage = "SHIFT RESTARTED FROM CAMPAIGN CHECKPOINT";
+                RefreshPresentation();
+                return true;
+            }
+            RebuildAsStandaloneM2();
+            return true;
+        }
+
+        private void RebuildAsStandaloneM2()
+        {
+            _simulationState = OfficeSimulationState.CreateM2();
+            _caseRepository = _simulationState.Cases;
+            RebuildRuntimePresentation();
+            _tickDriver.ReplaceState(_simulationState, paused: false);
+            _lastDebugMessage = "SHIFT RESTARTED FROM CLEAN CHECKPOINT";
+            RefreshPresentation();
+        }
+
+        private void RebuildRuntimePresentation()
+        {
             if (_runtimeRoot != null)
             {
                 _runtimeRoot.gameObject.SetActive(false);
@@ -291,16 +335,9 @@ namespace Desk42.Product.OfficeSlice
             _folderRenderers.Clear();
             _customerViews.Clear();
             _staffViews.Clear();
-
-            _simulationState = OfficeSimulationState.CreateM2();
-            _caseRepository = _simulationState.Cases;
             _runtimeRoot = new GameObject("Office Slice Runtime").transform;
             _runtimeRoot.SetParent(transform, false);
             BuildGreybox();
-            _tickDriver.ReplaceState(_simulationState, paused: false);
-            _lastDebugMessage = "SHIFT RESTARTED FROM CLEAN CHECKPOINT";
-            RefreshPresentation();
-            return true;
         }
 
         public void SaveCommandLog()
@@ -677,8 +714,24 @@ namespace Desk42.Product.OfficeSlice
             if (!Ready) return;
             GUILayout.BeginArea(new Rect(16f, 16f, 540f, 440f), GUI.skin.box);
             GUILayout.Label("DESK 42 / TODAY'S DESK");
+            if (_campaignState != null)
+                GUILayout.Label("DAY " + _campaignState.CurrentShiftOrdinal +
+                    " / " + _campaignState.CurrentShift.Title);
             GUILayout.Label("SHIFT: " +
                 _simulationState.Shift.Phase.ToString().ToUpperInvariant());
+            if (_campaignState != null &&
+                _campaignState.Phase == OfficeCampaignPhase.ChooseUpgrade)
+            {
+                GUILayout.Label("THE OFFICE SURVIVED.");
+                GUILayout.Label("CHOOSE ONE CHANGE FOR TOMORROW.");
+                GUILayout.Label("1 FAST TRAYS     2 CALM CHAIRS     3 RED LABELS");
+            }
+            else if (_campaignState != null &&
+                _campaignState.Phase == OfficeCampaignPhase.ReadyForNextShift)
+            {
+                GUILayout.Label("OFFICE UPGRADE CHOSEN");
+                GUILayout.Label("E / SPACE / A: NEXT SHIFT");
+            }
             OfficeCustomerState customer =
                 _simulationState.Customers.ActiveDeskCustomer;
             if (customer == null)
@@ -729,7 +782,12 @@ namespace Desk42.Product.OfficeSlice
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             GUILayout.BeginArea(new Rect(16f, 470f, 700f, 205f), GUI.skin.box);
-            GUILayout.Label("M2 ENGINEERING EVIDENCE");
+            GUILayout.Label(_campaignState == null
+                ? "M2 ENGINEERING EVIDENCE"
+                : "M3 CAMPAIGN ENGINEERING EVIDENCE");
+            if (_campaignState != null)
+                GUILayout.Label("CAMPAIGN " + _campaignState.Phase +
+                    " / " + _campaignState.Checksum);
             GUILayout.Label("TICK " + _simulationState.CurrentTick +
                 " / CHECKSUM " + _simulationState.Checksum);
             GUILayout.Label("WARDEN " + _simulationState.Warden.Cell(_simulationState.Grid) +

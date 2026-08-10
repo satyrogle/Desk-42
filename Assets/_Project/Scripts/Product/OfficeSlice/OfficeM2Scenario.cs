@@ -126,10 +126,14 @@ namespace Desk42.Product.OfficeSlice
             InstitutionalAutomationSession institutionalSession,
             OfficeCaseRepository cases,
             IEnumerable<OfficeCustomerDefinition> customers,
-            IEnumerable<OfficeCaseWorkDefinition> work)
+            IEnumerable<OfficeCaseWorkDefinition> work,
+            int shiftOrdinal)
         {
+            if (shiftOrdinal < 1 || shiftOrdinal > 3)
+                throw new ArgumentOutOfRangeException(nameof(shiftOrdinal));
             InstitutionalSession = institutionalSession ??
                 throw new ArgumentNullException(nameof(institutionalSession));
+            ShiftOrdinal = shiftOrdinal;
             Cases = cases ?? throw new ArgumentNullException(nameof(cases));
             Customers = new ReadOnlyCollection<OfficeCustomerDefinition>(
                 new List<OfficeCustomerDefinition>(customers ??
@@ -152,6 +156,7 @@ namespace Desk42.Product.OfficeSlice
         }
 
         public InstitutionalAutomationSession InstitutionalSession { get; }
+        public int ShiftOrdinal { get; }
         public OfficeCaseRepository Cases { get; }
         public IReadOnlyList<OfficeCustomerDefinition> Customers { get; }
 
@@ -175,21 +180,26 @@ namespace Desk42.Product.OfficeSlice
         {
             InstitutionalAutomationSession session =
                 InstitutionalAutomationSession.Create(6);
+            return CreateForCampaign(session, 1);
+        }
+
+        public static OfficeM2Scenario CreateForCampaign(
+            InstitutionalAutomationSession session,
+            int shiftOrdinal)
+        {
+            if (session == null) throw new ArgumentNullException(nameof(session));
+            if (shiftOrdinal < 1 || shiftOrdinal > 3)
+                throw new ArgumentOutOfRangeException(nameof(shiftOrdinal));
+            if (session.Claims == null || session.Claims.Count != 6)
+                throw new InvalidOperationException(
+                    "A campaign shift requires exactly six released public claims.");
             OfficeCaseRepository cases = OfficeCaseProjector.FromClaims(session.Claims);
             string[] names =
             {
                 "NIA BELL", "OWEN PIKE", "MARA VALE",
                 "IRIS COLE", "TOMAS REED", "JUNE HART",
             };
-            string[] problems =
-            {
-                "MY REFUND ARRIVED YESTERDAY, BUT MY ACCOUNT STILL SAYS NO.",
-                "THE SHOP SENT MY REFUND. I NEED IT PUT BACK IN MY ACCOUNT.",
-                "THE COPIER MADE ANOTHER REFUND FILE AND NOW BOTH LOOK REAL.",
-                "MY ACCESS CARD STOPPED WORKING AFTER I CHANGED DESKS.",
-                "MY PAY RECORD HAS MY NAME, BUT THE ACCOUNT MARK IS WRONG.",
-                "MY REFUND PAPERS LOOK RIGHT. PLEASE SEND THE MONEY TO MY ACCOUNT.",
-            };
+            string[] problems = ProblemsForShift(shiftOrdinal);
             string[] traitIds =
             {
                 "trait.keeps-receipts", "trait.speaks-plainly",
@@ -211,31 +221,129 @@ namespace Desk42.Product.OfficeSlice
                     traitIds[i]));
             }
 
-            work.Add(new OfficeCaseWorkDefinition(cases.Cases[0].AutomationClaimId,
-                "NIA BELL", "TODAY / RECEIPT SAYS YESTERDAY", "REFUND READY",
-                OfficePaperEntry.PaymentDate, 1, OfficeMoneyResult.MoneyMoved,
-                "COMPANY > PAYMENT RECORD > HOLDING ACCOUNT", true));
-            work.Add(new OfficeCaseWorkDefinition(cases.Cases[1].AutomationClaimId,
-                "OWEN PIKE", "YESTERDAY", "REFUND READY",
-                OfficePaperEntry.PapersMatch, 0, OfficeMoneyResult.MoneyFound,
-                "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT", true));
-            work.Add(new OfficeCaseWorkDefinition(cases.Cases[2].AutomationClaimId,
-                "MARA VALE", "YESTERDAY", "REFUND READY",
-                OfficePaperEntry.PapersMatch, 0, OfficeMoneyResult.MoneyFound,
-                "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT", true));
-            work.Add(new OfficeCaseWorkDefinition(cases.Cases[3].AutomationClaimId,
-                "IRIS COLE", "MONDAY", "OLD DESK MARK",
-                OfficePaperEntry.AccountMark, 1, OfficeMoneyResult.MoneyMoved,
-                "COMPANY > ACCESS RECORD > OLD DESK", false));
-            work.Add(new OfficeCaseWorkDefinition(cases.Cases[4].AutomationClaimId,
-                "TOMAS REED", "FRIDAY", "ACCOUNT 14 / FILE SAYS 41",
-                OfficePaperEntry.AccountMark, 0, OfficeMoneyResult.MoneyFound,
-                "COMPANY > PAY RECORD > ACCOUNT 14", false));
-            work.Add(new OfficeCaseWorkDefinition(cases.Cases[5].AutomationClaimId,
-                "JUNE HART", "THURSDAY", "REFUND READY",
-                OfficePaperEntry.PapersMatch, 0, OfficeMoneyResult.MoneyFound,
-                "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT", true));
-            return new OfficeM2Scenario(session, cases, customers, work);
+            AddWorkForShift(work, cases, shiftOrdinal);
+            return new OfficeM2Scenario(
+                session, cases, customers, work, shiftOrdinal);
+        }
+
+        private static string[] ProblemsForShift(int shiftOrdinal)
+        {
+            if (shiftOrdinal == 1)
+                return new[]
+                {
+                    "MY REFUND ARRIVED YESTERDAY, BUT MY ACCOUNT STILL SAYS NO.",
+                    "THE SHOP SENT MY REFUND. I NEED IT PUT BACK IN MY ACCOUNT.",
+                    "THE COPIER MADE ANOTHER REFUND FILE AND NOW BOTH LOOK REAL.",
+                    "MY ACCESS CARD STOPPED WORKING AFTER I CHANGED DESKS.",
+                    "MY PAY RECORD HAS MY NAME, BUT THE ACCOUNT MARK IS WRONG.",
+                    "MY REFUND PAPERS LOOK RIGHT. PLEASE SEND THE MONEY TO MY ACCOUNT.",
+                };
+            if (shiftOrdinal == 2)
+                return new[]
+                {
+                    "YESTERDAY IS NOW CHARGING INTEREST.",
+                    "MY SHIFT WAS PAID TO SOMEONE WHO CLOCKED IN BEFORE I ARRIVED.",
+                    "THE COPIER MADE A STAFF BADGE WITH MY FACE AND SOMEONE ELSE'S NUMBER.",
+                    "MY OLD ACCESS CARD OPENS A ROOM THAT NO LONGER EXISTS.",
+                    "I DIED ON FRIDAY. PAYROLL SAYS I WORKED SATURDAY.",
+                    "MY BADGE AND SHIFT LOG MATCH. MY PAY STILL DIDN'T ARRIVE.",
+                };
+            return new[]
+            {
+                "THE REFUND SYSTEM SENT ME A RECEIPT FOR TOMORROW.",
+                "THE NEW SUPERVISOR MOVED MY CASE WITHOUT ASKING.",
+                "THE COPIER HAS MY BADGE, TOMAS'S HOURS, AND A MANAGER'S STAMP.",
+                "THE MISSING ROOM IS NOW LISTED AS A DEPARTMENT.",
+                "PAYROLL PROMOTED THE MACHINE ABOVE ME.",
+                "MY PAY IS CORRECT, BUT THE APPROVAL CAME FROM THE COPIER.",
+            };
+        }
+
+        private static void AddWorkForShift(
+            List<OfficeCaseWorkDefinition> work,
+            OfficeCaseRepository cases,
+            int shiftOrdinal)
+        {
+            if (shiftOrdinal == 1)
+            {
+                work.Add(new OfficeCaseWorkDefinition(cases.Cases[0].AutomationClaimId,
+                    "NIA BELL", "TODAY / RECEIPT SAYS YESTERDAY", "REFUND READY",
+                    OfficePaperEntry.PaymentDate, 1, OfficeMoneyResult.MoneyMoved,
+                    "COMPANY > PAYMENT RECORD > HOLDING ACCOUNT", true));
+                work.Add(new OfficeCaseWorkDefinition(cases.Cases[1].AutomationClaimId,
+                    "OWEN PIKE", "YESTERDAY", "REFUND READY",
+                    OfficePaperEntry.PapersMatch, 0, OfficeMoneyResult.MoneyFound,
+                    "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT", true));
+                work.Add(new OfficeCaseWorkDefinition(cases.Cases[2].AutomationClaimId,
+                    "MARA VALE", "YESTERDAY", "REFUND READY",
+                    OfficePaperEntry.PapersMatch, 0, OfficeMoneyResult.MoneyFound,
+                    "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT", true));
+                work.Add(new OfficeCaseWorkDefinition(cases.Cases[3].AutomationClaimId,
+                    "IRIS COLE", "MONDAY", "OLD DESK MARK",
+                    OfficePaperEntry.AccountMark, 1, OfficeMoneyResult.MoneyMoved,
+                    "COMPANY > ACCESS RECORD > OLD DESK", false));
+                work.Add(new OfficeCaseWorkDefinition(cases.Cases[4].AutomationClaimId,
+                    "TOMAS REED", "FRIDAY", "ACCOUNT 14 / FILE SAYS 41",
+                    OfficePaperEntry.AccountMark, 0, OfficeMoneyResult.MoneyFound,
+                    "COMPANY > PAY RECORD > ACCOUNT 14", false));
+                work.Add(new OfficeCaseWorkDefinition(cases.Cases[5].AutomationClaimId,
+                    "JUNE HART", "THURSDAY", "REFUND READY",
+                    OfficePaperEntry.PapersMatch, 0, OfficeMoneyResult.MoneyFound,
+                    "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT", true));
+                return;
+            }
+
+            OfficePaperEntry[] paperAnswers = shiftOrdinal == 2
+                ? new[]
+                {
+                    OfficePaperEntry.PaymentDate, OfficePaperEntry.PapersMatch,
+                    OfficePaperEntry.AccountMark, OfficePaperEntry.AccountMark,
+                    OfficePaperEntry.PaymentDate, OfficePaperEntry.PapersMatch,
+                }
+                : new[]
+                {
+                    OfficePaperEntry.PaymentDate, OfficePaperEntry.AccountMark,
+                    OfficePaperEntry.AccountMark, OfficePaperEntry.PapersMatch,
+                    OfficePaperEntry.AccountMark, OfficePaperEntry.PapersMatch,
+                };
+            OfficeMoneyResult[] moneyResults = shiftOrdinal == 2
+                ? new[]
+                {
+                    OfficeMoneyResult.MoneyMoved, OfficeMoneyResult.MoneyFound,
+                    OfficeMoneyResult.MoneyMoved, OfficeMoneyResult.MoneyMissing,
+                    OfficeMoneyResult.MoneyMoved, OfficeMoneyResult.MoneyFound,
+                }
+                : new[]
+                {
+                    OfficeMoneyResult.MoneyMissing, OfficeMoneyResult.MoneyMoved,
+                    OfficeMoneyResult.MoneyMoved, OfficeMoneyResult.MoneyFound,
+                    OfficeMoneyResult.MoneyMoved, OfficeMoneyResult.MoneyFound,
+                };
+            int[] moneyAnswers = { 1, 0, 1, 2, 1, 0 };
+            string[] customerNames =
+            {
+                "NIA BELL", "OWEN PIKE", "MARA VALE",
+                "IRIS COLE", "TOMAS REED", "JUNE HART",
+            };
+            for (int i = 0; i < cases.Cases.Count; i++)
+            {
+                bool payroll = i == 1 || i == 4 || i == 5;
+                string path = moneyResults[i] == OfficeMoneyResult.MoneyFound
+                    ? "COMPANY > PAYMENT RECORD > CUSTOMER ACCOUNT"
+                    : moneyResults[i] == OfficeMoneyResult.MoneyMoved
+                        ? "COMPANY > PAYMENT RECORD > HOLDING ACCOUNT"
+                        : "COPIED FILE > NO PAYMENT RECORD > NO ACCOUNT";
+                work.Add(new OfficeCaseWorkDefinition(
+                    cases.Cases[i].AutomationClaimId,
+                    customerNameOnPaper: customerNames[i],
+                    paymentDateOnPaper: shiftOrdinal == 2 ? "SATURDAY" : "TOMORROW",
+                    accountMarkOnPaper: payroll ? "BADGE ACTIVE" : "OFFICE RECORD",
+                    paperAnswer: paperAnswers[i],
+                    moneyPathAnswer: moneyAnswers[i],
+                    moneyResult: moneyResults[i],
+                    moneyPathSummary: path,
+                    refundFile: !payroll && i == 0));
+            }
         }
     }
 }

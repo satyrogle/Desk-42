@@ -22,6 +22,11 @@ namespace Desk42.Product.OfficeSlice
         ToggleRule,
         AssignStaff,
         Restart,
+        ChooseUpgrade,
+        ContinueToNextShift,
+        ToggleRule2,
+        RemoveSupervisorStamp,
+        ReassignRunner,
     }
 
     public sealed class OfficeCommand
@@ -197,6 +202,44 @@ namespace Desk42.Product.OfficeSlice
                 tick, sequence, OfficeCommandKind.Restart,
                 "warden", "shift", 0, 0, string.Empty);
         }
+
+        public static OfficeCommand ChooseUpgrade(
+            long tick,
+            int sequence,
+            OfficeUpgradeFamily family)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.ChooseUpgrade,
+                "warden", "office-upgrade", (int)family, 0, family.ToString());
+        }
+
+        public static OfficeCommand ContinueToNextShift(long tick, int sequence)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.ContinueToNextShift,
+                "warden", "next-shift", 0, 0, string.Empty);
+        }
+
+        public static OfficeCommand ToggleRule2(long tick, int sequence)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.ToggleRule2,
+                "warden", "pay-sorter", 0, 0, string.Empty);
+        }
+
+        public static OfficeCommand RemoveSupervisorStamp(long tick, int sequence)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.RemoveSupervisorStamp,
+                "warden", "supervisor-stamp", 0, 0, string.Empty);
+        }
+
+        public static OfficeCommand ReassignRunner(long tick, int sequence)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.ReassignRunner,
+                "warden", OfficeStaffSystem.RunnerId, 0, 0, "warden");
+        }
     }
 
     public sealed class OfficeCommandFailure
@@ -224,7 +267,7 @@ namespace Desk42.Product.OfficeSlice
 
     public sealed class OfficeCommandLog
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 3;
 
         private readonly List<OfficeCommand> _commands = new();
         private readonly HashSet<int> _sequences = new();
@@ -257,6 +300,12 @@ namespace Desk42.Product.OfficeSlice
                 failure = "Unsupported command schema version " + command.SchemaVersion + ".";
                 return false;
             }
+            if (command.SchemaVersion < 3 && IsCampaignCommand(command.Kind))
+            {
+                failure = "Office command schema " + command.SchemaVersion +
+                    " cannot contain M3 campaign command " + command.Kind + ".";
+                return false;
+            }
             if (command.Tick < 0)
             {
                 failure = "Command tick cannot be negative.";
@@ -286,6 +335,15 @@ namespace Desk42.Product.OfficeSlice
             }
             _commands.Insert(insertAt, command);
             return true;
+        }
+
+        private static bool IsCampaignCommand(OfficeCommandKind kind)
+        {
+            return kind == OfficeCommandKind.ChooseUpgrade ||
+                kind == OfficeCommandKind.ContinueToNextShift ||
+                kind == OfficeCommandKind.ToggleRule2 ||
+                kind == OfficeCommandKind.RemoveSupervisorStamp ||
+                kind == OfficeCommandKind.ReassignRunner;
         }
 
         public OfficeCommandLog CloneForReplay()

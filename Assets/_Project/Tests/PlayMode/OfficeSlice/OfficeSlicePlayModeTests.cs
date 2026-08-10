@@ -201,6 +201,41 @@ namespace Desk42.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ShiftOneCompletesIntoUpgradeChoiceWithoutDebugControls()
+        {
+            yield return SceneManager.LoadSceneAsync("OfficeSlice");
+            yield return null;
+            OfficeSliceBootstrap bootstrap =
+                Object.FindObjectOfType<OfficeSliceBootstrap>();
+            OfficeCampaignState campaign = bootstrap.CampaignState;
+            OfficeSimulationState state = campaign.CurrentSimulation;
+            DriveToBreak(state);
+            RecoverBreak(state, fixMachineFirst: true);
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            while (state.Decisions.CommitCount < 6)
+                CompleteActiveCase(state, intent, input);
+            state.AdvanceOneTick();
+
+            Assert.That(campaign.Phase,
+                Is.EqualTo(OfficeCampaignPhase.ChooseUpgrade));
+            intent.BufferChoice(1, state.CurrentTick);
+            input.AdvanceOneTick();
+            Assert.That(campaign.Upgrades.FastTraysTier, Is.EqualTo(1));
+            Assert.That(campaign.Phase,
+                Is.EqualTo(OfficeCampaignPhase.ReadyForNextShift));
+            intent.BufferInteraction(state.CurrentTick);
+            input.AdvanceOneTick();
+            Assert.That(campaign.CurrentShiftOrdinal, Is.EqualTo(2));
+            Assert.That(campaign.CurrentSimulation, Is.Not.SameAs(state));
+            Assert.That(campaign.CurrentSimulation.Customers.Customers[0].CustomerId,
+                Is.EqualTo(state.Customers.Customers[0].CustomerId));
+            yield return null;
+            Assert.That(bootstrap.SimulationState,
+                Is.SameAs(campaign.CurrentSimulation));
+        }
+
+        [UnityTest]
         public IEnumerator FailureRestartReturnsToCleanCheckpoint()
         {
             yield return SceneManager.LoadSceneAsync("OfficeSlice");

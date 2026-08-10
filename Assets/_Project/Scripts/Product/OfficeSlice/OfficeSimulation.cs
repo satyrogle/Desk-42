@@ -55,11 +55,13 @@ namespace Desk42.Product.OfficeSlice
             OfficeCaseRepository cases,
             OfficeCommandLog commandLog,
             bool replayMode,
-            OfficeM2Scenario m2Scenario = null)
+            OfficeM2Scenario m2Scenario = null,
+            OfficeCampaignState campaign = null)
         {
             _readOnlyFailures = _failures.AsReadOnly();
             Cases = cases ?? throw new ArgumentNullException(nameof(cases));
             _m2Scenario = m2Scenario;
+            Campaign = campaign;
             Grid = OfficeGrid.CreateM1();
             Warden = new OfficeWardenState(Grid.SpawnCell);
             Queues = new OfficeQueueService(Cases);
@@ -99,8 +101,10 @@ namespace Desk42.Product.OfficeSlice
         public OfficeCausalEventLog CausalEvents { get; }
         public OfficeShiftState Shift { get; }
         public OfficeCommandLog CommandLog { get; }
+        public OfficeCampaignState Campaign { get; }
         public bool ReplayMode { get; }
         public bool M2Enabled => _m2Scenario != null;
+        public bool M3Enabled => Campaign != null;
         public long CurrentTick { get; private set; }
         public int AppliedCommandCount { get; private set; }
         public int DecisionStubCount { get; private set; }
@@ -112,6 +116,13 @@ namespace Desk42.Product.OfficeSlice
             get
             {
                 if (!M2Enabled) return "INTERACT";
+                if (Campaign != null)
+                {
+                    if (Campaign.Phase == OfficeCampaignPhase.ChooseUpgrade)
+                        return "CHOOSE AN OFFICE UPGRADE";
+                    if (Campaign.Phase == OfficeCampaignPhase.ReadyForNextShift)
+                        return "NEXT SHIFT";
+                }
                 OfficeInteractionPoint point = CurrentInteractionPoint();
                 if (point == null) return "MOVE TO A WORK POINT";
                 if (BreakState.Active && point.Room == OfficeRoomId.WeirdRoom &&
@@ -181,6 +192,20 @@ namespace Desk42.Product.OfficeSlice
             OfficeM2Scenario scenario = OfficeM2Scenario.Create();
             return new OfficeSimulationState(
                 scenario.Cases, sourceLog.CloneForReplay(), true, scenario);
+        }
+
+        public static OfficeSimulationState CreateCampaignShift(
+            OfficeM2Scenario scenario,
+            OfficeCampaignState campaign)
+        {
+            if (scenario == null) throw new ArgumentNullException(nameof(scenario));
+            if (campaign == null) throw new ArgumentNullException(nameof(campaign));
+            return new OfficeSimulationState(
+                scenario.Cases,
+                new OfficeCommandLog(),
+                false,
+                scenario,
+                campaign);
         }
 
         public OfficeCommand CreateMoveCommand(int x, int z)
@@ -269,6 +294,18 @@ namespace Desk42.Product.OfficeSlice
             return OfficeCommand.Restart(CurrentTick + 1, _nextSequence++);
         }
 
+        public OfficeCommand CreateChooseUpgradeCommand(OfficeUpgradeFamily family)
+        {
+            return OfficeCommand.ChooseUpgrade(
+                CurrentTick + 1, _nextSequence++, family);
+        }
+
+        public OfficeCommand CreateContinueToNextShiftCommand()
+        {
+            return OfficeCommand.ContinueToNextShift(
+                CurrentTick + 1, _nextSequence++);
+        }
+
         public OfficeCommand CreateDecideCommand(string caseId)
         {
             return OfficeCommand.Decide(CurrentTick + 1, _nextSequence++, caseId);
@@ -285,6 +322,9 @@ namespace Desk42.Product.OfficeSlice
         public OfficeCommand CreatePrimaryActionCommand()
         {
             if (!M2Enabled) return CreateInteractCommand();
+            if (Campaign != null &&
+                Campaign.Phase == OfficeCampaignPhase.ReadyForNextShift)
+                return CreateContinueToNextShiftCommand();
             OfficeInteractionPoint point = CurrentInteractionPoint();
             if (point == null) return CreateInteractCommand();
 
@@ -336,6 +376,11 @@ namespace Desk42.Product.OfficeSlice
 
         public OfficeCommand CreateChoiceCommand(int oneBasedChoice)
         {
+            if (Campaign != null &&
+                Campaign.Phase == OfficeCampaignPhase.ChooseUpgrade &&
+                oneBasedChoice >= 1 && oneBasedChoice <= 3)
+                return CreateChooseUpgradeCommand(
+                    (OfficeUpgradeFamily)oneBasedChoice);
             if (ManualTasks != null && ManualTasks.IsActive)
                 return CreateSubmitWorkChoiceCommand(oneBasedChoice - 1);
             string caseId = Customers?.ActiveDeskCustomer?.LinkedAutomationClaimId;
@@ -436,6 +481,7 @@ namespace Desk42.Product.OfficeSlice
                     CurrentTick, AutomationRule, BreakState, Queues);
                 Shift.Advance(
                     CurrentTick, Customers, Decisions, AutomationRule, BreakState);
+                Campaign?.ObserveSimulationTick(this);
             }
         }
 
@@ -524,6 +570,21 @@ namespace Desk42.Product.OfficeSlice
                     if (!M2Enabled || !Shift.TryRequestRestart())
                         AddFailure(CurrentTick, command.Sequence, "RESTART_NOT_AVAILABLE",
                             "Finish the current recovery before restarting.");
+                    break;
+                case OfficeCommandKind.ChooseUpgrade:
+                    if (Campaign == null ||
+                        command.Arg0 < (int)OfficeUpgradeFamily.FastTrays ||
+                        command.Arg0 > (int)OfficeUpgradeFamily.RedLabels ||
+                        !Campaign.TryChooseUpgrade((OfficeUpgradeFamily)command.Arg0))
+                        AddFailure(CurrentTick, command.Sequence,
+                            "UPGRADE_NOT_AVAILABLE",
+                            "Choose one available office upgrade after the shift.");
+                    break;
+                case OfficeCommandKind.ContinueToNextShift:
+                    if (Campaign == null || !Campaign.TryContinueToNextShift())
+                        AddFailure(CurrentTick, command.Sequence,
+                            "NEXT_SHIFT_NOT_AVAILABLE",
+                            "Finish the shift and choose an office upgrade first.");
                     break;
                 case OfficeCommandKind.Decide:
                     ExecuteDecide(command);

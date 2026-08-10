@@ -59,6 +59,7 @@ namespace Desk42.Product.OfficeSlice
             }
 
             _clock.Advance(Time.unscaledDeltaTime, _inputCommandGenerator.AdvanceOneTick);
+            _bootstrap.SynchronizeCampaignState();
             if (_state.M2Enabled && _state.Shift.RestartRequested)
             {
                 _bootstrap.RestartShift();
