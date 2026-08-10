@@ -162,32 +162,50 @@ namespace Desk42.Product.OfficeSlice
             OfficeAudioStateSnapshot current,
             Action<string, float> emit)
         {
-            if (!_previous.CopyEchoActive && current.CopyEchoActive)
-                emit("event.copy-echo-trigger", 1f);
-            if (current.ActiveCopyCount > _previous.ActiveCopyCount)
-                emit("event.copy-spawn", 1f);
-            if (current.ClearedCopyCount > _previous.ClearedCopyCount)
-                emit("event.copy-clear", 1f);
-            if (!current.CopyEchoActive && _previous.CopyEchoActive &&
-                current.CopyEchoRecovered)
-                emit("event.recovery-complete", 1f);
+            if (current.ShiftOrdinal == 1)
+            {
+                if (!_previous.CopyEchoActive && current.CopyEchoActive)
+                    emit("event.copy-echo-trigger", 1f);
+                if (current.ActiveCopyCount > _previous.ActiveCopyCount)
+                    emit("event.copy-spawn", 1f);
+                if (_previous.CopyEchoActive && _previous.CopierActive &&
+                    !current.CopierActive)
+                    emit("event.copier-stop", 1f);
+                if (current.ClearedCopyCount > _previous.ClearedCopyCount)
+                    emit("event.copy-clear", 1f);
+                if (!_previous.OriginalFound && current.OriginalFound)
+                    emit("event.original-recovered", 1f);
+                if (!current.CopyEchoActive && _previous.CopyEchoActive &&
+                    current.CopyEchoRecovered)
+                    emit("event.recovery-complete", 1f);
+            }
             if (!_previous.GhostClockActive && current.GhostClockActive)
                 emit("event.ghost-clock", 1f);
             if (!_previous.MissingRoomActive && current.MissingRoomActive)
                 emit("event.missing-room", 1f);
+            if (current.ActivePromotionFormCount >
+                _previous.ActivePromotionFormCount)
+                emit("automation.copied-accepted", 0.9f);
             if (!_previous.PromotionActive && current.PromotionActive)
             {
                 emit("event.promotion-trigger", 1f);
                 emit("event.copier-promoted", 0.92f);
+                emit("event.supervisor-authority", 0.86f);
             }
-            if (current.ActivePromotionFormCount >
-                _previous.ActivePromotionFormCount)
-                emit("automation.copied-accepted", 0.9f);
             if (_previous.SupervisorStampActive &&
                 !current.SupervisorStampActive)
                 emit("event.supervisor-removed", 1f);
+            if (_previous.PromotionActive && _previous.PromotionCopierActive &&
+                !current.PromotionCopierActive)
+                emit("event.copier-stop", 1f);
+            if (!_previous.RunnerFollowingCopier &&
+                current.RunnerFollowingCopier)
+                emit("event.runner-to-copier", 1f);
             if (!_previous.RunnerReassigned && current.RunnerReassigned)
-                emit("event.runner-allegiance", 1f);
+                emit("event.runner-to-warden", 1f);
+            if (!_previous.PromotionOriginalFound &&
+                current.PromotionOriginalFound)
+                emit("event.original-recovered", 1f);
             if (!_previous.PromotionRecovered && current.PromotionRecovered)
                 emit("event.recovery-complete", 1f);
             if (!_previous.ShiftResult && current.ShiftResult)

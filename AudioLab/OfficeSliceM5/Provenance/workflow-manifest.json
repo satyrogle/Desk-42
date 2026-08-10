@@ -4,11 +4,11 @@
   "authoring_method": "project-original deterministic synthesis",
   "bit_depth": 16,
   "python_version": "3.14.3",
-  "runtime_asset_count": 52,
-  "runtime_cue_count": 78,
+  "runtime_asset_count": 65,
+  "runtime_cue_count": 96,
   "sample_rate": 48000,
   "schema": "desk42.office-slice-m5.synthesis-workflow.v1",
-  "source_script_sha256": "096566661eb9c3eac610dd3ab72e7a95e8c817a271f246bffddd9906ea45d2f8",
-  "through_gate": "C",
+  "source_script_sha256": "3c88285be41729f5038513a0f9379fc49dd0fcac25b4faa1b6e12d48eced1131",
+  "through_gate": "D",
   "workflow_version": "1.0.0"
 }

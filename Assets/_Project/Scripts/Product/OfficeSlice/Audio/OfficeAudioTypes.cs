@@ -155,14 +155,20 @@ namespace Desk42.Product.OfficeSlice
         public bool PayrollEnabled { get; }
         public bool CopyEchoActive { get; }
         public bool CopyEchoRecovered { get; }
+        public bool CopierActive { get; }
+        public bool OriginalFound { get; }
         public bool GhostClockActive { get; }
         public bool GhostClockRecovered { get; }
         public bool MissingRoomActive { get; }
         public bool MissingRoomRecovered { get; }
         public bool PromotionActive { get; }
         public bool PromotionRecovered { get; }
+        public bool PromotionCopierActive { get; }
+        public bool PromotionOriginalFound { get; }
+        public bool PromotionOriginalReturned { get; }
         public bool SupervisorStampActive { get; }
         public bool RunnerReassigned { get; }
+        public bool RunnerFollowingCopier { get; }
         public bool CampaignComplete { get; }
         public bool ShiftResult { get; }
         public string ActiveManualCaseId { get; }
@@ -192,14 +198,23 @@ namespace Desk42.Product.OfficeSlice
             PayrollEnabled = state.PayrollRule.Enabled;
             CopyEchoActive = state.BreakState.Active && !state.BreakState.Recovered;
             CopyEchoRecovered = state.BreakState.Recovered;
+            CopierActive = state.BreakState.CopierActive;
+            OriginalFound = state.BreakState.OriginalFound;
             GhostClockActive = state.GhostClock.Active;
             GhostClockRecovered = state.GhostClock.Recovered;
             MissingRoomActive = state.MissingRoomAccess.Active;
             MissingRoomRecovered = state.MissingRoomAccess.Recovered;
             PromotionActive = state.PromotionCascade.Active;
             PromotionRecovered = state.PromotionCascade.Recovered;
+            PromotionCopierActive = state.PromotionCascade.CopierActive;
+            PromotionOriginalFound = state.PromotionCascade.OriginalBadgeFound;
+            PromotionOriginalReturned = state.PromotionCascade.OriginalBadgeReturned;
             SupervisorStampActive = state.PromotionCascade.SupervisorStampActive;
             RunnerReassigned = state.PromotionCascade.RunnerReassigned;
+            RunnerFollowingCopier = string.Equals(
+                state.Staff.RunnerTaskSourceId,
+                OfficeStaffSystem.CopierTaskSourceId,
+                StringComparison.Ordinal);
             CampaignComplete = campaign?.IsComplete ?? false;
             ShiftResult = state.Shift.Phase == OfficeShiftPhase.Result;
             ActiveManualCaseId = state.ManualTasks.ActiveCaseId;

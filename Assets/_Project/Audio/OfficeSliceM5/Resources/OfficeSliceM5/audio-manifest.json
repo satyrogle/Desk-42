@@ -623,6 +623,162 @@
       "resource_path": "OfficeSliceM5/Automation/automation_copied-accepted",
       "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Automation/automation_copied-accepted.wav",
       "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.copy-echo-trigger",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.72,
+      "final_sha256": "d00c71f6eac588ffe5c976a4f97df510565faf9436c14c8b7652188a8492a1ca",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_copy-echo-trigger",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_copy-echo-trigger.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.copy-spawn",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.26,
+      "final_sha256": "d0a3b372feafb1eb0b463356e0cd698a876825ceb5887a8323aac7c55b8f7608",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_copy-spawn",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_copy-spawn.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.copy-clear",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.24,
+      "final_sha256": "2cd7c993457ec629602ba7205c5027636103c370a68335eb1d489ae962322426",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_copy-clear",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_copy-clear.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.ghost-clock",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.74,
+      "final_sha256": "8452f671361a4ead22c752885d4b4061409ce3371553df9c743c0a6d396f1012",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_ghost-clock",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_ghost-clock.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.missing-room",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.82,
+      "final_sha256": "447f28da7a53fc1c386a049d91fa975614d35db8cf0e426732e308add6fe5416",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_missing-room",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_missing-room.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.promotion-trigger",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.92,
+      "final_sha256": "027678886d9b379645ab6746e56ec89262868bba17abb7b3ede7b43ce2579fd3",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_promotion-trigger",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_promotion-trigger.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.copier-promoted",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.58,
+      "final_sha256": "444c59342737b2e3b151ca2b3a5a60a8b64c5a50a6943dcce0fdacb1674d832e",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_copier-promoted",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_copier-promoted.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.runner-allegiance",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.48,
+      "final_sha256": "fbc87d6b6003e5d387871303a0af3ce8090a715077935e8783c26c90b7f81961",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_runner-allegiance",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_runner-allegiance.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.supervisor-removed",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.38,
+      "final_sha256": "2738c26f4664c3163620a65f09251e5c3d999ad609bfff1b72207a4d8432886a",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_supervisor-removed",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_supervisor-removed.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.recovery-complete",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.84,
+      "final_sha256": "ba38fd672f69f3d5d780001f7d7c3e3f940bfaddd038d744d22d2c12493263ec",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_recovery-complete",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_recovery-complete.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.shift-close",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.72,
+      "final_sha256": "192ef5adf498ae1e6d59d368627cb95b25909b4d8df02bac1def7bff8a2f8d34",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_shift-close",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_shift-close.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.final-result",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 1.1,
+      "final_sha256": "bf7fa9f5ade9c1dd7b185632ed7b64a838959cb1671c20932bc9192abf65a122",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_final-result",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_final-result.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "event.next-day-tease",
+      "bit_depth": 16,
+      "category": "MajorEvent",
+      "channels": 1,
+      "duration_seconds": 0.64,
+      "final_sha256": "4b30ecb5f4930429f154d6a2adba4bf52bfb873491b79b2b55b0f627e44644dd",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/MajorEvent/event_next-day-tease",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/MajorEvent/event_next-day-tease.wav",
+      "sample_rate": 48000
     }
   ],
   "cues": [
@@ -1320,6 +1476,150 @@
       "stage": "C"
     },
     {
+      "asset_id": "event.copy-echo-trigger",
+      "base_volume": 0.74,
+      "bus": "SFX",
+      "cue_id": "event.copy-echo-trigger",
+      "loop": false,
+      "pan": 0.55,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.copy-spawn",
+      "base_volume": 0.54,
+      "bus": "SFX",
+      "cue_id": "event.copy-spawn",
+      "loop": false,
+      "pan": 0.5,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.copy-clear",
+      "base_volume": 0.5,
+      "bus": "SFX",
+      "cue_id": "event.copy-clear",
+      "loop": false,
+      "pan": 0.35,
+      "stage": "D"
+    },
+    {
+      "asset_id": "fix.complete",
+      "base_volume": 0.64,
+      "bus": "SFX",
+      "cue_id": "event.copier-stop",
+      "loop": false,
+      "pan": 0.55,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.recovery-complete",
+      "base_volume": 0.62,
+      "bus": "SFX",
+      "cue_id": "event.original-recovered",
+      "loop": false,
+      "pan": 0,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.ghost-clock",
+      "base_volume": 0.68,
+      "bus": "SFX",
+      "cue_id": "event.ghost-clock",
+      "loop": false,
+      "pan": 0.1,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.missing-room",
+      "base_volume": 0.68,
+      "bus": "SFX",
+      "cue_id": "event.missing-room",
+      "loop": false,
+      "pan": 0.7,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.promotion-trigger",
+      "base_volume": 0.78,
+      "bus": "SFX",
+      "cue_id": "event.promotion-trigger",
+      "loop": false,
+      "pan": 0.58,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.copier-promoted",
+      "base_volume": 0.64,
+      "bus": "SFX",
+      "cue_id": "event.copier-promoted",
+      "loop": false,
+      "pan": 0.58,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.copier-promoted",
+      "base_volume": 0.58,
+      "bus": "SFX",
+      "cue_id": "event.supervisor-authority",
+      "loop": false,
+      "pan": 0.68,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.runner-allegiance",
+      "base_volume": 0.62,
+      "bus": "SFX",
+      "cue_id": "event.runner-allegiance",
+      "loop": false,
+      "pan": -0.1,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.runner-allegiance",
+      "base_volume": 0.62,
+      "bus": "SFX",
+      "cue_id": "event.runner-to-copier",
+      "loop": false,
+      "pan": 0.42,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.runner-allegiance",
+      "base_volume": 0.62,
+      "bus": "SFX",
+      "cue_id": "event.runner-to-warden",
+      "loop": false,
+      "pan": -0.1,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.supervisor-removed",
+      "base_volume": 0.62,
+      "bus": "SFX",
+      "cue_id": "event.supervisor-removed",
+      "loop": false,
+      "pan": 0.68,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.recovery-complete",
+      "base_volume": 0.72,
+      "bus": "SFX",
+      "cue_id": "event.recovery-complete",
+      "loop": false,
+      "pan": 0,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.shift-close",
+      "base_volume": 0.62,
+      "bus": "SFX",
+      "cue_id": "event.shift-close",
+      "loop": false,
+      "pan": 0,
+      "stage": "D"
+    },
+    {
       "asset_id": "choice.confirm",
       "base_volume": 0.62,
       "bus": "SFX",
@@ -1327,9 +1627,27 @@
       "loop": false,
       "pan": 0,
       "stage": "C"
+    },
+    {
+      "asset_id": "event.final-result",
+      "base_volume": 0.68,
+      "bus": "SFX",
+      "cue_id": "event.final-result",
+      "loop": false,
+      "pan": 0,
+      "stage": "D"
+    },
+    {
+      "asset_id": "event.next-day-tease",
+      "base_volume": 0.46,
+      "bus": "SFX",
+      "cue_id": "event.next-day-tease",
+      "loop": false,
+      "pan": 0,
+      "stage": "D"
     }
   ],
   "schema": "desk42.office-slice-m5.audio-manifest.v1",
-  "through_gate": "C",
+  "through_gate": "D",
   "workflow_version": "1.0.0"
 }
