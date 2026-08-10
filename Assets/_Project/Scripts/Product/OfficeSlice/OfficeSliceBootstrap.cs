@@ -23,6 +23,8 @@ namespace Desk42.Product.OfficeSlice
             "--desk42-office-slice-performance-smoke";
         private const string CaptureDistributionArgument =
             "--desk42-office-slice-capture-distribution";
+        private const string ReducedFlashArgument =
+            "--desk42-office-slice-reduced-flash";
 
         private readonly Dictionary<string, Transform> _folderViews =
             new(StringComparer.Ordinal);
@@ -48,6 +50,11 @@ namespace Desk42.Product.OfficeSlice
         private OfficeVisualDirector _m4Director;
         private OfficeVisualStateProjector _m4Projector;
         private OfficeVisualSnapshot _m4Snapshot;
+        private readonly OfficeM4HudPresenter _m4HudPresenter = new();
+        private GUIStyle _m4TitleStyle;
+        private GUIStyle _m4ActionStyle;
+        private GUIStyle _m4BodyStyle;
+        private string _captureStateName = "interactive";
         private bool _built;
         private string _lastDebugMessage = "BOOTING OFFICE SLICE";
 
@@ -59,6 +66,7 @@ namespace Desk42.Product.OfficeSlice
         public int VisibleFolderCount => _folderViews.Count;
         public OfficeVisualDirector VisualDirector => _m4Director;
         public OfficeVisualSnapshot VisualSnapshot => _m4Snapshot;
+        public OfficeM4HudPresenter HudPresenter => _m4HudPresenter;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void RouteDevelopmentPlayerToOfficeSlice()
@@ -90,6 +98,8 @@ namespace Desk42.Product.OfficeSlice
         private IEnumerator Start()
         {
             string[] arguments = Environment.GetCommandLineArgs();
+            _m4HudPresenter.SetReducedFlash(
+                HasArgument(arguments, ReducedFlashArgument));
             string capturePath = ArgumentValue(arguments, CaptureArgument);
             string performancePath = ArgumentValue(arguments, PerformanceArgument);
             if (string.IsNullOrWhiteSpace(capturePath) &&
@@ -116,10 +126,12 @@ namespace Desk42.Product.OfficeSlice
                         "Capture shift must be 1, 2, or 3.",
                         CaptureShiftArgument);
                 string stateName = ArgumentValue(arguments, CaptureStateArgument);
+                _captureStateName = string.IsNullOrWhiteSpace(stateName)
+                    ? "opening" : stateName.Trim().ToLowerInvariant();
                 OfficeCampaignCaptureDriver.Prepare(
                     _campaignState,
                     shiftOrdinal,
-                    string.IsNullOrWhiteSpace(stateName) ? "opening" : stateName);
+                    _captureStateName);
                 SynchronizeCampaignState();
                 RefreshPresentation();
             }
@@ -148,7 +160,18 @@ namespace Desk42.Product.OfficeSlice
                 Application.Quit(1);
                 yield break;
             }
-            Debug.Log("OFFICE_SLICE_CAPTURE_OK " + fullPath, this);
+            var assetIds = new List<string>(_m4Director?.ActiveAssetIds ??
+                Array.Empty<string>());
+            assetIds.Sort(StringComparer.Ordinal);
+            int activeVfx = _m4Director?.VfxPool?.ActiveCount ?? 0;
+            int vfxCapacity = _m4Director?.VfxPool?.Capacity ?? 0;
+            Debug.Log("OFFICE_M4_CAPTURE_OK state=" + _captureStateName +
+                " assets=" + string.Join(",", assetIds) +
+                " visual_count=" + (_m4Director?.ActiveVisualObjectCount ?? 0) +
+                " vfx_active=" + activeVfx +
+                " vfx_capacity=" + vfxCapacity +
+                " checksum=" + _campaignState.Checksum +
+                " path=" + fullPath, this);
             Application.Quit(0);
         }
 
@@ -1124,6 +1147,246 @@ namespace Desk42.Product.OfficeSlice
         }
 
         private void OnGUI()
+        {
+            if (!Ready) return;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (Event.current.type == EventType.KeyDown &&
+                Event.current.keyCode == KeyCode.F9)
+            {
+                _m4HudPresenter.SetDevelopmentHudVisible(
+                    !_m4HudPresenter.DevelopmentHudVisible);
+                Event.current.Use();
+            }
+#endif
+            if (_m4Director != null)
+            {
+                DrawM4Hud();
+                return;
+            }
+            DrawLegacyHud();
+        }
+
+        private void DrawM4Hud()
+        {
+            EnsureM4HudStyles();
+            if (_campaignState != null &&
+                _campaignState.Phase == OfficeCampaignPhase.CampaignResult)
+            {
+                Rect resultPanel = _m4HudPresenter.ResultPanelRect(
+                    Screen.width, Screen.height);
+                DrawM4PaperCard(resultPanel);
+                GUILayout.BeginArea(Inset(resultPanel, 10f));
+                GUILayout.Label("DESK 42 / THREE-DAY RESULT", _m4TitleStyle);
+                if (_captureStateName == "16-next-day-tease")
+                    GUILayout.Label("TOMORROW'S DESK", _m4ActionStyle);
+                Color previousContent = GUI.contentColor;
+                GUI.contentColor = new Color(0.08f, 0.08f, 0.1f, 1f);
+                DrawCampaignResult();
+                GUI.contentColor = previousContent;
+                GUILayout.EndArea();
+                DrawM4DevelopmentHud();
+                return;
+            }
+
+            Rect panel = _m4HudPresenter.PlayerPanelRect(Screen.width, Screen.height);
+            DrawM4PaperCard(panel);
+            GUILayout.BeginArea(Inset(panel, 10f));
+            GUILayout.Label("DESK 42 / DAY " + _campaignState.CurrentShiftOrdinal,
+                _m4TitleStyle);
+            GUILayout.Label(_campaignState.CurrentShift.Title + "  •  " +
+                _simulationState.Shift.Phase.ToString().ToUpperInvariant(),
+                _m4BodyStyle);
+            OfficeCustomerState customer =
+                _simulationState.Customers.ActiveDeskCustomer;
+            GUILayout.BeginHorizontal();
+            GUILayout.BeginVertical(GUILayout.Width(panel.width - 112f));
+            if (customer == null)
+                GUILayout.Label("NO CUSTOMER AT THE DESK", _m4BodyStyle);
+            else
+            {
+                GUILayout.Label(customer.DisplayName + "  •  " +
+                    customer.VisibleMoodState.ToString().ToUpperInvariant(),
+                    _m4BodyStyle);
+                GUILayout.Label(customer.Problem, _m4BodyStyle);
+            }
+            GUILayout.EndVertical();
+            GUILayout.Label(string.Empty, GUILayout.Width(72f), GUILayout.Height(68f));
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(4f);
+            GUILayout.Label("DO NOW", _m4TitleStyle);
+            GUILayout.Label(M4CurrentTaskLabel(), _m4ActionStyle);
+            GUILayout.Label(M4WorkSummary(customer), _m4BodyStyle);
+            GUILayout.Space(3f);
+            GUILayout.Label("AUTO SORTER " + RuleState(
+                    _simulationState.AutomationRule.Unlocked,
+                    _simulationState.AutomationRule.Enabled) +
+                "  •  PAY RULE " + RuleState(
+                    _simulationState.PayrollRule.Unlocked,
+                    _simulationState.PayrollRule.Enabled), _m4BodyStyle);
+            GUILayout.Label(M4QueueSummary(), _m4BodyStyle);
+            string recovery = M4RecoveryChecklist();
+            if (!string.IsNullOrWhiteSpace(recovery))
+            {
+                GUILayout.Space(3f);
+                GUILayout.Label("FIX THE OFFICE", _m4TitleStyle);
+                GUILayout.Label(recovery, _m4BodyStyle);
+            }
+            if (_campaignState.Phase == OfficeCampaignPhase.ChooseUpgrade)
+                GUILayout.Label("DECIDE: 1 FAST TRAYS  •  2 CALM CHAIRS  •  3 RED LABELS",
+                    _m4BodyStyle);
+            GUILayout.FlexibleSpace();
+            GUILayout.Label("MOVE WASD / STICK  •  ACT E / A  •  PUT DOWN Q / B",
+                _m4BodyStyle);
+            GUILayout.EndArea();
+
+            DrawM4Portrait(customer);
+            DrawM4DevelopmentHud();
+        }
+
+        private void EnsureM4HudStyles()
+        {
+            if (_m4TitleStyle != null) return;
+            _m4TitleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 14,
+                fontStyle = FontStyle.Bold,
+                wordWrap = true,
+            };
+            _m4ActionStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 18,
+                fontStyle = FontStyle.Bold,
+                wordWrap = true,
+            };
+            _m4BodyStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 11,
+                wordWrap = true,
+            };
+            Color ink = new(0.08f, 0.08f, 0.1f, 1f);
+            _m4TitleStyle.normal.textColor = ink;
+            _m4ActionStyle.normal.textColor = ink;
+            _m4BodyStyle.normal.textColor = ink;
+        }
+
+        private static Rect Inset(Rect rect, float amount)
+        {
+            return new Rect(rect.x + amount, rect.y + amount,
+                rect.width - amount * 2f, rect.height - amount * 2f);
+        }
+
+        private static void DrawM4PaperCard(Rect rect)
+        {
+            Color previous = GUI.color;
+            GUI.color = new Color(0.91f, 0.85f, 0.71f, 0.94f);
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = new Color(0.42f, 0.31f, 0.24f, 1f);
+            GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, 3f),
+                Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x, rect.yMax - 3f, rect.width, 3f),
+                Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x, rect.y, 3f, rect.height),
+                Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.xMax - 3f, rect.y, 3f, rect.height),
+                Texture2D.whiteTexture);
+            GUI.color = previous;
+        }
+
+        private void DrawM4Portrait(OfficeCustomerState customer)
+        {
+            if (customer == null || _m4Catalog == null) return;
+            string id = CustomerVisualId(
+                customer.DisplayName, customer.VisibleMoodState)
+                .Replace("character.", "portrait.");
+            if (customer.DisplayName == "MARA VALE" &&
+                _simulationState.PromotionCascade.Active)
+                id = "portrait.mara-vale.promotion-cascade";
+            else if (customer.DisplayName == "TOMAS REED" &&
+                _simulationState.GhostClock.Active)
+                id = "portrait.tomas-reed.ghost-clock";
+            if (_m4Catalog.TryResolve(id, out Sprite portrait) && portrait != null)
+                GUI.DrawTexture(
+                    _m4HudPresenter.PortraitRect(Screen.width, Screen.height),
+                    portrait.texture, ScaleMode.ScaleToFit, true);
+        }
+
+        private string M4CurrentTaskLabel()
+        {
+            if (_campaignState.Phase == OfficeCampaignPhase.ChooseUpgrade)
+                return "DECIDE";
+            if (_campaignState.Phase == OfficeCampaignPhase.ReadyForNextShift)
+                return "OPEN TOMORROW'S DESK";
+            if (_simulationState.ManualTasks.IsActive)
+                return _simulationState.ManualTasks.ActiveKind switch
+                {
+                    OfficeManualTaskKind.Compare => "CHECK PAPERS",
+                    OfficeManualTaskKind.Trace => "TRACE MONEY",
+                    _ => "CHECK WEIRD STUFF",
+                };
+            return _simulationState.PrimaryActionLabel;
+        }
+
+        private string M4WorkSummary(OfficeCustomerState customer)
+        {
+            if (_simulationState.ManualTasks.IsActive)
+                return "Choose the matching public record with 1–4.";
+            if (customer == null) return "Wait for the next person.";
+            return FolderStatus(customer.LinkedAutomationClaimId);
+        }
+
+        private string M4RecoveryChecklist()
+        {
+            if (_simulationState.PromotionCascade.Active)
+                return "STOP MACHINE  •  REMOVE STAMP  •  CLEAR FORMS  •  CALM MARA  •  FIND ORIGINAL  •  REASSIGN RUNNER";
+            if (_simulationState.GhostClock.Active)
+                return "STOP CLOCK  •  CLEAR TIME SLIPS  •  CALM TOMAS";
+            if (_simulationState.MissingRoomAccess.Active)
+                return "CLOSE MISSING ROOM  •  HELP IRIS";
+            if (_simulationState.BreakState.Active &&
+                !_simulationState.BreakState.Recovered)
+                return "STOP MACHINE  •  CLEAR COPIES  •  CALM CUSTOMER  •  FIND ORIGINAL";
+            if (_simulationState.BreakState.Recovered ||
+                _simulationState.GhostClock.Recovered ||
+                _simulationState.MissingRoomAccess.Recovered ||
+                _simulationState.PromotionCascade.Recovered)
+                return "RECOVERY COMPLETE";
+            return string.Empty;
+        }
+
+        private string M4QueueSummary()
+        {
+            return "FILES  FRONT " +
+                _simulationState.Queues.GetQueue(OfficeRoomId.FrontDesk).Count +
+                "  PAPER " + _simulationState.Queues.GetQueue(OfficeRoomId.PaperRoom).Count +
+                "  MONEY " + _simulationState.Queues.GetQueue(OfficeRoomId.MoneyRoom).Count +
+                "  WEIRD " + _simulationState.Queues.GetQueue(OfficeRoomId.WeirdRoom).Count;
+        }
+
+        private static string RuleState(bool unlocked, bool enabled)
+        {
+            return enabled ? "ON" : unlocked ? "OFF" : "LOCKED";
+        }
+
+        private void DrawM4DevelopmentHud()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_m4HudPresenter.DevelopmentHudVisible) return;
+            GUILayout.BeginArea(
+                _m4HudPresenter.DevelopmentPanelRect(Screen.width, Screen.height),
+                GUI.skin.box);
+            GUILayout.Label("M4 DEVELOPMENT / F9 TO HIDE", _m4TitleStyle);
+            GUILayout.Label("TICK " + _simulationState.CurrentTick +
+                "  CHECKSUM " + _simulationState.Checksum, _m4BodyStyle);
+            GUILayout.Label("ROOTS " + OfficeVisualDirector.ActiveRootCount() +
+                "  VISUALS " + (_m4Director?.ActiveVisualObjectCount ?? 0) +
+                "  VFX " + (_m4Director?.VfxPool?.ActiveCount ?? 0) + "/" +
+                (_m4Director?.VfxPool?.Capacity ?? 0), _m4BodyStyle);
+            GUILayout.EndArea();
+#endif
+        }
+
+        private void DrawLegacyHud()
         {
             if (!Ready) return;
             if (_campaignState != null &&

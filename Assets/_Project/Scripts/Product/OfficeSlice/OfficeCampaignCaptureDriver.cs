@@ -18,33 +18,160 @@ namespace Desk42.Product.OfficeSlice
             if (shiftOrdinal < 1 || shiftOrdinal > 3)
                 throw new ArgumentOutOfRangeException(nameof(shiftOrdinal));
             string state = (stateName ?? "opening").Trim().ToLowerInvariant();
-            if (shiftOrdinal == 1 && state == "opening") return;
             if (shiftOrdinal == 1)
             {
-                DriveShiftOneToBreak(campaign.CurrentSimulation);
-                return;
+                switch (state)
+                {
+                    case "opening":
+                    case "01-shift-1-opening":
+                        return;
+                    case "02-shift-1-paper-check":
+                        DriveActiveCaseToWork(
+                            campaign.CurrentSimulation, OfficeManualTaskKind.Compare);
+                        return;
+                    case "03-shift-1-money-trace":
+                        DriveActiveCaseToWork(
+                            campaign.CurrentSimulation, OfficeManualTaskKind.Trace);
+                        return;
+                    case "04-shift-1-copy-echo-warning":
+                        DriveShiftOneToCopyWarning(campaign.CurrentSimulation);
+                        return;
+                    case "06-shift-1-upgrade-choice":
+                        DriveShiftOneToUpgradeChoice(campaign);
+                        return;
+                    case "break":
+                    case "05-shift-1-copy-echo-break":
+                        DriveShiftOneToBreak(campaign.CurrentSimulation);
+                        return;
+                    default:
+                        throw new ArgumentException(
+                            "Unsupported Shift 1 capture state: " + state);
+                }
             }
 
             EnterShiftTwo(campaign);
-            if (shiftOrdinal == 2 && state == "rush")
-            {
-                DriveShiftTwoToGhostClock(campaign.CurrentSimulation);
-                return;
-            }
             if (shiftOrdinal == 2)
             {
-                DriveShiftTwoToResult(campaign);
-                return;
+                switch (state)
+                {
+                    case "opening":
+                    case "07-shift-2-opening-upgrade-visible":
+                        return;
+                    case "rush":
+                    case "08-shift-2-ghost-clock":
+                        DriveShiftTwoToGhostClock(campaign.CurrentSimulation);
+                        return;
+                    case "09-shift-2-missing-room-access":
+                        DriveShiftTwoToMissingRoom(campaign.CurrentSimulation);
+                        return;
+                    case "result":
+                    case "10-shift-2-second-upgrade-choice":
+                        DriveShiftTwoToResult(campaign);
+                        return;
+                    default:
+                        throw new ArgumentException(
+                            "Unsupported Shift 2 capture state: " + state);
+                }
             }
 
             DriveShiftTwoToResult(campaign);
             ChooseUpgradeAndContinue(campaign, OfficeUpgradeFamily.CalmChairs);
-            TriggerPromotion(campaign.CurrentSimulation);
-            if (state == "promotion-cascade" || state == "rush") return;
-            DriveShiftThreeToResult(campaign);
+            switch (state)
+            {
+                case "opening":
+                case "11-shift-3-opening-both-rules":
+                    return;
+                case "12-shift-3-promotion-warning":
+                    DriveShiftThreeToPromotionWarning(campaign.CurrentSimulation);
+                    return;
+                case "promotion-cascade":
+                case "rush":
+                case "13-shift-3-promotion-cascade":
+                    TriggerPromotion(campaign.CurrentSimulation);
+                    return;
+                case "14-shift-3-recovery":
+                {
+                    OfficeSimulationState simulation = campaign.CurrentSimulation;
+                    TriggerPromotion(simulation);
+                    var intent = new OfficeInputIntent();
+                    var input = new OfficeInputCommandGenerator(simulation, intent);
+                    RecoverPromotion(simulation, intent, input);
+                    return;
+                }
+                case "result":
+                case "15-final-campaign-result":
+                case "16-next-day-tease":
+                    TriggerPromotion(campaign.CurrentSimulation);
+                    DriveShiftThreeToResult(campaign);
+                    return;
+                default:
+                    throw new ArgumentException(
+                        "Unsupported Shift 3 capture state: " + state);
+            }
         }
 
         private static void EnterShiftTwo(OfficeCampaignState campaign)
+        {
+            DriveShiftOneToUpgradeChoice(campaign);
+            ChooseUpgradeAndContinue(campaign, OfficeUpgradeFamily.FastTrays);
+        }
+
+        private static void DriveActiveCaseToWork(
+            OfficeSimulationState state,
+            OfficeManualTaskKind targetKind)
+        {
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            OfficeCustomerState customer = state.Customers.ActiveDeskCustomer;
+            Require(customer != null, "Capture setup has no active customer.");
+            OfficeCaseWorkDefinition work = state.WorkDefinitionFor(
+                customer.LinkedAutomationClaimId);
+            NavigateTo(state, intent, input, "front-desk.interact");
+            CalmUntilActionable(state, intent, input);
+            PressPrimary(state, intent, input);
+            for (int stepIndex = 0; stepIndex < work.RequiredSequence.Count; stepIndex++)
+            {
+                OfficeManualTaskKind step = work.RequiredSequence[stepIndex];
+                PressPrimary(state, intent, input);
+                string pointId = step switch
+                {
+                    OfficeManualTaskKind.Compare => "paper-room.interact",
+                    OfficeManualTaskKind.Trace => "money-room.interact",
+                    _ => "weird-room.interact",
+                };
+                NavigateTo(state, intent, input, pointId);
+                state.AdvanceTicks(state.Queues.TransferDurationTicks);
+                ResolveComplications(state, intent, input);
+                PressPrimary(state, intent, input);
+                PressPrimary(state, intent, input);
+                Require(state.ManualTasks.IsActive &&
+                    state.ManualTasks.ActiveKind == step,
+                    "Capture setup did not start the requested room work.");
+                if (step == targetKind) return;
+                int choice = step switch
+                {
+                    OfficeManualTaskKind.Compare => (int)work.PaperAnswer + 1,
+                    OfficeManualTaskKind.Trace => work.MoneyPathAnswer + 1,
+                    _ => work.WeirdChoiceAnswer + 1,
+                };
+                PressChoice(state, intent, input, choice);
+            }
+            throw new InvalidOperationException(
+                "Requested capture work is not in the authored sequence: " + targetKind);
+        }
+
+        private static void DriveShiftOneToCopyWarning(OfficeSimulationState state)
+        {
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            CompleteActiveCase(state, intent, input);
+            intent.BufferToggleRule(state.CurrentTick);
+            input.AdvanceOneTick();
+            Require(state.AutomationRule.Enabled && !state.BreakState.Active,
+                "Capture setup did not reach the Copy Echo warning.");
+        }
+
+        private static void DriveShiftOneToUpgradeChoice(OfficeCampaignState campaign)
         {
             OfficeSimulationState state = campaign.CurrentSimulation;
             DriveShiftOneToBreak(state);
@@ -56,7 +183,76 @@ namespace Desk42.Product.OfficeSlice
             state.AdvanceOneTick();
             Require(campaign.Phase == OfficeCampaignPhase.ChooseUpgrade,
                 "Shift 1 did not reach its upgrade choice.");
-            ChooseUpgradeAndContinue(campaign, OfficeUpgradeFamily.FastTrays);
+        }
+
+        private static void EnsureBothRulesEnabled(OfficeSimulationState state)
+        {
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            if (!state.AutomationRule.Enabled)
+            {
+                intent.BufferToggleRule(state.CurrentTick);
+                input.AdvanceOneTick();
+            }
+            if (!state.PayrollRule.Enabled)
+            {
+                intent.BufferToggleRule2(state.CurrentTick);
+                input.AdvanceOneTick();
+            }
+            Require(state.AutomationRule.Enabled && state.PayrollRule.Enabled,
+                "Capture setup did not preserve both automation rules.");
+        }
+
+        private static void DriveShiftTwoToMissingRoom(OfficeSimulationState state)
+        {
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            while (state.Decisions.CommitCount < 3)
+            {
+                CompleteActiveCase(state, intent, input);
+                if (state.Decisions.CommitCount == 2 && !state.PayrollRule.Enabled)
+                {
+                    intent.BufferToggleRule2(state.CurrentTick);
+                    input.AdvanceOneTick();
+                }
+            }
+            Require(state.Customers.ActiveDeskCustomer?.DisplayName == "IRIS COLE",
+                "Missing Room capture did not reach Iris.");
+            NavigateTo(state, intent, input, "front-desk.interact");
+            PressPrimary(state, intent, input);
+            PressPrimary(state, intent, input);
+            NavigateTo(state, intent, input, "weird-room.interact");
+            state.AdvanceTicks(state.Queues.TransferDurationTicks);
+            state.AdvanceOneTick();
+            Require(state.MissingRoomAccess.Active,
+                "Capture setup did not reach Missing Room access.");
+        }
+
+        private static void DriveShiftThreeToPromotionWarning(OfficeSimulationState state)
+        {
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            DisablePayrollRuleForPromotion(state, intent, input);
+            while (state.Decisions.CommitCount < 2)
+                CompleteActiveCase(state, intent, input);
+            for (int tick = 0; tick < 1800 &&
+                state.PromotionCascade.PromotionFormIds.Count == 0; tick++)
+                input.AdvanceOneTick();
+            Require(state.PromotionCascade.PromotionFormIds.Count > 0 &&
+                !state.PromotionCascade.HasTriggered,
+                "Capture setup did not reach the Promotion warning.");
+        }
+
+        private static void DisablePayrollRuleForPromotion(
+            OfficeSimulationState state,
+            OfficeInputIntent intent,
+            OfficeInputCommandGenerator input)
+        {
+            if (!state.PayrollRule.Enabled) return;
+            intent.BufferToggleRule2(state.CurrentTick);
+            input.AdvanceOneTick();
+            Require(!state.PayrollRule.Enabled,
+                "Capture setup could not pause the pay rule for the Promotion route.");
         }
 
         private static void DriveShiftOneToBreak(OfficeSimulationState state)
@@ -152,6 +348,8 @@ namespace Desk42.Product.OfficeSlice
             var input = new OfficeInputCommandGenerator(state, intent);
             while (state.Decisions.CommitCount < 6)
             {
+                if (state.Decisions.CommitCount == 5)
+                    EnsureBothRulesEnabled(state);
                 if (state.Customers.ActiveDeskCustomer?.DisplayName == "TOMAS REED" &&
                     state.PayrollRule.Enabled)
                 {
@@ -175,6 +373,7 @@ namespace Desk42.Product.OfficeSlice
             if (state.PromotionCascade.HasTriggered) return;
             var intent = new OfficeInputIntent();
             var input = new OfficeInputCommandGenerator(state, intent);
+            DisablePayrollRuleForPromotion(state, intent, input);
             while (state.Decisions.CommitCount < 2)
                 CompleteActiveCase(state, intent, input);
             for (int tick = 0; tick < 1800 &&
