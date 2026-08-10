@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using Desk42.Institutional.Player;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -180,6 +181,8 @@ namespace Desk42.Product.OfficeSlice
             const int warmupFrames = 60;
             const int sampleFrames = 600;
             const double targetFps = 60d;
+            const double maximumP95Milliseconds = 25d;
+            const double maximumWorstMilliseconds = 50d;
 
             Application.runInBackground = true;
             QualitySettings.vSyncCount = 0;
@@ -188,26 +191,101 @@ namespace Desk42.Product.OfficeSlice
             for (int frame = 0; frame < warmupFrames; frame++)
                 yield return endOfFrame;
 
+            int initialGameObjects = ActiveSceneGameObjectCount();
+            int initialLogicalFolders = _simulationState.Queues.FolderIds.Count;
+            int initialMaterials = DistinctM4MaterialCount();
+            int initialPoolGrowth = _m4Director?.VfxPool?.GrowthCount ?? 0;
+            long initialTick = _simulationState.CurrentTick;
+            var gcAllocatedRecorder = ProfilerRecorder.StartNew(
+                ProfilerCategory.Memory, "GC Allocated In Frame", 32);
+            var drawCallsRecorder = ProfilerRecorder.StartNew(
+                ProfilerCategory.Render, "Draw Calls Count", 32);
+            var batchesRecorder = ProfilerRecorder.StartNew(
+                ProfilerCategory.Render, "Batches Count", 32);
+            var trianglesRecorder = ProfilerRecorder.StartNew(
+                ProfilerCategory.Render, "Triangles Count", 32);
+            var verticesRecorder = ProfilerRecorder.StartNew(
+                ProfilerCategory.Render, "Vertices Count", 32);
+            var textureMemoryRecorder = ProfilerRecorder.StartNew(
+                ProfilerCategory.Memory, "Texture Memory", 32);
+            var frameMilliseconds = new double[sampleFrames];
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             double previousSeconds = stopwatch.Elapsed.TotalSeconds;
             double worstFrameSeconds = 0d;
+            long peakGcAllocated = 0L;
             for (int frame = 0; frame < sampleFrames; frame++)
             {
                 yield return endOfFrame;
                 double currentSeconds = stopwatch.Elapsed.TotalSeconds;
                 double frameSeconds = currentSeconds - previousSeconds;
+                frameMilliseconds[frame] = frameSeconds * 1000d;
                 if (frameSeconds > worstFrameSeconds)
                     worstFrameSeconds = frameSeconds;
+                if (gcAllocatedRecorder.Valid &&
+                    gcAllocatedRecorder.LastValue > peakGcAllocated)
+                    peakGcAllocated = gcAllocatedRecorder.LastValue;
                 previousSeconds = currentSeconds;
             }
             stopwatch.Stop();
 
             double elapsedSeconds = stopwatch.Elapsed.TotalSeconds;
             double averageFps = sampleFrames / elapsedSeconds;
+            long sampledTicks = _simulationState.CurrentTick - initialTick;
+            double simulationHz = sampledTicks / elapsedSeconds;
+            Array.Sort(frameMilliseconds);
+            int p95Index = Math.Max(0,
+                (int)Math.Ceiling(sampleFrames * 0.95d) - 1);
+            double p95Milliseconds = frameMilliseconds[p95Index];
+            int gameObjectGrowth = ActiveSceneGameObjectCount() - initialGameObjects;
+            int logicalFolderGrowth = _simulationState.Queues.FolderIds.Count -
+                initialLogicalFolders;
+            int temporaryGameObjectGrowth = gameObjectGrowth - logicalFolderGrowth;
+            int materialGrowth = DistinctM4MaterialCount() - initialMaterials;
+            int poolGrowth = (_m4Director?.VfxPool?.GrowthCount ?? 0) -
+                initialPoolGrowth;
+            OfficeVisualSnapshot steadySnapshot =
+                _m4Projector.Project(_simulationState, _campaignState);
+            _m4Director.Apply(steadySnapshot);
+            long steadyBefore = GC.GetAllocatedBytesForCurrentThread();
+            for (int iteration = 0; iteration < 10000; iteration++)
+                _m4Director.Apply(steadySnapshot);
+            long steadyAllocated = GC.GetAllocatedBytesForCurrentThread() -
+                steadyBefore;
+            double steadyBytesPerUpdate = steadyAllocated / 10000d;
+            long drawCalls = LastProfilerValue(drawCallsRecorder);
+            long batches = LastProfilerValue(batchesRecorder);
+            long triangles = LastProfilerValue(trianglesRecorder);
+            long vertices = LastProfilerValue(verticesRecorder);
+            long textureMemory = LastProfilerValue(textureMemoryRecorder);
+            if (textureMemory < 0L) textureMemory = M4TextureMemoryBytes();
+            gcAllocatedRecorder.Dispose();
+            drawCallsRecorder.Dispose();
+            batchesRecorder.Dispose();
+            trianglesRecorder.Dispose();
+            verticesRecorder.Dispose();
+            textureMemoryRecorder.Dispose();
+
+            OfficeCampaignState verification = OfficeCampaignState.Create();
+            OfficeCampaignCaptureDriver.Prepare(
+                verification, 3, "15-final-campaign-result");
+            OfficeCampaignState replay = OfficeCampaignReplayRunner.ReplayToResult(
+                verification.CreateReplayTape());
+            bool replayChecksumMatch = string.Equals(
+                verification.Checksum, replay.Checksum, StringComparison.Ordinal);
+            bool ownershipValid =
+                _simulationState.Queues.HasSingleLogicalOwnerForEveryFolder();
+            int activeRoots = OfficeVisualDirector.ActiveRootCount();
+            bool performancePass = averageFps >= targetFps &&
+                p95Milliseconds <= maximumP95Milliseconds &&
+                worstFrameSeconds * 1000d <= maximumWorstMilliseconds &&
+                simulationHz >= 29d && simulationHz <= 31d &&
+                steadyAllocated == 0L && activeRoots == 1 && poolGrowth == 0 &&
+                materialGrowth == 0 && temporaryGameObjectGrowth == 0 &&
+                ownershipValid && replayChecksumMatch;
             string fullPath = Path.GetFullPath(outputPath);
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? ".");
-            var report = new StringBuilder(256);
-            report.AppendLine("OFFICE_SLICE_PERFORMANCE_V1");
+            var report = new StringBuilder(1024);
+            report.AppendLine("OFFICE_SLICE_M4_PERFORMANCE_V2");
             report.Append("resolution=").Append(Screen.width).Append('x')
                 .AppendLine(Screen.height.ToString(CultureInfo.InvariantCulture));
             report.Append("frames=").AppendLine(
@@ -216,10 +294,51 @@ namespace Desk42.Product.OfficeSlice
                 elapsedSeconds.ToString("F6", CultureInfo.InvariantCulture));
             report.Append("average_fps=").AppendLine(
                 averageFps.ToString("F2", CultureInfo.InvariantCulture));
+            report.Append("p95_frame_ms=").AppendLine(
+                p95Milliseconds.ToString("F2", CultureInfo.InvariantCulture));
             report.Append("worst_frame_ms=").AppendLine(
                 (worstFrameSeconds * 1000d).ToString("F2", CultureInfo.InvariantCulture));
-            report.Append("simulation_ticks=").AppendLine(
-                _simulationState.CurrentTick.ToString(CultureInfo.InvariantCulture));
+            report.Append("simulation_sample_ticks=").AppendLine(
+                sampledTicks.ToString(CultureInfo.InvariantCulture));
+            report.Append("simulation_hz=").AppendLine(
+                simulationHz.ToString("F2", CultureInfo.InvariantCulture));
+            report.Append("profiler_gc_peak_bytes_per_frame=").AppendLine(
+                peakGcAllocated.ToString(CultureInfo.InvariantCulture));
+            report.Append("steady_visual_total_allocated_bytes=").AppendLine(
+                steadyAllocated.ToString(CultureInfo.InvariantCulture));
+            report.Append("steady_visual_bytes_per_update=").AppendLine(
+                steadyBytesPerUpdate.ToString("F2", CultureInfo.InvariantCulture));
+            report.Append("draw_calls=").AppendLine(
+                drawCalls.ToString(CultureInfo.InvariantCulture));
+            report.Append("batches=").AppendLine(
+                batches.ToString(CultureInfo.InvariantCulture));
+            report.Append("triangles=").AppendLine(
+                triangles.ToString(CultureInfo.InvariantCulture));
+            report.Append("vertices=").AppendLine(
+                vertices.ToString(CultureInfo.InvariantCulture));
+            report.Append("texture_memory_bytes=").AppendLine(
+                textureMemory.ToString(CultureInfo.InvariantCulture));
+            report.Append("active_visual_roots=").AppendLine(
+                activeRoots.ToString(CultureInfo.InvariantCulture));
+            report.Append("active_visual_objects=").AppendLine(
+                (_m4Director?.ActiveVisualObjectCount ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("vfx_active=").AppendLine(
+                (_m4Director?.VfxPool?.ActiveCount ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("vfx_capacity=").AppendLine(
+                (_m4Director?.VfxPool?.Capacity ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("vfx_pool_growth=").AppendLine(
+                poolGrowth.ToString(CultureInfo.InvariantCulture));
+            report.Append("runtime_material_growth=").AppendLine(
+                materialGrowth.ToString(CultureInfo.InvariantCulture));
+            report.Append("game_object_growth=").AppendLine(
+                gameObjectGrowth.ToString(CultureInfo.InvariantCulture));
+            report.Append("logical_folder_visual_growth=").AppendLine(
+                logicalFolderGrowth.ToString(CultureInfo.InvariantCulture));
+            report.Append("temporary_game_object_growth=").AppendLine(
+                temporaryGameObjectGrowth.ToString(CultureInfo.InvariantCulture));
             report.Append("active_folders=").AppendLine(
                 _simulationState.Queues.FolderIds.Count.ToString(
                     CultureInfo.InvariantCulture));
@@ -244,19 +363,65 @@ namespace Desk42.Product.OfficeSlice
             report.Append("staff=").AppendLine(
                 _simulationState.Staff.Staff.Count.ToString(
                     CultureInfo.InvariantCulture));
-            report.Append("ownership_valid=").AppendLine(
-                _simulationState.Queues.HasSingleLogicalOwnerForEveryFolder()
-                    .ToString());
+            report.Append("ownership_valid=").AppendLine(ownershipValid.ToString());
+            report.Append("final_campaign_checksum=").AppendLine(
+                verification.Checksum);
+            report.Append("replay_campaign_checksum=").AppendLine(replay.Checksum);
+            report.Append("replay_checksum_match=").AppendLine(
+                replayChecksumMatch.ToString());
             report.Append("target_fps=").AppendLine(
                 targetFps.ToString("F0", CultureInfo.InvariantCulture));
-            report.Append("target_met=").AppendLine(
-                (averageFps >= targetFps).ToString());
+            report.Append("performance_pass=").AppendLine(performancePass.ToString());
             File.WriteAllText(fullPath, report.ToString());
 
-            Debug.Log("OFFICE_SLICE_PERFORMANCE_OK " +
+            Debug.Log("OFFICE_M4_PERFORMANCE_" +
+                (performancePass ? "OK " : "FAILED ") +
                 averageFps.ToString("F2", CultureInfo.InvariantCulture) +
                 " FPS " + fullPath, this);
-            Application.Quit(averageFps >= targetFps ? 0 : 2);
+            Application.Quit(performancePass ? 0 : 2);
+        }
+
+        private static long LastProfilerValue(ProfilerRecorder recorder)
+        {
+            return recorder.Valid ? recorder.LastValue : -1L;
+        }
+
+        private int DistinctM4MaterialCount()
+        {
+            if (_runtimeRoot == null) return 0;
+            var ids = new HashSet<int>();
+            Renderer[] renderers = _runtimeRoot.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+                if (renderers[i].sharedMaterial != null)
+                    ids.Add(renderers[i].sharedMaterial.GetInstanceID());
+            return ids.Count;
+        }
+
+        private static int ActiveSceneGameObjectCount()
+        {
+            GameObject[] objects = Resources.FindObjectsOfTypeAll<GameObject>();
+            int count = 0;
+            for (int i = 0; i < objects.Length; i++)
+                if (objects[i].scene.IsValid()) count++;
+            return count;
+        }
+
+        private long M4TextureMemoryBytes()
+        {
+            if (_m4Catalog == null) return 0L;
+            var textureIds = new HashSet<int>();
+            long bytes = 0L;
+            for (int i = 0; i < _m4Catalog.Entries.Count; i++)
+            {
+                Sprite sprite = _m4Catalog.Entries[i].Sprite;
+                Texture2D texture = sprite == null ? null : sprite.texture;
+                if (texture == null || !textureIds.Add(texture.GetInstanceID())) continue;
+                long measured = UnityEngine.Profiling.Profiler
+                    .GetRuntimeMemorySizeLong(texture);
+                long rgbaEstimate = (long)texture.width * texture.height * 4L;
+                bytes += Math.Max(measured, rgbaEstimate);
+            }
+            return bytes;
         }
 
         private void LateUpdate()
