@@ -69,6 +69,10 @@ namespace Desk42.Product.OfficeSlice
                 Customers = new OfficeCustomerScheduleState(_m2Scenario.Customers);
                 ManualTasks = new OfficeManualTaskState(_m2Scenario);
                 Decisions = new OfficeDecisionState(_m2Scenario.InstitutionalSession);
+                RoomWork = new OfficeRoomWorkState();
+                Staff = new OfficeStaffSystem(Grid, Queues, RoomWork, Customers);
+                CustomerPressure = new OfficeCustomerPressureState(
+                    Customers, Queues, ManualTasks);
             }
         }
 
@@ -80,6 +84,9 @@ namespace Desk42.Product.OfficeSlice
         public OfficeCustomerScheduleState Customers { get; }
         public OfficeManualTaskState ManualTasks { get; }
         public OfficeDecisionState Decisions { get; }
+        public OfficeRoomWorkState RoomWork { get; }
+        public OfficeStaffSystem Staff { get; }
+        public OfficeCustomerPressureState CustomerPressure { get; }
         public OfficeCommandLog CommandLog { get; }
         public bool ReplayMode { get; }
         public bool M2Enabled => _m2Scenario != null;
@@ -96,6 +103,13 @@ namespace Desk42.Product.OfficeSlice
                 if (!M2Enabled) return "INTERACT";
                 OfficeInteractionPoint point = CurrentInteractionPoint();
                 if (point == null) return "MOVE TO A WORK POINT";
+                OfficeRoomWorkJobState roomJob = RoomWork.ActiveJobAt(point.Room);
+                if (!Carry.IsCarrying && roomJob != null) return "HELP";
+                OfficeCustomerState active = Customers.ActiveDeskCustomer;
+                if (!Carry.IsCarrying && point.Room == OfficeRoomId.FrontDesk &&
+                    active != null && active.VisibleMoodState >= OfficeVisibleMoodState.Worried &&
+                    CustomerPressure.CalmCooldownRemainingTicks == 0)
+                    return "CALM";
                 if (Carry.IsCarrying)
                 {
                     OfficeCaseWorkRecord record = ManualTasks.RecordFor(
@@ -205,6 +219,25 @@ namespace Desk42.Product.OfficeSlice
             return OfficeCommand.CancelWork(CurrentTick + 1, _nextSequence++);
         }
 
+        public OfficeCommand CreateHelpCommand(string jobId)
+        {
+            return OfficeCommand.Help(CurrentTick + 1, _nextSequence++, jobId);
+        }
+
+        public OfficeCommand CreateCalmCommand(string customerId)
+        {
+            return OfficeCommand.Calm(CurrentTick + 1, _nextSequence++, customerId);
+        }
+
+        public OfficeCommand CreateAssignStaffCommand(
+            string staffId,
+            string targetId,
+            OfficeRoomId destination)
+        {
+            return OfficeCommand.AssignStaff(
+                CurrentTick + 1, _nextSequence++, staffId, targetId, destination);
+        }
+
         public OfficeCommand CreateDecideCommand(string caseId)
         {
             return OfficeCommand.Decide(CurrentTick + 1, _nextSequence++, caseId);
@@ -223,6 +256,16 @@ namespace Desk42.Product.OfficeSlice
             if (!M2Enabled) return CreateInteractCommand();
             OfficeInteractionPoint point = CurrentInteractionPoint();
             if (point == null) return CreateInteractCommand();
+
+            OfficeRoomWorkJobState roomJob = RoomWork.ActiveJobAt(point.Room);
+            if (!Carry.IsCarrying && roomJob != null)
+                return CreateHelpCommand(roomJob.JobId);
+            OfficeCustomerState activeCustomer = Customers.ActiveDeskCustomer;
+            if (!Carry.IsCarrying && point.Room == OfficeRoomId.FrontDesk &&
+                activeCustomer != null &&
+                activeCustomer.VisibleMoodState >= OfficeVisibleMoodState.Worried &&
+                CustomerPressure.CalmCooldownRemainingTicks == 0)
+                return CreateCalmCommand(activeCustomer.CustomerId);
 
             if (Carry.IsCarrying)
             {
@@ -269,6 +312,20 @@ namespace Desk42.Product.OfficeSlice
                         : OfficeDecisionChoice.RejectCase;
                     return CreateDecideCommand(caseId, choice);
                 }
+                if (oneBasedChoice == 3)
+                {
+                    OfficeFolderState folder = Queues.GetFolder(caseId);
+                    OfficeRoomId destination = folder == null
+                        ? OfficeRoomId.FrontDesk
+                        : OfficeQueueService.NextRoom(folder.CurrentRoom);
+                    return CreateAssignStaffCommand(
+                        OfficeStaffSystem.RunnerId, caseId, destination);
+                }
+                if (oneBasedChoice == 4)
+                    return CreateAssignStaffCommand(
+                        OfficeStaffSystem.TalkerId,
+                        Customers.ActiveDeskCustomer.CustomerId,
+                        OfficeRoomId.FrontDesk);
             }
             return CreateInteractCommand();
         }
@@ -328,6 +385,12 @@ namespace Desk42.Product.OfficeSlice
                 if (command.Tick > CurrentTick) break;
                 Execute(command);
             }
+            if (M2Enabled)
+            {
+                Staff.AdvanceOneTick(CurrentTick);
+                RoomWork.AdvanceOneTick(Warden.Cell(Grid));
+                CustomerPressure.AdvanceOneTick(Warden.Cell(Grid), Staff);
+            }
         }
 
         public void AdvanceTicks(int count)
@@ -356,6 +419,13 @@ namespace Desk42.Product.OfficeSlice
         private void Execute(OfficeCommand command)
         {
             AppliedCommandCount++;
+            if (M2Enabled)
+            {
+                if (command.Kind != OfficeCommandKind.Help)
+                    RoomWork.CancelHelp();
+                if (command.Kind != OfficeCommandKind.Calm)
+                    CustomerPressure.CancelCalm();
+            }
             switch (command.Kind)
             {
                 case OfficeCommandKind.Move:
@@ -385,6 +455,15 @@ namespace Desk42.Product.OfficeSlice
                             "There is no active work to cancel.");
                     else
                         ManualTasks.Cancel();
+                    break;
+                case OfficeCommandKind.Help:
+                    ExecuteHelp(command);
+                    break;
+                case OfficeCommandKind.Calm:
+                    ExecuteCalm(command);
+                    break;
+                case OfficeCommandKind.AssignStaff:
+                    ExecuteAssignStaff(command);
                     break;
                 case OfficeCommandKind.Decide:
                     ExecuteDecide(command);
@@ -576,6 +655,56 @@ namespace Desk42.Product.OfficeSlice
             Customers.MarkDecisionMade(command.TargetId);
         }
 
+        private void ExecuteHelp(OfficeCommand command)
+        {
+            if (!M2Enabled)
+            {
+                AddFailure(CurrentTick, command.Sequence, "HELP_NOT_AVAILABLE",
+                    "There is no active room task to help here.");
+                return;
+            }
+            OfficeInteractionPoint point = CurrentInteractionPoint();
+            OfficeRoomWorkJobState job = point == null
+                ? null
+                : RoomWork.ActiveJobAt(point.Room);
+            if (point == null || job == null ||
+                (!string.IsNullOrWhiteSpace(command.TargetId) &&
+                    !string.Equals(job.JobId, command.TargetId,
+                        StringComparison.Ordinal)) ||
+                !RoomWork.TryStartHelp(point.Room, Warden.Cell(Grid)))
+                AddFailure(CurrentTick, command.Sequence, "HELP_NOT_AVAILABLE",
+                    "There is no active room task to help here.");
+        }
+
+        private void ExecuteCalm(OfficeCommand command)
+        {
+            OfficeInteractionPoint point = CurrentInteractionPoint();
+            if (!M2Enabled || point == null || point.Room != OfficeRoomId.FrontDesk ||
+                !CustomerPressure.TryStartCalm(
+                    command.TargetId, Warden.Cell(Grid)))
+                AddFailure(CurrentTick, command.Sequence, "CALM_NOT_AVAILABLE",
+                    "The customer cannot be calmed here yet.");
+        }
+
+        private void ExecuteAssignStaff(OfficeCommand command)
+        {
+            if (!M2Enabled || command.Arg0 < (int)OfficeRoomId.FrontDesk ||
+                command.Arg0 > (int)OfficeRoomId.WaitingArea)
+            {
+                AddFailure(CurrentTick, command.Sequence, "STAFF_ASSIGNMENT_REJECTED",
+                    "That staff task is not available.");
+                return;
+            }
+            if (!Staff.TryAssign(
+                    command.TargetId,
+                    command.TextArg,
+                    (OfficeRoomId)command.Arg0,
+                    CurrentTick,
+                    out string failure))
+                AddFailure(CurrentTick, command.Sequence,
+                    "STAFF_ASSIGNMENT_REJECTED", failure);
+        }
+
         private OfficeInteractionPoint CurrentInteractionPoint()
         {
             return Grid.ChooseClosestInteractionPoint(Warden.Cell(Grid));
@@ -701,6 +830,9 @@ namespace Desk42.Product.OfficeSlice
                 state.Customers.AppendSnapshot(builder);
                 state.ManualTasks.AppendSnapshot(builder, state.Cases.Cases);
                 state.Decisions.AppendSnapshot(builder, state.Cases.Cases);
+                state.RoomWork.AppendSnapshot(builder);
+                state.Staff.AppendSnapshot(builder);
+                state.CustomerPressure.AppendSnapshot(builder);
             }
             for (int i = 0; i < state.Failures.Count; i++)
                 builder.Append("|failure=").Append(state.Failures[i]);

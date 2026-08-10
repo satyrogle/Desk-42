@@ -76,6 +76,39 @@ namespace Desk42.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator StaffAndWardenCanShareWorkWithoutDuplicateOwnership()
+        {
+            yield return SceneManager.LoadSceneAsync("OfficeSlice");
+            yield return null;
+            OfficeSimulationState state = Object.FindObjectOfType<OfficeSliceBootstrap>()
+                .SimulationState;
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            string caseId = state.Customers.ActiveDeskCustomer.LinkedAutomationClaimId;
+
+            PressChoice(state, intent, input, 3); // ASSIGN RUNNER
+            NavigateTo(state, intent, input, "front-desk.interact");
+            PressPrimary(state, intent, input); // WARDEN TAKES FIRST
+            state.AdvanceTicks(250);
+
+            Assert.That(state.Carry.CarriedFolderId, Is.EqualTo(caseId));
+            Assert.That(state.Staff.Get(OfficeStaffSystem.RunnerId).TaskState,
+                Is.EqualTo(OfficeStaffTaskState.Blocked));
+            Assert.That(state.Queues.HasSingleLogicalOwnerForEveryFolder(), Is.True);
+
+            intent.BufferDrop(state.CurrentTick);
+            input.AdvanceOneTick();
+            state.AdvanceTicks(101);
+
+            OfficeFolderState folder = state.Queues.GetFolder(caseId);
+            Assert.That(folder.OwnerKind, Is.EqualTo(OfficeFolderOwnerKind.RoomQueue));
+            Assert.That(folder.CurrentRoom, Is.EqualTo(OfficeRoomId.PaperRoom));
+            Assert.That(state.Staff.Get(OfficeStaffSystem.RunnerId).TaskState,
+                Is.EqualTo(OfficeStaffTaskState.Idle));
+            Assert.That(state.Queues.HasSingleLogicalOwnerForEveryFolder(), Is.True);
+        }
+
+        [UnityTest]
         public IEnumerator OfficeSliceSceneBootsAsOneRootWithSixCases()
         {
             yield return SceneManager.LoadSceneAsync("OfficeSlice");

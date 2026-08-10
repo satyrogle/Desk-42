@@ -201,6 +201,53 @@ namespace Desk42.Product.OfficeSlice
             return true;
         }
 
+        public bool TryTakeByRunner(
+            string staffId,
+            string caseId,
+            OfficeRoomId room)
+        {
+            if (string.IsNullOrWhiteSpace(staffId) ||
+                !_folders.TryGetValue(caseId, out OfficeFolderState folder)) return false;
+            for (int i = 0; i < _folderOrder.Count; i++)
+            {
+                OfficeFolderState existing = _folders[_folderOrder[i]];
+                if (existing.OwnerKind == OfficeFolderOwnerKind.Runner &&
+                    string.Equals(existing.OwnerId, staffId, StringComparison.Ordinal))
+                    return false;
+            }
+            if (folder.IsMoving || folder.CurrentRoom != room ||
+                folder.OwnerKind != OfficeFolderOwnerKind.RoomQueue ||
+                !IsQueuedIn(caseId, room)) return false;
+            _queues[room].Remove(caseId);
+            folder.OwnerKind = OfficeFolderOwnerKind.Runner;
+            folder.OwnerId = staffId;
+            ValidateSingleOwnership();
+            return true;
+        }
+
+        public bool TryDropByRunner(string staffId, OfficeRoomId room)
+        {
+            if (string.IsNullOrWhiteSpace(staffId)) return false;
+            OfficeFolderState carried = null;
+            for (int i = 0; i < _folderOrder.Count; i++)
+            {
+                OfficeFolderState folder = _folders[_folderOrder[i]];
+                if (folder.OwnerKind == OfficeFolderOwnerKind.Runner &&
+                    string.Equals(folder.OwnerId, staffId, StringComparison.Ordinal))
+                {
+                    carried = folder;
+                    break;
+                }
+            }
+            if (carried == null) return false;
+            carried.CurrentRoom = room;
+            carried.OwnerKind = OfficeFolderOwnerKind.RoomQueue;
+            carried.OwnerId = room.ToString();
+            _queues[room].Add(carried.CaseId);
+            ValidateSingleOwnership();
+            return true;
+        }
+
         public bool TrySendByWarden(
             OfficeRoomId destination,
             long currentTick,

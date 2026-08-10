@@ -150,6 +150,32 @@ namespace Desk42.Product.OfficeSlice
                 tick, sequence, OfficeCommandKind.CancelWork,
                 "warden", string.Empty, 0, 0, string.Empty);
         }
+
+        public static OfficeCommand Help(long tick, int sequence, string jobId)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Help,
+                "warden", jobId, 0, 0, string.Empty);
+        }
+
+        public static OfficeCommand Calm(long tick, int sequence, string customerId)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.Calm,
+                "warden", customerId, 0, 0, string.Empty);
+        }
+
+        public static OfficeCommand AssignStaff(
+            long tick,
+            int sequence,
+            string staffId,
+            string targetId,
+            OfficeRoomId destination)
+        {
+            return new OfficeCommand(OfficeCommandLog.CurrentSchemaVersion,
+                tick, sequence, OfficeCommandKind.AssignStaff,
+                "warden", staffId, (int)destination, 0, targetId);
+        }
     }
 
     public sealed class OfficeCommandFailure

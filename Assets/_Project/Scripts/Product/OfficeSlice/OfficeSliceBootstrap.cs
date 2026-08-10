@@ -24,6 +24,8 @@ namespace Desk42.Product.OfficeSlice
             new(StringComparer.Ordinal);
         private readonly Dictionary<string, Transform> _customerViews =
             new(StringComparer.Ordinal);
+        private readonly Dictionary<string, Transform> _staffViews =
+            new(StringComparer.Ordinal);
         private readonly List<Material> _runtimeMaterials = new();
 
         private OfficeCaseRepository _caseRepository;
@@ -129,6 +131,11 @@ namespace Desk42.Product.OfficeSlice
                 {
                     destination = _wardenView.position + new Vector3(0.55f, 0.15f, 0f);
                 }
+                else if (folder.OwnerKind == OfficeFolderOwnerKind.Runner &&
+                    _staffViews.TryGetValue(folder.OwnerId, out Transform staffView))
+                {
+                    destination = staffView.position + new Vector3(0.55f, 0.15f, 0f);
+                }
                 else if (folder.IsMoving)
                 {
                     Vector3 source = SocketWorldPosition(folder.SourceRoom, 0);
@@ -150,6 +157,7 @@ namespace Desk42.Product.OfficeSlice
             }
 
             RefreshCustomerViews();
+            RefreshStaffViews();
             UpdateBillboards(wardenCell);
         }
 
@@ -237,6 +245,7 @@ namespace Desk42.Product.OfficeSlice
             CreateWarden();
             CreateFolderViews();
             CreateCustomerViews();
+            CreateStaffViews();
         }
 
         private void CreateCamera()
@@ -401,6 +410,37 @@ namespace Desk42.Product.OfficeSlice
                 folder.CurrentRoom == point.Room;
         }
 
+        private void CreateStaffViews()
+        {
+            for (int i = 0; i < _simulationState.Staff.Staff.Count; i++)
+            {
+                OfficeStaffState staff = _simulationState.Staff.Staff[i];
+                Color color = staff.Role == OfficeStaffRole.Runner
+                    ? new Color(0.38f, 0.75f, 0.45f)
+                    : new Color(0.72f, 0.48f, 0.82f);
+                GameObject body = CreateCube(staff.DisplayName,
+                    Vector3.zero, new Vector3(0.52f, 0.82f, 0.52f), color);
+                CreateLabel(staff.DisplayName, Vector3.up * 1.02f,
+                    0.06f, body.transform);
+                _staffViews.Add(staff.StaffId, body.transform);
+            }
+            RefreshStaffViews();
+        }
+
+        private void RefreshStaffViews()
+        {
+            if (_simulationState.Staff == null) return;
+            for (int i = 0; i < _simulationState.Staff.Staff.Count; i++)
+            {
+                OfficeStaffState staff = _simulationState.Staff.Staff[i];
+                if (!_staffViews.TryGetValue(staff.StaffId, out Transform view)) continue;
+                view.position = new Vector3(
+                    staff.XSubunits / (float)OfficeGrid.LogicalSubunitsPerCell,
+                    0.43f,
+                    staff.ZSubunits / (float)OfficeGrid.LogicalSubunitsPerCell);
+            }
+        }
+
         private GameObject CreateCube(
             string objectName,
             Vector3 position,
@@ -506,7 +546,7 @@ namespace Desk42.Product.OfficeSlice
         private void OnGUI()
         {
             if (!Ready) return;
-            GUILayout.BeginArea(new Rect(16f, 16f, 540f, 330f), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(16f, 16f, 540f, 440f), GUI.skin.box);
             GUILayout.Label("DESK 42 / TODAY'S DESK");
             OfficeCustomerState customer =
                 _simulationState.Customers.ActiveDeskCustomer;
@@ -519,6 +559,9 @@ namespace Desk42.Product.OfficeSlice
                 GUILayout.Label("CUSTOMER: " + customer.DisplayName);
                 GUILayout.Label(customer.Problem);
                 GUILayout.Label("MOOD: " + customer.VisibleMoodState.ToString().ToUpperInvariant());
+                OfficeCustomerPressureRecord pressure =
+                    _simulationState.CustomerPressure.RecordFor(customer.CustomerId);
+                GUILayout.Label("WHY: " + pressure.LastAuthoredCause);
                 GUILayout.Label("FOLDER: " + FolderStatus(customer.LinkedAutomationClaimId));
             }
             GUILayout.Space(8f);
@@ -527,10 +570,20 @@ namespace Desk42.Product.OfficeSlice
             GUILayout.Label("E / SPACE / A: " + _simulationState.PrimaryActionLabel);
             GUILayout.Label("WASD / ARROWS / LEFT STICK: MOVE");
             GUILayout.Label("CHOICES: 1-4 / X-Y-LB-RB");
+            GUILayout.Label("Q / B: PUT DOWN");
+            GUILayout.Label("3 RUNNER     4 TALKER");
+            for (int i = 0; i < _simulationState.Staff.Staff.Count; i++)
+            {
+                OfficeStaffState staff = _simulationState.Staff.Staff[i];
+                GUILayout.Label(staff.DisplayName + ": " + staff.VisibleIntent);
+            }
+            if (_simulationState.CustomerPressure.CalmActive)
+                GUILayout.Label("CALMING: " +
+                    _simulationState.CustomerPressure.CalmRemainingTicks + " TICKS");
             GUILayout.EndArea();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            GUILayout.BeginArea(new Rect(16f, 360f, 700f, 205f), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(16f, 470f, 700f, 205f), GUI.skin.box);
             GUILayout.Label("M2 ENGINEERING EVIDENCE");
             GUILayout.Label("TICK " + _simulationState.CurrentTick +
                 " / CHECKSUM " + _simulationState.Checksum);
@@ -568,6 +621,14 @@ namespace Desk42.Product.OfficeSlice
                     GUILayout.Label("3 COPIED FILE > NO PAYMENT RECORD > NO ACCOUNT");
                 }
                 return;
+            }
+
+            if (_simulationState.RoomWork.HelpActive)
+            {
+                OfficeRoomWorkJobState job = _simulationState.RoomWork.Job(
+                    _simulationState.RoomWork.HelpJobId);
+                if (job != null)
+                    GUILayout.Label("HELPING: " + job.RemainingTicks + " TICKS LEFT");
             }
 
             if (customer == null) return;

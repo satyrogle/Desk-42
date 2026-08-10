@@ -58,6 +58,7 @@ namespace Desk42.Product.OfficeSlice
     public sealed class OfficeCustomerScheduleState
     {
         private readonly List<OfficeCustomerState> _customers = new();
+        private readonly IReadOnlyList<OfficeCustomerState> _readOnlyCustomers;
         private readonly Dictionary<string, OfficeCustomerState> _byId =
             new(StringComparer.Ordinal);
 
@@ -78,11 +79,11 @@ namespace Desk42.Product.OfficeSlice
                 _byId.Add(customer.CustomerId, customer);
                 priorArrival = definition.ArrivalTick;
             }
+            _readOnlyCustomers = _customers.AsReadOnly();
             AdvanceToTick(0L);
         }
 
-        public IReadOnlyList<OfficeCustomerState> Customers =>
-            new ReadOnlyCollection<OfficeCustomerState>(_customers);
+        public IReadOnlyList<OfficeCustomerState> Customers => _readOnlyCustomers;
         public OfficeCustomerState ActiveDeskCustomer { get; private set; }
 
         public void AdvanceToTick(long tick)

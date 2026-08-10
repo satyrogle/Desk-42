@@ -84,6 +84,8 @@ namespace Desk42.Product.OfficeSlice
         private bool _choiceBuffered;
         private int _bufferedChoice;
         private long _choiceExpiresAfterTick;
+        private bool _dropBuffered;
+        private long _dropExpiresAfterTick;
 
         public OfficeInputDirection Movement { get; private set; }
         public bool HasBufferedInteraction => _interactionBuffered;
@@ -151,11 +153,32 @@ namespace Desk42.Product.OfficeSlice
             return true;
         }
 
+        public void BufferDrop(long currentTick)
+        {
+            if (currentTick < 0L) throw new ArgumentOutOfRangeException(nameof(currentTick));
+            if (_dropBuffered) return;
+            _dropBuffered = true;
+            _dropExpiresAfterTick = currentTick + InteractionBufferTicks;
+        }
+
+        public bool TryConsumeDrop(long commandTick)
+        {
+            if (!_dropBuffered) return false;
+            if (commandTick > _dropExpiresAfterTick)
+            {
+                ClearDrop();
+                return false;
+            }
+            ClearDrop();
+            return true;
+        }
+
         public void Clear()
         {
             Movement = OfficeInputDirection.None;
             ClearInteraction();
             ClearChoice();
+            ClearDrop();
         }
 
         private void ClearInteraction()
@@ -169,6 +192,12 @@ namespace Desk42.Product.OfficeSlice
             _choiceBuffered = false;
             _bufferedChoice = 0;
             _choiceExpiresAfterTick = 0L;
+        }
+
+        private void ClearDrop()
+        {
+            _dropBuffered = false;
+            _dropExpiresAfterTick = 0L;
         }
     }
 
@@ -209,6 +238,9 @@ namespace Desk42.Product.OfficeSlice
             if (_intent.TryConsumeChoice(commandTick, out int choice))
                 _state.TryQueueCommand(
                     _state.CreateChoiceCommand(choice), out OfficeCommandFailure ignored);
+            if (_intent.TryConsumeDrop(commandTick))
+                _state.TryQueueCommand(
+                    _state.CreateDropCommand(), out OfficeCommandFailure ignored);
 
             _state.AdvanceOneTick();
         }
