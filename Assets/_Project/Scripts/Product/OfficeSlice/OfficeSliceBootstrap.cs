@@ -337,6 +337,7 @@ namespace Desk42.Product.OfficeSlice
 
             RefreshCustomerViews();
             RefreshStaffViews();
+            RefreshM4CharacterSprites();
             UpdateBillboards(wardenCell);
             if (_m4Projector != null &&
                 (_m4Snapshot == null || _m4Snapshot.Tick != _simulationState.CurrentTick))
@@ -756,16 +757,11 @@ namespace Desk42.Product.OfficeSlice
             {
                 OfficeCustomerState customer = customers[i];
                 GameObject body;
-                if (_m4Director != null &&
-                    string.Equals(customer.DisplayName, "NIA BELL", StringComparison.Ordinal))
+                if (_m4Director != null)
                     body = _m4Director.CreateSpriteObject(
                         "Customer " + customer.DisplayName,
-                        "character.nia-bell.idle", Vector3.zero, Vector3.one, 105);
-                else if (_m4Director != null)
-                {
-                    body = new GameObject("Customer " + customer.DisplayName + " Visual Anchor");
-                    body.transform.SetParent(_runtimeRoot, false);
-                }
+                        CustomerVisualId(customer.DisplayName, OfficeVisibleMoodState.Calm),
+                        Vector3.zero, new Vector3(0.8f, 0.8f, 1f), 105);
                 else
                 {
                     body = CreateCube("Customer " + customer.DisplayName,
@@ -795,7 +791,7 @@ namespace Desk42.Product.OfficeSlice
                 view.gameObject.SetActive(visible);
                 if (!visible) continue;
                 float x = customer.QueueState == OfficeCustomerQueueState.AtDesk
-                    ? -10f : -3f + waitingIndex++ * 1.1f;
+                    ? -10f : -4f + waitingIndex++ * 1.6f;
                 float z = customer.QueueState == OfficeCustomerQueueState.AtDesk ? 7f : -3f;
                 view.position = PresentationPosition(x, z, 0.55f);
                 if (view.TryGetComponent(out SpriteRenderer renderer))
@@ -856,6 +852,113 @@ namespace Desk42.Product.OfficeSlice
                 if (view.TryGetComponent(out SpriteRenderer renderer))
                     renderer.sortingOrder = OfficeVisualDirector.SortingOrder(z);
             }
+        }
+
+        private void RefreshM4CharacterSprites()
+        {
+            if (_m4Director == null) return;
+            if (_wardenView != null)
+            {
+                string wardenId;
+                string action = _simulationState.PrimaryActionLabel;
+                if (_simulationState.CustomerPressure.CalmActive)
+                    wardenId = "character.warden.calm";
+                else if (_simulationState.ManualTasks.IsActive)
+                    wardenId = "character.warden.interact";
+                else if (action == "STOP COPIER" || action == "STOP CLOCK" ||
+                    action == "REMOVE SUPERVISOR STAMP" ||
+                    action == "CLEAR PROMOTION FORM" || action == "CLEAR COPY")
+                    wardenId = "character.warden.fix";
+                else
+                    wardenId = OfficeTickAnimationDriver.WardenMovementAssetId(
+                        _tickDriver?.VisualMovement ?? OfficeInputDirection.None,
+                        _simulationState.Carry.IsCarrying);
+                _m4Director.SetSprite(_wardenView, wardenId);
+            }
+
+            IReadOnlyList<OfficeCustomerState> customers =
+                _simulationState.Customers.Customers;
+            for (int i = 0; i < customers.Count; i++)
+            {
+                OfficeCustomerState customer = customers[i];
+                if (_customerViews.TryGetValue(customer.CustomerId, out Transform view))
+                    _m4Director.SetSprite(view,
+                        CustomerVisualId(customer.DisplayName, customer.VisibleMoodState));
+            }
+
+            for (int i = 0; i < _simulationState.Staff.Staff.Count; i++)
+            {
+                OfficeStaffState staff = _simulationState.Staff.Staff[i];
+                if (_staffViews.TryGetValue(staff.StaffId, out Transform view))
+                    _m4Director.SetSprite(view, StaffVisualId(staff));
+            }
+        }
+
+        private static string StaffVisualId(OfficeStaffState staff)
+        {
+            if (staff.Role == OfficeStaffRole.Runner)
+            {
+                if (staff.IsBlocked) return "character.runner.blocked";
+                if (staff.VisibleIntent.StartsWith("COPIER ORDER", StringComparison.Ordinal) ||
+                    staff.VisibleIntent.StartsWith("FOLLOWING COPIER", StringComparison.Ordinal))
+                    return "character.runner.obey-copier";
+                if (staff.VisibleIntent.StartsWith("CARRYING", StringComparison.Ordinal))
+                    return "character.runner.carry";
+                if (staff.VisibleIntent.StartsWith("CHECKING", StringComparison.Ordinal))
+                    return "character.runner.work";
+                return "character.runner.idle";
+            }
+            if (staff.IsBlocked) return "character.talker.blocked";
+            if (staff.VisibleIntent.StartsWith("CALMING", StringComparison.Ordinal))
+                return "character.talker.calm-customer";
+            if (staff.VisibleIntent.StartsWith("CHECKING", StringComparison.Ordinal))
+                return "character.talker.work";
+            return "character.talker.idle";
+        }
+
+        private static string CustomerVisualId(
+            string displayName,
+            OfficeVisibleMoodState mood)
+        {
+            string calm;
+            string worried;
+            string upset;
+            string strange;
+            switch (displayName)
+            {
+                case "NIA BELL":
+                    calm = "character.nia-bell.calm"; worried = "character.nia-bell.worried";
+                    upset = "character.nia-bell.upset"; strange = "character.nia-bell.strange";
+                    break;
+                case "OWEN PIKE":
+                    calm = "character.owen-pike.calm"; worried = "character.owen-pike.worried";
+                    upset = "character.owen-pike.upset"; strange = "character.owen-pike.strange";
+                    break;
+                case "MARA VALE":
+                    calm = "character.mara-vale.calm"; worried = "character.mara-vale.worried";
+                    upset = "character.mara-vale.upset"; strange = "character.mara-vale.strange";
+                    break;
+                case "IRIS COLE":
+                    calm = "character.iris-cole.calm"; worried = "character.iris-cole.worried";
+                    upset = "character.iris-cole.upset"; strange = "character.iris-cole.strange";
+                    break;
+                case "TOMAS REED":
+                    calm = "character.tomas-reed.calm"; worried = "character.tomas-reed.worried";
+                    upset = "character.tomas-reed.upset"; strange = "character.tomas-reed.strange";
+                    break;
+                default:
+                    calm = "character.june-hart.calm"; worried = "character.june-hart.worried";
+                    upset = "character.june-hart.upset"; strange = "character.june-hart.strange";
+                    break;
+            }
+            return mood switch
+            {
+                OfficeVisibleMoodState.Worried => worried,
+                OfficeVisibleMoodState.Upset => upset,
+                OfficeVisibleMoodState.Strange => strange,
+                OfficeVisibleMoodState.Break => strange,
+                _ => calm,
+            };
         }
 
         private GameObject CreateCube(

@@ -45,6 +45,7 @@ def save_asset(asset_id: str, category: str, image: Image.Image,
         path.parent.mkdir(parents=True, exist_ok=True)
         image.save(path, optimize=False, compress_level=9)
     digest = sha(runtime)
+    records[:] = [record for record in records if record["asset_id"] != asset_id]
     records.append({
         "asset_id": asset_id,
         "runtime_filename": runtime.relative_to(ROOT).as_posix(),
@@ -246,6 +247,75 @@ def state_overlay(kind: str) -> Image.Image:
     return im
 
 
+def character_state(primary: str, accent: str, signature: int, state: str) -> Image.Image:
+    mood = state if state in ("calm", "worried", "upset", "strange") else "calm"
+    im = character(primary, accent, signature, mood)
+    d = ImageDraw.Draw(im)
+    if "carry" in state:
+        d.polygon(((18, 65), (61, 65), (68, 93), (24, 96)), fill=P["cream"], outline=P["ink"])
+        d.rectangle((29, 73, 57, 80), fill=P["red"])
+    if state in ("interact", "work"):
+        d.line((66, 63, 86, 48), fill=P["cream"], width=8)
+        d.ellipse((80, 41, 92, 53), fill=P[accent], outline=P["ink"])
+    if state in ("calm", "calm-customer"):
+        d.arc((8, 42, 88, 121), 205, 335, fill=P["mint"], width=6)
+    if state == "fix":
+        d.line((69, 79, 88, 57), fill=P["cyan"], width=7)
+        d.ellipse((78, 47, 95, 64), outline=P["ink"], width=5)
+    if state == "help":
+        d.polygon(((72, 48), (78, 60), (92, 61), (82, 70), (86, 84), (73, 77), (62, 84), (66, 70), (56, 61), (69, 60)), fill=P["amber"])
+    if state in ("blocked", "stunned"):
+        d.line((11, 54, 85, 54), fill=P["red"], width=8)
+        d.line((16, 72, 80, 72), fill=P["ink"], width=7)
+    if state == "obey-copier":
+        d.polygon(((58, 47), (88, 38), (91, 66), (64, 73)), fill=P["red"], outline=P["ink"])
+        d.line((74, 74, 93, 100), fill=P["violet"], width=7)
+    if state == "return-to-warden":
+        d.line((82, 38, 66, 30, 72, 48), fill=P["teal"], width=6)
+    if state == "strange":
+        d.line((15, 25, 3, 18), fill=P["violet"], width=5)
+        d.line((78, 18, 92, 8), fill=P["cyan"], width=5)
+    # Direction marker changes stance while preserving the bottom-centre anchor.
+    if state.endswith("-left"): d.line((22, 88, 10, 103), fill=P[accent], width=6)
+    elif state.endswith("-right"): d.line((74, 88, 88, 103), fill=P[accent], width=6)
+    elif state.endswith("-up"): d.line((48, 52, 48, 31), fill=P[accent], width=6)
+    elif state.endswith("-down"): d.polygon(((40, 92), (56, 92), (48, 105)), fill=P[accent])
+    return im
+
+
+def portrait(primary: str, accent: str, signature: int, mood: str) -> Image.Image:
+    im = Image.new("RGBA", (192, 192), P["cream"])
+    d = ImageDraw.Draw(im)
+    d.rectangle((4, 4, 187, 187), outline=P["ink"], width=8)
+    d.polygon(((28, 190), (42, 121), (96, 104), (150, 121), (166, 190)), fill=P[primary], outline=P["ink"])
+    d.ellipse((46, 31, 146, 132), fill=P["plaster"], outline=P["ink"], width=8)
+    if signature % 3 == 0:
+        d.polygon(((39, 66), (52, 18), (96, 33), (144, 17), (151, 71)), fill=P[accent], outline=P["ink"])
+    elif signature % 3 == 1:
+        d.arc((35, 12, 154, 105), 185, 355, fill=P[accent], width=24)
+    else:
+        d.polygon(((40, 62), (61, 18), (97, 40), (128, 12), (153, 66)), fill=P[accent], outline=P["ink"])
+    eye_y = 78
+    d.rectangle((68, eye_y, 78, eye_y + 8), fill=P["ink"])
+    d.rectangle((114, eye_y, 124, eye_y + 8), fill=P["ink"])
+    if mood == "worried":
+        d.arc((75, 99, 120, 132), 190, 350, fill=P["amber"], width=7)
+    elif mood == "upset":
+        d.line((70, 68, 83, 74), fill=P["red"], width=6); d.line((110, 74, 126, 67), fill=P["red"], width=6)
+        d.line((78, 119, 116, 111), fill=P["red"], width=7)
+    elif mood == "strange":
+        d.ellipse((62, 70, 84, 92), outline=P["cyan"], width=6); d.ellipse((108, 70, 130, 92), outline=P["violet"], width=6)
+        d.line((79, 116, 116, 116), fill=P["ink"], width=6)
+    elif mood == "promotion-cascade":
+        d.polygon(((95, 100), (106, 124), (133, 126), (112, 143), (120, 169), (95, 154), (70, 169), (78, 143), (57, 126), (84, 124)), fill=P["red"], outline=P["ink"])
+    elif mood == "ghost-clock":
+        d.arc((42, 26, 152, 137), 0, 359, fill=P["cyan"], width=8)
+        d.line((98, 45, 98, 75), fill=P["cyan"], width=6); d.line((98, 75, 120, 91), fill=P["cyan"], width=6)
+    else:
+        d.arc((77, 96, 119, 126), 5, 175, fill=P["coffee"], width=6)
+    return im
+
+
 def gate_a(records: list[dict]):
     env = environment()
     save_asset("environment.office.base", "Environment", env, "Environment/office_background.png", records)
@@ -298,6 +368,50 @@ def gate_b(records: list[dict]):
                "Environment/shift_3_dressing.png", records)
 
 
+def gate_c(records: list[dict]):
+    cast = {
+        "warden": ("teal", "red", 1),
+        "runner": ("moss", "mint", 2),
+        "talker": ("violet", "cream", 3),
+    }
+    warden_states = ["idle"] + [f"walk-{d}" for d in ("up", "down", "left", "right")] + \
+        [f"carry-walk-{d}" for d in ("up", "down", "left", "right")] + \
+        ["interact", "calm", "fix", "help", "stunned"]
+    runner_states = ["idle"] + [f"walk-{d}" for d in ("up", "down", "left", "right")] + \
+        ["carry", "work", "blocked", "obey-copier", "return-to-warden"]
+    talker_states = ["idle"] + [f"walk-{d}" for d in ("up", "down", "left", "right")] + \
+        ["calm-customer", "blocked", "work"]
+    for role, states in (("warden", warden_states), ("runner", runner_states), ("talker", talker_states)):
+        primary, accent, signature = cast[role]
+        for state in states:
+            save_asset(f"character.{role}.{state}", "Characters",
+                       character_state(primary, accent, signature, state),
+                       f"Characters/{role}_{state}.png", records)
+
+    customers = {
+        "nia-bell": ("amber", "coffee", 4),
+        "owen-pike": ("moss", "cream", 5),
+        "mara-vale": ("red", "violet", 6),
+        "iris-cole": ("cyan", "teal", 7),
+        "tomas-reed": ("coffee", "cyan", 8),
+        "june-hart": ("cream", "red", 9),
+    }
+    for name, (primary, accent, signature) in customers.items():
+        for mood in ("calm", "worried", "upset", "strange"):
+            save_asset(f"character.{name}.{mood}", "Characters",
+                       character_state(primary, accent, signature, mood),
+                       f"Characters/{name}_{mood}.png", records)
+            save_asset(f"portrait.{name}.{mood}", "Portraits",
+                       portrait(primary, accent, signature, mood),
+                       f"Characters/Portraits/{name}_{mood}.png", records)
+    save_asset("portrait.mara-vale.promotion-cascade", "Portraits",
+               portrait("red", "violet", 6, "promotion-cascade"),
+               "Characters/Portraits/mara-vale_promotion-cascade.png", records)
+    save_asset("portrait.tomas-reed.ghost-clock", "Portraits",
+               portrait("coffee", "cyan", 8, "ghost-clock"),
+               "Characters/Portraits/tomas-reed_ghost-clock.png", records)
+
+
 def write_outputs(records: list[dict]):
     columns = [
         "asset_id", "runtime_filename", "category", "authoring_method", "blender_source",
@@ -321,11 +435,12 @@ def write_outputs(records: list[dict]):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--gate", choices=("A", "B"), default="A")
+    parser.add_argument("--gate", choices=("A", "B", "C"), default="A")
     args = parser.parse_args()
     records: list[dict] = []
     gate_a(records)
-    if args.gate == "B": gate_b(records)
+    if args.gate in ("B", "C"): gate_b(records)
+    if args.gate == "C": gate_c(records)
     write_outputs(records)
 
 

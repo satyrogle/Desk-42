@@ -14,17 +14,176 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   theme: {fileID: 11400000, guid: bcc19f529b77dc24b8e5365f795ea1b9, type: 2}
   entries:
+  - id: character.iris-cole.calm
+    sprite: {fileID: 21300000, guid: bcf141fd68e69ef4d86e612c3076f394, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.iris-cole.strange
+    sprite: {fileID: 21300000, guid: ea8de7048cc0fef4eb0d4f6cae81a5a0, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.iris-cole.upset
+    sprite: {fileID: 21300000, guid: f2ad363b5e9a8854f809567db70cf0c9, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.iris-cole.worried
+    sprite: {fileID: 21300000, guid: a8afa75305e62a449b10f8571e01463b, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.june-hart.calm
+    sprite: {fileID: 21300000, guid: 9d14b1ec6c2f4b9428fe73fcd7b3533d, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.june-hart.strange
+    sprite: {fileID: 21300000, guid: 3709107943b8cb241a1a0a70da506c21, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.june-hart.upset
+    sprite: {fileID: 21300000, guid: db562cccb5da01f438b739ed175b9252, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.june-hart.worried
+    sprite: {fileID: 21300000, guid: 400af89240785b24b86c4a03fecc55b8, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.mara-vale.calm
+    sprite: {fileID: 21300000, guid: e8e7c072b418a884287c70fda075dcf8, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.mara-vale.strange
+    sprite: {fileID: 21300000, guid: fd3eccc0eab41b34690883d5c86e9932, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.mara-vale.upset
+    sprite: {fileID: 21300000, guid: 1d3fad500a9c799469fefe3c8046b3f7, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.mara-vale.worried
+    sprite: {fileID: 21300000, guid: 690fbce98571e4c45a32609819a69f42, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.nia-bell.calm
+    sprite: {fileID: 21300000, guid: 4010da28bbd77154aa723d6b3910a578, type: 3}
+    anchor: {x: 0.5, y: 0}
   - id: character.nia-bell.idle
     sprite: {fileID: 21300000, guid: ccda0875da1292a4d8a96b7fc4782332, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.nia-bell.strange
+    sprite: {fileID: 21300000, guid: 964b1a4d8f07b014d9b4aa1bda241d99, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.nia-bell.upset
+    sprite: {fileID: 21300000, guid: 084d642845e4d4d4d9b17dda1e15a0e1, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.nia-bell.worried
+    sprite: {fileID: 21300000, guid: b6448ca1b37ab1748bca3b858bae3516, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.owen-pike.calm
+    sprite: {fileID: 21300000, guid: b586b905dc0a64b41a228bbf0e990433, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.owen-pike.strange
+    sprite: {fileID: 21300000, guid: b752d5aa8d0793c4ea816317d3038fc0, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.owen-pike.upset
+    sprite: {fileID: 21300000, guid: 4e47416d15ad591448da1e1c24f1c341, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.owen-pike.worried
+    sprite: {fileID: 21300000, guid: 3dbfd0f80a418ba4591f9cd5f025bf2c, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.runner.blocked
+    sprite: {fileID: 21300000, guid: 5492515073ab06d40beb057ed06ae459, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.runner.carry
+    sprite: {fileID: 21300000, guid: 8fd36a6f43d602a429b0a5548930e83d, type: 3}
     anchor: {x: 0.5, y: 0}
   - id: character.runner.idle
     sprite: {fileID: 21300000, guid: f09e0feafbe8d084685eec27e1ab5e63, type: 3}
     anchor: {x: 0.5, y: 0}
+  - id: character.runner.obey-copier
+    sprite: {fileID: 21300000, guid: 9cc41c0f5cf10a1469fbcef25cac0625, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.runner.return-to-warden
+    sprite: {fileID: 21300000, guid: d9c05e637b3ab65429b84e201d73c731, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.runner.walk-down
+    sprite: {fileID: 21300000, guid: fe5bb3f50acfde34c981743dd7e0fbfe, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.runner.walk-left
+    sprite: {fileID: 21300000, guid: cc4a86e18a9f2fa4f8c5d1608d247a93, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.runner.walk-right
+    sprite: {fileID: 21300000, guid: b7883b46af63220428d85c009cb3e0f8, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.runner.walk-up
+    sprite: {fileID: 21300000, guid: 00f25e10f39aaf7418702ea73b5b4dc3, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.runner.work
+    sprite: {fileID: 21300000, guid: 3ffcddaac50dfa84c9a139620b9c78c1, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.talker.blocked
+    sprite: {fileID: 21300000, guid: 7de61facc06187d4fb9bffa2a25b3e23, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.talker.calm-customer
+    sprite: {fileID: 21300000, guid: 7423f130d3944e240970f2d2f7fdf2fd, type: 3}
+    anchor: {x: 0.5, y: 0}
   - id: character.talker.idle
     sprite: {fileID: 21300000, guid: 2e38cf15a5b5b7045bd38d8e976bd1f1, type: 3}
     anchor: {x: 0.5, y: 0}
+  - id: character.talker.walk-down
+    sprite: {fileID: 21300000, guid: c53cec9da02031c4e86c65752d4654a6, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.talker.walk-left
+    sprite: {fileID: 21300000, guid: 0a4751265f90ed749863d84817dead13, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.talker.walk-right
+    sprite: {fileID: 21300000, guid: e2c8f1e254f9b0f4eb662d4bbdd8ac49, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.talker.walk-up
+    sprite: {fileID: 21300000, guid: bb286617a852d58479768efab9499390, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.talker.work
+    sprite: {fileID: 21300000, guid: 57daef6291e702c429a4542ecd8e660c, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.tomas-reed.calm
+    sprite: {fileID: 21300000, guid: 5ee9f6438826fb94ab39300ae0324a3f, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.tomas-reed.strange
+    sprite: {fileID: 21300000, guid: 4283015e7055a2c4d951382e2d04e559, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.tomas-reed.upset
+    sprite: {fileID: 21300000, guid: bfeb6a6db638cca4588acabd87461b2c, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.tomas-reed.worried
+    sprite: {fileID: 21300000, guid: 1b7e638d9b289414482ccbc18b3657bb, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.calm
+    sprite: {fileID: 21300000, guid: cafe945ca67b1864a8f71f6a85dbe505, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.carry-walk-down
+    sprite: {fileID: 21300000, guid: f5a619fffa9df3542bddc8d8e1fac066, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.carry-walk-left
+    sprite: {fileID: 21300000, guid: 2103dd63918146e40b248c0e39e1be0b, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.carry-walk-right
+    sprite: {fileID: 21300000, guid: 0a0c038edd940424390697aa4bee6447, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.carry-walk-up
+    sprite: {fileID: 21300000, guid: 89ba416854fcd174d98352a007c5a152, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.fix
+    sprite: {fileID: 21300000, guid: 35d2aaa1e2204a84097d05ff1077f9cd, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.help
+    sprite: {fileID: 21300000, guid: fed820547d2504c42a6481e764691c40, type: 3}
+    anchor: {x: 0.5, y: 0}
   - id: character.warden.idle
     sprite: {fileID: 21300000, guid: b213080292c718a4481750ec049b893c, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.interact
+    sprite: {fileID: 21300000, guid: 61b57a09078026c4295c92d28d356067, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.stunned
+    sprite: {fileID: 21300000, guid: 32146bbfffe12d14a8390d5d1e54ed2f, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.walk-down
+    sprite: {fileID: 21300000, guid: 884fbaf7092261e4badc4744e00c8746, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.walk-left
+    sprite: {fileID: 21300000, guid: 48db88303eb7da44fb279ed45a13c147, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.walk-right
+    sprite: {fileID: 21300000, guid: 886e760a97e6e3f4db08f1f78d6ffca6, type: 3}
+    anchor: {x: 0.5, y: 0}
+  - id: character.warden.walk-up
+    sprite: {fileID: 21300000, guid: 82c58da134965f644bdadad939372657, type: 3}
     anchor: {x: 0.5, y: 0}
   - id: environment.interaction.socket
     sprite: {fileID: 21300000, guid: 008309a5701766548a745e9cd33fdb55, type: 3}
@@ -97,4 +256,82 @@ MonoBehaviour:
     anchor: {x: 0.5, y: 0.5}
   - id: folder.original.6
     sprite: {fileID: 21300000, guid: b9820b9d748f8904e94c25a3f37b53d5, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.iris-cole.calm
+    sprite: {fileID: 21300000, guid: ff09c1ea562ed7b4fa7bab7d7b92917b, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.iris-cole.strange
+    sprite: {fileID: 21300000, guid: 3a4fb35e3eb81ff4b84398c84813df56, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.iris-cole.upset
+    sprite: {fileID: 21300000, guid: 4dfbf4d7f55c0f944909c5308d1d66de, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.iris-cole.worried
+    sprite: {fileID: 21300000, guid: 9113aa6a7ec91e44585e7a69c114a16c, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.june-hart.calm
+    sprite: {fileID: 21300000, guid: bb3b2b4ffc9c367478c2eaa2a33214c0, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.june-hart.strange
+    sprite: {fileID: 21300000, guid: 9863e1df20405b3439e5352dbc9706bb, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.june-hart.upset
+    sprite: {fileID: 21300000, guid: c91083a0660e3384b86549115a9e9cd1, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.june-hart.worried
+    sprite: {fileID: 21300000, guid: db98566490863fc4d8c02857712b35fe, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.mara-vale.calm
+    sprite: {fileID: 21300000, guid: e25703702cf28fb4ba13706ef5f04cb2, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.mara-vale.promotion-cascade
+    sprite: {fileID: 21300000, guid: d7efcb58aaf254f4ebd70cb25d07d38c, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.mara-vale.strange
+    sprite: {fileID: 21300000, guid: 675d76246a04c03429005060865d4dab, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.mara-vale.upset
+    sprite: {fileID: 21300000, guid: 13f4adae353509846a4374283746a56d, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.mara-vale.worried
+    sprite: {fileID: 21300000, guid: 86e7bcdb372b8e743bd2169f308cc046, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.nia-bell.calm
+    sprite: {fileID: 21300000, guid: 42e1d57c7b73f2f4797f4323443065a4, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.nia-bell.strange
+    sprite: {fileID: 21300000, guid: cc986191150843a4aa9431cc6ca21623, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.nia-bell.upset
+    sprite: {fileID: 21300000, guid: 3309e2a5c91ef464b82a92ece5d43cd7, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.nia-bell.worried
+    sprite: {fileID: 21300000, guid: 73a0bf0c082b399419890e719dcf47d5, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.owen-pike.calm
+    sprite: {fileID: 21300000, guid: 686df076170cf70469c5e53260e3ada7, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.owen-pike.strange
+    sprite: {fileID: 21300000, guid: d53a9388abfc4d246b243c27f719c1da, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.owen-pike.upset
+    sprite: {fileID: 21300000, guid: cbc1386f1a5200f449c4beba1b676c93, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.owen-pike.worried
+    sprite: {fileID: 21300000, guid: b50e5faeba3a32e4cb0c9320c6fc784e, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.tomas-reed.calm
+    sprite: {fileID: 21300000, guid: 2de406c4c45816341931e0d752960c79, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.tomas-reed.ghost-clock
+    sprite: {fileID: 21300000, guid: 94e5ea66f40a25147a7e11ee82e71e19, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.tomas-reed.strange
+    sprite: {fileID: 21300000, guid: c0e92ccb28c5816458323a628a119c34, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.tomas-reed.upset
+    sprite: {fileID: 21300000, guid: cfd334736214d0b409e6f8d8ad2e8afe, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: portrait.tomas-reed.worried
+    sprite: {fileID: 21300000, guid: 7dfd9a503ad22ed4e9e30ef2c135e996, type: 3}
     anchor: {x: 0.5, y: 0.5}

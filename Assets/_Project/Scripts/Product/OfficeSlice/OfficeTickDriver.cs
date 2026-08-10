@@ -13,6 +13,8 @@ namespace Desk42.Product.OfficeSlice
         private bool _initialized;
 
         public OfficeSimulationClock Clock => _clock;
+        public OfficeInputDirection VisualMovement =>
+            _inputIntent?.Movement ?? OfficeInputDirection.None;
 
         public void Initialize(OfficeSliceBootstrap bootstrap, OfficeSimulationState state)
         {

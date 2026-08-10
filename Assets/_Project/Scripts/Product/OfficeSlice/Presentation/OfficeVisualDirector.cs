@@ -89,6 +89,17 @@ namespace Desk42.Product.OfficeSlice
             return view;
         }
 
+        public bool SetSprite(Transform view, string assetId)
+        {
+            if (view == null || !view.TryGetComponent(out SpriteRenderer renderer)) return false;
+            Sprite sprite = _catalog.ResolveOrFallback(assetId, out bool usedFallback);
+            UsedFallback |= usedFallback;
+            if (sprite == null) return false;
+            if (renderer.sprite != sprite) renderer.sprite = sprite;
+            if (!_activeAssetIds.Contains(assetId)) _activeAssetIds.Add(assetId);
+            return !usedFallback;
+        }
+
         public void Apply(OfficeVisualSnapshot snapshot)
         {
             if (snapshot == null || _environment == null) return;
@@ -173,10 +184,10 @@ namespace Desk42.Product.OfficeSlice
 
         public static int ActiveRootCount()
         {
-            GameObject[] roots = GameObject.FindGameObjectsWithTag("Untagged");
+            Transform[] roots = UnityEngine.Object.FindObjectsOfType<Transform>();
             int count = 0;
             for (int i = 0; i < roots.Length; i++)
-                if (roots[i].activeInHierarchy && roots[i].name == RootName) count++;
+                if (roots[i].gameObject.activeInHierarchy && roots[i].name == RootName) count++;
             return count;
         }
 
