@@ -189,7 +189,7 @@ CUES.extend([
     CueSpec("D", "event.supervisor-removed", "event.supervisor-removed", "SFX", False, 0.68, 0.62),
     CueSpec("D", "event.recovery-complete", "event.recovery-complete", "SFX", False, 0, 0.72),
     CueSpec("D", "event.shift-close", "event.shift-close", "SFX", False, 0, 0.62),
-    CueSpec("D", "event.upgrade-chosen", "choice.confirm", "SFX", False, 0, 0.62),
+    CueSpec("C", "event.upgrade-chosen", "choice.confirm", "SFX", False, 0, 0.62),
     CueSpec("D", "event.final-result", "event.final-result", "SFX", False, 0, 0.68),
     CueSpec("D", "event.next-day-tease", "event.next-day-tease", "SFX", False, 0, 0.46),
 ])

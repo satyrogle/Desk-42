@@ -46,10 +46,49 @@ namespace Desk42.Product.OfficeSlice
                 });
             }
             ApplyMix(_snapshot.MixState);
+            ApplyMachineBed(_snapshot);
             _pool.UpdateVolumes(_settings, deltaTime);
         }
 
         public bool PlayCue(string cueId, float intensity = 1f)
+        {
+            return PlayCueWithPan(cueId, intensity, null);
+        }
+
+        public bool PlayPositionalCue(
+            string cueId,
+            Transform source,
+            float intensity = 1f)
+        {
+            float? pan = source == null
+                ? null
+                : Mathf.Clamp(source.position.x / 12f, -0.75f, 0.75f);
+            return PlayCueWithPan(cueId, intensity, pan);
+        }
+
+        public bool SetMachineLoop(
+            int machineSlot,
+            string machineId,
+            string state,
+            float intensity = 1f)
+        {
+            if (machineSlot < 0 || machineSlot >= 6) return false;
+            string cueId = OfficeAudioEventRouter.CueForMachine(machineId, state);
+            if (!_catalog.TryResolve(cueId, out OfficeAudioCueRecord cue,
+                    out AudioClip clip))
+            {
+                _pool.SetContinuous(machineSlot + 2, null, "Ambience", 0f, 0f);
+                return false;
+            }
+            _pool.SetContinuous(machineSlot + 2, clip, cue.bus,
+                cue.base_volume * Mathf.Clamp01(intensity), cue.pan);
+            return true;
+        }
+
+        private bool PlayCueWithPan(
+            string cueId,
+            float intensity,
+            float? panOverride)
         {
             if (_settings.Muted ||
                 !_catalog.TryResolve(cueId, out OfficeAudioCueRecord cue,
@@ -61,13 +100,21 @@ namespace Desk42.Product.OfficeSlice
                 clip,
                 cue.base_volume * Mathf.Clamp01(intensity) *
                     _settings.BusGain(cue.bus),
-                cue.pan,
+                panOverride ?? cue.pan,
                 deterministicPitch);
         }
 
         public void NotifyInteractionAttempt(bool valid)
         {
             PlayCue(valid ? "action.interact" : "action.invalid");
+        }
+
+        public void ApplyMixForPresentation(
+            OfficeAudioMixState state,
+            float deltaTime)
+        {
+            ApplyMix(state);
+            _pool.UpdateVolumes(_settings, deltaTime);
         }
 
         public void ResetForState(
@@ -103,6 +150,28 @@ namespace Desk42.Product.OfficeSlice
             SetMusic(2, "music.break",
                 state == OfficeAudioMixState.Break ? 1f : 0f);
             _mixState = state;
+        }
+
+        private void ApplyMachineBed(OfficeAudioStateSnapshot snapshot)
+        {
+            SetMachineLoop(0, "front-desk-counter",
+                snapshot.HasActiveCustomer ? "active" : "idle", 0.42f);
+            SetMachineLoop(1, "paper-check",
+                snapshot.ManualTaskActive && snapshot.ActiveManualKind ==
+                    OfficeManualTaskKind.Compare ? "active" : "idle", 0.38f);
+            SetMachineLoop(2, "money-trace",
+                snapshot.ManualTaskActive && snapshot.ActiveManualKind ==
+                    OfficeManualTaskKind.Trace ? "active" : "idle", 0.38f);
+            SetMachineLoop(3, "auto-sorter",
+                snapshot.AutomationEnabled || snapshot.PayrollEnabled
+                    ? "active" : "idle", 0.44f);
+            SetMachineLoop(4, "copy-echo",
+                snapshot.CopyEchoActive ? "active" : "idle", 0.46f);
+
+            string eventMachine = snapshot.PromotionActive
+                ? "supervisor-stamp" : "ghost-clock";
+            bool eventActive = snapshot.PromotionActive || snapshot.GhostClockActive;
+            SetMachineLoop(5, eventMachine, eventActive ? "active" : "idle", 0.4f);
         }
 
         private void SetMusic(int slot, string cueId, float gain)

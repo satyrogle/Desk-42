@@ -58,6 +58,13 @@ namespace Desk42.Product.OfficeSlice
         public int ActiveSourceCount =>
             ActiveOneShotCount + ActiveContinuousCount + ActiveMusicCount;
 
+        public float ContinuousTargetVolume(int slot) =>
+            slot >= 0 && slot < _continuousTargets.Length
+                ? _continuousTargets[slot] : 0f;
+
+        public float MusicTargetVolume(int slot) =>
+            slot >= 0 && slot < _musicTargets.Length ? _musicTargets[slot] : 0f;
+
         public bool PlayOneShot(
             AudioClip clip,
             float volume,

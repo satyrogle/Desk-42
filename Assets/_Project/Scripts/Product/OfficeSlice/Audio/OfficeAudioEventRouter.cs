@@ -75,6 +75,19 @@ namespace Desk42.Product.OfficeSlice
             return "machine." + machineId + "." + state.ToLowerInvariant();
         }
 
+        public static string CueForMood(OfficeVisibleMoodState mood)
+        {
+            return mood switch
+            {
+                OfficeVisibleMoodState.Calm => "customer.calm-response",
+                OfficeVisibleMoodState.Worried => "customer.worried",
+                OfficeVisibleMoodState.Upset => "customer.upset",
+                OfficeVisibleMoodState.Strange => "customer.strange",
+                OfficeVisibleMoodState.Break => "customer.upset",
+                _ => "customer.worried",
+            };
+        }
+
         private void RouteCommands(
             OfficeAudioStateSnapshot current,
             OfficeSimulationState state,
@@ -139,13 +152,7 @@ namespace Desk42.Product.OfficeSlice
             if (current.ActiveCustomerMood == _previous.ActiveCustomerMood) return;
             if (current.ActiveCustomerMood > _previous.ActiveCustomerMood)
             {
-                string cue = current.ActiveCustomerMood switch
-                {
-                    OfficeVisibleMoodState.Strange => "customer.strange",
-                    OfficeVisibleMoodState.Upset => "customer.upset",
-                    _ => "customer.worried",
-                };
-                emit(cue, 1f);
+                emit(CueForMood(current.ActiveCustomerMood), 1f);
             }
             else
                 emit("customer.calm-response", 1f);
