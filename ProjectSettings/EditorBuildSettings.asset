@@ -8,4 +8,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/InstitutionalAutomation.unity
     guid: 273967ededfa4a579dbad6da5ab27e6c
+  - enabled: 1
+    path: Assets/_Project/Scenes/OfficeSlice.unity
+    guid: 44d5c972a53d4e6db85a1e7c9f0b2d63
   m_configObjects: {}
