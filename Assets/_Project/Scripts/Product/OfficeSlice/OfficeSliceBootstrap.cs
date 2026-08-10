@@ -180,12 +180,27 @@ namespace Desk42.Product.OfficeSlice
                     shiftOrdinal,
                     _captureStateName);
                 SynchronizeCampaignState();
+                if (shiftOrdinal > 1)
+                {
+                    _m6Onboarding = new OfficeM6Onboarding(
+                        completedPreviously: true);
+                    _m6Onboarding.SetHintsEnabled(
+                        _m6Settings.TutorialHints);
+                }
                 _m5AudioDirector?.ResetForState(
                     _simulationState, _campaignState);
                 string reviewCue = M5CaptureReviewCue(_captureStateName);
                 if (!string.IsNullOrEmpty(reviewCue))
                     _m5AudioDirector?.PlayCue(reviewCue);
                 RefreshPresentation();
+                if (_captureStateName == "19-pause-settings")
+                {
+                    _tickDriver.Clock.SetPaused(TogglePauseMenu());
+                    NavigatePauseMenu(1);
+                    _tickDriver.Clock.SetPaused(ConfirmPauseMenu());
+                }
+                else if (_captureStateName == "20-what-happened")
+                    ToggleWhatHappened();
             }
 
             yield return null;
@@ -1886,8 +1901,16 @@ namespace Desk42.Product.OfficeSlice
                 GUILayout.Label(_m6HudModel.BreakCause, _m4BodyStyle);
                 GUILayout.Label(
                     _m6HudModel.ActionableProblemRoom, _m4BodyStyle);
-                for (int i = 0; i < _m6HudModel.RecoveryItems.Count; i++)
-                    GUILayout.Label(_m6HudModel.RecoveryItems[i], _m4BodyStyle);
+                for (int i = 0; i < _m6HudModel.RecoveryItems.Count; i += 2)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(_m6HudModel.RecoveryItems[i],
+                        _m4BodyStyle, GUILayout.Width(132f));
+                    if (i + 1 < _m6HudModel.RecoveryItems.Count)
+                        GUILayout.Label(_m6HudModel.RecoveryItems[i + 1],
+                            _m4BodyStyle, GUILayout.Width(132f));
+                    GUILayout.EndHorizontal();
+                }
                 GUILayout.EndArea();
             }
 

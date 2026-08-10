@@ -221,7 +221,7 @@ namespace Desk42.Product.OfficeSlice
         {
             float cardWidth = Mathf.Min(SideCardWidth, width - SafeMargin * 2f);
             return new Rect(width - cardWidth - SafeMargin, 226f,
-                cardWidth, 94f);
+                cardWidth, 154f);
         }
 
         public Rect BreakCardRect(int width, int height)
@@ -292,6 +292,20 @@ namespace Desk42.Product.OfficeSlice
                 Fits(width, height) &&
                 ActionRect(width, height).height >= 96f * textScale &&
                 BreakCardRect(width, height).height >= 148f * textScale;
+        }
+
+        public int RecoveryRowCount(OfficeM6HudModel model)
+        {
+            if (model == null) throw new ArgumentNullException(nameof(model));
+            return (model.RecoveryItems.Count + 1) / 2;
+        }
+
+        public bool BreakContentFits(OfficeM6HudModel model, float textScale)
+        {
+            if (model == null) throw new ArgumentNullException(nameof(model));
+            float required = (54f + RecoveryRowCount(model) * 18f) *
+                textScale;
+            return required <= 174f;
         }
 
         public bool CriticalTargetsRemainVisible(

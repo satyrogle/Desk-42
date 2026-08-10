@@ -24,24 +24,40 @@ namespace Desk42.Product.OfficeSlice
                 {
                     case "opening":
                     case "01-shift-1-opening":
+                    case "01-first-launch-first-customer":
+                    case "19-pause-settings":
                         return;
                     case "02-shift-1-paper-check":
+                    case "02-first-paper-check":
                         DriveActiveCaseToWork(
                             campaign.CurrentSimulation, OfficeManualTaskKind.Compare);
                         return;
                     case "03-shift-1-money-trace":
+                    case "03-first-money-trace":
                         DriveActiveCaseToWork(
                             campaign.CurrentSimulation, OfficeManualTaskKind.Trace);
                         return;
+                    case "04-first-decision":
+                        DriveShiftOneToFirstDecision(campaign.CurrentSimulation);
+                        return;
                     case "04-shift-1-copy-echo-warning":
+                    case "05-auto-sorter-active":
+                    case "06-copy-echo-warning":
                         DriveShiftOneToCopyWarning(campaign.CurrentSimulation);
                         return;
+                    case "08-copy-echo-recovery":
+                        DriveShiftOneToBreak(campaign.CurrentSimulation);
+                        RecoverBreak(campaign.CurrentSimulation);
+                        return;
                     case "06-shift-1-upgrade-choice":
+                    case "09-shift-1-result-upgrade":
                         DriveShiftOneToUpgradeChoice(campaign);
                         return;
                     case "break":
                     case "rush":
                     case "05-shift-1-copy-echo-break":
+                    case "07-copy-echo-break":
+                    case "20-what-happened":
                         DriveShiftOneToBreak(campaign.CurrentSimulation);
                         return;
                     default:
@@ -57,16 +73,22 @@ namespace Desk42.Product.OfficeSlice
                 {
                     case "opening":
                     case "07-shift-2-opening-upgrade-visible":
+                    case "10-shift-2-opening":
                         return;
                     case "rush":
                     case "08-shift-2-ghost-clock":
+                    case "11-ghost-clock":
                         DriveShiftTwoToGhostClock(campaign.CurrentSimulation);
+                        return;
+                    case "12-rule-2-active":
+                        DriveShiftTwoToRuleTwoActive(campaign.CurrentSimulation);
                         return;
                     case "09-shift-2-missing-room-access":
                         DriveShiftTwoToMissingRoom(campaign.CurrentSimulation);
                         return;
                     case "result":
                     case "10-shift-2-second-upgrade-choice":
+                    case "13-shift-2-result":
                         DriveShiftTwoToResult(campaign);
                         return;
                     default:
@@ -81,6 +103,7 @@ namespace Desk42.Product.OfficeSlice
             {
                 case "opening":
                 case "11-shift-3-opening-both-rules":
+                case "14-shift-3-opening":
                     return;
                 case "12-shift-3-promotion-warning":
                     DriveShiftThreeToPromotionWarning(campaign.CurrentSimulation);
@@ -88,9 +111,11 @@ namespace Desk42.Product.OfficeSlice
                 case "promotion-cascade":
                 case "rush":
                 case "13-shift-3-promotion-cascade":
+                case "15-promotion-cascade":
                     TriggerPromotion(campaign.CurrentSimulation);
                     return;
                 case "14-shift-3-recovery":
+                case "16-promotion-recovery":
                 {
                     OfficeSimulationState simulation = campaign.CurrentSimulation;
                     TriggerPromotion(simulation);
@@ -102,6 +127,8 @@ namespace Desk42.Product.OfficeSlice
                 case "result":
                 case "15-final-campaign-result":
                 case "16-next-day-tease":
+                case "17-final-campaign-result":
+                case "18-next-day-tease":
                     TriggerPromotion(campaign.CurrentSimulation);
                     DriveShiftThreeToResult(campaign);
                     return;
@@ -161,6 +188,33 @@ namespace Desk42.Product.OfficeSlice
                 "Requested capture work is not in the authored sequence: " + targetKind);
         }
 
+        private static void DriveShiftOneToFirstDecision(
+            OfficeSimulationState state)
+        {
+            DriveActiveCaseToWork(state, OfficeManualTaskKind.Trace);
+            OfficeCustomerState customer = state.Customers.ActiveDeskCustomer;
+            Require(customer != null,
+                "Decision capture has no active customer.");
+            string caseId = customer.LinkedAutomationClaimId;
+            OfficeCaseWorkDefinition work = state.WorkDefinitionFor(caseId);
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            PressChoice(state, intent, input, work.MoneyPathAnswer + 1);
+            Require(!state.ManualTasks.IsActive,
+                "Decision capture did not finish Money Trace.");
+            PressPrimary(state, intent, input);
+            NavigateTo(state, intent, input, "front-desk.interact");
+            state.AdvanceTicks(state.Queues.TransferDurationTicks);
+            CalmUntilActionable(state, intent, input);
+            state.AdvanceOneTick();
+            OfficeFolderState folder = state.Queues.GetFolder(caseId);
+            Require(folder != null && !folder.IsMoving &&
+                folder.OwnerKind == OfficeFolderOwnerKind.RoomQueue &&
+                folder.CurrentRoom == OfficeRoomId.FrontDesk &&
+                state.Decisions.RecordFor(caseId) == null,
+                "Decision capture did not expose the first decision.");
+        }
+
         private static void DriveShiftOneToCopyWarning(OfficeSimulationState state)
         {
             var intent = new OfficeInputIntent();
@@ -202,6 +256,25 @@ namespace Desk42.Product.OfficeSlice
             }
             Require(state.AutomationRule.Enabled && state.PayrollRule.Enabled,
                 "Capture setup did not preserve both automation rules.");
+        }
+
+        private static void DriveShiftTwoToRuleTwoActive(
+            OfficeSimulationState state)
+        {
+            var intent = new OfficeInputIntent();
+            var input = new OfficeInputCommandGenerator(state, intent);
+            int safety = 0;
+            while (!state.PayrollRule.Unlocked && safety++ < 6)
+                CompleteActiveCase(state, intent, input);
+            Require(state.PayrollRule.Unlocked,
+                "Rule 2 capture did not unlock the pay machine.");
+            if (!state.PayrollRule.Enabled)
+            {
+                intent.BufferToggleRule2(state.CurrentTick);
+                input.AdvanceOneTick();
+            }
+            Require(state.PayrollRule.Enabled,
+                "Rule 2 capture did not enable the pay machine.");
         }
 
         private static void DriveShiftTwoToMissingRoom(OfficeSimulationState state)
