@@ -82,12 +82,12 @@ namespace Desk42.Product.OfficeSlice
             if (campaign?.Phase == OfficeCampaignPhase.CampaignResult ||
                 state.Shift.Phase == OfficeShiftPhase.Result)
                 return OfficeVisualPressureState.Result;
-            if (state.BreakState.Recovered || state.GhostClock.Recovered ||
-                state.MissingRoomAccess.Recovered || state.PromotionCascade.Recovered)
-                return OfficeVisualPressureState.Recovery;
             if (state.BreakState.Active || state.GhostClock.Active ||
                 state.MissingRoomAccess.Active || state.PromotionCascade.Active)
                 return OfficeVisualPressureState.Break;
+            if (state.BreakState.Recovered || state.GhostClock.Recovered ||
+                state.MissingRoomAccess.Recovered || state.PromotionCascade.Recovered)
+                return OfficeVisualPressureState.Recovery;
             if (state.Customers.ActiveDeskCustomer?.VisibleMoodState >=
                 OfficeVisibleMoodState.Worried)
                 return OfficeVisualPressureState.Rush;

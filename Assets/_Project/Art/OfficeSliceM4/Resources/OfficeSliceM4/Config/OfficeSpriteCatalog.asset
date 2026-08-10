@@ -26,8 +26,56 @@ MonoBehaviour:
   - id: character.warden.idle
     sprite: {fileID: 21300000, guid: b213080292c718a4481750ec049b893c, type: 3}
     anchor: {x: 0.5, y: 0}
+  - id: environment.interaction.socket
+    sprite: {fileID: 21300000, guid: 008309a5701766548a745e9cd33fdb55, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.kit.chair
+    sprite: {fileID: 21300000, guid: 341792ecfe8988045af4305aed0bd500, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.kit.counter
+    sprite: {fileID: 21300000, guid: 4a1a379ba76c07f4dbcc1cd97c1f60ad, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.kit.impossible-door
+    sprite: {fileID: 21300000, guid: cce2cb16a7914344bbb418145a247914, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.kit.plant
+    sprite: {fileID: 21300000, guid: a431230505f77ef4cbba0253e18f7d04, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.kit.shelf
+    sprite: {fileID: 21300000, guid: cb95e818096f19c49a337dd3748208ee, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.kit.vault
+    sprite: {fileID: 21300000, guid: b23163a49e146e345a8f32fbb37cb659, type: 3}
+    anchor: {x: 0.5, y: 0.5}
   - id: environment.office.base
     sprite: {fileID: 21300000, guid: c6ffc3ed16838094daa8cbcf146574f2, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.route.overlay
+    sprite: {fileID: 21300000, guid: 185a1c65f2e5f1743ba050f38a5be8a4, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.shift.2-dressing
+    sprite: {fileID: 21300000, guid: 2c8a13e20af4d9f47827932e19170a4d, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.shift.3-dressing
+    sprite: {fileID: 21300000, guid: d609aceb6e875154a8a9f1f719ecae24, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.state.break
+    sprite: {fileID: 21300000, guid: 1ea367ad3d720474d982acc1edc9c0ac, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.state.recovery
+    sprite: {fileID: 21300000, guid: a1267906cf8191c44af10372972df5b5, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.state.rush
+    sprite: {fileID: 21300000, guid: c13bda458fa16504588d0110232f36f3, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.upgrade.calm-chairs
+    sprite: {fileID: 21300000, guid: b8bcb728225cc134bb5d34aa1a5964a5, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.upgrade.fast-trays
+    sprite: {fileID: 21300000, guid: 8bd9ef9b950feef46b02be9108fbeb52, type: 3}
+    anchor: {x: 0.5, y: 0.5}
+  - id: environment.upgrade.red-labels
+    sprite: {fileID: 21300000, guid: 7537e34b3442ab44ca4bfa5c18a848fc, type: 3}
     anchor: {x: 0.5, y: 0.5}
   - id: fallback.explicit
     sprite: {fileID: 21300000, guid: f404fc054ad983942a6b500e39b56f25, type: 3}

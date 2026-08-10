@@ -180,6 +180,72 @@ def fallback() -> Image.Image:
     return im
 
 
+def prop(kind: str, primary: str, accent: str) -> Image.Image:
+    im = Image.new("RGBA", (160, 160), P["clear"])
+    d = ImageDraw.Draw(im)
+    ink = P["ink"]
+    if kind == "counter":
+        d.polygon(((12, 54), (142, 54), (153, 82), (25, 82)), fill=P[primary], outline=ink)
+        d.rectangle((24, 82, 142, 135), fill=P[accent], outline=ink, width=7)
+        for x in (44, 78, 112): d.line((x, 88, x, 130), fill=P[primary], width=5)
+    elif kind == "shelf":
+        d.rectangle((25, 14, 136, 145), fill=P[accent], outline=ink, width=8)
+        for y in (45, 78, 111):
+            d.line((31, y, 130, y), fill=ink, width=6)
+            for x in range(38, 125, 18): d.rectangle((x, y - 22, x + 10, y - 4), fill=P[primary])
+    elif kind == "chair":
+        d.rounded_rectangle((39, 20, 122, 103), radius=24, fill=P[primary], outline=ink, width=8)
+        d.rectangle((32, 90, 129, 120), fill=P[accent], outline=ink, width=7)
+        d.line((52, 119, 43, 148), fill=ink, width=8); d.line((110, 119, 119, 148), fill=ink, width=8)
+    elif kind == "vault":
+        d.rectangle((18, 18, 142, 142), fill=P[accent], outline=ink, width=10)
+        d.ellipse((43, 43, 117, 117), fill=P[primary], outline=ink, width=8)
+        d.line((80, 53, 80, 107), fill=ink, width=7); d.line((53, 80, 107, 80), fill=ink, width=7)
+    elif kind == "door":
+        d.polygon(((35, 22), (124, 12), (136, 147), (26, 137)), fill=P[primary], outline=P[accent], width=9)
+        d.ellipse((100, 76, 111, 87), fill=P[accent])
+        d.line((42, 35, 116, 126), fill=ink, width=4)
+    elif kind == "tray":
+        for n in range(3):
+            y = 28 + n * 39
+            d.polygon(((20, y), (139, y), (126, y + 31), (33, y + 31)), fill=P[primary], outline=ink)
+            d.polygon(((125, y + 8), (150, y + 16), (128, y + 24)), fill=P[accent])
+    elif kind == "label":
+        d.polygon(((24, 45), (112, 45), (140, 80), (112, 115), (24, 115)), fill=P[primary], outline=ink)
+        d.ellipse((105, 70, 122, 87), fill=P[accent])
+    elif kind == "socket":
+        d.ellipse((40, 40, 120, 120), outline=P[primary], width=10)
+        d.polygon(((80, 27), (91, 61), (128, 61), (98, 82), (110, 121), (80, 97), (50, 121), (62, 82), (32, 61), (69, 61)), fill=P[accent])
+    elif kind == "route":
+        d.line((18, 126, 56, 88, 90, 105, 139, 39), fill=P[primary], width=14, joint="curve")
+        d.polygon(((130, 24), (151, 27), (144, 50)), fill=P[accent])
+    else:  # plant
+        d.rectangle((57, 98, 104, 145), fill=P[accent], outline=ink, width=6)
+        for box in ((22, 42, 80, 111), (69, 23, 128, 109), (48, 8, 103, 105)):
+            d.ellipse(box, fill=P[primary], outline=ink, width=5)
+    return im
+
+
+def state_overlay(kind: str) -> Image.Image:
+    im = Image.new("RGBA", (1600, 900), P["clear"])
+    d = ImageDraw.Draw(im)
+    if kind == "rush":
+        for n in range(8):
+            inset = 18 + n * 18
+            d.line((inset, 32, inset + 90, 32), fill=P["amber"], width=8)
+            d.line((1600 - inset, 868, 1510 - inset, 868), fill=P["amber"], width=8)
+    elif kind == "break":
+        for n in range(10):
+            x = 45 + n * 165
+            d.polygon(((x, 0), (x + 34, 78), (x + 6, 142), (x + 58, 218)), fill=P["ink"])
+        d.rectangle((10, 10, 1590, 890), outline=P["red"], width=18)
+    elif kind == "recovery":
+        d.rectangle((12, 12, 1588, 888), outline=P["mint"], width=16)
+        for x in range(90, 1550, 210):
+            d.line((x, 838, x + 22, 862, x + 64, 812), fill=P["mint"], width=10)
+    return im
+
+
 def gate_a(records: list[dict]):
     env = environment()
     save_asset("environment.office.base", "Environment", env, "Environment/office_background.png", records)
@@ -202,6 +268,34 @@ def gate_a(records: list[dict]):
     approved_target = ARTLAB / "ApprovedSources" / "TargetFrames" / "shift1_opening_target.png"
     approved_target.parent.mkdir(parents=True, exist_ok=True)
     target.save(approved_target, optimize=False, compress_level=9)
+
+
+def gate_b(records: list[dict]):
+    kit = [
+        ("environment.kit.counter", "counter", "coffee", "cream"),
+        ("environment.kit.shelf", "shelf", "cream", "coffee"),
+        ("environment.kit.chair", "chair", "mint", "moss"),
+        ("environment.kit.vault", "vault", "teal", "coffee"),
+        ("environment.kit.impossible-door", "door", "ink", "cyan"),
+        ("environment.kit.plant", "plant", "moss", "coffee"),
+        ("environment.upgrade.fast-trays", "tray", "teal", "mint"),
+        ("environment.upgrade.calm-chairs", "chair", "mint", "amber"),
+        ("environment.upgrade.red-labels", "label", "red", "cream"),
+        ("environment.interaction.socket", "socket", "amber", "cream"),
+        ("environment.route.overlay", "route", "teal", "cream"),
+    ]
+    for asset_id, kind, primary, accent in kit:
+        filename = asset_id.replace("environment.", "").replace(".", "_") + ".png"
+        save_asset(asset_id, "Environment", prop(kind, primary, accent),
+                   "Environment/" + filename, records)
+    for kind in ("rush", "break", "recovery"):
+        save_asset(f"environment.state.{kind}", "Environment", state_overlay(kind),
+                   f"Environment/state_{kind}.png", records)
+    # Shift dressing is deliberately symbolic and contains no generated text.
+    save_asset("environment.shift.2-dressing", "Environment", prop("plant", "cyan", "coffee"),
+               "Environment/shift_2_dressing.png", records)
+    save_asset("environment.shift.3-dressing", "Environment", prop("label", "violet", "red"),
+               "Environment/shift_3_dressing.png", records)
 
 
 def write_outputs(records: list[dict]):
@@ -227,10 +321,11 @@ def write_outputs(records: list[dict]):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--gate", choices=("A",), default="A")
+    parser.add_argument("--gate", choices=("A", "B"), default="A")
     args = parser.parse_args()
     records: list[dict] = []
-    if args.gate == "A": gate_a(records)
+    gate_a(records)
+    if args.gate == "B": gate_b(records)
     write_outputs(records)
 
 
