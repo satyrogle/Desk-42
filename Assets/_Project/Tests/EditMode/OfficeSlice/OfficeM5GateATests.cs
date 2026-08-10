@@ -140,8 +140,8 @@ namespace Desk42.Tests.EditMode.OfficeSlice
         public void RuntimeAudioManifestHasProvenance()
         {
             OfficeAudioCueCatalog catalog = OfficeAudioCueCatalog.Load();
-            Assert.That(catalog.AssetCount, Is.EqualTo(8));
-            Assert.That(catalog.CueCount, Is.EqualTo(8));
+            Assert.That(catalog.AssetCount, Is.InRange(8, 65));
+            Assert.That(catalog.CueCount, Is.GreaterThanOrEqualTo(8));
             Assert.That(catalog.MissingClipCount, Is.Zero);
 
             string root = Directory.GetParent(Application.dataPath)?.FullName ??

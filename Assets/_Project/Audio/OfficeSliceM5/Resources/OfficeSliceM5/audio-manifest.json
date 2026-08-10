@@ -95,6 +95,210 @@
       "resource_path": "OfficeSliceM5/Music/music_break",
       "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Music/music_break.wav",
       "sample_rate": 48000
+    },
+    {
+      "asset_id": "warden.step",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.12,
+      "final_sha256": "692e7d1a906e2c072d5394771188ba658a70b11985b08a5b8356b5c4b1d502f1",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/warden_step",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/warden_step.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "folder.take",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.22,
+      "final_sha256": "1d7dc70c4b0e36c540c3b4484fe85b94c1be81607225a4c07d93acc8f1aeefe3",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/folder_take",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/folder_take.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "folder.send",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.28,
+      "final_sha256": "20ef03cc39a136db0abe108504d5d476d53fe8066b85c3f99243c9658e38b7b1",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/folder_send",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/folder_send.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "action.interact",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.15,
+      "final_sha256": "02c6aed4b685bea03c44615a2b9722dc36a08973e5a6564b3180904d03daccec",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/action_interact",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/action_interact.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "action.start",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.18,
+      "final_sha256": "440fdab2670b36f0ca886807178099f9d5f19768e5de4408e9278c0479777f10",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/action_start",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/action_start.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "help.complete",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.3,
+      "final_sha256": "c9a3401c8c22f637d90d7312d82050adbd04a6ae94254df0e5fbceeea711487e",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/help_complete",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/help_complete.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "calm.complete",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.42,
+      "final_sha256": "e45ce6d3a6e21f65791e1abc48d3d2998fc2b64a756c9a3bb7e986ec9e5880b9",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/calm_complete",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/calm_complete.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "fix.complete",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.36,
+      "final_sha256": "21ba43780b7d852a218613df51a966fb1238cb96cd0a3edb020e728282d835b5",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/fix_complete",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/fix_complete.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "choice.confirm",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.24,
+      "final_sha256": "b7189001003c6d6e257e010bbfe763dd37ac4086ef26d472063c7cb0355c254c",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/choice_confirm",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/choice_confirm.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "decision.stamp",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.3,
+      "final_sha256": "44e7bcaddcb3a262eb6e142652007c6facbbb076245989f4c52302d27d02c599",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/decision_stamp",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/decision_stamp.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "action.invalid",
+      "bit_depth": 16,
+      "category": "Player",
+      "channels": 1,
+      "duration_seconds": 0.23,
+      "final_sha256": "0410b7d1b3bb62490b6a8a3b2163344764038a5f2104e76695331ad9ad9daaa0",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/Player/action_invalid",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/Player/action_invalid.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "paper.open",
+      "bit_depth": 16,
+      "category": "ManualWork",
+      "channels": 1,
+      "duration_seconds": 0.3,
+      "final_sha256": "388fff625f5d12f6060fbaddf7253c542f904fac12ef84ce357d981115a504b9",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/ManualWork/paper_open",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/ManualWork/paper_open.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "money.open",
+      "bit_depth": 16,
+      "category": "ManualWork",
+      "channels": 1,
+      "duration_seconds": 0.32,
+      "final_sha256": "ad9265e698dc05a44f718729b95ab6383c31781b2cb7b48ca234c0b80ed2d864",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/ManualWork/money_open",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/ManualWork/money_open.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "manual.selection",
+      "bit_depth": 16,
+      "category": "ManualWork",
+      "channels": 1,
+      "duration_seconds": 0.12,
+      "final_sha256": "aaa7c7f63928232b6ae4a2f7c2ea0eb3886d00bb8b2933a70826630141952489",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/ManualWork/manual_selection",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/ManualWork/manual_selection.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "trace.movement",
+      "bit_depth": 16,
+      "category": "ManualWork",
+      "channels": 1,
+      "duration_seconds": 0.14,
+      "final_sha256": "0dcaadfd0563e22ebb14d42837206e4c7bbfbae24d52bc573792d9f5aa420d8b",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/ManualWork/trace_movement",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/ManualWork/trace_movement.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "manual.correct",
+      "bit_depth": 16,
+      "category": "ManualWork",
+      "channels": 1,
+      "duration_seconds": 0.32,
+      "final_sha256": "c1623b95a0970625eb28ab17aa9fc306b93651f2cdef9d973c2ab5e44244a8e2",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/ManualWork/manual_correct",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/ManualWork/manual_correct.wav",
+      "sample_rate": 48000
+    },
+    {
+      "asset_id": "manual.incorrect",
+      "bit_depth": 16,
+      "category": "ManualWork",
+      "channels": 1,
+      "duration_seconds": 0.34,
+      "final_sha256": "cb725efdfcbaff819857adf86ec963039d1ce2ba4f14f9c3596d7349bdd27e72",
+      "loop": false,
+      "resource_path": "OfficeSliceM5/ManualWork/manual_incorrect",
+      "runtime_filename": "Assets/_Project/Audio/OfficeSliceM5/Resources/OfficeSliceM5/ManualWork/manual_incorrect.wav",
+      "sample_rate": 48000
     }
   ],
   "cues": [
@@ -169,9 +373,216 @@
       "loop": true,
       "pan": 0,
       "stage": "A"
+    },
+    {
+      "asset_id": "warden.step",
+      "base_volume": 0.24,
+      "bus": "SFX",
+      "cue_id": "warden.step.a",
+      "loop": false,
+      "pan": -0.08,
+      "stage": "B"
+    },
+    {
+      "asset_id": "warden.step",
+      "base_volume": 0.2,
+      "bus": "SFX",
+      "cue_id": "warden.step.b",
+      "loop": false,
+      "pan": 0.08,
+      "stage": "B"
+    },
+    {
+      "asset_id": "folder.take",
+      "base_volume": 0.55,
+      "bus": "SFX",
+      "cue_id": "folder.take",
+      "loop": false,
+      "pan": 0,
+      "stage": "B"
+    },
+    {
+      "asset_id": "folder.send",
+      "base_volume": 0.54,
+      "bus": "SFX",
+      "cue_id": "folder.drop",
+      "loop": false,
+      "pan": 0,
+      "stage": "B"
+    },
+    {
+      "asset_id": "folder.send",
+      "base_volume": 0.56,
+      "bus": "SFX",
+      "cue_id": "folder.send",
+      "loop": false,
+      "pan": 0.15,
+      "stage": "B"
+    },
+    {
+      "asset_id": "action.interact",
+      "base_volume": 0.42,
+      "bus": "SFX",
+      "cue_id": "action.interact",
+      "loop": false,
+      "pan": 0,
+      "stage": "B"
+    },
+    {
+      "asset_id": "action.start",
+      "base_volume": 0.4,
+      "bus": "SFX",
+      "cue_id": "help.start",
+      "loop": false,
+      "pan": 0,
+      "stage": "B"
+    },
+    {
+      "asset_id": "help.complete",
+      "base_volume": 0.54,
+      "bus": "SFX",
+      "cue_id": "help.complete",
+      "loop": false,
+      "pan": 0,
+      "stage": "B"
+    },
+    {
+      "asset_id": "action.start",
+      "base_volume": 0.34,
+      "bus": "SFX",
+      "cue_id": "calm.start",
+      "loop": false,
+      "pan": 0,
+      "stage": "B"
+    },
+    {
+      "asset_id": "calm.complete",
+      "base_volume": 0.52,
+      "bus": "SFX",
+      "cue_id": "calm.complete",
+      "loop": false,
+      "pan": 0,
+      "stage": "B"
+    },
+    {
+      "asset_id": "action.start",
+      "base_volume": 0.44,
+      "bus": "SFX",
+      "cue_id": "fix.start",
+      "loop": false,
+      "pan": 0.35,
+      "stage": "B"
+    },
+    {
+      "asset_id": "fix.complete",
+      "base_volume": 0.58,
+      "bus": "SFX",
+      "cue_id": "fix.complete",
+      "loop": false,
+      "pan": 0.35,
+      "stage": "B"
+    },
+    {
+      "asset_id": "choice.confirm",
+      "base_volume": 0.52,
+      "bus": "SFX",
+      "cue_id": "choice.confirm",
+      "loop": false,
+      "pan": 0,
+      "stage": "B"
+    },
+    {
+      "asset_id": "decision.stamp",
+      "base_volume": 0.62,
+      "bus": "SFX",
+      "cue_id": "decision.stamp",
+      "loop": false,
+      "pan": -0.55,
+      "stage": "B"
+    },
+    {
+      "asset_id": "action.invalid",
+      "base_volume": 0.48,
+      "bus": "SFX",
+      "cue_id": "action.invalid",
+      "loop": false,
+      "pan": 0,
+      "stage": "B"
+    },
+    {
+      "asset_id": "paper.open",
+      "base_volume": 0.48,
+      "bus": "SFX",
+      "cue_id": "paper.open",
+      "loop": false,
+      "pan": -0.2,
+      "stage": "B"
+    },
+    {
+      "asset_id": "manual.selection",
+      "base_volume": 0.38,
+      "bus": "SFX",
+      "cue_id": "paper.selection",
+      "loop": false,
+      "pan": -0.2,
+      "stage": "B"
+    },
+    {
+      "asset_id": "manual.correct",
+      "base_volume": 0.61,
+      "bus": "SFX",
+      "cue_id": "paper.correct",
+      "loop": false,
+      "pan": -0.2,
+      "stage": "B"
+    },
+    {
+      "asset_id": "manual.incorrect",
+      "base_volume": 0.55,
+      "bus": "SFX",
+      "cue_id": "paper.incorrect",
+      "loop": false,
+      "pan": -0.2,
+      "stage": "B"
+    },
+    {
+      "asset_id": "money.open",
+      "base_volume": 0.5,
+      "bus": "SFX",
+      "cue_id": "money.open",
+      "loop": false,
+      "pan": 0.25,
+      "stage": "B"
+    },
+    {
+      "asset_id": "trace.movement",
+      "base_volume": 0.36,
+      "bus": "SFX",
+      "cue_id": "money.trace",
+      "loop": false,
+      "pan": 0.25,
+      "stage": "B"
+    },
+    {
+      "asset_id": "manual.correct",
+      "base_volume": 0.64,
+      "bus": "SFX",
+      "cue_id": "money.correct",
+      "loop": false,
+      "pan": 0.25,
+      "stage": "B"
+    },
+    {
+      "asset_id": "manual.incorrect",
+      "base_volume": 0.57,
+      "bus": "SFX",
+      "cue_id": "money.incorrect",
+      "loop": false,
+      "pan": 0.25,
+      "stage": "B"
     }
   ],
   "schema": "desk42.office-slice-m5.audio-manifest.v1",
-  "through_gate": "A",
+  "through_gate": "B",
   "workflow_version": "1.0.0"
 }
