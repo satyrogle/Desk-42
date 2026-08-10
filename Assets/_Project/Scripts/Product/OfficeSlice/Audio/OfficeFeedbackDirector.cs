@@ -24,6 +24,7 @@ namespace Desk42.Product.OfficeSlice
         private float _folderSnap;
         private float _machineRecoil;
         private float _rumbleRemaining;
+        private float _visualRemaining;
 
         public OfficeFeedbackDirector(
             Transform parent,
@@ -137,6 +138,10 @@ namespace Desk42.Product.OfficeSlice
             _folderSnap = Mathf.MoveTowards(_folderSnap, 0f, delta * 3.8f);
             _machineRecoil = Mathf.MoveTowards(_machineRecoil, 0f, delta * 3.2f);
             _rumbleRemaining = Mathf.Max(0f, _rumbleRemaining - delta);
+            float previousVisualRemaining = _visualRemaining;
+            _visualRemaining = Mathf.Max(0f, _visualRemaining - delta);
+            if (previousVisualRemaining > 0f && _visualRemaining <= 0f)
+                _visuals?.VfxPool?.ReleaseAll();
             if (_camera != null)
             {
                 float phase = Time.unscaledTime * 41f;
@@ -190,7 +195,10 @@ namespace Desk42.Product.OfficeSlice
 
         private void RequestVisual(string assetId)
         {
-            _visuals?.RequestVfx(assetId, Vector3.zero);
+            if (_visuals?.VfxPool == null) return;
+            _visuals.VfxPool.ReleaseAll();
+            _visuals.RequestVfx(assetId, Vector3.zero);
+            _visualRemaining = 0.18f;
         }
 
         private static void DisableExistingRoots(Transform parent)

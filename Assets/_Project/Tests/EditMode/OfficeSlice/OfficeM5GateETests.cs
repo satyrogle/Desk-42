@@ -110,5 +110,32 @@ namespace Desk42.Tests.EditMode.OfficeSlice
                 Object.DestroyImmediate(owner);
             }
         }
+
+        [Test]
+        public void SustainedFeedbackRecyclesTheBoundedVisualPool()
+        {
+            GameObject owner = new("M5 Gate E Visual Recycle Owner");
+            try
+            {
+                var visuals = new OfficeVisualDirector(
+                    owner.transform, OfficeSpriteCatalog.LoadRequired());
+                visuals.BuildEnvironment();
+                var feedback = new OfficeFeedbackDirector(
+                    owner.transform, null, visuals, new OfficeAudioSettings());
+
+                for (int i = 0; i < 100; i++)
+                    feedback.RouteCue(i % 2 == 0 ? "folder.take" : "folder.send", 1f);
+
+                Assert.That(visuals.VfxPool.ActiveCount, Is.EqualTo(1));
+                Assert.That(visuals.VfxPool.GrowthCount, Is.Zero);
+                feedback.Update(0.2f);
+                Assert.That(visuals.VfxPool.ActiveCount, Is.Zero);
+                feedback.Dispose();
+            }
+            finally
+            {
+                Object.DestroyImmediate(owner);
+            }
+        }
     }
 }
