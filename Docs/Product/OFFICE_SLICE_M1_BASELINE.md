@@ -80,4 +80,3 @@ Docs/Product/ISSUE_ID_HARDENING_V0.5.1.md
 
 M1 will not modify package inputs, MCP providers, save schemas, render-pipeline
 settings, audio integrations, final art, ComfyUI, Blender or FMOD.
-
