@@ -142,6 +142,11 @@ namespace Desk42.Product.OfficeSlice
                     shiftOrdinal,
                     _captureStateName);
                 SynchronizeCampaignState();
+                _m5AudioDirector?.ResetForState(
+                    _simulationState, _campaignState);
+                string reviewCue = M5CaptureReviewCue(_captureStateName);
+                if (!string.IsNullOrEmpty(reviewCue))
+                    _m5AudioDirector?.PlayCue(reviewCue);
                 RefreshPresentation();
             }
 
@@ -174,11 +179,20 @@ namespace Desk42.Product.OfficeSlice
             assetIds.Sort(StringComparer.Ordinal);
             int activeVfx = _m4Director?.VfxPool?.ActiveCount ?? 0;
             int vfxCapacity = _m4Director?.VfxPool?.Capacity ?? 0;
+            OfficeAudioVoicePool voices = _m5AudioDirector?.VoicePool;
             Debug.Log("OFFICE_M4_CAPTURE_OK state=" + _captureStateName +
                 " assets=" + string.Join(",", assetIds) +
                 " visual_count=" + (_m4Director?.ActiveVisualObjectCount ?? 0) +
                 " vfx_active=" + activeVfx +
                 " vfx_capacity=" + vfxCapacity +
+                " audio_assets=" + (_m5AudioDirector?.Catalog.AssetCount ?? 0) +
+                " audio_missing=" + (_m5AudioDirector?.Catalog.MissingClipCount ?? 0) +
+                " audio_oneshot=" + (voices?.ActiveOneShotCount ?? 0) +
+                " audio_continuous=" + (voices?.ActiveContinuousCount ?? 0) +
+                " audio_music=" + (voices?.ActiveMusicCount ?? 0) +
+                " audio_sources=" + (voices?.TotalSourceCount ?? 0) +
+                " audio_roots=" + OfficeAudioVoicePool.ActiveRootCount() +
+                " feedback_roots=" + OfficeFeedbackDirector.ActiveRootCount() +
                 " checksum=" + _campaignState.Checksum +
                 " path=" + fullPath, this);
             Application.Quit(0);
@@ -203,6 +217,7 @@ namespace Desk42.Product.OfficeSlice
             int initialLogicalFolders = _simulationState.Queues.FolderIds.Count;
             int initialMaterials = DistinctM4MaterialCount();
             int initialPoolGrowth = _m4Director?.VfxPool?.GrowthCount ?? 0;
+            int initialAudioClipCount = Resources.FindObjectsOfTypeAll<AudioClip>().Length;
             long initialTick = _simulationState.CurrentTick;
             var gcAllocatedRecorder = ProfilerRecorder.StartNew(
                 ProfilerCategory.Memory, "GC Allocated In Frame", 32);
@@ -256,7 +271,12 @@ namespace Desk42.Product.OfficeSlice
             _m4Director.Apply(steadySnapshot);
             long steadyBefore = GC.GetAllocatedBytesForCurrentThread();
             for (int iteration = 0; iteration < 10000; iteration++)
+            {
                 _m4Director.Apply(steadySnapshot);
+                _m5AudioDirector?.Apply(
+                    _simulationState, _campaignState, 1f / 60f);
+                _m5FeedbackDirector?.Update(1f / 60f);
+            }
             long steadyAllocated = GC.GetAllocatedBytesForCurrentThread() -
                 steadyBefore;
             double steadyBytesPerUpdate = steadyAllocated / 10000d;
@@ -266,6 +286,8 @@ namespace Desk42.Product.OfficeSlice
             long vertices = LastProfilerValue(verticesRecorder);
             long textureMemory = LastProfilerValue(textureMemoryRecorder);
             if (textureMemory < 0L) textureMemory = M4TextureMemoryBytes();
+            int audioClipGrowth = Resources.FindObjectsOfTypeAll<AudioClip>().Length -
+                initialAudioClipCount;
             gcAllocatedRecorder.Dispose();
             drawCallsRecorder.Dispose();
             batchesRecorder.Dispose();
@@ -283,17 +305,28 @@ namespace Desk42.Product.OfficeSlice
             bool ownershipValid =
                 _simulationState.Queues.HasSingleLogicalOwnerForEveryFolder();
             int activeRoots = OfficeVisualDirector.ActiveRootCount();
+            OfficeAudioVoicePool audioVoices = _m5AudioDirector?.VoicePool;
+            int activeAudioRoots = OfficeAudioVoicePool.ActiveRootCount();
+            int activeFeedbackRoots = OfficeFeedbackDirector.ActiveRootCount();
+            bool audioBoundsValid = audioVoices != null &&
+                audioVoices.ActiveOneShotCount <= OfficeAudioVoicePool.OneShotCapacity &&
+                audioVoices.ActiveContinuousCount <= OfficeAudioVoicePool.ContinuousCapacity &&
+                audioVoices.ActiveMusicCount <= OfficeAudioVoicePool.MusicCapacity &&
+                audioVoices.TotalSourceCount == 44 && audioVoices.GrowthCount == 0 &&
+                activeAudioRoots == 1 && activeFeedbackRoots == 1 &&
+                audioClipGrowth == 0 &&
+                _m5AudioDirector.Catalog.MissingClipCount == 0;
             bool performancePass = averageFps >= targetFps &&
                 p95Milliseconds <= maximumP95Milliseconds &&
                 worstFrameSeconds * 1000d <= maximumWorstMilliseconds &&
                 simulationHz >= 29d && simulationHz <= 31d &&
                 steadyAllocated == 0L && activeRoots == 1 && poolGrowth == 0 &&
                 materialGrowth == 0 && temporaryGameObjectGrowth == 0 &&
-                ownershipValid && replayChecksumMatch;
+                ownershipValid && replayChecksumMatch && audioBoundsValid;
             string fullPath = Path.GetFullPath(outputPath);
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? ".");
             var report = new StringBuilder(1024);
-            report.AppendLine("OFFICE_SLICE_M4_PERFORMANCE_V2");
+            report.AppendLine("OFFICE_SLICE_M5_PERFORMANCE_V1");
             report.Append("resolution=").Append(Screen.width).Append('x')
                 .AppendLine(Screen.height.ToString(CultureInfo.InvariantCulture));
             report.Append("frames=").AppendLine(
@@ -328,6 +361,39 @@ namespace Desk42.Product.OfficeSlice
                 textureMemory.ToString(CultureInfo.InvariantCulture));
             report.Append("active_visual_roots=").AppendLine(
                 activeRoots.ToString(CultureInfo.InvariantCulture));
+            report.Append("active_audio_roots=").AppendLine(
+                activeAudioRoots.ToString(CultureInfo.InvariantCulture));
+            report.Append("active_feedback_roots=").AppendLine(
+                activeFeedbackRoots.ToString(CultureInfo.InvariantCulture));
+            report.Append("active_one_shot_voices=").AppendLine(
+                (audioVoices?.ActiveOneShotCount ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("peak_one_shot_voices=").AppendLine(
+                (audioVoices?.PeakOneShotVoices ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("active_continuous_sources=").AppendLine(
+                (audioVoices?.ActiveContinuousCount ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("active_music_sources=").AppendLine(
+                (audioVoices?.ActiveMusicCount ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("audio_source_objects=").AppendLine(
+                (audioVoices?.TotalSourceCount ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("audio_source_growth=").AppendLine(
+                (audioVoices?.GrowthCount ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("runtime_audio_clip_growth=").AppendLine(
+                audioClipGrowth.ToString(CultureInfo.InvariantCulture));
+            report.Append("audio_pcm_memory_estimate_bytes=").AppendLine(
+                (_m5AudioDirector?.Catalog.PcmMemoryEstimateBytes ?? 0L).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("audio_assets=").AppendLine(
+                (_m5AudioDirector?.Catalog.AssetCount ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
+            report.Append("audio_missing_clips=").AppendLine(
+                (_m5AudioDirector?.Catalog.MissingClipCount ?? 0).ToString(
+                    CultureInfo.InvariantCulture));
             report.Append("active_visual_objects=").AppendLine(
                 (_m4Director?.ActiveVisualObjectCount ?? 0).ToString(
                     CultureInfo.InvariantCulture));
@@ -382,11 +448,32 @@ namespace Desk42.Product.OfficeSlice
             report.Append("performance_pass=").AppendLine(performancePass.ToString());
             File.WriteAllText(fullPath, report.ToString());
 
-            Debug.Log("OFFICE_M4_PERFORMANCE_" +
+            Debug.Log("OFFICE_M5_PERFORMANCE_" +
                 (performancePass ? "OK " : "FAILED ") +
                 averageFps.ToString("F2", CultureInfo.InvariantCulture) +
                 " FPS " + fullPath, this);
             Application.Quit(performancePass ? 0 : 2);
+        }
+
+        private static string M5CaptureReviewCue(string stateName)
+        {
+            return stateName switch
+            {
+                "02-shift-1-paper-check" => "paper.correct",
+                "03-shift-1-money-trace" => "money.correct",
+                "04-shift-1-copy-echo-warning" => "automation.match",
+                "05-shift-1-copy-echo-break" => "event.copy-echo-trigger",
+                "06-shift-1-upgrade-choice" => "event.shift-close",
+                "08-shift-2-ghost-clock" => "event.ghost-clock",
+                "09-shift-2-missing-room-access" => "event.missing-room",
+                "10-shift-2-second-upgrade-choice" => "event.shift-close",
+                "12-shift-3-promotion-warning" => "automation.copied-accepted",
+                "13-shift-3-promotion-cascade" => "event.promotion-trigger",
+                "14-shift-3-recovery" => "event.recovery-complete",
+                "15-final-campaign-result" => "event.final-result",
+                "16-next-day-tease" => "event.next-day-tease",
+                _ => string.Empty,
+            };
         }
 
         private static long LastProfilerValue(ProfilerRecorder recorder)

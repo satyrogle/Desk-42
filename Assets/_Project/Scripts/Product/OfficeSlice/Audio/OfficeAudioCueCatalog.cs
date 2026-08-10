@@ -19,6 +19,22 @@ namespace Desk42.Product.OfficeSlice
         public int AssetCount => _assets.Count;
         public int CueCount => _cues.Count;
         public int MissingClipCount { get; private set; }
+        public long PcmMemoryEstimateBytes
+        {
+            get
+            {
+                long bytes = 0L;
+                for (int i = 0; i < Manifest.assets.Length; i++)
+                {
+                    OfficeAudioAssetRecord asset = Manifest.assets[i];
+                    if (asset == null) continue;
+                    bytes += (long)Math.Ceiling(asset.duration_seconds *
+                        asset.sample_rate) * Math.Max(1, asset.channels) *
+                        Math.Max(1, asset.bit_depth / 8);
+                }
+                return bytes;
+            }
+        }
 
         private OfficeAudioCueCatalog(OfficeAudioManifest manifest)
         {
