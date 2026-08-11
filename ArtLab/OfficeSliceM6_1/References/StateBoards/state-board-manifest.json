@@ -1,0 +1,76 @@
+{
+  "schema": "desk42.office-slice-m6.1.state-reference-boards.v1",
+  "method": "deterministic Pillow composition of approved M4 project-original assets",
+  "sources": [
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Machines/auto-sorter_active.png",
+      "sha256": "5727810bf9460143c8947090e469ee9a32e5090d73b1a1634b14934a0260cdb0"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Machines/copy-echo_active.png",
+      "sha256": "d7af77e5bd2de06ff46202816e00a391ad13c75e595c49a342164d6d088ac27e"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Machines/copy-echo_break.png",
+      "sha256": "64da9079e532d563d5dd10698a389968778fc3dd755f3af6c0a19fa548d73be6"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Machines/supervisor-stamp_break.png",
+      "sha256": "85fe7a770477afd368142c6d910e6eec08f9eb013972e846b63e3d31528ded1d"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Characters/warden_help.png",
+      "sha256": "8ed64a7d4e41adb4ea4d2868aba36dae10bb6a17324ef7ca9c1eb06c3b515214"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Characters/runner_carry.png",
+      "sha256": "2087da510bbe9b2e9a1d447234ea1027939eee59ec6074ed4a91cfecd23432a7"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Characters/runner_obey-copier.png",
+      "sha256": "7876684b8aa029e148693910ef219faa3484888099ec0cbdcc378259652521d2"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Characters/mara-vale_upset.png",
+      "sha256": "02495bcbe571e4f91eabb06cd5dec449db235b5a0606dcb723f7d1617817063e"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Folders/folder_normal.png",
+      "sha256": "75ca2359590550873b1a13c04e6fadcbf3c580661349c15ff1b592e0e3e700e6"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Folders/folder_rule-matched.png",
+      "sha256": "75ca2359590550873b1a13c04e6fadcbf3c580661349c15ff1b592e0e3e700e6"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Folders/folder_original.png",
+      "sha256": "4db915e6ac559c154dd47a465efac7c6eef304558d6261e959c15053353f76f9"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/Folders/folder_copy_tier_2.png",
+      "sha256": "aaaea8bb334bffaba13f06231458c2dcebd217b71df6852411fa1c8f42ee3ba0"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/VFX/machine-stop.png",
+      "sha256": "c30f61022af1c55935de5bfd2fa0ac428a9e0c6956d50d428d7db7bd09852eba"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/VFX/copy-clear.png",
+      "sha256": "a4c5d12f9b36222726785fa3704f3669399531607afeddbd4b0444a02d766b48"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/VFX/promotion-cascade-ink-fracture.png",
+      "sha256": "24c61cece7ee6593d1c35618039349e6179db8ae19df9f69e15815c92a9a66f0"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "ArtLab/OfficeSliceM6_1/References/StateBoards/A02_automation_relief_board.png",
+      "sha256": "17041d50ac8303deefdb0f4fb19b566014c5ab50a968f2a4e2459976f8b506f1"
+    },
+    {
+      "path": "ArtLab/OfficeSliceM6_1/References/StateBoards/A03_promotion_cascade_break_board.png",
+      "sha256": "ccc19be8fca8002313d89f8ab5c2fe4f027eb136814fe16f4cbc72a9c7d0d6de"
+    }
+  ]
+}

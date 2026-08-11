@@ -1,0 +1,198 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "krea2_turbo_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3vl_4b_fp8_scaled.safetensors",
+      "type": "krea2",
+      "device": "default"
+    }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "qwen_image_vae.safetensors"
+    }
+  },
+  "4": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "lora_name": "krea2_style_reference.safetensors",
+      "strength_model": 1.0
+    }
+  },
+  "7": {
+    "class_type": "TextEncodeQwenImageEditPlus",
+    "inputs": {
+      "clip": [
+        "2",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ],
+      "prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels. Calm opening state. The teal-coated Warden stands in the central corridor as the primary hero, carrying no folder and facing the current orange-coated customer at the front desk. Runner and Talker are distinct secondary staff. All five room identities read immediately. A few paper folders rest in physical trays; machines are idle but recognizable. Warm lived-in atmosphere, calm short queue, almost no HUD and no chaos.",
+      "image1": [
+        "5",
+        0
+      ],
+      "image2": [
+        "6",
+        0
+      ]
+    }
+  },
+  "8": {
+    "class_type": "FluxKontextMultiReferenceLatentMethod",
+    "inputs": {
+      "conditioning": [
+        "7",
+        0
+      ],
+      "reference_latents_method": "index_timestep_zero"
+    }
+  },
+  "9": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": {
+      "conditioning": [
+        "8",
+        0
+      ]
+    }
+  },
+  "10": {
+    "class_type": "ModelSamplingFlux",
+    "inputs": {
+      "model": [
+        "4",
+        0
+      ],
+      "max_shift": 1.15,
+      "base_shift": 0.5,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "11": {
+    "class_type": "CFGGuider",
+    "inputs": {
+      "model": [
+        "10",
+        0
+      ],
+      "positive": [
+        "8",
+        0
+      ],
+      "negative": [
+        "9",
+        0
+      ],
+      "cfg": 1.0
+    }
+  },
+  "12": {
+    "class_type": "RandomNoise",
+    "inputs": {
+      "noise_seed": 6101001
+    }
+  },
+  "13": {
+    "class_type": "KSamplerSelect",
+    "inputs": {
+      "sampler_name": "euler"
+    }
+  },
+  "14": {
+    "class_type": "BasicScheduler",
+    "inputs": {
+      "model": [
+        "10",
+        0
+      ],
+      "scheduler": "simple",
+      "steps": 8,
+      "denoise": 1.0
+    }
+  },
+  "15": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {
+      "width": 1280,
+      "height": 720,
+      "batch_size": 1
+    }
+  },
+  "16": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {
+      "noise": [
+        "12",
+        0
+      ],
+      "guider": [
+        "11",
+        0
+      ],
+      "sampler": [
+        "13",
+        0
+      ],
+      "sigmas": [
+        "14",
+        0
+      ],
+      "latent_image": [
+        "15",
+        0
+      ]
+    }
+  },
+  "17": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "16",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    }
+  },
+  "18": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "17",
+        0
+      ],
+      "filename_prefix": "Desk42_M6_1/GateA/A01_calm_office"
+    }
+  },
+  "5": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "desk42_m6_1_blender_structure.png"
+    }
+  },
+  "6": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "desk42_m6_1_warm_ink_style.png"
+    }
+  }
+}

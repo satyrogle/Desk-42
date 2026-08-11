@@ -1,0 +1,97 @@
+{
+  "schema": "desk42.office-slice-m6.1.gate-a-targets.v1",
+  "visual_identity": "WARM OFFICE / INK BREAK",
+  "resolution": [
+    1280,
+    720
+  ],
+  "shared_seed": 6101001,
+  "shared_prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels.",
+  "references": [
+    {
+      "role": "locked structure and camera",
+      "path": "ArtLab/OfficeSliceM4/References/BlenderGuides/office_m4_flat_colour.png",
+      "comfy_input_name": "desk42_m6_1_blender_structure.png"
+    },
+    {
+      "role": "approved project visual language",
+      "path": "ArtLab/OfficeSliceM4/ApprovedSources/TargetFrames/shift1_opening_target.png",
+      "comfy_input_name": "desk42_m6_1_warm_ink_style.png"
+    }
+  ],
+  "targets": [
+    {
+      "id": "A01",
+      "slug": "calm_office",
+      "title": "CALM OFFICE",
+      "prompt": "Calm opening state. The teal-coated Warden stands in the central corridor as the primary hero, carrying no folder and facing the current orange-coated customer at the front desk. Runner and Talker are distinct secondary staff. All five room identities read immediately. A few paper folders rest in physical trays; machines are idle but recognizable. Warm lived-in atmosphere, calm short queue, almost no HUD and no chaos.",
+      "criteria": [
+        "Warden is the primary read and the current customer is readable.",
+        "Runner and Talker remain secondary.",
+        "Five room identities and walkable routes remain legible.",
+        "Paper, folders and machine silhouettes are present without chaos.",
+        "Atmosphere feels warm, shabby, specific and lightly funny."
+      ]
+    },
+    {
+      "id": "A02",
+      "slug": "automation_relief",
+      "title": "AUTOMATION RELIEF",
+      "prompt": "EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, high camera, cast design and warm ink style. Transform the activity into unmistakable automation relief. A bold physical flow of cream folders travels left-to-right through the squat teal Auto Sorter and red Copy Echo, then lands in tidy sorted stacks. Runner carries the machine output. The teal Warden is visibly away from the folder line, calmly helping a customer at another desk. Empty chairs and a shrinking queue create open breathing room. Make machine usefulness and reduced manual burden the strongest story after the Warden, without labels or explanatory UI.",
+      "references": [
+        {
+          "role": "authored same-office spatial edit for automation relief",
+          "path": "ArtLab/OfficeSliceM6_1/References/SpatialEdits/A02_automation_relief_spatial_edit.png",
+          "comfy_input_name": "desk42_m6_1_a02_spatial_edit.png"
+        },
+        {
+          "role": "same-office visual continuity from accepted A01 internal candidate",
+          "path": "ArtLab/OfficeSliceM6_1/Candidates/TargetFrames/A01_calm_office_seed6101001.png",
+          "comfy_input_name": "desk42_m6_1_a01_same_office.png"
+        },
+        {
+          "role": "automation-relief action board",
+          "path": "ArtLab/OfficeSliceM6_1/References/StateBoards/A02_automation_relief_board.png",
+          "comfy_input_name": "desk42_m6_1_a02_action_board.png"
+        }
+      ],
+      "criteria": [
+        "The office, cast and visual language match A01.",
+        "Machines visibly carry repetitive folder flow.",
+        "Warden is free to perform another useful task.",
+        "Queue pressure is visibly easing.",
+        "Relief reads without labels or explanatory UI."
+      ]
+    },
+    {
+      "id": "A03",
+      "slug": "promotion_cascade_break",
+      "title": "PROMOTION CASCADE BREAK",
+      "prompt": "EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, high camera, cast design and warm ink style. Turn only the bottom-right purple machine room into an unmistakable Promotion Cascade Break. A huge red-and-black Copy Echo copier and oversized supervisor stamp are the local origin and dominant silhouette. A violent but graphic ribbon of red ink fractures and duplicate paper bursts out from that machine room, stopping at room boundaries enough to preserve every corridor. Runner is visibly turned toward the copier carrying copies. Show one isolated cream original folder with a red seal against many cyan- and red-edged duplicate folders. The teal Warden faces a large stop lever, copy-clear bin, upset customer and visible route for returning the original to the front desk. Make the cause chain physical, local and funny, not subtle, not horror and not a random global glitch.",
+      "references": [
+        {
+          "role": "authored same-office spatial edit for promotion cascade",
+          "path": "ArtLab/OfficeSliceM6_1/References/SpatialEdits/A03_promotion_cascade_break_spatial_edit.png",
+          "comfy_input_name": "desk42_m6_1_a03_spatial_edit.png"
+        },
+        {
+          "role": "same-office visual continuity from accepted A01 internal candidate",
+          "path": "ArtLab/OfficeSliceM6_1/Candidates/TargetFrames/A01_calm_office_seed6101001.png",
+          "comfy_input_name": "desk42_m6_1_a01_same_office.png"
+        },
+        {
+          "role": "promotion-cascade action board",
+          "path": "ArtLab/OfficeSliceM6_1/References/StateBoards/A03_promotion_cascade_break_board.png",
+          "comfy_input_name": "desk42_m6_1_a03_action_board.png"
+        }
+      ],
+      "criteria": [
+        "The office, cast and visual language match A01 and A02.",
+        "The break has a local machine origin.",
+        "Copier and supervisor-stamp authority dominate the incident.",
+        "Runner allegiance and original-versus-copy distinction are readable.",
+        "Recovery targets remain visible and navigation remains intact."
+      ]
+    }
+  ]
+}

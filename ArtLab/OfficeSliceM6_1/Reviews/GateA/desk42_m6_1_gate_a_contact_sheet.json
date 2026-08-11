@@ -1,0 +1,26 @@
+{
+  "schema": "desk42.office-slice-m6.1.gate-a-contact-sheet.v1",
+  "contact_sheet": "ArtLab/OfficeSliceM6_1/Reviews/GateA/desk42_m6_1_gate_a_contact_sheet.png",
+  "sha256": "11eb43d8e8e35017d2beff44f8a5b3b9c82ad923287e7d95c762b1a16d638fc7",
+  "frames": [
+    {
+      "id": "A01",
+      "title": "CALM OFFICE",
+      "presentation_target": "ArtLab/OfficeSliceM6_1/Candidates/PresentationTargets/A01_calm_office_seed6101001.png",
+      "presentation_target_sha256": "39ccd5f354e8339068399c5ca1cf1aaf6d4acbd43923000ce604b550098b0efb"
+    },
+    {
+      "id": "A02",
+      "title": "AUTOMATION RELIEF",
+      "presentation_target": "ArtLab/OfficeSliceM6_1/Candidates/PresentationTargets/A02_automation_relief_seed6101001.png",
+      "presentation_target_sha256": "94ee1a64aaf587ae1311adb0cb4c3755a3ed25fc875b0d30c1a519a213f74b7d"
+    },
+    {
+      "id": "A03",
+      "title": "PROMOTION CASCADE BREAK",
+      "presentation_target": "ArtLab/OfficeSliceM6_1/Candidates/PresentationTargets/A03_promotion_cascade_break_seed6101001.png",
+      "presentation_target_sha256": "ab2485e46d565a71fb10b78bb65d221696304c6f566f48f4bdae53ea475f6b59"
+    }
+  ],
+  "status": "awaiting-owner-approval"
+}
