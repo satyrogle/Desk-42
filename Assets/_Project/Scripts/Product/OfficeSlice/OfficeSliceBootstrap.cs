@@ -159,7 +159,12 @@ namespace Desk42.Product.OfficeSlice
                     3,
                     "promotion-cascade");
                 SynchronizeCampaignState();
+                _m6Settings.SetTextScale(OfficeM6TextScale.Maximum);
+                _m4TitleStyle = null;
+                _m4ActionStyle = null;
+                _m4BodyStyle = null;
                 RefreshPresentation();
+                ToggleWhatHappened();
             }
             else if (!HasArgument(arguments, CaptureDistributionArgument))
             {
@@ -262,6 +267,16 @@ namespace Desk42.Product.OfficeSlice
             Application.runInBackground = true;
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = 120;
+            bool maximumTextScale =
+                _m6Settings.TextScale == OfficeM6TextScale.Maximum;
+            bool breakPanelOpen = _m6HudModel?.BreakCardVisible == true;
+            bool whatHappenedOpen =
+                _m6HudModel?.WhatHappenedVisible == true;
+            bool telemetryEnabled = _m6TelemetryRecorder?.Enabled == true;
+            bool audioEnabled = _m5AudioSettings.Master > 0f &&
+                _m5AudioSettings.Music > 0f &&
+                _m5AudioSettings.Sfx > 0f &&
+                _m5AudioSettings.Ambience > 0f;
             var endOfFrame = new WaitForEndOfFrame();
             for (int frame = 0; frame < warmupFrames; frame++)
                 yield return endOfFrame;
@@ -375,11 +390,13 @@ namespace Desk42.Product.OfficeSlice
                 simulationHz >= 29d && simulationHz <= 31d &&
                 steadyAllocated == 0L && activeRoots == 1 && poolGrowth == 0 &&
                 materialGrowth == 0 && temporaryGameObjectGrowth == 0 &&
-                ownershipValid && replayChecksumMatch && audioBoundsValid;
+                ownershipValid && replayChecksumMatch && audioBoundsValid &&
+                maximumTextScale && breakPanelOpen && whatHappenedOpen &&
+                telemetryEnabled && audioEnabled;
             string fullPath = Path.GetFullPath(outputPath);
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? ".");
             var report = new StringBuilder(1024);
-            report.AppendLine("OFFICE_SLICE_M5_PERFORMANCE_V1");
+            report.AppendLine("OFFICE_SLICE_M6_PERFORMANCE_V1");
             report.Append("resolution=").Append(Screen.width).Append('x')
                 .AppendLine(Screen.height.ToString(CultureInfo.InvariantCulture));
             report.Append("frames=").AppendLine(
@@ -447,6 +464,16 @@ namespace Desk42.Product.OfficeSlice
             report.Append("audio_missing_clips=").AppendLine(
                 (_m5AudioDirector?.Catalog.MissingClipCount ?? 0).ToString(
                     CultureInfo.InvariantCulture));
+            report.Append("maximum_text_scale=").AppendLine(
+                maximumTextScale.ToString());
+            report.Append("break_panel_open=").AppendLine(
+                breakPanelOpen.ToString());
+            report.Append("what_happened_open=").AppendLine(
+                whatHappenedOpen.ToString());
+            report.Append("telemetry_enabled=").AppendLine(
+                telemetryEnabled.ToString());
+            report.Append("audio_enabled=").AppendLine(
+                audioEnabled.ToString());
             report.Append("active_visual_objects=").AppendLine(
                 (_m4Director?.ActiveVisualObjectCount ?? 0).ToString(
                     CultureInfo.InvariantCulture));
