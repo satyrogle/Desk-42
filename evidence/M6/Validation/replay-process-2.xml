@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-11 00:20:52Z" end-time="2026-08-11 00:20:53Z" duration="1.2075029">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="615" result="Passed" start-time="2026-08-11 00:20:52Z" end-time="2026-08-11 00:20:53Z" duration="1.207503" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1702" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:20:52Z" end-time="2026-08-11 00:20:53Z" duration="1.192017" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="45280" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1703" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:20:52Z" end-time="2026-08-11 00:20:53Z" duration="1.181036" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1704" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:20:52Z" end-time="2026-08-11 00:20:53Z" duration="1.170879" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1705" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:20:52Z" end-time="2026-08-11 00:20:53Z" duration="1.153322" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-suite type="TestSuite" id="1709" name="OfficeSlice" fullname="Desk42.Tests.EditMode.OfficeSlice" runstate="Runnable" testcasecount="128" result="Passed" start-time="2026-08-11 00:20:52Z" end-time="2026-08-11 00:20:53Z" duration="1.142701" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-suite type="TestFixture" id="1653" name="OfficeM6GateGTests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateGTests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateGTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-11 00:20:52Z" end-time="2026-08-11 00:20:53Z" duration="1.138877" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1658" name="EvaluationModeCompletesThreeShiftCampaign" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateGTests.EvaluationModeCompletesThreeShiftCampaign" methodname="EvaluationModeCompletesThreeShiftCampaign" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateGTests" runstate="Runnable" seed="1514012582" result="Passed" start-time="2026-08-11 00:20:52Z" end-time="2026-08-11 00:20:53Z" duration="1.126386" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\evidence\M6\Validation\replay-process-2.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

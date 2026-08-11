@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:48Z" duration="0.5481435">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="580" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:48Z" duration="0.548144" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1661" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="579" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:48Z" duration="0.533119" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="46624" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1662" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="579" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:48Z" duration="0.523503" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1663" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="579" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:48Z" duration="0.514254" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1664" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="579" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:48Z" duration="0.505176" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-suite type="TestSuite" id="1668" name="OfficeSlice" fullname="Desk42.Tests.EditMode.OfficeSlice" runstate="Runnable" testcasecount="93" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:48Z" duration="0.496330" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-suite type="TestFixture" id="1614" name="OfficeM6GateBTests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:48Z" duration="0.493546" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1620" name="FirstShiftCanCompleteWithoutDeveloperHud" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests.FirstShiftCanCompleteWithoutDeveloperHud" methodname="FirstShiftCanCompleteWithoutDeveloperHud" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests" runstate="Runnable" seed="848214583" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:47Z" duration="0.418408" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1615" name="FreshProfileReceivesFirstShiftGuidance" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests.FreshProfileReceivesFirstShiftGuidance" methodname="FreshProfileReceivesFirstShiftGuidance" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests" runstate="Runnable" seed="1279759596" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:47Z" duration="0.002222" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1616" name="GuidanceAdvancesOnlyAfterObservedAction" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests.GuidanceAdvancesOnlyAfterObservedAction" methodname="GuidanceAdvancesOnlyAfterObservedAction" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests" runstate="Runnable" seed="76941362" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:47Z" duration="0.017229" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1617" name="GuidanceDoesNotRepeatAfterCompletion" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests.GuidanceDoesNotRepeatAfterCompletion" methodname="GuidanceDoesNotRepeatAfterCompletion" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests" runstate="Runnable" seed="1996084521" result="Passed" start-time="2026-08-10 23:22:47Z" end-time="2026-08-10 23:22:48Z" duration="0.017571" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1618" name="ReturningPlayerCanDisableGuidance" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests.ReturningPlayerCanDisableGuidance" methodname="ReturningPlayerCanDisableGuidance" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests" runstate="Runnable" seed="1297982909" result="Passed" start-time="2026-08-10 23:22:48Z" end-time="2026-08-10 23:22:48Z" duration="0.000238" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1619" name="TutorialStateDoesNotChangeSimulationChecksum" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests.TutorialStateDoesNotChangeSimulationChecksum" methodname="TutorialStateDoesNotChangeSimulationChecksum" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateBTests" runstate="Runnable" seed="1821927432" result="Passed" start-time="2026-08-10 23:22:48Z" end-time="2026-08-10 23:22:48Z" duration="0.025648" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\evidence\M6\Validation\gate-b.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

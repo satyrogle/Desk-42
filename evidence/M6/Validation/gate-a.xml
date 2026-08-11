@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-10 23:15:21Z" end-time="2026-08-10 23:15:25Z" duration="4.3921434">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="574" result="Passed" start-time="2026-08-10 23:15:21Z" end-time="2026-08-10 23:15:25Z" duration="4.392143" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1654" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="573" result="Passed" start-time="2026-08-10 23:15:21Z" end-time="2026-08-10 23:15:25Z" duration="4.377491" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="4772" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1655" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="573" result="Passed" start-time="2026-08-10 23:15:21Z" end-time="2026-08-10 23:15:25Z" duration="4.367041" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1656" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="573" result="Passed" start-time="2026-08-10 23:15:21Z" end-time="2026-08-10 23:15:25Z" duration="4.357528" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1657" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="573" result="Passed" start-time="2026-08-10 23:15:21Z" end-time="2026-08-10 23:15:25Z" duration="4.348052" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-suite type="TestSuite" id="1661" name="OfficeSlice" fullname="Desk42.Tests.EditMode.OfficeSlice" runstate="Runnable" testcasecount="87" result="Passed" start-time="2026-08-10 23:15:21Z" end-time="2026-08-10 23:15:25Z" duration="4.338471" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-suite type="TestFixture" id="1607" name="OfficeM6GateATests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-10 23:15:21Z" end-time="2026-08-10 23:15:25Z" duration="4.335839" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1611" name="BreakPanelAppearsOnlyDuringBreak" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests.BreakPanelAppearsOnlyDuringBreak" methodname="BreakPanelAppearsOnlyDuringBreak" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests" runstate="Runnable" seed="381026352" result="Passed" start-time="2026-08-10 23:15:21Z" end-time="2026-08-10 23:15:21Z" duration="0.243174" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1610" name="CriticalTargetsRemainVisible" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests.CriticalTargetsRemainVisible" methodname="CriticalTargetsRemainVisible" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests" runstate="Runnable" seed="2099269201" result="Passed" start-time="2026-08-10 23:15:21Z" end-time="2026-08-10 23:15:22Z" duration="0.723361" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1613" name="DeveloperHudIsOptIn" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests.DeveloperHudIsOptIn" methodname="DeveloperHudIsOptIn" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests" runstate="Runnable" seed="357221255" result="Passed" start-time="2026-08-10 23:15:22Z" end-time="2026-08-10 23:15:22Z" duration="0.020507" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1609" name="HudFitsAtAllTargetResolutions" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests.HudFitsAtAllTargetResolutions" methodname="HudFitsAtAllTargetResolutions" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests" runstate="Runnable" seed="1231256151" result="Passed" start-time="2026-08-10 23:15:22Z" end-time="2026-08-10 23:15:22Z" duration="0.000633" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1608" name="NormalHudContainsNoDebugIdentifiers" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests.NormalHudContainsNoDebugIdentifiers" methodname="NormalHudContainsNoDebugIdentifiers" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests" runstate="Runnable" seed="2037340760" result="Passed" start-time="2026-08-10 23:15:22Z" end-time="2026-08-10 23:15:25Z" duration="2.436015" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1612" name="ResultScreenSuppressesOperationalHud" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests.ResultScreenSuppressesOperationalHud" methodname="ResultScreenSuppressesOperationalHud" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateATests" runstate="Runnable" seed="1679063000" result="Passed" start-time="2026-08-10 23:15:25Z" end-time="2026-08-10 23:15:25Z" duration="0.897854" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\evidence\M6\Validation\gate-a.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

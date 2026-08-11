@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="47" result="Passed" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:35Z" duration="13.116526">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="615" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:35Z" duration="13.116526" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1702" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:35Z" duration="13.102571" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="15936" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1703" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:35Z" duration="13.094126" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1704" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:35Z" duration="13.083632" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1705" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:35Z" duration="13.074328" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-suite type="TestSuite" id="1709" name="OfficeSlice" fullname="Desk42.Tests.EditMode.OfficeSlice" runstate="Runnable" testcasecount="128" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:35Z" duration="13.064786" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-suite type="TestFixture" id="1514" name="OfficeM4GateATests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:22Z" duration="0.223573" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1515" name="AllM4VisualIdsResolveToApprovedAssets" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests.AllM4VisualIdsResolveToApprovedAssets" methodname="AllM4VisualIdsResolveToApprovedAssets" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests" runstate="Runnable" seed="344121566" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:22Z" duration="0.074857" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1520" name="MissingVisualUsesFallbackWithoutChangingState" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests.MissingVisualUsesFallbackWithoutChangingState" methodname="MissingVisualUsesFallbackWithoutChangingState" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests" runstate="Runnable" seed="1013705691" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:22Z" duration="0.086448" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[OFFICE_M4_VISUAL_MISSING_ID missing.required-test-id
+]]></output>
+                </test-case>
+                <test-case id="1516" name="NoApprovedRuntimeAssetLacksProvenanceEntry" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests.NoApprovedRuntimeAssetLacksProvenanceEntry" methodname="NoApprovedRuntimeAssetLacksProvenanceEntry" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests" runstate="Runnable" seed="81904397" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:22Z" duration="0.031332" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1517" name="NoDuplicateRuntimeAssetIdExists" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests.NoDuplicateRuntimeAssetIdExists" methodname="NoDuplicateRuntimeAssetIdExists" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests" runstate="Runnable" seed="456671161" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:22Z" duration="0.000440" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1518" name="PaletteContainsEveryRequiredSemanticColour" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests.PaletteContainsEveryRequiredSemanticColour" methodname="PaletteContainsEveryRequiredSemanticColour" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests" runstate="Runnable" seed="1462631365" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:22Z" duration="0.001163" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1519" name="VisualProjectionDoesNotMutateSimulationState" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests.VisualProjectionDoesNotMutateSimulationState" methodname="VisualProjectionDoesNotMutateSimulationState" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateATests" runstate="Runnable" seed="753414063" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:22Z" duration="0.016346" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1521" name="OfficeM4GateBTests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:23Z" duration="0.593116" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1526" name="ActiveAnomalyOutranksPriorShiftRecoveryInVisualProjection" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests.ActiveAnomalyOutranksPriorShiftRecoveryInVisualProjection" methodname="ActiveAnomalyOutranksPriorShiftRecoveryInVisualProjection" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests" runstate="Runnable" seed="1015233802" result="Passed" start-time="2026-08-11 00:14:22Z" end-time="2026-08-11 00:14:23Z" duration="0.546441" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1524" name="AuthoredEnvironmentCreatesNoColliderOrPrimitiveMesh" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests.AuthoredEnvironmentCreatesNoColliderOrPrimitiveMesh" methodname="AuthoredEnvironmentCreatesNoColliderOrPrimitiveMesh" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests" runstate="Runnable" seed="550516765" result="Passed" start-time="2026-08-11 00:14:23Z" end-time="2026-08-11 00:14:23Z" duration="0.019435" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1525" name="EnvironmentConstructionDoesNotChangeGridOrSimulationChecksum" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests.EnvironmentConstructionDoesNotChangeGridOrSimulationChecksum" methodname="EnvironmentConstructionDoesNotChangeGridOrSimulationChecksum" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests" runstate="Runnable" seed="1764134635" result="Passed" start-time="2026-08-11 00:14:23Z" end-time="2026-08-11 00:14:23Z" duration="0.023238" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1523" name="EnvironmentStateAndUpgradeVariantsResolve" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests.EnvironmentStateAndUpgradeVariantsResolve" methodname="EnvironmentStateAndUpgradeVariantsResolve" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests" runstate="Runnable" seed="1150612112" result="Passed" start-time="2026-08-11 00:14:23Z" end-time="2026-08-11 00:14:23Z" duration="0.000442" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1522" name="EveryDepartmentHasDistinctSilhouetteSignature" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests.EveryDepartmentHasDistinctSilhouetteSignature" methodname="EveryDepartmentHasDistinctSilhouetteSignature" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateBTests" runstate="Runnable" seed="1857916466" result="Passed" start-time="2026-08-11 00:14:23Z" end-time="2026-08-11 00:14:23Z" duration="0.001653" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1527" name="OfficeM4GateCTests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-11 00:14:23Z" end-time="2026-08-11 00:14:27Z" duration="4.019007" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1528" name="AllCharacterStatesShareStableAnchors" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests.AllCharacterStatesShareStableAnchors" methodname="AllCharacterStatesShareStableAnchors" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests" runstate="Runnable" seed="975150857" result="Passed" start-time="2026-08-11 00:14:23Z" end-time="2026-08-11 00:14:23Z" duration="0.002327" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1531" name="AnimationEventsDoNotOwnGameplayActions" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests.AnimationEventsDoNotOwnGameplayActions" methodname="AnimationEventsDoNotOwnGameplayActions" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests" runstate="Runnable" seed="2146321138" result="Passed" start-time="2026-08-11 00:14:23Z" end-time="2026-08-11 00:14:23Z" duration="0.016251" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1529" name="EveryCustomerHasDistinctSilhouetteSignature" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests.EveryCustomerHasDistinctSilhouetteSignature" methodname="EveryCustomerHasDistinctSilhouetteSignature" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests" runstate="Runnable" seed="402962381" result="Passed" start-time="2026-08-11 00:14:23Z" end-time="2026-08-11 00:14:23Z" duration="0.000357" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1533" name="ReplayProducesSameSimulationChecksumWithVisualsEnabledAndDisabled" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests.ReplayProducesSameSimulationChecksumWithVisualsEnabledAndDisabled" methodname="ReplayProducesSameSimulationChecksumWithVisualsEnabledAndDisabled" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests" runstate="Runnable" seed="1534652195" result="Passed" start-time="2026-08-11 00:14:23Z" end-time="2026-08-11 00:14:25Z" duration="1.956162" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1530" name="RequiredCastStatesAndPortraitsResolve" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests.RequiredCastStatesAndPortraitsResolve" methodname="RequiredCastStatesAndPortraitsResolve" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests" runstate="Runnable" seed="1817612613" result="Passed" start-time="2026-08-11 00:14:25Z" end-time="2026-08-11 00:14:25Z" duration="0.000529" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1532" name="VisualFrameRateDoesNotChangeCampaignChecksum" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests.VisualFrameRateDoesNotChangeCampaignChecksum" methodname="VisualFrameRateDoesNotChangeCampaignChecksum" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateCTests" runstate="Runnable" seed="1196911863" result="Passed" start-time="2026-08-11 00:14:25Z" end-time="2026-08-11 00:14:27Z" duration="2.041121" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1534" name="OfficeM4GateDTests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.042251" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1535" name="AllFolderStatesResolveAtBothUpgradeTiers" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests.AllFolderStatesResolveAtBothUpgradeTiers" methodname="AllFolderStatesResolveAtBothUpgradeTiers" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests" runstate="Runnable" seed="1398232797" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.000490" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1536" name="AllMachineStatesResolveForEveryCampaignShift" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests.AllMachineStatesResolveForEveryCampaignShift" methodname="AllMachineStatesResolveForEveryCampaignShift" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests" runstate="Runnable" seed="1333884049" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.000291" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1538" name="EveryRequiredVfxResolvesAndUsesTheBoundedPool" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests.EveryRequiredVfxResolvesAndUsesTheBoundedPool" methodname="EveryRequiredVfxResolvesAndUsesTheBoundedPool" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests" runstate="Runnable" seed="456962989" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.005469" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1537" name="OriginalAndCopyFoldersDifferByShapeAndMark" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests.OriginalAndCopyFoldersDifferByShapeAndMark" methodname="OriginalAndCopyFoldersDifferByShapeAndMark" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests" runstate="Runnable" seed="621500504" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.003048" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1540" name="PromotionCascadeVisualStressStaysWithinPoolBounds" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests.PromotionCascadeVisualStressStaysWithinPoolBounds" methodname="PromotionCascadeVisualStressStaysWithinPoolBounds" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests" runstate="Runnable" seed="582494477" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.014167" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1539" name="RepeatedBreakRestartDoesNotGrowVisualPools" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests.RepeatedBreakRestartDoesNotGrowVisualPools" methodname="RepeatedBreakRestartDoesNotGrowVisualPools" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateDTests" runstate="Runnable" seed="161376825" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.017062" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1541" name="OfficeM4GateETests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" testcasecount="24" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:35Z" duration="8.183143" total="24" passed="24" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1542" name="BreakRecoveryTargetsRemainVisibleAt1280x720" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.BreakRecoveryTargetsRemainVisibleAt1280x720" methodname="BreakRecoveryTargetsRemainVisibleAt1280x720" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="2089777754" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.000525" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1545" name="DevelopmentHudIsHiddenInProductionCapture" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.DevelopmentHudIsHiddenInProductionCapture" methodname="DevelopmentHudIsHiddenInProductionCapture" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="1860009115" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.000164" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-suite type="ParameterizedMethod" id="1563" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:34Z" duration="6.984577" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                  </properties>
+                  <test-case id="1547" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;01-shift-1-opening&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;01-shift-1-opening&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="421357137" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.020791" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1548" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;02-shift-1-paper-check&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;02-shift-1-paper-check&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="271009206" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.019005" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1549" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;03-shift-1-money-trace&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;03-shift-1-money-trace&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="364733076" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.018505" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1550" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;04-shift-1-copy-echo-warning&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;04-shift-1-copy-echo-warning&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="1388539865" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.034335" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1551" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;05-shift-1-copy-echo-break&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;05-shift-1-copy-echo-break&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="1979148189" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.056674" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1552" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;06-shift-1-upgrade-choice&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(1,&quot;06-shift-1-upgrade-choice&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="2004222057" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:27Z" duration="0.189905" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1553" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(2,&quot;07-shift-2-opening-upgrade-visible&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(2,&quot;07-shift-2-opening-upgrade-visible&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="804294835" result="Passed" start-time="2026-08-11 00:14:27Z" end-time="2026-08-11 00:14:28Z" duration="0.279438" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1554" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(2,&quot;08-shift-2-ghost-clock&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(2,&quot;08-shift-2-ghost-clock&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="1254279172" result="Passed" start-time="2026-08-11 00:14:28Z" end-time="2026-08-11 00:14:28Z" duration="0.398401" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1555" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(2,&quot;09-shift-2-missing-room-access&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(2,&quot;09-shift-2-missing-room-access&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="335488811" result="Passed" start-time="2026-08-11 00:14:28Z" end-time="2026-08-11 00:14:29Z" duration="0.373144" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1556" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(2,&quot;10-shift-2-second-upgrade-choice&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(2,&quot;10-shift-2-second-upgrade-choice&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="1020190014" result="Passed" start-time="2026-08-11 00:14:29Z" end-time="2026-08-11 00:14:29Z" duration="0.834393" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1557" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;11-shift-3-opening-both-rules&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;11-shift-3-opening-both-rules&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="1292498702" result="Passed" start-time="2026-08-11 00:14:29Z" end-time="2026-08-11 00:14:30Z" duration="0.603667" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1558" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;12-shift-3-promotion-warning&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;12-shift-3-promotion-warning&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="1487549297" result="Passed" start-time="2026-08-11 00:14:30Z" end-time="2026-08-11 00:14:31Z" duration="0.748922" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1559" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;13-shift-3-promotion-cascade&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;13-shift-3-promotion-cascade&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="648323856" result="Passed" start-time="2026-08-11 00:14:31Z" end-time="2026-08-11 00:14:31Z" duration="0.727939" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1560" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;14-shift-3-recovery&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;14-shift-3-recovery&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="1450576726" result="Passed" start-time="2026-08-11 00:14:31Z" end-time="2026-08-11 00:14:32Z" duration="0.829018" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1561" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;15-final-campaign-result&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;15-final-campaign-result&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="556113952" result="Passed" start-time="2026-08-11 00:14:32Z" end-time="2026-08-11 00:14:33Z" duration="0.944049" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1562" name="EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;16-next-day-tease&quot;)" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.EveryRequiredCaptureStateUsesCanonicalCampaignFlow(3,&quot;16-next-day-tease&quot;)" methodname="EveryRequiredCaptureStateUsesCanonicalCampaignFlow" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="512504555" result="Passed" start-time="2026-08-11 00:14:33Z" end-time="2026-08-11 00:14:34Z" duration="0.902189" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                </test-suite>
+                <test-case id="1543" name="HudFitsAt1280x720WithoutClipping" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.HudFitsAt1280x720WithoutClipping" methodname="HudFitsAt1280x720WithoutClipping" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="1212498595" result="Passed" start-time="2026-08-11 00:14:34Z" end-time="2026-08-11 00:14:34Z" duration="0.000642" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1544" name="HudFitsAt1600x900WithoutClipping" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.HudFitsAt1600x900WithoutClipping" methodname="HudFitsAt1600x900WithoutClipping" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="2016297544" result="Passed" start-time="2026-08-11 00:14:34Z" end-time="2026-08-11 00:14:34Z" duration="0.000101" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1565" name="NoRuntimeMaterialCountGrowthAcrossThreeShiftCampaign" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.NoRuntimeMaterialCountGrowthAcrossThreeShiftCampaign" methodname="NoRuntimeMaterialCountGrowthAcrossThreeShiftCampaign" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="919389734" result="Passed" start-time="2026-08-11 00:14:34Z" end-time="2026-08-11 00:14:35Z" duration="1.115427" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1566" name="NoUnboundedTemporaryGameObjectGrowthAcrossRestart" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.NoUnboundedTemporaryGameObjectGrowthAcrossRestart" methodname="NoUnboundedTemporaryGameObjectGrowthAcrossRestart" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="422092148" result="Passed" start-time="2026-08-11 00:14:35Z" end-time="2026-08-11 00:14:35Z" duration="0.020023" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1546" name="ReducedFlashSeamChangesPresentationOnly" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.ReducedFlashSeamChangesPresentationOnly" methodname="ReducedFlashSeamChangesPresentationOnly" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="1702574362" result="Passed" start-time="2026-08-11 00:14:35Z" end-time="2026-08-11 00:14:35Z" duration="0.025930" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1564" name="SteadyStateVisualUpdateAllocatesZeroManagedBytesAfterWarmup" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests.SteadyStateVisualUpdateAllocatesZeroManagedBytesAfterWarmup" methodname="SteadyStateVisualUpdateAllocatesZeroManagedBytesAfterWarmup" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM4GateETests" runstate="Runnable" seed="61586401" result="Passed" start-time="2026-08-11 00:14:35Z" end-time="2026-08-11 00:14:35Z" duration="0.032948" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\evidence\M6\Validation\focused-m4.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -1,0 +1,34 @@
+DESK42 M6 FINAL BUILD CAPTURE MATRIX
+candidate_commit=476ee35faba8433d2081e387e572301bbdfa8783
+executable_sha256=F5F73D8616A2500E0FB0223D83774E2D7F6A74C1BBDAD772F4FEFC9BF5812036
+resolutions=1280x720,1600x900,1920x1080
+states_per_resolution=20
+capture_count=60
+contact_sheet_count=3
+all_dimensions_exact=True
+visual_review_pass=True
+clipping_found=0
+debug_leakage_found=0
+missing_m4_sprites=0
+capture_logs_with_missing_m5_audio=0
+
+01 first launch / first customer
+02 first Paper Check
+03 first Money Trace
+04 first decision
+05 Auto Sorter active
+06 Copy Echo warning
+07 Copy Echo Break
+08 Copy Echo recovery
+09 Shift 1 result / upgrade
+10 Shift 2 opening
+11 Ghost Clock
+12 Rule 2 active
+13 Shift 2 result
+14 Shift 3 opening
+15 Promotion Cascade
+16 Promotion recovery
+17 final campaign result
+18 next-day tease
+19 pause/settings
+20 WHAT HAPPENED

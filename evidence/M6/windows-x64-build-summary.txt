@@ -1,0 +1,14 @@
+DESK42 M6 WINDOWS X64 BUILD SUMMARY
+candidate_commit=476ee35faba8433d2081e387e572301bbdfa8783
+unity=2022.3.62f3
+target=StandaloneWindows64
+output=Builds/M6/Desk42.exe
+build_result=Success
+executable_sha256=F5F73D8616A2500E0FB0223D83774E2D7F6A74C1BBDAD772F4FEFC9BF5812036
+shippable_file_count=202
+shippable_total_bytes=126925547
+launch_argument=--desk42-evaluation
+capture_processes_clean_exit=60
+performance_process_clean_exit=True
+telemetry_session_closed=True
+burst_do_not_ship_directory_removed=True

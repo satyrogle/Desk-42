@@ -1,0 +1,19 @@
+DESK42 M6 FINAL VALIDATION SUMMARY
+candidate_commit=476ee35faba8433d2081e387e572301bbdfa8783
+
+focused_m6=Passed,47 passed,0 failed,0 skipped
+focused_m5=Passed,34 passed,0 failed,0 skipped
+focused_m4=Passed,47 passed,0 failed,0 skipped
+focused_m3=Passed,35 passed,0 failed,0 skipped
+full_editmode=Passed,615 passed,0 failed,0 skipped
+office_slice_playmode=Passed,26 passed,0 failed,0 skipped
+institutional_automation_playmode=Passed,11 passed,0 failed,0 skipped
+
+replay_process_1=Passed,checksum assertion B42CFA89D6277EA2
+replay_process_2=Passed,checksum assertion B42CFA89D6277EA2
+replay_process_3=Passed,checksum assertion B42CFA89D6277EA2
+
+tutorial_hints_on_off_parity=Passed
+telemetry_on_off_parity=Passed
+audio_on_muted_parity=Passed
+feedback_on_off_parity=Passed

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:21Z" duration="0.4288992">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="608" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:21Z" duration="0.428899" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1693" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="607" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:21Z" duration="0.414551" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="13884" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1694" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="607" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:21Z" duration="0.401345" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1695" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="607" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:21Z" duration="0.389558" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1696" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="607" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:21Z" duration="0.380476" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-suite type="TestSuite" id="1700" name="OfficeSlice" fullname="Desk42.Tests.EditMode.OfficeSlice" runstate="Runnable" testcasecount="121" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:21Z" duration="0.371621" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-suite type="TestFixture" id="1646" name="OfficeM6GateFTests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:21Z" duration="0.368367" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1650" name="EvaluationSchemaIsVersioned" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests.EvaluationSchemaIsVersioned" methodname="EvaluationSchemaIsVersioned" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests" runstate="Runnable" seed="1850594272" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:20Z" duration="0.028541" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1652" name="RestartDoesNotOverwritePreviousSession" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests.RestartDoesNotOverwritePreviousSession" methodname="RestartDoesNotOverwritePreviousSession" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests" runstate="Runnable" seed="569513117" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:20Z" duration="0.008790" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1651" name="SessionFileClosesOnNormalExit" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests.SessionFileClosesOnNormalExit" methodname="SessionFileClosesOnNormalExit" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests" runstate="Runnable" seed="890203876" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:20Z" duration="0.008674" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1649" name="TelemetryContainsNoPersonalIdentifiers" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests.TelemetryContainsNoPersonalIdentifiers" methodname="TelemetryContainsNoPersonalIdentifiers" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests" runstate="Runnable" seed="902357601" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:20Z" duration="0.009300" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1647" name="TelemetryDisabledProducesIdenticalChecksum" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests.TelemetryDisabledProducesIdenticalChecksum" methodname="TelemetryDisabledProducesIdenticalChecksum" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests" runstate="Runnable" seed="2068356842" result="Passed" start-time="2026-08-10 23:43:20Z" end-time="2026-08-10 23:43:21Z" duration="0.157597" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1648" name="TelemetryEnabledProducesIdenticalChecksum" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests.TelemetryEnabledProducesIdenticalChecksum" methodname="TelemetryEnabledProducesIdenticalChecksum" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateFTests" runstate="Runnable" seed="441556848" result="Passed" start-time="2026-08-10 23:43:21Z" end-time="2026-08-10 23:43:21Z" duration="0.142476" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\evidence\M6\Validation\gate-f.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

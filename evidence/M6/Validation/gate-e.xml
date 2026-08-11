@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="7" result="Passed" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-10 23:37:19Z" end-time="2026-08-10 23:37:20Z" duration="0.316947">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="602" result="Passed" start-time="2026-08-10 23:37:19Z" end-time="2026-08-10 23:37:20Z" duration="0.316947" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1686" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="601" result="Passed" start-time="2026-08-10 23:37:19Z" end-time="2026-08-10 23:37:20Z" duration="0.302451" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="45324" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1687" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="601" result="Passed" start-time="2026-08-10 23:37:19Z" end-time="2026-08-10 23:37:20Z" duration="0.293220" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1688" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="601" result="Passed" start-time="2026-08-10 23:37:19Z" end-time="2026-08-10 23:37:20Z" duration="0.284061" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1689" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="601" result="Passed" start-time="2026-08-10 23:37:19Z" end-time="2026-08-10 23:37:20Z" duration="0.275204" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-suite type="TestSuite" id="1693" name="OfficeSlice" fullname="Desk42.Tests.EditMode.OfficeSlice" runstate="Runnable" testcasecount="115" result="Passed" start-time="2026-08-10 23:37:19Z" end-time="2026-08-10 23:37:20Z" duration="0.266304" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-suite type="TestFixture" id="1638" name="OfficeM6GateETests" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-10 23:37:20Z" end-time="2026-08-10 23:37:20Z" duration="0.263277" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1645" name="ControllerNavigatesPauseAndSettings" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests.ControllerNavigatesPauseAndSettings" methodname="ControllerNavigatesPauseAndSettings" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests" runstate="Runnable" seed="1687854154" result="Passed" start-time="2026-08-10 23:37:20Z" end-time="2026-08-10 23:37:20Z" duration="0.012029" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1643" name="PauseDoesNotAdvanceSimulation" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests.PauseDoesNotAdvanceSimulation" methodname="PauseDoesNotAdvanceSimulation" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests" runstate="Runnable" seed="885479896" result="Passed" start-time="2026-08-10 23:37:20Z" end-time="2026-08-10 23:37:20Z" duration="0.081217" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1641" name="ReducedFlashDoesNotChangeSimulation" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests.ReducedFlashDoesNotChangeSimulation" methodname="ReducedFlashDoesNotChangeSimulation" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests" runstate="Runnable" seed="1966640902" result="Passed" start-time="2026-08-10 23:37:20Z" end-time="2026-08-10 23:37:20Z" duration="0.089382" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1644" name="ResumePreservesCommandOrder" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests.ResumePreservesCommandOrder" methodname="ResumePreservesCommandOrder" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests" runstate="Runnable" seed="93530539" result="Passed" start-time="2026-08-10 23:37:20Z" end-time="2026-08-10 23:37:20Z" duration="0.024724" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1642" name="RumbleOffDoesNotChangeSimulation" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests.RumbleOffDoesNotChangeSimulation" methodname="RumbleOffDoesNotChangeSimulation" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests" runstate="Runnable" seed="1761944148" result="Passed" start-time="2026-08-10 23:37:20Z" end-time="2026-08-10 23:37:20Z" duration="0.020830" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1639" name="SettingsPersistOutsideCampaignState" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests.SettingsPersistOutsideCampaignState" methodname="SettingsPersistOutsideCampaignState" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests" runstate="Runnable" seed="39033614" result="Passed" start-time="2026-08-10 23:37:20Z" end-time="2026-08-10 23:37:20Z" duration="0.021711" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1640" name="TextScaleDoesNotClipCriticalHudAt1280x720" fullname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests.TextScaleDoesNotClipCriticalHudAt1280x720" methodname="TextScaleDoesNotClipCriticalHudAt1280x720" classname="Desk42.Tests.EditMode.OfficeSlice.OfficeM6GateETests" runstate="Runnable" seed="1820739973" result="Passed" start-time="2026-08-10 23:37:20Z" end-time="2026-08-10 23:37:20Z" duration="0.001005" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\evidence\M6\Validation\gate-e.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

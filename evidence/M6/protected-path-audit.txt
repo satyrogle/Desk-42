@@ -1,0 +1,24 @@
+DESK42 M6 PROTECTED PATH AUDIT
+baseline=d519723d900bdad232b8a01c982c8fbc2ac9ec87
+tag=office-slice-m6-baseline-m5-audio
+candidate=476ee35faba8433d2081e387e572301bbdfa8783
+protected_path_changes=0
+package_additions=0
+render_pipeline_changes=0
+institutional_save_schema_changes=0
+new_campaign_content=0
+new_break_families=0
+new_automation_rules=0
+
+Audited protected prefixes/files:
+Assets/_Project/Scripts/Institutional/Domain/**
+Assets/_Project/Scripts/Institutional/Authority/**
+Assets/_Project/Scripts/Institutional/Player/**
+Assets/_Project/Scripts/Institutional/Runtime/**
+Assets/_Project/Scripts/Institutional/Authority/Scenarios/**
+Assets/_Project/Scenes/InstitutionalAutomation.unity
+DESK42_SYSTEM_CONSTITUTION.md
+Packages/manifest.json
+Packages/packages-lock.json
+ProjectSettings/GraphicsSettings.asset
+ProjectSettings/QualitySettings.asset

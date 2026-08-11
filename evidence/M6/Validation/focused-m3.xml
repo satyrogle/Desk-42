@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="35" result="Passed" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-11 00:15:10Z" end-time="2026-08-11 00:15:24Z" duration="13.9106612">
+  <test-suite type="TestSuite" id="1000" name="Desk 42" fullname="Desk 42" runstate="Runnable" testcasecount="615" result="Passed" start-time="2026-08-11 00:15:10Z" end-time="2026-08-11 00:15:24Z" duration="13.910661" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1702" name="Desk42.Tests.EditMode.dll" fullname="C:/Users/jacob/Desk 42/Library/ScriptAssemblies/Desk42.Tests.EditMode.dll" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:15:10Z" end-time="2026-08-11 00:15:24Z" duration="13.886328" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="34612" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1703" name="Desk42" fullname="Desk42" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:15:10Z" end-time="2026-08-11 00:15:24Z" duration="13.849246" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties>
+          <property name="platform" value="EditMode" />
+        </properties>
+        <test-suite type="TestSuite" id="1704" name="Tests" fullname="Desk42.Tests" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:15:10Z" end-time="2026-08-11 00:15:24Z" duration="13.828124" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties>
+            <property name="platform" value="EditMode" />
+          </properties>
+          <test-suite type="TestSuite" id="1705" name="EditMode" fullname="Desk42.Tests.EditMode" runstate="Runnable" testcasecount="614" result="Passed" start-time="2026-08-11 00:15:10Z" end-time="2026-08-11 00:15:24Z" duration="13.820529" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="platform" value="EditMode" />
+            </properties>
+            <test-suite type="TestSuite" id="1710" name="OfficeM3" fullname="Desk42.Tests.EditMode.OfficeM3" runstate="Runnable" testcasecount="35" result="Passed" start-time="2026-08-11 00:15:10Z" end-time="2026-08-11 00:15:24Z" duration="13.812848" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="platform" value="EditMode" />
+              </properties>
+              <test-suite type="TestFixture" id="1662" name="OfficeM3GateATests" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-11 00:15:10Z" end-time="2026-08-11 00:15:11Z" duration="0.991011" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1663" name="CampaignUsesOneContinuingInstitutionalSession" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests.CampaignUsesOneContinuingInstitutionalSession" methodname="CampaignUsesOneContinuingInstitutionalSession" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests" runstate="Runnable" seed="1881617199" result="Passed" start-time="2026-08-11 00:15:10Z" end-time="2026-08-11 00:15:11Z" duration="0.415055" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1668" name="CommandSchemaThreeExplicitlyRejectsCampaignCommandsInOldLogs" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests.CommandSchemaThreeExplicitlyRejectsCampaignCommandsInOldLogs" methodname="CommandSchemaThreeExplicitlyRejectsCampaignCommandsInOldLogs" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests" runstate="Runnable" seed="1263582135" result="Passed" start-time="2026-08-11 00:15:11Z" end-time="2026-08-11 00:15:11Z" duration="0.000796" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1664" name="EachShiftReleasesSixDistinctPublicClaims" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests.EachShiftReleasesSixDistinctPublicClaims" methodname="EachShiftReleasesSixDistinctPublicClaims" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests" runstate="Runnable" seed="300979493" result="Passed" start-time="2026-08-11 00:15:11Z" end-time="2026-08-11 00:15:11Z" duration="0.051030" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1667" name="FirstUpgradePersistsIntoShiftTwo" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests.FirstUpgradePersistsIntoShiftTwo" methodname="FirstUpgradePersistsIntoShiftTwo" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests" runstate="Runnable" seed="2078837990" result="Passed" start-time="2026-08-11 00:15:11Z" end-time="2026-08-11 00:15:11Z" duration="0.232941" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1665" name="SameSixCustomerIdsPersistAcrossThreeShifts" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests.SameSixCustomerIdsPersistAcrossThreeShifts" methodname="SameSixCustomerIdsPersistAcrossThreeShifts" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests" runstate="Runnable" seed="1202693688" result="Passed" start-time="2026-08-11 00:15:11Z" end-time="2026-08-11 00:15:11Z" duration="0.046835" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1666" name="ShiftOneM2CriticalPathRemainsValid" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests.ShiftOneM2CriticalPathRemainsValid" methodname="ShiftOneM2CriticalPathRemainsValid" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateATests" runstate="Runnable" seed="1695208982" result="Passed" start-time="2026-08-11 00:15:11Z" end-time="2026-08-11 00:15:11Z" duration="0.231160" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1669" name="OfficeM3GateBTests" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-08-11 00:15:11Z" end-time="2026-08-11 00:15:14Z" duration="2.483090" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1672" name="CalmChairsChangesExactMoodThresholds" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests.CalmChairsChangesExactMoodThresholds" methodname="CalmChairsChangesExactMoodThresholds" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" seed="1720834579" result="Passed" start-time="2026-08-11 00:15:11Z" end-time="2026-08-11 00:15:11Z" duration="0.235725" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1671" name="FastTraysChangesExactTransferTicks" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests.FastTraysChangesExactTransferTicks" methodname="FastTraysChangesExactTransferTicks" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" seed="605950077" result="Passed" start-time="2026-08-11 00:15:11Z" end-time="2026-08-11 00:15:12Z" duration="0.233102" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1676" name="GhostClockNeverExceedsThreeSlips" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests.GhostClockNeverExceedsThreeSlips" methodname="GhostClockNeverExceedsThreeSlips" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" seed="293936674" result="Passed" start-time="2026-08-11 00:15:12Z" end-time="2026-08-11 00:15:12Z" duration="0.424695" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1675" name="GhostClockRequiresExactConjunction" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests.GhostClockRequiresExactConjunction" methodname="GhostClockRequiresExactConjunction" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" seed="1881110837" result="Passed" start-time="2026-08-11 00:15:12Z" end-time="2026-08-11 00:15:12Z" duration="0.000241" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1677" name="MissingRoomAccessReroutesOnlyOneStaffPath" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests.MissingRoomAccessReroutesOnlyOneStaffPath" methodname="MissingRoomAccessReroutesOnlyOneStaffPath" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" seed="875232898" result="Passed" start-time="2026-08-11 00:15:12Z" end-time="2026-08-11 00:15:12Z" duration="0.332491" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1673" name="RuleTwoAcceptsTwoKnownPayrollCases" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests.RuleTwoAcceptsTwoKnownPayrollCases" methodname="RuleTwoAcceptsTwoKnownPayrollCases" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" seed="1328198250" result="Passed" start-time="2026-08-11 00:15:12Z" end-time="2026-08-11 00:15:12Z" duration="0.030918" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1674" name="RuleTwoReasonLogUsesPublicDataOnly" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests.RuleTwoReasonLogUsesPublicDataOnly" methodname="RuleTwoReasonLogUsesPublicDataOnly" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" seed="2113962540" result="Passed" start-time="2026-08-11 00:15:12Z" end-time="2026-08-11 00:15:12Z" duration="0.030393" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1679" name="SecondUpgradePersistsIntoShiftThree" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests.SecondUpgradePersistsIntoShiftThree" methodname="SecondUpgradePersistsIntoShiftThree" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" seed="131660705" result="Passed" start-time="2026-08-11 00:15:12Z" end-time="2026-08-11 00:15:13Z" duration="0.630206" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1670" name="ShiftTwoAuthoredCasesUseFourChangedSequences" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests.ShiftTwoAuthoredCasesUseFourChangedSequences" methodname="ShiftTwoAuthoredCasesUseFourChangedSequences" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" seed="556137273" result="Passed" start-time="2026-08-11 00:15:13Z" end-time="2026-08-11 00:15:13Z" duration="0.034016" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1678" name="ShiftTwoHeadlineAndComplicationsCompleteWithNormalControls" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests.ShiftTwoHeadlineAndComplicationsCompleteWithNormalControls" methodname="ShiftTwoHeadlineAndComplicationsCompleteWithNormalControls" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateBTests" runstate="Runnable" seed="1857884656" result="Passed" start-time="2026-08-11 00:15:13Z" end-time="2026-08-11 00:15:14Z" duration="0.528511" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1680" name="OfficeM3GateCTests" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-08-11 00:15:14Z" end-time="2026-08-11 00:15:16Z" duration="2.858755" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-case id="1686" name="MachineFirstRecoveryCompletes" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests.MachineFirstRecoveryCompletes" methodname="MachineFirstRecoveryCompletes" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" runstate="Runnable" seed="267891670" result="Passed" start-time="2026-08-11 00:15:14Z" end-time="2026-08-11 00:15:14Z" duration="0.150322" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1687" name="PeopleFirstRecoveryCompletes" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests.PeopleFirstRecoveryCompletes" methodname="PeopleFirstRecoveryCompletes" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" runstate="Runnable" seed="2127712290" result="Passed" start-time="2026-08-11 00:15:14Z" end-time="2026-08-11 00:15:14Z" duration="0.114395" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1685" name="PromotionCascadeCopyGrowthIsBounded" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests.PromotionCascadeCopyGrowthIsBounded" methodname="PromotionCascadeCopyGrowthIsBounded" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" runstate="Runnable" seed="2014469865" result="Passed" start-time="2026-08-11 00:15:14Z" end-time="2026-08-11 00:15:14Z" duration="0.108034" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1684" name="PromotionCascadeDoesNotUseRandomness" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests.PromotionCascadeDoesNotUseRandomness" methodname="PromotionCascadeDoesNotUseRandomness" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" runstate="Runnable" seed="458738017" result="Passed" start-time="2026-08-11 00:15:14Z" end-time="2026-08-11 00:15:14Z" duration="0.192753" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1683" name="PromotionCascadeRequiresEveryLockedCondition" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests.PromotionCascadeRequiresEveryLockedCondition" methodname="PromotionCascadeRequiresEveryLockedCondition" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" runstate="Runnable" seed="1887260327" result="Passed" start-time="2026-08-11 00:15:14Z" end-time="2026-08-11 00:15:14Z" duration="0.000332" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1682" name="RedLabelsChangesExactCopyRecoveryValues" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests.RedLabelsChangesExactCopyRecoveryValues" methodname="RedLabelsChangesExactCopyRecoveryValues" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" runstate="Runnable" seed="230848984" result="Passed" start-time="2026-08-11 00:15:14Z" end-time="2026-08-11 00:15:14Z" duration="0.138068" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1688" name="ShiftRestartPreservesPriorUpgradeChoices" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests.ShiftRestartPreservesPriorUpgradeChoices" methodname="ShiftRestartPreservesPriorUpgradeChoices" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" runstate="Runnable" seed="1348469186" result="Passed" start-time="2026-08-11 00:15:14Z" end-time="2026-08-11 00:15:15Z" duration="0.812465" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1689" name="ShiftRestartRemovesCurrentShiftRuntimeState" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests.ShiftRestartRemovesCurrentShiftRuntimeState" methodname="ShiftRestartRemovesCurrentShiftRuntimeState" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" runstate="Runnable" seed="243320502" result="Passed" start-time="2026-08-11 00:15:15Z" end-time="2026-08-11 00:15:16Z" duration="0.750305" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1681" name="ShiftThreeAuthoredCasesAndBothRulesCarryForward" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests.ShiftThreeAuthoredCasesAndBothRulesCarryForward" methodname="ShiftThreeAuthoredCasesAndBothRulesCarryForward" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateCTests" runstate="Runnable" seed="270225605" result="Passed" start-time="2026-08-11 00:15:16Z" end-time="2026-08-11 00:15:16Z" duration="0.589451" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="TestFixture" id="1690" name="OfficeM3GateDTests" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-08-11 00:15:16Z" end-time="2026-08-11 00:15:24Z" duration="7.478167" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties>
+                  <property name="platform" value="EditMode" />
+                </properties>
+                <test-suite type="ParameterizedMethod" id="1700" name="CampaignCaptureDriverReachesNamedState" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.CampaignCaptureDriverReachesNamedState" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-11 00:15:16Z" end-time="2026-08-11 00:15:19Z" duration="2.538889" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                  </properties>
+                  <test-case id="1694" name="CampaignCaptureDriverReachesNamedState(1,&quot;opening&quot;)" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.CampaignCaptureDriverReachesNamedState(1,&quot;opening&quot;)" methodname="CampaignCaptureDriverReachesNamedState" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" seed="2000873678" result="Passed" start-time="2026-08-11 00:15:16Z" end-time="2026-08-11 00:15:17Z" duration="0.017675" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1695" name="CampaignCaptureDriverReachesNamedState(1,&quot;rush&quot;)" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.CampaignCaptureDriverReachesNamedState(1,&quot;rush&quot;)" methodname="CampaignCaptureDriverReachesNamedState" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" seed="113167302" result="Passed" start-time="2026-08-11 00:15:17Z" end-time="2026-08-11 00:15:17Z" duration="0.056991" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1696" name="CampaignCaptureDriverReachesNamedState(2,&quot;rush&quot;)" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.CampaignCaptureDriverReachesNamedState(2,&quot;rush&quot;)" methodname="CampaignCaptureDriverReachesNamedState" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" seed="1113939772" result="Passed" start-time="2026-08-11 00:15:17Z" end-time="2026-08-11 00:15:17Z" duration="0.434605" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1697" name="CampaignCaptureDriverReachesNamedState(2,&quot;result&quot;)" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.CampaignCaptureDriverReachesNamedState(2,&quot;result&quot;)" methodname="CampaignCaptureDriverReachesNamedState" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" seed="566670053" result="Passed" start-time="2026-08-11 00:15:17Z" end-time="2026-08-11 00:15:17Z" duration="0.469541" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1698" name="CampaignCaptureDriverReachesNamedState(3,&quot;promotion-cascade&quot;)" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.CampaignCaptureDriverReachesNamedState(3,&quot;promotion-cascade&quot;)" methodname="CampaignCaptureDriverReachesNamedState" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" seed="1380577539" result="Passed" start-time="2026-08-11 00:15:17Z" end-time="2026-08-11 00:15:18Z" duration="0.665412" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                  <test-case id="1699" name="CampaignCaptureDriverReachesNamedState(3,&quot;result&quot;)" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.CampaignCaptureDriverReachesNamedState(3,&quot;result&quot;)" methodname="CampaignCaptureDriverReachesNamedState" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" seed="752467037" result="Passed" start-time="2026-08-11 00:15:18Z" end-time="2026-08-11 00:15:19Z" duration="0.893227" asserts="0">
+                    <properties>
+                      <property name="platform" value="EditMode" />
+                      <property name="retryIteration" value="0" />
+                      <property name="repeatIteration" value="0" />
+                    </properties>
+                  </test-case>
+                </test-suite>
+                <test-case id="1701" name="CampaignReplayLocksOutLiveInput" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.CampaignReplayLocksOutLiveInput" methodname="CampaignReplayLocksOutLiveInput" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" seed="77967209" result="Passed" start-time="2026-08-11 00:15:19Z" end-time="2026-08-11 00:15:20Z" duration="0.973701" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1691" name="CampaignResultContainsObservableFactsAndNextDayTease" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.CampaignResultContainsObservableFactsAndNextDayTease" methodname="CampaignResultContainsObservableFactsAndNextDayTease" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" seed="194868623" result="Passed" start-time="2026-08-11 00:15:20Z" end-time="2026-08-11 00:15:21Z" duration="0.902017" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1693" name="ThreeShiftReplayProducesIdenticalChecksum" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.ThreeShiftReplayProducesIdenticalChecksum" methodname="ThreeShiftReplayProducesIdenticalChecksum" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" seed="455218602" result="Passed" start-time="2026-08-11 00:15:21Z" end-time="2026-08-11 00:15:23Z" duration="2.126018" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[M3_CAMPAIGN_CHECKSUM=B42CFA89D6277EA2
+]]></output>
+                </test-case>
+                <test-case id="1692" name="ThreeShiftWhatHappenedIncludesEveryShift" fullname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests.ThreeShiftWhatHappenedIncludesEveryShift" methodname="ThreeShiftWhatHappenedIncludesEveryShift" classname="Desk42.Tests.EditMode.OfficeM3.OfficeM3GateDTests" runstate="Runnable" seed="298584722" result="Passed" start-time="2026-08-11 00:15:23Z" end-time="2026-08-11 00:15:24Z" duration="0.935753" asserts="0">
+                  <properties>
+                    <property name="platform" value="EditMode" />
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: [TestRunnerNoThrottle] Restored Interaction Mode after test run.
+Saving results to: C:\Users\jacob\Desk 42\evidence\M6\Validation\focused-m3.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
