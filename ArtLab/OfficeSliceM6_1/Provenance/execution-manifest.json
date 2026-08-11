@@ -34,15 +34,16 @@
       "prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels. Calm opening state. The teal-coated Warden stands in the central corridor as the primary hero, carrying no folder and facing the current orange-coated customer at the front desk. Runner and Talker are distinct secondary staff. All five room identities read immediately. A few paper folders rest in physical trays; machines are idle but recognizable. Warm lived-in atmosphere, calm short queue, almost no HUD and no chaos.",
       "prompt_sha256": "e603c840d6db67767ed04e17f2bd2780001d075052a078a61c325042a49add32",
       "workflow": "ArtLab/OfficeSliceM6_1/ComfyUI/A01_calm_office_krea2_style_reference_api.json",
-      "workflow_sha256": "f70c2909fad26a13e7105f0a2391cbde4cf7c29df78402d236c277fd6263b5c4",
+      "workflow_sha256": "8d15c9ca834e51515fd79257fe122f021723f9e15412d7a508af84b43d071d50",
       "comfy_prompt_id": "b149c134-f292-47c8-8af8-f6f47a4c6146",
       "candidate": "ArtLab/OfficeSliceM6_1/Candidates/TargetFrames/A01_calm_office_seed6101001.png",
       "candidate_sha256": "39ccd5f354e8339068399c5ca1cf1aaf6d4acbd43923000ce604b550098b0efb",
       "candidate_bytes": 1190722,
       "generated_utc": "2026-08-11T02:05:35.951674+00:00",
-      "review_status": "presentation-target-awaiting-gate-a-owner-approval",
+      "review_status": "owner-approved-gate-a-partial-do-not-regenerate",
       "presentation_target": "ArtLab/OfficeSliceM6_1/Candidates/PresentationTargets/A01_calm_office_seed6101001.png",
-      "presentation_target_sha256": "39ccd5f354e8339068399c5ca1cf1aaf6d4acbd43923000ce604b550098b0efb"
+      "presentation_target_sha256": "39ccd5f354e8339068399c5ca1cf1aaf6d4acbd43923000ce604b550098b0efb",
+      "owner_decision": "approved"
     },
     {
       "id": "A02",
@@ -56,15 +57,15 @@
       "cfg": 1.0,
       "sampler": "euler",
       "scheduler": "simple",
-      "prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels. EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, high camera, cast design and warm ink style. Transform the activity into unmistakable automation relief. A bold physical flow of cream folders travels left-to-right through the squat teal Auto Sorter and red Copy Echo, then lands in tidy sorted stacks. Runner carries the machine output. The teal Warden is visibly away from the folder line, calmly helping a customer at another desk. Empty chairs and a shrinking queue create open breathing room. Make machine usefulness and reduced manual burden the strongest story after the Warden, without labels or explanatory UI.",
-      "prompt_sha256": "3f2b16ed73b47b45707f663c3ba5eaec11b3b050851f9400b1cf95f818a70227",
+      "prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels. EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, fixed high camera and object placement. Repaint the staged machines, folders and staff so they are physically grounded inside the bottom-right Weird Room and fully inherit REFERENCE IMAGE 2's handmade warm-ink linework, scuffed surfaces, three-quarter perspective, shadows, scale and lighting. The squat teal Auto Sorter has folders resting in its input tray and emerging from its output tray; the violet Copy Echo receives them and leaves a small tidy output stack. A staff member physically collects the output. The teal Warden remains elsewhere helping a customer, the queue is short, chairs are empty and the corridor breathes. No cyan route line, no arrows, no connecting path, no floating icons, no boxes, no diagram, no infographic, no HUD and no debug visualization. All cause and relief must exist as ordinary objects and activity in the office.",
+      "prompt_sha256": "05a224cd43e63048b256bf5661dbe07858a96e2cfb73ac532efe00ebc017dee2",
       "reference_inputs": [
         {
-          "role": "authored same-office spatial edit for automation relief",
-          "path": "ArtLab/OfficeSliceM6_1/References/SpatialEdits/A02_automation_relief_spatial_edit.png",
-          "comfy_input_name": "desk42_m6_1_a02_spatial_edit.png",
-          "sha256": "ead7bc1898dc05e711ea82dafc1913298dbbe346c14d9e821ebae8d14cd39554",
-          "bytes": 1156194
+          "role": "physical automation staging to repaint into the office",
+          "path": "ArtLab/OfficeSliceM6_1/References/PhysicalStaging/A02_automation_relief_physical_staging.png",
+          "comfy_input_name": "desk42_m6_1_a02_physical_staging.png",
+          "sha256": "dc3b7aeb61a61067d6809177649c01bbede590028f7ccb1abfd5db2c8e9872a9",
+          "bytes": 1234408
         },
         {
           "role": "same-office visual continuity from accepted A01 internal candidate",
@@ -72,25 +73,19 @@
           "comfy_input_name": "desk42_m6_1_a01_same_office.png",
           "sha256": "39ccd5f354e8339068399c5ca1cf1aaf6d4acbd43923000ce604b550098b0efb",
           "bytes": 1190722
-        },
-        {
-          "role": "automation-relief action board",
-          "path": "ArtLab/OfficeSliceM6_1/References/StateBoards/A02_automation_relief_board.png",
-          "comfy_input_name": "desk42_m6_1_a02_action_board.png",
-          "sha256": "17041d50ac8303deefdb0f4fb19b566014c5ab50a968f2a4e2459976f8b506f1",
-          "bytes": 10103
         }
       ],
       "workflow": "ArtLab/OfficeSliceM6_1/ComfyUI/A02_automation_relief_krea2_style_reference_api.json",
-      "workflow_sha256": "1758b2ae2d2f613f6f0078f807d8439a17ccdadc9819273f10ecd72c06919687",
-      "comfy_prompt_id": "91e6ed0e-32e3-41f7-97ee-8a03846ece69",
+      "workflow_sha256": "6db6ce25f71ca972afc0b207d82c758a0962b4c142c270cb539f782eede10421",
+      "comfy_prompt_id": "96401bf8-aa1b-4b6f-a2f8-124a482668ab",
       "candidate": "ArtLab/OfficeSliceM6_1/Candidates/TargetFrames/A02_automation_relief_seed6101001.png",
-      "candidate_sha256": "bc2dc9d6b459837594bafa5c4e3a0b0702a9b91a28e11a17f7651b91ca004ed0",
-      "candidate_bytes": 1338049,
-      "generated_utc": "2026-08-11T02:21:45.100238+00:00",
-      "review_status": "presentation-target-awaiting-gate-a-owner-approval",
+      "candidate_sha256": "848c672f81e00f5a97c377f9ecbe0764c77b1ff8a1707060ed97d7662f0ee4b7",
+      "candidate_bytes": 1362366,
+      "generated_utc": "2026-08-11T07:39:45.971019+00:00",
+      "review_status": "revised-presentation-target-awaiting-owner-approval",
       "presentation_target": "ArtLab/OfficeSliceM6_1/Candidates/PresentationTargets/A02_automation_relief_seed6101001.png",
-      "presentation_target_sha256": "94ee1a64aaf587ae1311adb0cb4c3755a3ed25fc875b0d30c1a519a213f74b7d"
+      "presentation_target_sha256": "7872b727e4687d0affbbbdfe1cfce47a458f344860f47df55e7d12e81c16edaf",
+      "owner_decision": "revision-required"
     },
     {
       "id": "A03",
@@ -104,15 +99,15 @@
       "cfg": 1.0,
       "sampler": "euler",
       "scheduler": "simple",
-      "prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels. EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, high camera, cast design and warm ink style. Turn only the bottom-right purple machine room into an unmistakable Promotion Cascade Break. A huge red-and-black Copy Echo copier and oversized supervisor stamp are the local origin and dominant silhouette. A violent but graphic ribbon of red ink fractures and duplicate paper bursts out from that machine room, stopping at room boundaries enough to preserve every corridor. Runner is visibly turned toward the copier carrying copies. Show one isolated cream original folder with a red seal against many cyan- and red-edged duplicate folders. The teal Warden faces a large stop lever, copy-clear bin, upset customer and visible route for returning the original to the front desk. Make the cause chain physical, local and funny, not subtle, not horror and not a random global glitch.",
-      "prompt_sha256": "524b4e039aea9a1a62f835b3361f665874ba8a0f70a167e497d2c1b50af665b8",
+      "prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels. EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, fixed high camera and object placement. Repaint every staged object so it is physically grounded inside the bottom-right Weird Room and fully inherits REFERENCE IMAGE 2's handmade warm-ink linework, worn surfaces, three-quarter perspective, shadows, scale and lighting. The promoted Copy Echo is an oversized red municipal copier standing on the floor; the supervisor stamp is a literal large rubber office stamp mounted on it. Duplicate paper physically spills from the output tray across the room and just through the doorway. Runner physically faces the copier carrying copies. One clean cream original folder with an amber seal lies isolated near the doorway. An actual stop lever, open copy-clear bin and upset customer remain visible and reachable. Thin ink fractures originate in the copier body and continue into the nearby floor and wall. No network lines, no arrows, no circles, no targets, no symbols, no enclosing frame, no floating icons, no diagram, no infographic, no HUD and no debug visualization. The Break must be a local physical office accident, graphic and funny rather than horror.",
+      "prompt_sha256": "11725a258832def63f444880330b43c59647254f951724a7dca6d22b11fd6fff",
       "reference_inputs": [
         {
-          "role": "authored same-office spatial edit for promotion cascade",
-          "path": "ArtLab/OfficeSliceM6_1/References/SpatialEdits/A03_promotion_cascade_break_spatial_edit.png",
-          "comfy_input_name": "desk42_m6_1_a03_spatial_edit.png",
-          "sha256": "1e80377499abccc51f3b7d418f16597acae53f3e542989f125c53ed8288ef313",
-          "bytes": 1054635
+          "role": "physical Promotion Cascade staging to repaint into the office",
+          "path": "ArtLab/OfficeSliceM6_1/References/PhysicalStaging/A03_promotion_cascade_break_physical_staging.png",
+          "comfy_input_name": "desk42_m6_1_a03_physical_staging.png",
+          "sha256": "6bda52a5b9cf692088d19368ea3accaf32f76defed7196d21c5d0c84cb692ef1",
+          "bytes": 1241332
         },
         {
           "role": "same-office visual continuity from accepted A01 internal candidate",
@@ -120,28 +115,22 @@
           "comfy_input_name": "desk42_m6_1_a01_same_office.png",
           "sha256": "39ccd5f354e8339068399c5ca1cf1aaf6d4acbd43923000ce604b550098b0efb",
           "bytes": 1190722
-        },
-        {
-          "role": "promotion-cascade action board",
-          "path": "ArtLab/OfficeSliceM6_1/References/StateBoards/A03_promotion_cascade_break_board.png",
-          "comfy_input_name": "desk42_m6_1_a03_action_board.png",
-          "sha256": "ccc19be8fca8002313d89f8ab5c2fe4f027eb136814fe16f4cbc72a9c7d0d6de",
-          "bytes": 20840
         }
       ],
       "workflow": "ArtLab/OfficeSliceM6_1/ComfyUI/A03_promotion_cascade_break_krea2_style_reference_api.json",
-      "workflow_sha256": "c4518862b853b9f8bfb50d5b88c1e194956adad63b82b6feb21476d34c83d115",
-      "comfy_prompt_id": "c53b41a2-c258-47e3-94a9-2db9dfd490d1",
+      "workflow_sha256": "599a51666f505b7d0b2da515e5b9f70de48ba9e9c54983d1ac42ed55568b35e8",
+      "comfy_prompt_id": "4cd68329-e997-4cb0-9b2b-cfa9db7374ea",
       "candidate": "ArtLab/OfficeSliceM6_1/Candidates/TargetFrames/A03_promotion_cascade_break_seed6101001.png",
-      "candidate_sha256": "4174c16221b7fae6f82f1a3d8350112e0d6fbe93adf91d5ea441a0c9090d7bad",
-      "candidate_bytes": 1332706,
-      "generated_utc": "2026-08-11T02:24:10.000964+00:00",
-      "review_status": "presentation-target-awaiting-gate-a-owner-approval",
+      "candidate_sha256": "107e58b8b81af45e0d64aec01f548a63fdcc63b7a19fe3fbda63f18c6340a1a5",
+      "candidate_bytes": 1353469,
+      "generated_utc": "2026-08-11T07:41:50.850322+00:00",
+      "review_status": "revised-presentation-target-awaiting-owner-approval",
       "presentation_target": "ArtLab/OfficeSliceM6_1/Candidates/PresentationTargets/A03_promotion_cascade_break_seed6101001.png",
-      "presentation_target_sha256": "ab2485e46d565a71fb10b78bb65d221696304c6f566f48f4bdae53ea475f6b59"
+      "presentation_target_sha256": "abb89cf3983068221f68eaa8de14b0b7087cd384f3a6d598b2b7c0d5042c2ac7",
+      "owner_decision": "revision-required"
     }
   ],
-  "updated_utc": "2026-08-11T02:24:10.000964+00:00",
+  "updated_utc": "2026-08-11T07:41:50.850322+00:00",
   "rejections": [
     {
       "id": "A02",
@@ -166,6 +155,54 @@
       "candidate": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A03_promotion_cascade_break_rejected_b571948a.png",
       "candidate_sha256": "b571948a0db22b8d811a4e26956bdf29dcd2560f06ce0afe693f3ade49032550",
       "reason": "State differentiation was too weak in internal Gate A review; excluded from contact sheet."
+    },
+    {
+      "id": "A02",
+      "candidate": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A02_owner_rejected_94ee1a64.png",
+      "candidate_sha256": "94ee1a64aaf587ae1311adb0cb4c3755a3ed25fc875b0d30c1a519a213f74b7d",
+      "reason": "Owner rejected floating schematic/UI graphics; retained before physical-storytelling revision."
+    },
+    {
+      "id": "A03",
+      "candidate": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A03_owner_rejected_ab2485e4.png",
+      "candidate_sha256": "ab2485e46d565a71fb10b78bb65d221696304c6f566f48f4bdae53ea475f6b59",
+      "reason": "Owner rejected floating schematic/UI graphics; retained before physical-storytelling revision."
+    },
+    {
+      "id": "A02",
+      "candidate": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A02_automation_relief_rejected_bc2dc9d6.png",
+      "candidate_sha256": "bc2dc9d6b459837594bafa5c4e3a0b0702a9b91a28e11a17f7651b91ca004ed0",
+      "reason": "State differentiation was too weak in internal Gate A review; excluded from contact sheet."
+    },
+    {
+      "id": "A03",
+      "candidate": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A03_promotion_cascade_break_rejected_4174c162.png",
+      "candidate_sha256": "4174c16221b7fae6f82f1a3d8350112e0d6fbe93adf91d5ea441a0c9090d7bad",
+      "reason": "State differentiation was too weak in internal Gate A review; excluded from contact sheet."
+    },
+    {
+      "id": "A02",
+      "candidate": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A02_automation_relief_rejected_585c07a9.png",
+      "candidate_sha256": "585c07a9798274b40c6a88919e1cf4ed3d28ecb53a68ad7cc611f8896b3ac720",
+      "reason": "State differentiation was too weak in internal Gate A review; excluded from contact sheet."
+    },
+    {
+      "id": "A03",
+      "candidate": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A03_promotion_cascade_break_rejected_41928042.png",
+      "candidate_sha256": "41928042db6d42b44714f3297d454e51e03d9bab400d4ad15b5f308ba14e3002",
+      "reason": "State differentiation was too weak in internal Gate A review; excluded from contact sheet."
+    },
+    {
+      "id": "A02",
+      "candidate": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A02_owner_rejected_dc3b7aeb.png",
+      "candidate_sha256": "dc3b7aeb61a61067d6809177649c01bbede590028f7ccb1abfd5db2c8e9872a9",
+      "reason": "Owner rejected floating schematic/UI graphics; retained before physical-storytelling revision."
+    },
+    {
+      "id": "A03",
+      "candidate": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A03_owner_rejected_6bda52a5.png",
+      "candidate_sha256": "6bda52a5b9cf692088d19368ea3accaf32f76defed7196d21c5d0c84cb692ef1",
+      "reason": "Owner rejected floating schematic/UI graphics; retained before physical-storytelling revision."
     }
   ]
 }

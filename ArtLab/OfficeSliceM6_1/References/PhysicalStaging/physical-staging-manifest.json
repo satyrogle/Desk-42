@@ -1,0 +1,22 @@
+{
+  "schema": "desk42.office-slice-m6.1.physical-staging.v1",
+  "script": "tools/art/office_slice_m6_1/build_physical_staging_guides.py",
+  "guides": [
+    {
+      "id": "A02",
+      "source": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A02_owner_rejected_dc3b7aeb.png",
+      "source_sha256": "dc3b7aeb61a61067d6809177649c01bbede590028f7ccb1abfd5db2c8e9872a9",
+      "guide": "ArtLab/OfficeSliceM6_1/References/PhysicalStaging/A02_automation_relief_physical_staging.png",
+      "guide_sha256": "dc3b7aeb61a61067d6809177649c01bbede590028f7ccb1abfd5db2c8e9872a9",
+      "role": "retained owner-rejected physical placement pass used only as Krea staging guidance"
+    },
+    {
+      "id": "A03",
+      "source": "ArtLab/OfficeSliceM6_1/Candidates/Rejected/A03_owner_rejected_6bda52a5.png",
+      "source_sha256": "6bda52a5b9cf692088d19368ea3accaf32f76defed7196d21c5d0c84cb692ef1",
+      "guide": "ArtLab/OfficeSliceM6_1/References/PhysicalStaging/A03_promotion_cascade_break_physical_staging.png",
+      "guide_sha256": "6bda52a5b9cf692088d19368ea3accaf32f76defed7196d21c5d0c84cb692ef1",
+      "role": "retained owner-rejected physical placement pass used only as Krea staging guidance"
+    }
+  ]
+}

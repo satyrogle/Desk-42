@@ -42,17 +42,13 @@
         "3",
         0
       ],
-      "prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels. EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, high camera, cast design and warm ink style. Transform the activity into unmistakable automation relief. A bold physical flow of cream folders travels left-to-right through the squat teal Auto Sorter and red Copy Echo, then lands in tidy sorted stacks. Runner carries the machine output. The teal Warden is visibly away from the folder line, calmly helping a customer at another desk. Empty chairs and a shrinking queue create open breathing room. Make machine usefulness and reduced manual burden the strongest story after the Warden, without labels or explanatory UI.",
+      "prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels. EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, fixed high camera and object placement. Repaint the staged machines, folders and staff so they are physically grounded inside the bottom-right Weird Room and fully inherit REFERENCE IMAGE 2's handmade warm-ink linework, scuffed surfaces, three-quarter perspective, shadows, scale and lighting. The squat teal Auto Sorter has folders resting in its input tray and emerging from its output tray; the violet Copy Echo receives them and leaves a small tidy output stack. A staff member physically collects the output. The teal Warden remains elsewhere helping a customer, the queue is short, chairs are empty and the corridor breathes. No cyan route line, no arrows, no connecting path, no floating icons, no boxes, no diagram, no infographic, no HUD and no debug visualization. All cause and relief must exist as ordinary objects and activity in the office.",
       "image1": [
         "5",
         0
       ],
       "image2": [
         "6",
-        0
-      ],
-      "image3": [
-        "19",
         0
       ]
     }
@@ -190,19 +186,13 @@
   "5": {
     "class_type": "LoadImage",
     "inputs": {
-      "image": "desk42_m6_1_a02_spatial_edit.png"
+      "image": "desk42_m6_1_a02_physical_staging.png"
     }
   },
   "6": {
     "class_type": "LoadImage",
     "inputs": {
       "image": "desk42_m6_1_a01_same_office.png"
-    }
-  },
-  "19": {
-    "class_type": "LoadImage",
-    "inputs": {
-      "image": "desk42_m6_1_a02_action_board.png"
     }
   }
 }

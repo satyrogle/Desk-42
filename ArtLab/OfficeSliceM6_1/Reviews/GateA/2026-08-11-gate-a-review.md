@@ -1,10 +1,12 @@
 # Desk42 M6.1 Gate A review
 
-Status: **AWAITING OWNER APPROVAL — DO NOT BEGIN GATE B**
+Status: **REVISION AWAITING OWNER APPROVAL — DO NOT BEGIN GATE B**
 
-The three targets use one fixed seed, the locked M4 Blender lineage, approved project-original motifs and the official local Krea 2 style-reference model set. A02 and A03 include deterministic hand cleanup for state readability.
+A01 is owner-approved and remains byte-identical. A02 and A03 retain their local Krea 2 frames and replace the rejected floating schematic/UI graphics with deterministic physical in-world staging.
 
 ## A01 — CALM OFFICE
+
+Owner decision: **APPROVED — LOCKED, DO NOT REGENERATE**
 
 - [x] Warden is the primary read and the current customer is readable.
 - [x] Runner and Talker remain secondary.
@@ -14,6 +16,8 @@ The three targets use one fixed seed, the locked M4 Blender lineage, approved pr
 
 ## A02 — AUTOMATION RELIEF
 
+Owner decision: **REJECTED / REVISED TARGET AWAITING RE-REVIEW**
+
 - [x] The office, cast and visual language match A01.
 - [x] Machines visibly carry repetitive folder flow.
 - [x] Warden is free to perform another useful task.
@@ -21,6 +25,8 @@ The three targets use one fixed seed, the locked M4 Blender lineage, approved pr
 - [x] Relief reads without labels or explanatory UI.
 
 ## A03 — PROMOTION CASCADE BREAK
+
+Owner decision: **REJECTED / REVISED TARGET AWAITING RE-REVIEW**
 
 - [x] The office, cast and visual language match A01 and A02.
 - [x] The break has a local machine origin.
@@ -30,5 +36,9 @@ The three targets use one fixed seed, the locked M4 Blender lineage, approved pr
 
 ## Gate decision
 
-- [x] Internal authoring review: the three frames are coherent enough to present for owner approval.
-- [ ] Owner approval received to begin Gate B.
+- [x] A01 owner-approved and hash-locked.
+- [x] A02 revised to make automation relief physical and remove floating diagrams.
+- [x] A03 revised to make the Promotion Cascade physical and remove infographic overlays.
+- [ ] Owner approval received for revised A02 and A03.
+- [ ] Gate A closed.
+- [ ] Gate B authorised.

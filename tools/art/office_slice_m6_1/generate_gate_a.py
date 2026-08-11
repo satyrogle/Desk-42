@@ -377,6 +377,8 @@ def build_contact_sheet(spec: dict[str, object], manifest: dict[str, object]) ->
                 "title": target["title"],
                 "presentation_target": frame_path,
                 "presentation_target_sha256": frame_hash,
+                "owner_decision": frame.get("owner_decision", "pending"),
+                "review_status": frame.get("review_status", "pending"),
             }
         )
 
@@ -389,28 +391,37 @@ def build_contact_sheet(spec: dict[str, object], manifest: dict[str, object]) ->
             "contact_sheet": CONTACT_SHEET.relative_to(ROOT).as_posix(),
             "sha256": sha256_path(CONTACT_SHEET),
             "frames": contact_records,
-            "status": "awaiting-owner-approval",
+            "status": "revision-awaiting-owner-approval-gate-b-blocked",
         },
     )
 
     lines = [
         "# Desk42 M6.1 Gate A review",
         "",
-        "Status: **AWAITING OWNER APPROVAL — DO NOT BEGIN GATE B**",
+        "Status: **REVISION AWAITING OWNER APPROVAL — DO NOT BEGIN GATE B**",
         "",
-        "The three targets use one fixed seed, the locked M4 Blender lineage, approved project-original motifs and the official local Krea 2 style-reference model set. A02 and A03 include deterministic hand cleanup for state readability.",
+        "A01 is owner-approved and remains byte-identical. A02 and A03 retain their local Krea 2 frames and replace the rejected floating schematic/UI graphics with deterministic physical in-world staging.",
         "",
     ]
     for target in spec["targets"]:
         lines.extend([f"## {target['id']} — {target['title']}", ""])
+        if target["id"] == "A01":
+            lines.append("Owner decision: **APPROVED — LOCKED, DO NOT REGENERATE**")
+        else:
+            lines.append("Owner decision: **REJECTED / REVISED TARGET AWAITING RE-REVIEW**")
+        lines.append("")
         lines.extend(f"- [x] {criterion}" for criterion in target["criteria"])
         lines.append("")
     lines.extend(
         [
             "## Gate decision",
             "",
-            "- [x] Internal authoring review: the three frames are coherent enough to present for owner approval.",
-            "- [ ] Owner approval received to begin Gate B.",
+            "- [x] A01 owner-approved and hash-locked.",
+            "- [x] A02 revised to make automation relief physical and remove floating diagrams.",
+            "- [x] A03 revised to make the Promotion Cascade physical and remove infographic overlays.",
+            "- [ ] Owner approval received for revised A02 and A03.",
+            "- [ ] Gate A closed.",
+            "- [ ] Gate B authorised.",
             "",
         ]
     )
@@ -440,6 +451,8 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     spec = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
+    if "A01" in args.frames:
+        raise RuntimeError("A01 is owner-approved and SHA-256 locked; refusing to regenerate it")
     references = prepare_references(spec["references"], args.input_dir.resolve())
     manifest = load_execution_manifest(references)
     if args.frames:

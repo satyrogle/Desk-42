@@ -11,6 +11,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[3]
 ARTLAB = ROOT / "ArtLab" / "OfficeSliceM6_1"
 MODEL_ROOT = Path.home() / "ComfyUI-Shared" / "models"
+A01_LOCKED_SHA256 = "39ccd5f354e8339068399c5ca1cf1aaf6d4acbd43923000ce604b550098b0efb"
 
 
 def sha256(path: Path) -> str:
@@ -41,6 +42,9 @@ def main() -> None:
     models = load_json(ARTLAB / "Provenance" / "model-manifest.json")
     execution = load_json(ARTLAB / "Provenance" / "execution-manifest.json")
     finalisation = load_json(ARTLAB / "Provenance" / "finalisation-manifest.json")
+    physical_staging = load_json(
+        ARTLAB / "References" / "PhysicalStaging" / "physical-staging-manifest.json"
+    )
     contact = load_json(ARTLAB / "Reviews" / "GateA" / "desk42_m6_1_gate_a_contact_sheet.json")
 
     model_paths = {
@@ -74,11 +78,26 @@ def main() -> None:
         check_image(raw_path, expected_size, execution_frame["candidate_sha256"])
         target_path = ROOT / final_frame["presentation_target"]
         check_image(target_path, expected_size, final_frame["presentation_target_sha256"])
+        if frame_id == "A01":
+            if execution_frame["candidate_sha256"] != A01_LOCKED_SHA256:
+                raise AssertionError("Approved A01 Krea candidate changed")
+            if final_frame["presentation_target_sha256"] != A01_LOCKED_SHA256:
+                raise AssertionError("Approved A01 presentation target changed")
+            if execution_frame.get("owner_decision") != "approved":
+                raise AssertionError("A01 owner approval is not recorded")
+        elif execution_frame.get("review_status") != "revised-presentation-target-awaiting-owner-approval":
+            raise AssertionError(f"{frame_id} must remain a revision awaiting owner approval")
         if contact_frame["presentation_target_sha256"] != final_frame["presentation_target_sha256"]:
             raise AssertionError(f"Contact sheet frame mismatch for {frame_id}")
 
         workflow_path = ROOT / execution_frame["workflow"]
         workflow = load_json(workflow_path)
+        if execution_frame["workflow_sha256"] != sha256(workflow_path):
+            raise AssertionError(f"Workflow SHA-256 mismatch for {frame_id}")
+        for reference in execution_frame.get("reference_inputs", execution["reference_inputs"]):
+            reference_path = ROOT / reference["path"]
+            if sha256(reference_path) != reference["sha256"]:
+                raise AssertionError(f"Reference SHA-256 mismatch for {frame_id}: {reference_path}")
         if workflow["1"]["inputs"]["unet_name"] != "krea2_turbo_int8_convrot.safetensors":
             raise AssertionError(f"Wrong Krea 2 UNET in {workflow_path}")
         if workflow["2"]["inputs"]["type"] != "krea2":
@@ -88,10 +107,24 @@ def main() -> None:
         if workflow["14"]["inputs"]["steps"] != 8:
             raise AssertionError(f"Workflow step mismatch in {workflow_path}")
 
+    for guide in physical_staging["guides"]:
+        source_path = ROOT / guide["source"]
+        guide_path = ROOT / guide["guide"]
+        check_image(source_path, expected_size, guide["source_sha256"])
+        check_image(guide_path, expected_size, guide["guide_sha256"])
+    for target in spec["targets"]:
+        if target["id"] in {"A02", "A03"}:
+            reference_paths = {reference["path"] for reference in target["references"]}
+            if any("SpatialEdits" in path or "StateBoards" in path for path in reference_paths):
+                raise AssertionError(f"{target['id']} still references rejected schematic guidance")
+
     contact_path = ROOT / contact["contact_sheet"]
     check_image(contact_path, (1920, 480), contact["sha256"])
-    if contact["status"] != "awaiting-owner-approval":
-        raise AssertionError("Gate A must remain awaiting owner approval")
+    expected_status = "revision-awaiting-owner-approval-gate-b-blocked"
+    if finalisation["status"] != expected_status:
+        raise AssertionError("Gate A finalisation must record the blocked revision status")
+    if contact["status"] != expected_status:
+        raise AssertionError("Gate A must remain blocked pending revised-frame approval")
 
     print(
         "M6_1_GATE_A_VALIDATION_OK",

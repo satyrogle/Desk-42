@@ -37,22 +37,17 @@
       "id": "A02",
       "slug": "automation_relief",
       "title": "AUTOMATION RELIEF",
-      "prompt": "EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, high camera, cast design and warm ink style. Transform the activity into unmistakable automation relief. A bold physical flow of cream folders travels left-to-right through the squat teal Auto Sorter and red Copy Echo, then lands in tidy sorted stacks. Runner carries the machine output. The teal Warden is visibly away from the folder line, calmly helping a customer at another desk. Empty chairs and a shrinking queue create open breathing room. Make machine usefulness and reduced manual burden the strongest story after the Warden, without labels or explanatory UI.",
+      "prompt": "EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, fixed high camera and object placement. Repaint the staged machines, folders and staff so they are physically grounded inside the bottom-right Weird Room and fully inherit REFERENCE IMAGE 2's handmade warm-ink linework, scuffed surfaces, three-quarter perspective, shadows, scale and lighting. The squat teal Auto Sorter has folders resting in its input tray and emerging from its output tray; the violet Copy Echo receives them and leaves a small tidy output stack. A staff member physically collects the output. The teal Warden remains elsewhere helping a customer, the queue is short, chairs are empty and the corridor breathes. No cyan route line, no arrows, no connecting path, no floating icons, no boxes, no diagram, no infographic, no HUD and no debug visualization. All cause and relief must exist as ordinary objects and activity in the office.",
       "references": [
         {
-          "role": "authored same-office spatial edit for automation relief",
-          "path": "ArtLab/OfficeSliceM6_1/References/SpatialEdits/A02_automation_relief_spatial_edit.png",
-          "comfy_input_name": "desk42_m6_1_a02_spatial_edit.png"
+          "role": "physical automation staging to repaint into the office",
+          "path": "ArtLab/OfficeSliceM6_1/References/PhysicalStaging/A02_automation_relief_physical_staging.png",
+          "comfy_input_name": "desk42_m6_1_a02_physical_staging.png"
         },
         {
           "role": "same-office visual continuity from accepted A01 internal candidate",
           "path": "ArtLab/OfficeSliceM6_1/Candidates/TargetFrames/A01_calm_office_seed6101001.png",
           "comfy_input_name": "desk42_m6_1_a01_same_office.png"
-        },
-        {
-          "role": "automation-relief action board",
-          "path": "ArtLab/OfficeSliceM6_1/References/StateBoards/A02_automation_relief_board.png",
-          "comfy_input_name": "desk42_m6_1_a02_action_board.png"
         }
       ],
       "criteria": [
@@ -67,22 +62,17 @@
       "id": "A03",
       "slug": "promotion_cascade_break",
       "title": "PROMOTION CASCADE BREAK",
-      "prompt": "EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, high camera, cast design and warm ink style. Turn only the bottom-right purple machine room into an unmistakable Promotion Cascade Break. A huge red-and-black Copy Echo copier and oversized supervisor stamp are the local origin and dominant silhouette. A violent but graphic ribbon of red ink fractures and duplicate paper bursts out from that machine room, stopping at room boundaries enough to preserve every corridor. Runner is visibly turned toward the copier carrying copies. Show one isolated cream original folder with a red seal against many cyan- and red-edged duplicate folders. The teal Warden faces a large stop lever, copy-clear bin, upset customer and visible route for returning the original to the front desk. Make the cause chain physical, local and funny, not subtle, not horror and not a random global glitch.",
+      "prompt": "EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, fixed high camera and object placement. Repaint every staged object so it is physically grounded inside the bottom-right Weird Room and fully inherits REFERENCE IMAGE 2's handmade warm-ink linework, worn surfaces, three-quarter perspective, shadows, scale and lighting. The promoted Copy Echo is an oversized red municipal copier standing on the floor; the supervisor stamp is a literal large rubber office stamp mounted on it. Duplicate paper physically spills from the output tray across the room and just through the doorway. Runner physically faces the copier carrying copies. One clean cream original folder with an amber seal lies isolated near the doorway. An actual stop lever, open copy-clear bin and upset customer remain visible and reachable. Thin ink fractures originate in the copier body and continue into the nearby floor and wall. No network lines, no arrows, no circles, no targets, no symbols, no enclosing frame, no floating icons, no diagram, no infographic, no HUD and no debug visualization. The Break must be a local physical office accident, graphic and funny rather than horror.",
       "references": [
         {
-          "role": "authored same-office spatial edit for promotion cascade",
-          "path": "ArtLab/OfficeSliceM6_1/References/SpatialEdits/A03_promotion_cascade_break_spatial_edit.png",
-          "comfy_input_name": "desk42_m6_1_a03_spatial_edit.png"
+          "role": "physical Promotion Cascade staging to repaint into the office",
+          "path": "ArtLab/OfficeSliceM6_1/References/PhysicalStaging/A03_promotion_cascade_break_physical_staging.png",
+          "comfy_input_name": "desk42_m6_1_a03_physical_staging.png"
         },
         {
           "role": "same-office visual continuity from accepted A01 internal candidate",
           "path": "ArtLab/OfficeSliceM6_1/Candidates/TargetFrames/A01_calm_office_seed6101001.png",
           "comfy_input_name": "desk42_m6_1_a01_same_office.png"
-        },
-        {
-          "role": "promotion-cascade action board",
-          "path": "ArtLab/OfficeSliceM6_1/References/StateBoards/A03_promotion_cascade_break_board.png",
-          "comfy_input_name": "desk42_m6_1_a03_action_board.png"
         }
       ],
       "criteria": [

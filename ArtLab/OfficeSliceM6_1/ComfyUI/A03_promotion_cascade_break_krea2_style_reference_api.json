@@ -42,17 +42,13 @@
         "3",
         0
       ],
-      "prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels. EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, high camera, cast design and warm ink style. Turn only the bottom-right purple machine room into an unmistakable Promotion Cascade Break. A huge red-and-black Copy Echo copier and oversized supervisor stamp are the local origin and dominant silhouette. A violent but graphic ribbon of red ink fractures and duplicate paper bursts out from that machine room, stopping at room boundaries enough to preserve every corridor. Runner is visibly turned toward the copier carrying copies. Show one isolated cream original folder with a red seal against many cyan- and red-edged duplicate folders. The teal Warden faces a large stop lever, copy-clear bin, upset customer and visible route for returning the original to the front desk. Make the cause chain physical, local and funny, not subtle, not horror and not a random global glitch.",
+      "prompt": "Wide 16:9 orthographic 2.5D game concept frame of the same cramped British municipal office shown by the references. Preserve the five-room layout and fixed high diagonal camera: front desk at top-left, paper archive at top-centre, money office at top-right, waiting room at bottom-left, weird machine room at bottom-right, and a central corridor. WARM OFFICE / INK BREAK visual language: handmade ink outlines, chunky readable shapes, limited cream, warm plaster, moss, teal, coffee, amber, red and violet palette, shabby wood, scuffed linoleum, paper clutter and fluorescent warmth. Cozy comic bureaucracy, cheap, specific, claustrophobic and lived-in. Clear walkable routes and readable game silhouettes. No glossy corporate lobby, no cyberpunk, no photorealism, no horror dungeon, no random global glitch, no readable text, no logos, no watermark and no large UI panels. EDIT REFERENCE IMAGE 1 while keeping its exact outer walls, five-room geometry, fixed high camera and object placement. Repaint every staged object so it is physically grounded inside the bottom-right Weird Room and fully inherits REFERENCE IMAGE 2's handmade warm-ink linework, worn surfaces, three-quarter perspective, shadows, scale and lighting. The promoted Copy Echo is an oversized red municipal copier standing on the floor; the supervisor stamp is a literal large rubber office stamp mounted on it. Duplicate paper physically spills from the output tray across the room and just through the doorway. Runner physically faces the copier carrying copies. One clean cream original folder with an amber seal lies isolated near the doorway. An actual stop lever, open copy-clear bin and upset customer remain visible and reachable. Thin ink fractures originate in the copier body and continue into the nearby floor and wall. No network lines, no arrows, no circles, no targets, no symbols, no enclosing frame, no floating icons, no diagram, no infographic, no HUD and no debug visualization. The Break must be a local physical office accident, graphic and funny rather than horror.",
       "image1": [
         "5",
         0
       ],
       "image2": [
         "6",
-        0
-      ],
-      "image3": [
-        "19",
         0
       ]
     }
@@ -190,19 +186,13 @@
   "5": {
     "class_type": "LoadImage",
     "inputs": {
-      "image": "desk42_m6_1_a03_spatial_edit.png"
+      "image": "desk42_m6_1_a03_physical_staging.png"
     }
   },
   "6": {
     "class_type": "LoadImage",
     "inputs": {
       "image": "desk42_m6_1_a01_same_office.png"
-    }
-  },
-  "19": {
-    "class_type": "LoadImage",
-    "inputs": {
-      "image": "desk42_m6_1_a03_action_board.png"
     }
   }
 }
